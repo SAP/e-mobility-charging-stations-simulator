@@ -18,7 +18,7 @@ import type { CoherentSession } from '../../../../src/charging-station/meter-val
 import type { ConnectorStatus, EmptyObject } from '../../../../src/types/index.js'
 
 import { prepareConnectorStatus } from '../../../../src/charging-station/HelpersConnectorStatus.js'
-import { addConfigurationKey } from '../../../../src/charging-station/index.js'
+import { addConfigurationKey, buildConfigKey } from '../../../../src/charging-station/index.js'
 import { createTestableResponseService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
@@ -30,6 +30,7 @@ import {
   flushQueuedTransactionMessages,
   startUpdatedMeterValues,
 } from '../../../../src/charging-station/ocpp/OCPPServiceOperations.js'
+import { buildMeterValue } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
   AttributeEnumType,
@@ -5377,6 +5378,152 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         sampledValue.measurand,
         OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
       )
+    })
+
+    await it('should keep configured energy unchanged in the transaction begin snapshot', async t => {
+      await withMockTimers(t, ['Date'], () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const transactionBeginAt = new Date('2026-09-08T10:00:00.000Z')
+        t.mock.timers.tick(transactionBeginAt.getTime())
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        const evseStatus = station.getEvseStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        assert.ok(evseStatus != null)
+        connectorStatus.transactionStart = new Date(transactionBeginAt.getTime() - 3_600_000)
+        connectorStatus.energyActiveImportRegisterValue = 1234
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
+        evseStatus.MeterValues = [
+          {
+            fluctuationPercent: 0,
+            measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: 'Wh',
+            value: '1000',
+          },
+        ] as unknown as ConnectorStatus['MeterValues']
+        addConfigurationKey(
+          station,
+          buildConfigKey(
+            OCPP20ComponentName.SampledDataCtrlr,
+            OCPP20RequiredVariableName.TxStartedMeasurands
+          ),
+          OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          undefined,
+          { save: false }
+        )
+
+        const [meterValue] = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
+          station,
+          transactionId
+        )
+
+        assert.strictEqual(meterValue.timestamp.getTime(), transactionBeginAt.getTime())
+        assert.strictEqual(meterValue.sampledValue.length, 1)
+        assert.strictEqual(meterValue.sampledValue[0].value, 1234)
+        assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, 1234)
+        assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 1234)
+      })
+    })
+
+    await it('should baseline transaction energy when the begin snapshot omits energy', async t => {
+      await withMockTimers(t, ['Date'], () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const transactionBeginAt = new Date('2026-09-08T10:00:00.000Z')
+        const pendingStartedAt = new Date(transactionBeginAt.getTime() - 3_600_000)
+        const sampleInterval = 1000
+        t.mock.timers.tick(transactionBeginAt.getTime())
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        const evseStatus = station.getEvseStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        assert.ok(evseStatus != null)
+        assert.ok(station.stationInfo != null)
+        station.stationInfo.customValueLimitationMeterValues = true
+        connectorStatus.transactionStart = pendingStartedAt
+        connectorStatus.energyActiveImportRegisterValue = 100
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 100
+        evseStatus.MeterValues = [
+          {
+            fluctuationPercent: 0,
+            measurand: OCPP20MeasurandEnumType.VOLTAGE,
+            unit: 'V',
+            value: '230',
+          },
+          {
+            fluctuationPercent: 0,
+            measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: 'Wh',
+            value: '1000000',
+          },
+        ] as unknown as ConnectorStatus['MeterValues']
+        addConfigurationKey(
+          station,
+          buildConfigKey(
+            OCPP20ComponentName.SampledDataCtrlr,
+            OCPP20RequiredVariableName.TxStartedMeasurands
+          ),
+          OCPP20MeasurandEnumType.VOLTAGE,
+          undefined,
+          { save: false }
+        )
+
+        const [beginMeterValue] = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
+          station,
+          transactionId
+        )
+
+        assert.ok(beginMeterValue.sampledValue.length > 0)
+        assert.strictEqual(
+          beginMeterValue.sampledValue.every(
+            sampledValue => sampledValue.measurand === OCPP20MeasurandEnumType.VOLTAGE
+          ),
+          true
+        )
+        assert.strictEqual(
+          connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt?.getTime(),
+          transactionBeginAt.getTime()
+        )
+
+        t.mock.timers.tick(sampleInterval)
+        const txUpdatedMeasurandsKey = buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          OCPP20RequiredVariableName.TxUpdatedMeasurands
+        )
+        addConfigurationKey(
+          station,
+          txUpdatedMeasurandsKey,
+          OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          undefined,
+          { save: false }
+        )
+        const meterValue = buildMeterValue(
+          station,
+          transactionId,
+          60_000,
+          txUpdatedMeasurandsKey,
+          OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
+        ) as OCPP20MeterValue
+        const expectedEnergyDelta = Number(
+          (
+            (station.getConnectorMaximumAvailablePower(connectorId) * sampleInterval) /
+            Constants.MS_PER_HOUR
+          ).toFixed(2)
+        )
+        const expectedEnergyRegister = 100 + expectedEnergyDelta
+
+        assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, expectedEnergyRegister)
+        assert.strictEqual(
+          connectorStatus.transactionEnergyActiveImportRegisterValue,
+          expectedEnergyRegister
+        )
+        assert.strictEqual(meterValue.sampledValue[0].value, expectedEnergyRegister)
+        assert.strictEqual(
+          connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt.getTime(),
+          transactionBeginAt.getTime() + sampleInterval
+        )
+      })
     })
 
     await it('should return empty array when no transaction found for transactionId', () => {

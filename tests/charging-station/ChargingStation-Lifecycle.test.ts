@@ -212,10 +212,15 @@ await describe('ChargingStation Lifecycle', async () => {
         if (args[1] !== OCPP16RequestCommand.STOP_TRANSACTION) {
           return {}
         }
-        assert.deepStrictEqual(args[3], {
+        const { onError, ...requestOptions } = args[3] as {
+          [key: string]: unknown
+          onError?: unknown
+        }
+        assert.strictEqual(typeof onError, 'function')
+        assert.deepStrictEqual(requestOptions, {
           bufferOnErrorDuringStationStop: true,
           rawPayload: true,
-          skipBufferingOnError: true,
+          skipBufferingOnError: false,
           throwError: true,
         })
         stopRequestPending = true

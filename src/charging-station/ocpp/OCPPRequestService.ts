@@ -502,6 +502,14 @@ export abstract class OCPPRequestService {
             ocppError
           )
           chargingStation.requests.delete(messageId)
+          try {
+            params.onError?.(ocppError, requestStatistic)
+          } catch (error: unknown) {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: onError callback failed for message id '${messageId}':`,
+              error
+            )
+          }
           chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
           reject(ocppError)
         }
@@ -525,7 +533,9 @@ export abstract class OCPPRequestService {
                 messagePayload as JsonType,
                 commandName,
                 responseCallback,
-                errorCallback
+                errorCallback,
+                undefined,
+                params.onMessageSent
               )
             }
           } else if (messageType === MessageType.CALL_MESSAGE) {
@@ -555,7 +565,8 @@ export abstract class OCPPRequestService {
             commandName,
             responseCallback,
             errorCallback,
-            cancelPendingSend
+            cancelPendingSend,
+            params.onMessageSent
           )
         }
         if (chargingStation.isWebSocketConnectionOpened()) {
@@ -593,7 +604,9 @@ export abstract class OCPPRequestService {
                   messagePayload as JsonType,
                   commandName,
                   responseCallback,
-                  errorCallback
+                  errorCallback,
+                  undefined,
+                  params.onMessageSent
                 )
               }
               const notifyMessageSent = (): void => {
@@ -677,7 +690,8 @@ export abstract class OCPPRequestService {
     commandName: IncomingRequestCommand | RequestCommand,
     responseCallback: ResponseCallback,
     errorCallback: ErrorCallback,
-    cancelPendingSend?: PendingRequestCancellationCallback
+    cancelPendingSend?: PendingRequestCancellationCallback,
+    onMessageSent?: () => void
   ): void {
     chargingStation.requests.set(messageId, [
       responseCallback,
@@ -685,6 +699,7 @@ export abstract class OCPPRequestService {
       commandName,
       messagePayload,
       cancelPendingSend,
+      onMessageSent,
     ])
   }
 }

@@ -785,10 +785,15 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         transactionData,
         transactionId: 202,
       })
-      assert.deepStrictEqual(stopCall.arguments[3], {
+      const { onError, ...requestOptions } = stopCall.arguments[3] as {
+        [key: string]: unknown
+        onError?: unknown
+      }
+      assert.strictEqual(typeof onError, 'function')
+      assert.deepStrictEqual(requestOptions, {
         bufferOnErrorDuringStationStop: true,
         rawPayload: true,
-        skipBufferingOnError: true,
+        skipBufferingOnError: false,
         throwError: true,
       })
     })
@@ -1096,11 +1101,16 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       const stopCall = requestHandler.mock.calls.find(
         call => call.arguments[1] === RequestCommand.STOP_TRANSACTION
       )
-      assert.deepStrictEqual(stopCall?.arguments[3], {
+      const { onError, ...requestOptions } = stopCall?.arguments[3] as {
+        [key: string]: unknown
+        onError?: unknown
+      }
+      assert.strictEqual(typeof onError, 'function')
+      assert.deepStrictEqual(requestOptions, {
         bufferOnErrorDuringStationStop: true,
         rawPayload: true,
         responseTimeoutMs: 50,
-        skipBufferingOnError: true,
+        skipBufferingOnError: false,
         throwError: true,
       })
     })

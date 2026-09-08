@@ -10,8 +10,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
-
+import { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
   AuthResultStatus,
@@ -48,6 +47,7 @@ import {
   OCPP16SupportedFeatureProfiles,
   OCPP16VendorParametersKey,
   OCPPVersion,
+  type RequestParams,
 } from '../../../../src/types/index.js'
 import {
   setupConnectorWithTransaction,
@@ -690,6 +690,25 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
     }
 
+    await it('should suppress periodic MeterValues while a transaction is ending', t => {
+      t.mock.timers.enable({ apis: ['setInterval'] })
+      const requestHandler = mock.fn(() => Promise.resolve({}))
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+
+      OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 1000)
+      connectorStatus.transactionEnding = true
+      t.mock.timers.tick(1000)
+
+      assert.strictEqual(requestHandler.mock.callCount(), 0)
+      assert.ok(connectorStatus.transactionUpdatedMeterValuesSetInterval != null)
+    })
+
     await it('should return one in-flight promise per connector and allow a later retry', async () => {
       const stopResponse = Promise.withResolvers<OCPP16StopTransactionResponse>()
       const stopRequestStarted = Promise.withResolvers<undefined>()
@@ -1044,12 +1063,14 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
           return Promise.resolve({})
         }
         stopAttempts++
-        assert.deepStrictEqual(args[3], {
+        const { onError, ...requestOptions } = args[3] as RequestParams
+        assert.strictEqual(typeof onError, 'function')
+        assert.deepStrictEqual(requestOptions, {
           bufferOnErrorDuringStationStop: true,
           onMessageSent,
           rawPayload: true,
           responseTimeoutMs: 25,
-          skipBufferingOnError: true,
+          skipBufferingOnError: false,
           throwError: true,
         })
         if (stopAttempts === 1) {
@@ -1102,6 +1123,354 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         }
       )
       assert.strictEqual(stopAttempts, 2)
+    })
+
+    await it('should send StopTransaction when replay response precedes the send callback', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
+      const transportFailure = new Error('terminal MeterValues transport failure')
+      let replaySendCallback: ((error?: Error) => void) | undefined
+      const timestamp = new Date('2026-09-08T12:34:56.000Z')
+      const firstSendFailed = Promise.withResolvers<undefined>()
+      const stopSendStarted = Promise.withResolvers<undefined>()
+      const wireMessages: string[] = []
+      const { requestService, station } = createOCPP16RequestTestContext({
+        stationInfo: {
+          beginEndMeterValues: true,
+          meterSerialNumber: 'SIM-001',
+          ocppStrictCompliance: true,
+          outOfOrderEndMeterValues: false,
+          transactionDataMeterValues: true,
+        },
+      })
+      station.ocppRequestService = requestService
+      station.recordRequestStatistic = () => undefined
+      const responseService = (
+        requestService as unknown as {
+          ocppResponseService: { responseHandler: () => Promise<undefined> }
+        }
+      ).ocppResponseService
+      mock.method(responseService, 'responseHandler', () => Promise.resolve(undefined))
+      configureSignedStop(station, 100)
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.status = OCPP16ChargePointStatus.Finishing
+      const wsConnection = station.wsConnection
+      assert.ok(wsConnection != null)
+      mock.method(
+        wsConnection,
+        'send',
+        (data: unknown, callback?: (error?: Error) => void): void => {
+          const message = String(data)
+          wireMessages.push(message)
+          const [, , command] = JSON.parse(message) as [number, string, OCPP16RequestCommand]
+          if (wireMessages.length === 1) {
+            callback?.(transportFailure)
+            firstSendFailed.resolve(undefined)
+            return
+          }
+          if (wireMessages.length === 2) {
+            replaySendCallback = callback
+            return
+          }
+          callback?.()
+          if (command === OCPP16RequestCommand.STOP_TRANSACTION) {
+            stopSendStarted.resolve(undefined)
+          }
+        }
+      )
+
+      assert.strictEqual(station.isStopping(), false)
+      const stop = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1, undefined, {
+        timestamp,
+      })
+      await firstSendFailed.promise
+      for (let index = 0; index < 10; index++) await Promise.resolve()
+
+      const { messageQueue } = station as unknown as { messageQueue: string[] }
+      assert.strictEqual(messageQueue.length, 1)
+      assert.deepStrictEqual(
+        wireMessages.map(message => (JSON.parse(message) as [number, string, string])[2]),
+        [OCPP16RequestCommand.METER_VALUES]
+      )
+      assert.strictEqual(connectorStatus.transactionEnding, true)
+      const cachedMeterValues = [...station.requests.values()][0]
+      const sendMessageBuffer = (
+        ChargingStation.prototype as unknown as {
+          sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+        }
+      ).sendMessageBuffer
+      ;(station as unknown as { sendMessageBuffer: typeof sendMessageBuffer }).sendMessageBuffer =
+        sendMessageBuffer
+      sendMessageBuffer.call(station, () => undefined)
+
+      assert.deepStrictEqual(
+        wireMessages.map(message => (JSON.parse(message) as [number, string, string])[2]),
+        [OCPP16RequestCommand.METER_VALUES, OCPP16RequestCommand.METER_VALUES]
+      )
+      cachedMeterValues[0]({}, cachedMeterValues[3])
+      await stopSendStarted.promise
+      replaySendCallback?.()
+
+      assert.deepStrictEqual(
+        wireMessages.map(message => (JSON.parse(message) as [number, string, string])[2]),
+        [
+          OCPP16RequestCommand.METER_VALUES,
+          OCPP16RequestCommand.METER_VALUES,
+          OCPP16RequestCommand.STOP_TRANSACTION,
+        ]
+      )
+      const meterValuesPayload = (
+        JSON.parse(wireMessages[0]) as [
+          number,
+          string,
+          OCPP16RequestCommand,
+          { meterValue: { sampledValue: { format?: OCPP16MeterValueFormat; value: string }[] }[] }
+        ]
+      )[3]
+      const meterValuesSignedSample = meterValuesPayload.meterValue[0].sampledValue.find(
+        sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA
+      )
+      assert.ok(meterValuesSignedSample != null)
+      assert.notStrictEqual(
+        (JSON.parse(meterValuesSignedSample.value) as { publicKey: string }).publicKey,
+        ''
+      )
+      const stopPayload = (
+        JSON.parse(wireMessages[2]) as [
+          number,
+          string,
+          OCPP16RequestCommand,
+          OCPP16StopTransactionRequest
+        ]
+      )[3]
+      const stopSignedSample = stopPayload.transactionData
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .find(sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA)
+      assert.ok(stopSignedSample != null)
+      assert.strictEqual(
+        (JSON.parse(stopSignedSample.value) as { publicKey: string }).publicKey,
+        ''
+      )
+
+      const cachedStop = [...station.requests.values()].find(
+        ([, , command]) => command === OCPP16RequestCommand.STOP_TRANSACTION
+      )
+      assert.ok(cachedStop != null)
+      cachedStop[0]({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }, cachedStop[3])
+      await stop
+      assert.strictEqual(connectorStatus.transactionEnding, undefined)
+    })
+
+    await it('should continue StopTransaction when replay CALLERROR precedes the send callback', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
+      const transportFailure = new Error('terminal MeterValues transport failure')
+      const firstSendFailed = Promise.withResolvers<undefined>()
+      const stopSendStarted = Promise.withResolvers<undefined>()
+      let firstSend = true
+      let replaySendCallback: ((error?: Error) => void) | undefined
+      const wireMessages: string[] = []
+      const { requestService, station } = createOCPP16RequestTestContext({
+        stationInfo: {
+          beginEndMeterValues: true,
+          meterSerialNumber: 'SIM-001',
+          ocppStrictCompliance: true,
+          outOfOrderEndMeterValues: false,
+          transactionDataMeterValues: true,
+        },
+      })
+      station.ocppRequestService = requestService
+      station.recordRequestStatistic = () => undefined
+      const responseService = (
+        requestService as unknown as {
+          ocppResponseService: { responseHandler: () => Promise<undefined> }
+        }
+      ).ocppResponseService
+      mock.method(responseService, 'responseHandler', () => Promise.resolve(undefined))
+      configureSignedStop(station, 100)
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.status = OCPP16ChargePointStatus.Finishing
+      const wsConnection = station.wsConnection
+      assert.ok(wsConnection != null)
+      mock.method(
+        wsConnection,
+        'send',
+        (data: unknown, callback?: (error?: Error) => void): void => {
+          const message = String(data)
+          wireMessages.push(message)
+          const [, , command] = JSON.parse(message) as [number, string, OCPP16RequestCommand]
+          if (firstSend) {
+            firstSend = false
+            callback?.(transportFailure)
+            firstSendFailed.resolve(undefined)
+            return
+          }
+          if (wireMessages.length === 2) {
+            replaySendCallback = callback
+            return
+          }
+          callback?.()
+          if (command === OCPP16RequestCommand.STOP_TRANSACTION) {
+            stopSendStarted.resolve(undefined)
+          }
+        }
+      )
+
+      const stop = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+      await firstSendFailed.promise
+      for (let index = 0; index < 10; index++) await Promise.resolve()
+      const cachedMeterValues = [...station.requests.values()][0]
+      const sendMessageBuffer = (
+        ChargingStation.prototype as unknown as {
+          sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+        }
+      ).sendMessageBuffer
+      ;(station as unknown as { sendMessageBuffer: typeof sendMessageBuffer }).sendMessageBuffer =
+        sendMessageBuffer
+      sendMessageBuffer.call(station, () => undefined)
+      cachedMeterValues[1](
+        new OCPPError(ErrorType.GENERIC_ERROR, 'MeterValues replay CALLERROR'),
+        true
+      )
+      await stopSendStarted.promise
+      replaySendCallback?.()
+      assert.deepStrictEqual(
+        wireMessages.map(message => (JSON.parse(message) as [number, string, string])[2]),
+        [
+          OCPP16RequestCommand.METER_VALUES,
+          OCPP16RequestCommand.METER_VALUES,
+          OCPP16RequestCommand.STOP_TRANSACTION,
+        ]
+      )
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+      const cachedStop = [...station.requests.values()].find(
+        ([, , command]) => command === OCPP16RequestCommand.STOP_TRANSACTION
+      )
+      assert.ok(cachedStop != null)
+      cachedStop[0]({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }, cachedStop[3])
+      await stop
+      assert.strictEqual(connectorStatus.transactionEnding, undefined)
+    })
+
+    await it('should keep replayed StopTransaction ownership through asynchronous response reset', async () => {
+      const transportFailure = new Error('StopTransaction transport failure')
+      const statusSendStarted = Promise.withResolvers<undefined>()
+      const stopResponseHandled = Promise.withResolvers<undefined>()
+      let firstSend = true
+      const { requestService, station } = createOCPP16RequestTestContext()
+      station.ocppRequestService = requestService
+      station.recordRequestStatistic = () => undefined
+      setupConnectorWithTransaction(station, 1, { energyImport: 1234, transactionId: 100 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.status = OCPP16ChargePointStatus.Finishing
+      const wsConnection = station.wsConnection
+      assert.ok(wsConnection != null)
+      mock.method(
+        wsConnection,
+        'send',
+        (data: unknown, callback?: (error?: Error) => void): void => {
+          const [, , command] = JSON.parse(String(data)) as [number, string, OCPP16RequestCommand]
+          if (firstSend) {
+            firstSend = false
+            callback?.(transportFailure)
+            return
+          }
+          callback?.()
+          if (command === OCPP16RequestCommand.STATUS_NOTIFICATION) {
+            statusSendStarted.resolve(undefined)
+          }
+        }
+      )
+      const responseService = (
+        requestService as unknown as {
+          ocppResponseService: { responseHandler: (...args: unknown[]) => Promise<void> }
+        }
+      ).ocppResponseService
+      const responseHandler = responseService.responseHandler.bind(responseService)
+      mock.method(responseService, 'responseHandler', async (...args: unknown[]): Promise<void> => {
+        await responseHandler(...args)
+        if (args[1] === OCPP16RequestCommand.STOP_TRANSACTION) {
+          stopResponseHandled.resolve(undefined)
+        }
+      })
+
+      await assert.rejects(
+        OCPP16ServiceUtils.stopTransactionOnConnector(station, 1),
+        /WebSocket errored/
+      )
+      assert.strictEqual(connectorStatus.transactionEnding, true)
+      const cachedStop = [...station.requests.values()][0]
+      const { messageQueue } = station as unknown as { messageQueue: string[] }
+      const bufferedStop = messageQueue[0]
+      wsConnection.send(bufferedStop, error => {
+        assert.strictEqual(error, undefined)
+      })
+      station.removeBufferedMessage(bufferedStop)
+      cachedStop[0]({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }, cachedStop[3])
+      await statusSendStarted.promise
+
+      await assert.rejects(
+        OCPP16ServiceUtils.stopTransactionOnConnector(station, 1),
+        /pending terminal response processing/
+      )
+      assert.strictEqual(connectorStatus.transactionEnding, true)
+      const cachedStatus = [...station.requests.values()].find(
+        ([, , command]) => command === OCPP16RequestCommand.STATUS_NOTIFICATION
+      )
+      assert.ok(cachedStatus != null)
+      cachedStatus[0]({}, cachedStatus[3])
+      await stopResponseHandled.promise
+      assert.strictEqual(connectorStatus.transactionEnding, undefined)
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+    })
+
+    await it('should release StopTransaction ownership before a synchronous CALLERROR retry', async () => {
+      const transportFailure = new Error('StopTransaction transport failure')
+      let requestCountAtRetry: number | undefined
+      let synchronousRetry: Promise<OCPP16StopTransactionResponse> | undefined
+      const { requestService, station } = createOCPP16RequestTestContext()
+      station.ocppRequestService = requestService
+      station.recordRequestStatistic = () => undefined
+      setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.status = OCPP16ChargePointStatus.Finishing
+      const wsConnection = station.wsConnection
+      assert.ok(wsConnection != null)
+      mock.method(
+        wsConnection,
+        'send',
+        (_data: unknown, callback?: (error?: Error) => void): void => {
+          callback?.(transportFailure)
+        }
+      )
+
+      await assert.rejects(
+        OCPP16ServiceUtils.stopTransactionOnConnector(
+          station,
+          1,
+          undefined,
+          {},
+          {
+            onError: () => {
+              requestCountAtRetry = station.requests.size
+              synchronousRetry = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+            },
+          }
+        ),
+        /WebSocket errored/
+      )
+      assert.strictEqual(connectorStatus.transactionEnding, true)
+      const cachedStop = [...station.requests.values()][0]
+      cachedStop[1](new OCPPError(ErrorType.GENERIC_ERROR, 'Terminal CALLERROR'), true)
+
+      assert.strictEqual(requestCountAtRetry, 0)
+      assert.ok(synchronousRetry != null)
+      await assert.rejects(synchronousRetry, /WebSocket errored/)
+      const { messageQueue } = station as unknown as { messageQueue: string[] }
+      assert.strictEqual(messageQueue.length, 1)
+      assert.strictEqual(station.requests.size, 1)
     })
 
     await it('should keep one recoverable stop intent and the active meter timer after send failure', async () => {
@@ -1205,7 +1574,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
     })
 
-    await it('should retry a key-bearing stop after an unbuffered pre-send failure', async () => {
+    await it('should retry a key-bearing stop after a buffered pre-send failure', async () => {
       const sendFailure = new Error('StopTransaction pre-send failure')
       const stopPayloads: OCPP16StopTransactionRequest[] = []
       let stopAttempts = 0
@@ -1217,7 +1586,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
             onMessageSent?: () => void
             skipBufferingOnError?: boolean
           }
-          assert.strictEqual(params.skipBufferingOnError, true)
+          assert.strictEqual(params.skipBufferingOnError, false)
           if (stopAttempts === 1) return Promise.reject(sendFailure)
           params.onMessageSent?.()
           return Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
@@ -1383,7 +1752,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
             onMessageSent?: () => void
             skipBufferingOnError?: boolean
           }
-          assert.strictEqual(params.skipBufferingOnError, true)
+          assert.strictEqual(params.skipBufferingOnError, false)
           params.onMessageSent?.()
           return Promise.resolve({})
         }
@@ -1500,9 +1869,9 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
           throwError: params.throwError,
         })),
         [
-          { skipBufferingOnError: true, throwError: true },
-          { skipBufferingOnError: true, throwError: true },
-          { skipBufferingOnError: true, throwError: true },
+          { skipBufferingOnError: false, throwError: true },
+          { skipBufferingOnError: false, throwError: true },
+          { skipBufferingOnError: false, throwError: true },
         ]
       )
       assert.strictEqual(meterValuesPayloads.length, 3)

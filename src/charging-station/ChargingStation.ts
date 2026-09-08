@@ -3196,6 +3196,7 @@ export class ChargingStation extends EventEmitter {
       const message = this.messageQueue[0]
       let beginId: string | undefined
       let commandName: RequestCommand | undefined
+      let messageId: string | undefined
       let parsedMessage: ErrorResponse | OutgoingRequest | Response
       messageIdx ??= 0
       try {
@@ -3212,7 +3213,7 @@ export class ChargingStation extends EventEmitter {
       const [messageType] = parsedMessage
       const isRequest = messageType === MessageType.CALL_MESSAGE
       if (isRequest) {
-        ;[, , commandName] = parsedMessage as OutgoingRequest
+        ;[, messageId, commandName] = parsedMessage as OutgoingRequest
         beginId = PerformanceStatistics.beginMeasure(commandName)
       }
       const bufferedMessageInFlight = { message, retracted: false }
@@ -3225,6 +3226,16 @@ export class ChargingStation extends EventEmitter {
           delete this.bufferedMessageInFlight
         }
         if (error == null) {
+          if (isRequest && messageId != null) {
+            try {
+              this.requests.get(messageId)?.[5]?.()
+            } catch (error: unknown) {
+              logger.error(
+                `${this.logPrefix()} ${moduleName}.sendMessageBuffer: onMessageSent callback failed for buffered message id '${messageId}':`,
+                error
+              )
+            }
+          }
           logger.debug(
             `${this.logPrefix()} ${moduleName}.sendMessageBuffer: >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
           )

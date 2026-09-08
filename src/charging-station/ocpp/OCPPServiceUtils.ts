@@ -1932,6 +1932,7 @@ const buildIdentifiedMeterValue = (
     } as OCPP20MeterValue
   }
   const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+  const transactionBegin = context === MeterValueContext.TRANSACTION_BEGIN
   if (isCoherentModeActive(coherentSession)) {
     const timestamp = identity.timestamp ?? new Date()
     if (signingConfig != null) signingConfig.timestamp = timestamp
@@ -1955,6 +1956,10 @@ const buildIdentifiedMeterValue = (
         chargingStation.stationInfo?.meteringPerTransaction === true,
       identity.energyRegisterWhOverride
     )
+    if (transactionBegin && connectorStatus != null) {
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt =
+        coherentMeterValue.timestamp
+    }
     if (snapshot) {
       const coherentOcpp20MeterValue = coherentMeterValue as OCPP20MeterValue
       coherentOcpp20MeterValue.sampledValue = applyClockAlignedVoltageControls(
@@ -2219,13 +2224,15 @@ const buildIdentifiedMeterValue = (
   }
   // Energy.Active.Import.Register measurand (default)
   const advanceEnergy = identity.advanceEnergy === true
-  const ownsEnergy = identity.transactionId != null && (!snapshot || advanceEnergy)
+  const ownsEnergy =
+    !transactionBegin && identity.transactionId != null && (!snapshot || advanceEnergy)
   let snapshotEnergyRegisterWhOverride = identity.energyRegisterWhOverride
   const previousEnergyUpdate =
     connectorStatus?.transactionEnergyActiveImportRegisterLastUpdatedAt ??
     connectorStatus?.transactionStart
-  const energyInterval =
-    ownsEnergy && previousEnergyUpdate != null
+  const energyInterval = transactionBegin
+    ? 0
+    : ownsEnergy && previousEnergyUpdate != null
       ? Math.max(0, meterValue.timestamp.getTime() - previousEnergyUpdate.getTime())
       : interval
   const energyMeasurand = buildEnergyMeasurandValue(
@@ -2234,7 +2241,7 @@ const buildIdentifiedMeterValue = (
     energyInterval,
     evseId,
     measurandsKey,
-    snapshot && !advanceEnergy,
+    transactionBegin || (snapshot && !advanceEnergy),
     snapshot
   )
   if (energyMeasurand != null) {
@@ -2325,6 +2332,9 @@ const buildIdentifiedMeterValue = (
     connectorStatus != null
   ) {
     connectorStatus.publicKeySentInTransaction = true
+  }
+  if (transactionBegin && connectorStatus != null) {
+    connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = meterValue.timestamp
   }
   return meterValue as MeterValue
 }

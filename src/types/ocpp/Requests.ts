@@ -45,7 +45,8 @@ export type CachedRequest = [
   ErrorCallback,
   IncomingRequestCommand | RequestCommand,
   JsonType,
-  PendingRequestCancellationCallback?
+  PendingRequestCancellationCallback?,
+  (() => void)?
 ]
 
 export type DataTransferRequest = OCPP16DataTransferRequest | OCPP20DataTransferRequest
@@ -92,6 +93,8 @@ export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand
 export interface RequestParams {
   /** Preserve a failed send for reconnect replay when station shutdown is in progress. */
   bufferOnErrorDuringStationStop?: boolean
+  /** Called when a CALL ends with CALLERROR or a local cancellation/timeout. */
+  onError?: (error: OCPPError, isCallError: boolean) => void
   onMessageSent?: () => void
   onResponseReceived?: () => void
   rawPayload?: boolean
