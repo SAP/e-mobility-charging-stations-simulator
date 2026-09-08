@@ -4821,6 +4821,84 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(connectorStatus.transactionRestored, undefined)
     })
 
+    await it('keeps a restored owning Started event recoverable after terminal replay failure', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+      let online = false
+      let rejectReplay = true
+      const stationHolder: { station?: ChargingStation } = {}
+      const replayedRequests: OCPP20TransactionEventRequest[] = []
+      const responseService = createTestableResponseService(new OCPP20ResponseService())
+      const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<unknown> => {
+        if (args[1] !== OCPP20RequestCommand.TRANSACTION_EVENT) return {}
+        const request = args[2] as OCPP20TransactionEventRequest
+        const requestParams = args[3] as RequestParams | undefined
+        replayedRequests.push(request)
+        requestParams?.onMessageSent?.()
+        if (rejectReplay) throw new Error('configured replay attempts exhausted')
+        requestParams?.onResponseReceived?.()
+        const replayStation = stationHolder.station
+        assert.ok(replayStation != null)
+        await responseService.handleResponseTransactionEvent(replayStation, {}, request)
+        return {}
+      })
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler: requestHandlerMock },
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      stationHolder.station = station
+      station.isWebSocketConnectionOpened = () => online
+      addConfigurationKey(
+        station,
+        `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+        '1',
+        undefined,
+        { save: false }
+      )
+      setupConnectorWithTransaction(station, connectorId, { pending: true, transactionId })
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        station,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+      const connectorStatus = station.getConnectorStatus(connectorId)
+      assert.ok(connectorStatus?.transactionEventQueue?.[0] != null)
+      connectorStatus.transactionPending = false
+      connectorStatus.transactionStarting = true
+      connectorStatus.transactionRestored = true
+      const queuedEvent = connectorStatus.transactionEventQueue[0]
+      const originalPayload = structuredClone(queuedEvent.request)
+      const saveQueueSpy = mock.method(station, 'saveTransactionEventQueues')
+      online = true
+
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+      await new Promise(resolve => setImmediate(resolve))
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
+      assert.strictEqual(connectorStatus.transactionEventQueue[0], queuedEvent)
+      assert.deepEqual(connectorStatus.transactionEventQueue[0].request, originalPayload)
+      assert.strictEqual(connectorStatus.transactionId, transactionId)
+      assert.strictEqual(connectorStatus.transactionStarting, true)
+      assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
+
+      rejectReplay = false
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+
+      assert.strictEqual(replayedRequests.length, 2)
+      assert.strictEqual(replayedRequests[0], replayedRequests[1])
+      assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(connectorStatus.transactionStarting, false)
+      assert.strictEqual(connectorStatus.transactionId, transactionId)
+    })
+
     await it('keeps an interrupted Started event queued without arming transaction timers', async () => {
       let stopping = false
       const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
@@ -4854,7 +4932,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const connectorStatus = station.getConnectorStatus(1)
       assert.ok(connectorStatus != null)
       assert.strictEqual(result.accepted, true)
-      assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
+      assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
       assert.strictEqual(
         connectorStatus.transactionEventQueue[0].request.eventType,
         OCPP20TransactionEventEnumType.Started

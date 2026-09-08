@@ -2906,14 +2906,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     if (
       connectorStatus.transactionStarted === true ||
       connectorStatus.transactionPending === true ||
+      connectorStatus.transactionStarting === true ||
       connectorStatus.locked === true
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active or pending transaction`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active, pending, or starting transaction`
       )
       return buildRejectedResponse(
         ReasonCodeEnumType.TxInProgress,
-        `Connector ${connectorId.toString()} already has an active or pending transaction`
+        `Connector ${connectorId.toString()} already has an active, pending, or starting transaction`
       )
     }
 

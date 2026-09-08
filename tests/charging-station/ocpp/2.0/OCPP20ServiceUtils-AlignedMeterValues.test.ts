@@ -977,7 +977,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
-    await it('suppresses only the targeted EVSE for an EVSE-scoped SendDuringIdle value', async () => {
+    await it('suppresses only the targeted EVSE output while retaining its EVSE 0 contribution', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -1043,7 +1043,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         .find(
           ({ measurand }) => measurand === OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_REGISTER
         )
-      assert.strictEqual(registerSample?.value, 1000)
+      assert.strictEqual(registerSample?.value, 2000)
     })
 
     await it('retains only the latest aligned boundary while one request per EVSE is stalled', async () => {
@@ -4902,7 +4902,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         SetVariableStatusEnumType.Rejected
       )
       assert.strictEqual(
-        response.setVariableResult[0].attributeStatusInfo?.reasonCode,
+        response.setVariableResult[0].attributeStatusInfo.reasonCode,
         ReasonCodeEnumType.ValueTooHigh
       )
       assert.strictEqual(restartSpy.mock.callCount(), 0)

@@ -8,12 +8,14 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ConnectorStatus } from '../../src/types/index.js'
 
 import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import { OCPP16RequestService } from '../../src/charging-station/ocpp/1.6/OCPP16RequestService.js'
 import { OCPP16ResponseService } from '../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import { OCPP16ServiceUtils } from '../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { stopRunningTransactions } from '../../src/charging-station/ocpp/OCPPServiceOperations.js'
 import {
   OCPP16AuthorizationStatus,
+  OCPP16ChargePointStatus,
   OCPP16RequestCommand,
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
@@ -208,6 +210,7 @@ await describe('ChargingStation Lifecycle', async () => {
           return {}
         }
         assert.deepStrictEqual(args[3], {
+          bufferOnErrorDuringStationStop: true,
           rawPayload: true,
           skipBufferingOnError: true,
           throwError: true,
@@ -283,6 +286,149 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(connectorStatus.transactionId, undefined)
       assert.strictEqual(cancellationDuringStopTransaction, false)
       assert.strictEqual(cancelCalls, 1)
+    })
+
+    await it('replays one immutable StopTransaction after its shutdown send fails', async t => {
+      const responseService = new OCPP16ResponseService()
+      const requestService = new OCPP16RequestService(responseService)
+      const initialSendStarted = Promise.withResolvers<undefined>()
+      const replayComplete = Promise.withResolvers<undefined>()
+      const wireMessages: string[] = []
+      let initialSendCallback: ((error?: Error) => void) | undefined
+      const result = createMockChargingStation({
+        connectorsCount: 1,
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: { beginEndMeterValues: false, ocppVersion: OCPPVersion.VERSION_16 },
+      })
+      const activeStation = result.station
+      station = activeStation
+      activeStation.started = true
+      activeStation.isStopping = () => ChargingStation.prototype.isStopping.call(activeStation)
+      activeStation.recordRequestStatistic = () => undefined
+      activeStation.ocppRequestService = requestService
+      setupConnectorWithTransaction(activeStation, 1, { transactionId: 102 })
+      const connectorStatus = activeStation.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.status = OCPP16ChargePointStatus.Finishing
+      const meterValuesTimer = setInterval(() => undefined, 60_000)
+      t.after(() => {
+        clearInterval(meterValuesTimer)
+      })
+      connectorStatus.transactionUpdatedMeterValuesSetInterval = meterValuesTimer
+      const wsConnection = activeStation.wsConnection
+      assert.ok(wsConnection != null)
+      mock.method(
+        wsConnection,
+        'send',
+        (data: unknown, callback?: (error?: Error) => void): void => {
+          wireMessages.push(String(data))
+          if (wireMessages.length === 1) {
+            initialSendCallback = callback
+            initialSendStarted.resolve(undefined)
+          } else {
+            callback?.()
+          }
+        }
+      )
+      ;(
+        activeStation as unknown as {
+          performStop: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stopTransactions?: boolean
+          ) => Promise<void>
+        }
+      ).performStop = async (reason, stopTransactions) => {
+        stopTransactions === true && (await stopRunningTransactions(activeStation, reason))
+        activeStation.ocppRequestService.cancelPendingRequests(activeStation)
+        activeStation.started = false
+      }
+      const transactionData = [
+        {
+          sampledValue: [{ value: '1024' }],
+          timestamp: new Date('2026-09-08T12:34:56.000Z'),
+        },
+      ]
+
+      const callerStop = OCPP16ServiceUtils.stopTransactionOnConnector(
+        activeStation,
+        1,
+        undefined,
+        { idTag: 'SHUTDOWN-TAG', transactionData }
+      )
+      await initialSendStarted.promise
+      const stationStop = ChargingStation.prototype.stop.call(activeStation, undefined, true)
+      await Promise.resolve()
+      const sendFailure = new Error('connection dropped during shutdown')
+      initialSendCallback?.(sendFailure)
+      initialSendCallback?.(sendFailure)
+
+      await assert.rejects(callerStop, /WebSocket errored for buffered message/)
+      await stationStop
+      transactionData[0].sampledValue[0].value = 'mutated-after-rejection'
+      transactionData.push({ sampledValue: [{ value: 'late' }], timestamp: new Date() })
+
+      const stationInternals = activeStation as unknown as { messageQueue: string[] }
+      assert.strictEqual(stationInternals.messageQueue.length, 1)
+      assert.strictEqual(activeStation.requests.size, 1)
+      assert.strictEqual(wireMessages.length, 1)
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(connectorStatus.transactionId, 102)
+      assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, meterValuesTimer)
+      const cachedRequest = [...activeStation.requests.values()][0]
+      const [responseCallback, , commandName, cachedPayload] = cachedRequest
+      assert.strictEqual(commandName, OCPP16RequestCommand.STOP_TRANSACTION)
+      assert.strictEqual(Object.isFrozen(cachedPayload), true)
+      assert.deepStrictEqual((cachedPayload as OCPP16StopTransactionRequest).transactionData, [
+        {
+          sampledValue: [{ value: '1024' }],
+          timestamp: new Date('2026-09-08T12:34:56.000Z'),
+        },
+      ])
+      const bufferedMessage = JSON.parse(stationInternals.messageQueue[0]) as [
+        number,
+        string,
+        string,
+        OCPP16StopTransactionRequest
+      ]
+      assert.strictEqual(bufferedMessage[2], OCPP16RequestCommand.STOP_TRANSACTION)
+      assert.deepStrictEqual(bufferedMessage[3].transactionData, [
+        {
+          sampledValue: [{ value: '1024' }],
+          timestamp: '2026-09-08T12:34:56.000Z',
+        },
+      ])
+
+      const sendMessageBuffer = (
+        ChargingStation.prototype as unknown as {
+          sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+        }
+      ).sendMessageBuffer
+      ;(
+        activeStation as unknown as { sendMessageBuffer: typeof sendMessageBuffer }
+      ).sendMessageBuffer = sendMessageBuffer
+      sendMessageBuffer.call(activeStation, () => {
+        replayComplete.resolve(undefined)
+      })
+      await replayComplete.promise
+
+      assert.strictEqual(stationInternals.messageQueue.length, 0)
+      assert.strictEqual(wireMessages.length, 2)
+      assert.strictEqual(wireMessages[1], wireMessages[0])
+      assert.strictEqual(
+        wireMessages.filter(message => {
+          const frame = JSON.parse(message) as unknown[]
+          return frame[2] === OCPP16RequestCommand.STOP_TRANSACTION
+        }).length,
+        2
+      )
+
+      ;(activeStation as unknown as { stopping: boolean }).stopping = true
+      responseCallback({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }, cachedPayload)
+      await new Promise(resolve => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
+      assert.strictEqual(activeStation.requests.size, 0)
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
     })
 
     await it('coalesces transaction queue persistence to one dirty follow-up save', async () => {

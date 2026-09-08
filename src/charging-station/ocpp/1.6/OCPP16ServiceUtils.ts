@@ -1247,6 +1247,7 @@ export class OCPP16ServiceUtils {
               requestParams?.onMessageSent?.()
             },
           }),
+          bufferOnErrorDuringStationStop: true,
           rawPayload: true,
           skipBufferingOnError: true,
           throwError: true,

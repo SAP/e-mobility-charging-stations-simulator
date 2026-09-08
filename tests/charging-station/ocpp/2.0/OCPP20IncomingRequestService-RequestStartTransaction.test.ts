@@ -494,6 +494,34 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxStarted)
   })
 
+  await it('should not overwrite the transaction identity while Started delivery owns the connector', async () => {
+    const connectorStatus = mockStation.getConnectorStatus(1)
+    if (connectorStatus == null) {
+      assert.fail('Connector 1 missing on mock station')
+    }
+    const transactionId = '00000000-0000-4000-8000-000000000020'
+    connectorStatus.transactionStarting = true
+    connectorStatus.transactionId = transactionId
+    connectorStatus.transactionIdTag = 'FIRST_TOKEN'
+    connectorStatus.remoteStartId = 100
+
+    const response = await testableService.handleRequestStartTransaction(mockStation, {
+      evseId: 1,
+      idToken: {
+        idToken: 'SECOND_TOKEN',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 101,
+    })
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.transactionId, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxInProgress)
+    assert.strictEqual(connectorStatus.transactionId, transactionId)
+    assert.strictEqual(connectorStatus.transactionIdTag, 'FIRST_TOKEN')
+    assert.strictEqual(connectorStatus.remoteStartId, 100)
+  })
+
   await it('should reject RequestStartTransaction with TxInProgress (no transactionId echo) when connector is locked without pending transaction', async () => {
     const connectorStatus = mockStation.getConnectorStatus(1)
     if (connectorStatus == null) {

@@ -1045,6 +1045,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         }
         stopAttempts++
         assert.deepStrictEqual(args[3], {
+          bufferOnErrorDuringStationStop: true,
           onMessageSent,
           rawPayload: true,
           responseTimeoutMs: 25,

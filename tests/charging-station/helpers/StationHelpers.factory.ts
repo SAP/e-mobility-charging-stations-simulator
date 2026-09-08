@@ -426,6 +426,10 @@ export function createMockChargingStation (
       return reservation == null
     },
 
+    isStopping (): boolean {
+      return this.stopping
+    },
+
     isWebSocketConnectionOpened (): boolean {
       return this.wsConnection?.readyState === WebSocketReadyState.OPEN
     },

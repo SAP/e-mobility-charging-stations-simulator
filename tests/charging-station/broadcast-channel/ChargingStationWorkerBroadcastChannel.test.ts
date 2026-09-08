@@ -786,6 +786,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         transactionId: 202,
       })
       assert.deepStrictEqual(stopCall.arguments[3], {
+        bufferOnErrorDuringStationStop: true,
         rawPayload: true,
         skipBufferingOnError: true,
         throwError: true,
@@ -1096,6 +1097,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         call => call.arguments[1] === RequestCommand.STOP_TRANSACTION
       )
       assert.deepStrictEqual(stopCall?.arguments[3], {
+        bufferOnErrorDuringStationStop: true,
         rawPayload: true,
         responseTimeoutMs: 50,
         skipBufferingOnError: true,

@@ -3164,10 +3164,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private readonly sendMessageBuffer = (
-    onCompleteCallback: () => void,
-    messageIdx?: number
-  ): void => {
+  private sendMessageBuffer (onCompleteCallback: () => void, messageIdx?: number): void {
     if (isNotEmptyArray<string>(this.messageQueue)) {
       const message = this.messageQueue[0]
       let beginId: string | undefined

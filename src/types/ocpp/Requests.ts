@@ -83,6 +83,8 @@ export const RequestCommand = {
 export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand
 
 export interface RequestParams {
+  /** Preserve a failed send for reconnect replay when station shutdown is in progress. */
+  bufferOnErrorDuringStationStop?: boolean
   onMessageSent?: () => void
   onResponseReceived?: () => void
   rawPayload?: boolean

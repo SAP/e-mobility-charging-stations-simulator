@@ -412,6 +412,7 @@ export abstract class OCPPRequestService {
       return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
         let responseTimeout: NodeJS.Timeout | undefined
         let sendTimeout: NodeJS.Timeout | undefined
+        let sendErrorHandled = false
         const clearResponseTimeout = (): void => {
           if (responseTimeout != null) {
             clearTimeout(responseTimeout)
@@ -485,9 +486,13 @@ export abstract class OCPPRequestService {
           reject(ocppError)
         }
 
+        const shouldBufferOnError = (): boolean =>
+          params.skipBufferingOnError === false ||
+          (params.bufferOnErrorDuringStationStop === true && chargingStation.isStopping())
         const handleSendError = (ocppError: OCPPError): void => {
-          if (params.skipBufferingOnError === false) {
-            // Buffer
+          if (sendErrorHandled) return
+          sendErrorHandled = true
+          if (shouldBufferOnError()) {
             chargingStation.bufferMessage(messageToSend)
             if (messageType === MessageType.CALL_MESSAGE) {
               this.setCachedRequest(
@@ -499,10 +504,7 @@ export abstract class OCPPRequestService {
                 errorCallback
               )
             }
-          } else if (
-            params.skipBufferingOnError === true &&
-            messageType === MessageType.CALL_MESSAGE
-          ) {
+          } else if (messageType === MessageType.CALL_MESSAGE) {
             chargingStation.requests.delete(messageId)
           }
           reject(ocppError)
@@ -535,7 +537,7 @@ export abstract class OCPPRequestService {
                 `Timeout ${formatDurationMilliSeconds(
                   OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS
                 )} reached for ${
-                  params.skipBufferingOnError === false ? '' : 'non '
+                  shouldBufferOnError() ? '' : 'non '
                 }buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
                 messagePayload instanceof OCPPError ? messagePayload.details : undefined
@@ -545,6 +547,7 @@ export abstract class OCPPRequestService {
           chargingStation.wsConnection?.send(messageToSend, (error?: Error) => {
             PerformanceStatistics.endMeasure(commandName, beginId)
             clearSendTimeout()
+            if (sendErrorHandled) return
             if (
               messageType === MessageType.CALL_MESSAGE &&
               !chargingStation.requests.has(messageId)
@@ -592,7 +595,7 @@ export abstract class OCPPRequestService {
                 new OCPPError(
                   ErrorType.GENERIC_ERROR,
                   `WebSocket errored for ${
-                    params.skipBufferingOnError === false ? '' : 'non '
+                    shouldBufferOnError() ? '' : 'non '
                   }buffered message id '${messageId}' with content '${messageToSend}'`,
                   commandName,
                   {
@@ -609,7 +612,7 @@ export abstract class OCPPRequestService {
             new OCPPError(
               ErrorType.GENERIC_ERROR,
               `WebSocket closed for ${
-                params.skipBufferingOnError === false ? '' : 'non '
+                shouldBufferOnError() ? '' : 'non '
               }buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
               messagePayload instanceof OCPPError ? messagePayload.details : undefined

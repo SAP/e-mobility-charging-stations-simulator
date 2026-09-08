@@ -521,6 +521,7 @@ export class OCPP20ServiceUtils {
     Map<string, number>
   >()
 
+  private static readonly retryableTransactionEventQueueFailures = new WeakSet<ConnectorStatus>()
   private static readonly saturatedTransactionEventQueues = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventQueueDrains = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventSendChains = new WeakMap<
@@ -931,7 +932,7 @@ export class OCPP20ServiceUtils {
           ) {
             sampledValueTemplates.push(...connectorStatus.MeterValues)
           }
-          if (evseId !== 0 && !suppressEvseEmission) {
+          if (evseId !== 0) {
             const configuredEfficiency =
               chargingStation.stationInfo?.currentOutType === CurrentType.DC
                 ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
@@ -2328,6 +2329,7 @@ export class OCPP20ServiceUtils {
     eligibleEvents?: ReadonlySet<QueuedTransactionEvent>
   ): Promise<void> {
     const queue: QueuedTransactionEvent[] = connectorStatus.transactionEventQueue ?? []
+    OCPP20ServiceUtils.retryableTransactionEventQueueFailures.delete(connectorStatus)
     if (queue.length === 0) return
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending ${queue.length.toString()} queued TransactionEvents for connector ${connectorId.toString()}`
@@ -2382,6 +2384,22 @@ export class OCPP20ServiceUtils {
           !OCPP20ServiceUtils.isChargingStationStopping(chargingStation) &&
           (responseState.received || chargingStation.isWebSocketConnectionOpened())
         ) {
+          const ownsRestoredStartedEvent =
+            connectorStatus.transactionRestored === true &&
+            connectorStatus.transactionStarted !== true &&
+            connectorStatus.transactionId?.toString() ===
+              queuedEvent.request.transactionInfo.transactionId &&
+            queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Started
+          if (ownsRestoredStartedEvent) {
+            OCPP20ServiceUtils.retryableTransactionEventQueueFailures.add(connectorStatus)
+            chargingStation.saveTransactionEventQueues()
+            queueChanged = false
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Preserving restored owning TransactionEvent(Started) with seqNo=${queuedEvent.seqNo.toString()} after configured delivery attempts:`,
+              error
+            )
+            break
+          }
           if (!responseState.sent) {
             const publicKey = Array.isArray(queuedEvent.request.meterValue)
               ? queuedEvent.request.meterValue
@@ -2580,6 +2598,7 @@ export class OCPP20ServiceUtils {
   ): void {
     if (
       OCPP20ServiceUtils.isChargingStationStopping(chargingStation) ||
+      OCPP20ServiceUtils.retryableTransactionEventQueueFailures.has(connectorStatus) ||
       OCPP20ServiceUtils.transactionEventQueueDrains.has(connectorStatus)
     ) {
       return
