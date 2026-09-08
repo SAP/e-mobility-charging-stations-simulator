@@ -231,6 +231,7 @@ export class ChargingStation extends EventEmitter {
   // started/stopping (which reset() itself toggles through stop()) so a station
   // deleted during the reset window is not resurrected and reconnected.
   private readonly deleteAbortController: AbortController
+  private deletePromise?: Promise<void>
   private readonly evses: Map<number, EvseStatus>
   private evsesConfigurationHash: string
   private flushingMessageBuffer: boolean
@@ -471,71 +472,18 @@ export class ChargingStation extends EventEmitter {
   /**
    * Deletes the charging station instance and optionally its persisted configuration.
    * @param deleteConfiguration - Whether to delete the persisted configuration file
+   * @returns Promise that resolves after the shared delete operation completes
    */
-  public async delete (deleteConfiguration = true): Promise<void> {
-    // Cancel any pending reset() so a station deleted during its reset window is
-    // not re-initialized and reconnected to the CSMS.
+  public delete (deleteConfiguration = true): Promise<void> {
+    // Cancel any pending reset() synchronously so a station deleted during its
+    // reset window cannot be re-initialized before deletion begins.
     this.deleteAbortController.abort()
-    const stopPromise = this.started || this.stopPromise != null ? this.stop() : undefined
-    this.ocppRequestService.cancelPendingRequests(
-      this,
-      'Charging station deleted while awaiting an OCPP response',
-      true
+    // Deletion is single-flight: concurrent callers join the same bounded stop
+    // and cleanup instead of cancelling lifecycle requests started by the first.
+    this.deletePromise ??= Promise.resolve().then(() =>
+      ChargingStation.prototype.performDelete.call(this, deleteConfiguration)
     )
-    if (stopPromise != null) {
-      try {
-        await stopPromise
-      } catch (error) {
-        const e = ensureError(error)
-        logger.error(
-          `${this.logPrefix()} ${moduleName}.delete: Error stopping station during delete:`,
-          e
-        )
-      }
-    }
-    ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
-    await this.transactionEventQueueSavePromise
-    this.ocppRequestService.cancelPendingRequests(
-      this,
-      'Charging station deleted while awaiting an OCPP response',
-      true
-    )
-    AutomaticTransactionGenerator.deleteInstance(this)
-    CoherentMeterValuesManager.deleteInstance(this)
-    PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
-    OCPPAuthServiceFactory.clearInstance(this)
-    if (this.stationInfo != null) {
-      const idTagsFile = getIdTagsFile(this.stationInfo)
-      if (idTagsFile != null) {
-        this.idTagsCache.deleteIdTags(idTagsFile)
-      } else {
-        logger.warn(
-          `${this.logPrefix()} ${moduleName}.delete: No ID tags file found during deletion`
-        )
-      }
-    } else {
-      logger.warn(
-        `${this.logPrefix()} ${moduleName}.delete: No station info available during deletion`
-      )
-    }
-    this.connectors.clear()
-    this.evses.clear()
-    this.clearMessageBuffer()
-    this.templateFileWatcher?.unref()
-    if (deleteConfiguration && existsSync(this.configurationFile)) {
-      try {
-        rmSync(this.configurationFile, { force: true })
-      } catch (error) {
-        const e = ensureError(error)
-        logger.error(
-          `${this.logPrefix()} ${moduleName}.delete: Failed to delete configuration file ${this.configurationFile}:`,
-          e
-        )
-      }
-    }
-    this.chargingStationWorkerBroadcastChannel.unref()
-    this.emitChargingStationEvent(ChargingStationEvents.deleted)
-    this.removeAllListeners()
+    return this.deletePromise
   }
 
   /**
@@ -1559,10 +1507,14 @@ export class ChargingStation extends EventEmitter {
     }
 
     this.stopping = true
-    this.lifecycleAbortController?.abort()
-    // Work already in flight keeps the aborted signal captured at creation;
-    // shutdown-generated TransactionEvents use a fresh signal for E13 retries.
-    this.lifecycleAbortController = new AbortController()
+    if (isOCPP20x(this.stationInfo?.ocppVersion)) {
+      this.lifecycleAbortController?.abort()
+      // Settle old-generation non-buffered requests before shutdown work joins
+      // the strict per-connector delivery chain. Buffered CALLs remain available
+      // for replay; shutdown-generated requests use the fresh lifecycle signal.
+      this.ocppRequestService.cancelPendingRequests(this)
+      this.lifecycleAbortController = new AbortController()
+    }
     const stopPromise = this.performStop(reason, stopTransactions)
     this.stopPromise = stopPromise
     try {
@@ -2913,6 +2865,65 @@ export class ChargingStation extends EventEmitter {
     logger.debug(
       `${this.logPrefix()} ${moduleName}.onPong: Received a WS pong (rfc6455) from the server`
     )
+  }
+
+  private async performDelete (deleteConfiguration: boolean): Promise<void> {
+    const stopPromise = this.started || this.stopPromise != null ? this.stop() : undefined
+    if (stopPromise != null) {
+      try {
+        await stopPromise
+      } catch (error) {
+        const e = ensureError(error)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.delete: Error stopping station during delete:`,
+          e
+        )
+      }
+    }
+    ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
+    await this.transactionEventQueueSavePromise
+    // Discard anything left after the graceful stop has settled or reached its timeout.
+    this.ocppRequestService.cancelPendingRequests(
+      this,
+      'Charging station deleted while awaiting an OCPP response',
+      true
+    )
+    AutomaticTransactionGenerator.deleteInstance(this)
+    CoherentMeterValuesManager.deleteInstance(this)
+    PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
+    OCPPAuthServiceFactory.clearInstance(this)
+    if (this.stationInfo != null) {
+      const idTagsFile = getIdTagsFile(this.stationInfo)
+      if (idTagsFile != null) {
+        this.idTagsCache.deleteIdTags(idTagsFile)
+      } else {
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.delete: No ID tags file found during deletion`
+        )
+      }
+    } else {
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}.delete: No station info available during deletion`
+      )
+    }
+    this.connectors.clear()
+    this.evses.clear()
+    this.clearMessageBuffer()
+    this.templateFileWatcher?.unref()
+    if (deleteConfiguration && existsSync(this.configurationFile)) {
+      try {
+        rmSync(this.configurationFile, { force: true })
+      } catch (error) {
+        const e = ensureError(error)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.delete: Failed to delete configuration file ${this.configurationFile}:`,
+          e
+        )
+      }
+    }
+    this.chargingStationWorkerBroadcastChannel.unref()
+    this.emitChargingStationEvent(ChargingStationEvents.deleted)
+    this.removeAllListeners()
   }
 
   private async performStop (

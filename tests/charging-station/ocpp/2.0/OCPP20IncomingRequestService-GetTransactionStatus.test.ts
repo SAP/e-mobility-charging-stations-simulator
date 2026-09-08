@@ -4,17 +4,29 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
-
+import {
+  addConfigurationKey,
+  type ChargingStation,
+} from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { OCPP20TransactionEventEnumType, OCPPVersion } from '../../../../src/types/index.js'
+import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import {
+  type EmptyObject,
+  OCPP20ComponentName,
+  OCPP20RequiredVariableName,
+  OCPP20TransactionEventEnumType,
+  OCPP20TriggerReasonEnumType,
+  OCPPVersion,
+  type RequestParams,
+} from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
   setupConnectorWithTransaction,
   standardCleanup,
+  withMockTimers,
 } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
@@ -155,5 +167,135 @@ await describe('D14 - GetTransactionStatus', async () => {
 
     assert.strictEqual(response.ongoingIndicator, true)
     assert.strictEqual(response.messagesInQueue, false)
+  })
+
+  await it('stops reporting a direct delivery after its wire response arrives', async () => {
+    const requestSent = Promise.withResolvers<undefined>()
+    const deliverWireResponse = Promise.withResolvers<undefined>()
+    const wireResponseReceived = Promise.withResolvers<undefined>()
+    const finishResponseHandler = Promise.withResolvers<undefined>()
+    const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<EmptyObject> => {
+      const requestParams = args[3] as RequestParams
+      requestParams.onMessageSent?.()
+      requestSent.resolve(undefined)
+      await deliverWireResponse.promise
+      requestParams.onResponseReceived?.()
+      wireResponseReceived.resolve(undefined)
+      await finishResponseHandler.promise
+      return {}
+    })
+    station.ocppRequestService.requestHandler =
+      requestHandlerMock as typeof station.ocppRequestService.requestHandler
+    station.isWebSocketConnectionOpened = () => true
+    setupConnectorWithTransaction(station, 1, { transactionId: TEST_TRANSACTION_UUID })
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionEnding = true
+
+    const delivery = OCPP20ServiceUtils.sendTransactionEvent(
+      station,
+      OCPP20TransactionEventEnumType.Ended,
+      OCPP20TriggerReasonEnumType.StopAuthorized,
+      1,
+      TEST_TRANSACTION_UUID
+    )
+    await requestSent.promise
+
+    assert.deepEqual(
+      testableService.handleRequestGetTransactionStatus(station, {
+        transactionId: TEST_TRANSACTION_UUID,
+      }),
+      { messagesInQueue: true, ongoingIndicator: false }
+    )
+
+    deliverWireResponse.resolve(undefined)
+    await wireResponseReceived.promise
+
+    assert.deepEqual(
+      testableService.handleRequestGetTransactionStatus(station, {
+        transactionId: TEST_TRANSACTION_UUID,
+      }),
+      { messagesInQueue: false, ongoingIndicator: false }
+    )
+    assert.deepEqual(testableService.handleRequestGetTransactionStatus(station, {}), {
+      messagesInQueue: false,
+    })
+
+    finishResponseHandler.resolve(undefined)
+    await delivery
+    assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+  })
+
+  await it('reports a direct Ended delivery during its E13 retry delay', async t => {
+    await withMockTimers(t, ['setTimeout'], async () => {
+      let attempts = 0
+      const firstAttemptFailed = Promise.withResolvers<undefined>()
+      const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
+        const requestParams = args[3] as RequestParams
+        requestParams.onMessageSent?.()
+        attempts++
+        if (attempts === 1) {
+          firstAttemptFailed.resolve(undefined)
+          return Promise.reject(new Error('first attempt failed'))
+        }
+        return Promise.reject(new Error('final attempt failed'))
+      })
+      station.ocppRequestService.requestHandler = requestHandlerMock
+      station.isWebSocketConnectionOpened = () => true
+      addConfigurationKey(
+        station,
+        `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+        '2',
+        undefined,
+        { save: false }
+      )
+      addConfigurationKey(
+        station,
+        `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttemptInterval}.TransactionEvent`,
+        '1',
+        undefined,
+        { save: false }
+      )
+      setupConnectorWithTransaction(station, 1, { transactionId: TEST_TRANSACTION_UUID })
+      const connectorStatus = station.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionEnding = true
+
+      const delivery = OCPP20ServiceUtils.sendTransactionEvent(
+        station,
+        OCPP20TransactionEventEnumType.Ended,
+        OCPP20TriggerReasonEnumType.StopAuthorized,
+        1,
+        TEST_TRANSACTION_UUID
+      )
+      await firstAttemptFailed.promise
+      await new Promise<void>(resolve => {
+        setImmediate(resolve)
+      })
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      assert.deepEqual(
+        testableService.handleRequestGetTransactionStatus(station, {
+          transactionId: TEST_TRANSACTION_UUID,
+        }),
+        { messagesInQueue: true, ongoingIndicator: false }
+      )
+      assert.deepEqual(testableService.handleRequestGetTransactionStatus(station, {}), {
+        messagesInQueue: true,
+      })
+      assert.strictEqual(connectorStatus.transactionEventQueue, undefined)
+
+      t.mock.timers.tick(1000)
+      await assert.rejects(delivery, /final attempt failed/)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
+
+      assert.deepEqual(
+        testableService.handleRequestGetTransactionStatus(station, {
+          transactionId: TEST_TRANSACTION_UUID,
+        }),
+        { messagesInQueue: false, ongoingIndicator: false }
+      )
+      assert.strictEqual(connectorStatus.transactionEventQueue, undefined)
+    })
   })
 })

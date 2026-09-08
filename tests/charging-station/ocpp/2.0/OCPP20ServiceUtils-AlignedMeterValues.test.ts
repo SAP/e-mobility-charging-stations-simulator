@@ -816,7 +816,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(powerSample.value, 1000)
     })
 
-    await it('does not project EVSE state of charge onto the station meter point', () => {
+    await it('does not project EVSE state of charge onto the station meter point', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -843,7 +843,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20MeasurandEnumType.STATE_OF_CHARGE
       )
 
-      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.ok(
         sentTransactionEvents(requestHandlerMock).some(event =>
@@ -1152,14 +1152,14 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 3)
     })
 
-    await it('keeps emitting for an in-transaction EVSE when SendDuringIdle=false', () => {
+    await it('keeps emitting for an in-transaction EVSE when SendDuringIdle=false', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-1' })
 
-      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 3)
       assert.deepEqual(
@@ -1287,7 +1287,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('uses the transactional Sample.Clock pipeline and aligned signing for an active connector', () => {
+    await it('uses the transactional Sample.Clock pipeline and aligned signing for an active connector', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -1312,7 +1312,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       activeConnectorStatus.transactionEnergyActiveImportRegisterValue = 1234
 
       const slotTimestamp = new Date('2026-08-28T15:00:00.000Z')
-      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, slotTimestamp)
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, slotTimestamp)
 
       const transactionEvent = sentTransactionEvents(requestHandlerMock)[0]
       assert.strictEqual(transactionEvent.timestamp, slotTimestamp)
@@ -1325,7 +1325,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(energySample.value, 1234)
     })
 
-    await it('does not sign active aligned samples when aligned SignUpdatedReadings is disabled', () => {
+    await it('does not sign active aligned samples when aligned SignUpdatedReadings is disabled', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -1340,7 +1340,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-sign-standard' })
 
-      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       const transactionEvent = sentTransactionEvents(requestHandlerMock)[0]
       assert.ok(
@@ -1635,7 +1635,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
     })
 
-    await it('advances coherent state once across interleaved aligned samples', () => {
+    await it('advances coherent state once across interleaved aligned samples', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       const { mockStation: controlStation } = createAlignedStation({
         connectorsCount: 1,
@@ -1681,7 +1681,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const registerBefore = connectorStatus.energyActiveImportRegisterValue
       const transactionRegisterBefore = connectorStatus.transactionEnergyActiveImportRegisterValue
 
-      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(90_000))
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(90_000))
 
       // Guard against a vacuous pass: the sweep must actually emit and advance
       // the active coherent session to the aligned observation time.
@@ -1705,7 +1705,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         Math.round((stationConnectorStatus.energyActiveImportRegisterValue ?? 0) * 100) / 100
       )
 
-      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(120_000))
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(120_000))
       computeCoherentSample(controlStation, controlConnectorStatus, controlSession, {
         intervalMs: 60_000,
         nowMs: 120_000,

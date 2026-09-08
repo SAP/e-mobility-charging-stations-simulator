@@ -186,6 +186,73 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(startEnded.mock.callCount(), 0)
   })
 
+  await it('should not resurrect a cleared transaction from a late Started response', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionPending = false
+    connectorStatus.locked = false
+    delete connectorStatus.transactionId
+    const statusBefore = connectorStatus.status
+    const requestHandler = mock.method(
+      station.ocppRequestService,
+      'requestHandler',
+      (async () => await Promise.resolve({})) as typeof station.ocppRequestService.requestHandler
+    )
+    const startUpdated = mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    const startEnded = mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+    const createSession = mock.method(station, 'createCoherentSession', () => undefined)
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      buildTransactionEventRequest(TEST_TRANSACTION_UUID, OCPP20TransactionEventEnumType.Started)
+    )
+
+    assert.strictEqual(connectorStatus.transactionStarted, false)
+    assert.strictEqual(connectorStatus.transactionPending, false)
+    assert.strictEqual(connectorStatus.transactionId, undefined)
+    assert.strictEqual(connectorStatus.locked, false)
+    assert.strictEqual(connectorStatus.status, statusBefore)
+    assert.strictEqual(requestHandler.mock.callCount(), 0)
+    assert.strictEqual(startUpdated.mock.callCount(), 0)
+    assert.strictEqual(startEnded.mock.callCount(), 0)
+    assert.strictEqual(createSession.mock.callCount(), 0)
+  })
+
+  await it('should not let an old Started response mutate a replacement transaction', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    const replacementTransactionId = '00000000-0000-0000-0000-000000000099'
+    connectorStatus.transactionId = replacementTransactionId
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionPending = true
+    connectorStatus.locked = false
+    const requestHandler = mock.method(
+      station.ocppRequestService,
+      'requestHandler',
+      (async () => await Promise.resolve({})) as typeof station.ocppRequestService.requestHandler
+    )
+    const startUpdated = mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    const startEnded = mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+    const createSession = mock.method(station, 'createCoherentSession', () => undefined)
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      buildTransactionEventRequest(TEST_TRANSACTION_UUID, OCPP20TransactionEventEnumType.Started)
+    )
+
+    assert.strictEqual(connectorStatus.transactionId, replacementTransactionId)
+    assert.strictEqual(connectorStatus.transactionStarted, false)
+    assert.strictEqual(connectorStatus.transactionPending, true)
+    assert.strictEqual(connectorStatus.locked, false)
+    assert.strictEqual(requestHandler.mock.callCount(), 0)
+    assert.strictEqual(startUpdated.mock.callCount(), 0)
+    assert.strictEqual(startEnded.mock.callCount(), 0)
+    assert.strictEqual(createSession.mock.callCount(), 0)
+  })
+
   await it('should process Started normally when only another transaction has Ended queued', async () => {
     const connectorStatus = station.getConnectorStatus(1, 1)
     assert.ok(connectorStatus != null)

@@ -2405,6 +2405,269 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       })
 
+      await it('starts a fresh Ended delivery only after the old active request is cancelled', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const oldLifecycle = new AbortController()
+        let lifecycleAbortSignal = oldLifecycle.signal
+        const oldRequestStarted = Promise.withResolvers<undefined>()
+        const oldRequest = Promise.withResolvers<EmptyObject>()
+        const sentEventTypes: OCPP20TransactionEventEnumType[] = []
+        const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<EmptyObject> => {
+          const request = args[2] as OCPP20TransactionEventRequest
+          const requestParams = args[3] as RequestParams
+          requestParams.onMessageSent?.()
+          sentEventTypes.push(request.eventType)
+          if (request.eventType === OCPP20TransactionEventEnumType.Started) {
+            oldRequestStarted.resolve(undefined)
+            return await oldRequest.promise
+          }
+          requestParams.onResponseReceived?.()
+          return {}
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        Object.defineProperty(station, 'lifecycleAbortSignal', {
+          configurable: true,
+          get: () => lifecycleAbortSignal,
+        })
+        station.isWebSocketConnectionOpened = () => true
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+
+        const oldDeliveryResult = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId,
+          {},
+          { skipBufferingOnError: true, throwError: true }
+        ).catch((error: unknown) => error)
+        await oldRequestStarted.promise
+
+        oldLifecycle.abort()
+        lifecycleAbortSignal = new AbortController().signal
+        const stopDelivery = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.StopAuthorized,
+          connectorId,
+          transactionId
+        )
+        await Promise.resolve()
+        assert.deepEqual(sentEventTypes, [OCPP20TransactionEventEnumType.Started])
+
+        oldRequest.reject(new Error('old request cancelled'))
+        assert.match(String(await oldDeliveryResult), /old request cancelled/)
+        await stopDelivery
+
+        assert.deepEqual(sentEventTypes, [
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TransactionEventEnumType.Ended,
+        ])
+      })
+
+      await it('queues an Ended waiter after its captured lifecycle is aborted before send', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const oldLifecycle = new AbortController()
+        Object.defineProperty(mockStation, 'lifecycleAbortSignal', {
+          configurable: true,
+          value: oldLifecycle.signal,
+        })
+        const activeRequestStarted = Promise.withResolvers<undefined>()
+        const activeRequest = Promise.withResolvers<OCPP20TransactionEventResponse>()
+        const requestHandlerMock = mock.method(
+          mockStation.ocppRequestService,
+          'requestHandler',
+          (async (...args: unknown[]): Promise<OCPP20TransactionEventResponse> => {
+            const requestParams = args[3] as RequestParams
+            requestParams.onMessageSent?.()
+            activeRequestStarted.resolve(undefined)
+            return await activeRequest.promise
+          }) as typeof mockStation.ocppRequestService.requestHandler
+        )
+        mockStation.isWebSocketConnectionOpened = () => true
+        setupConnectorWithTransaction(mockStation, connectorId, { transactionId })
+
+        const activeResult = OCPP20ServiceUtils.sendTransactionEvent(
+          mockStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId,
+          {},
+          { skipBufferingOnError: true, throwError: true }
+        ).catch((error: unknown) => error)
+        await activeRequestStarted.promise
+        const endedWaiter = OCPP20ServiceUtils.sendTransactionEvent(
+          mockStation,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.StopAuthorized,
+          connectorId,
+          transactionId
+        )
+
+        oldLifecycle.abort()
+        activeRequest.reject(new Error('old request cancelled'))
+        assert.match(String(await activeResult), /old request cancelled/)
+        await endedWaiter
+
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+        assert.deepEqual(
+          connectorStatus.transactionEventQueue?.map(event => event.request.eventType),
+          [OCPP20TransactionEventEnumType.Ended]
+        )
+      })
+
+      await it('serializes old replay drains and a fresh Ended without duplicate or reordered sends', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const oldLifecycle = new AbortController()
+        let lifecycleAbortSignal = oldLifecycle.signal
+        let online = false
+        let stopping = false
+        let handlerCallCount = 0
+        let activeHandlers = 0
+        let maximumActiveHandlers = 0
+        const firstRequestStarted = Promise.withResolvers<undefined>()
+        const firstRequest = Promise.withResolvers<EmptyObject>()
+        const sentEventTypes: OCPP20TransactionEventEnumType[] = []
+        const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<EmptyObject> => {
+          handlerCallCount++
+          activeHandlers++
+          maximumActiveHandlers = Math.max(maximumActiveHandlers, activeHandlers)
+          try {
+            if (handlerCallCount === 1) {
+              firstRequestStarted.resolve(undefined)
+              return await firstRequest.promise
+            }
+            const request = args[2] as OCPP20TransactionEventRequest
+            const requestParams = args[3] as RequestParams
+            requestParams.onMessageSent?.()
+            sentEventTypes.push(request.eventType)
+            requestParams.onResponseReceived?.()
+            return {}
+          } finally {
+            activeHandlers--
+          }
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        Object.defineProperty(station, 'lifecycleAbortSignal', {
+          configurable: true,
+          get: () => lifecycleAbortSignal,
+        })
+        station.isStopping = () => stopping
+        station.isWebSocketConnectionOpened = () => online
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId
+        )
+        online = true
+
+        const firstReplay = OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+        await firstRequestStarted.promise
+        const secondReplay = OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+        oldLifecycle.abort()
+        lifecycleAbortSignal = new AbortController().signal
+        stopping = true
+        const stopDelivery = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.StopAuthorized,
+          connectorId,
+          transactionId
+        )
+        await Promise.resolve()
+        assert.strictEqual(handlerCallCount, 1)
+
+        firstRequest.reject(new Error('old replay cancelled before send'))
+        await Promise.all([firstReplay, secondReplay, stopDelivery])
+
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        assert.strictEqual(maximumActiveHandlers, 1)
+        assert.strictEqual(handlerCallCount, 3)
+        assert.deepEqual(sentEventTypes, [
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TransactionEventEnumType.Ended,
+        ])
+        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      })
+
+      await it('does not remove a replacement queue head after the delivered object was replaced', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        let online = false
+        let replacement: NonNullable<ConnectorStatus['transactionEventQueue']>[number] | undefined
+        const requestHandlerMock = mock.fn((...args: unknown[]): Promise<EmptyObject> => {
+          const requestParams = args[3] as RequestParams
+          const connectorStatus = station.getConnectorStatus(connectorId)
+          assert.ok(connectorStatus?.transactionEventQueue != null)
+          replacement = {
+            ...connectorStatus.transactionEventQueue[0],
+            request: { ...connectorStatus.transactionEventQueue[0].request },
+          }
+          connectorStatus.transactionEventQueue[0] = replacement
+          requestParams.onMessageSent?.()
+          requestParams.onResponseReceived?.()
+          return Promise.resolve({})
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isWebSocketConnectionOpened = () => online
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId
+        )
+        online = true
+
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus?.transactionEventQueue != null)
+        assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
+        assert.strictEqual(connectorStatus.transactionEventQueue[0], replacement)
+      })
+
       await it('queues a sent event when station shutdown interrupts delivery', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
@@ -3036,6 +3299,192 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await Promise.all([updated, ended])
 
         assert.deepEqual(sentSequenceNumbers, [0, 0, 1])
+      })
+
+      await it('counts same-transaction direct deliveries across the serialization wait', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const firstDeliveryStarted = Promise.withResolvers<undefined>()
+        const secondDeliveryStarted = Promise.withResolvers<undefined>()
+        const releaseFirstDelivery = Promise.withResolvers<undefined>()
+        const releaseSecondDelivery = Promise.withResolvers<undefined>()
+        const sentEventTypes: OCPP20TransactionEventEnumType[] = []
+        const requestHandlerMock = mock.fn(async (...args: unknown[]) => {
+          const payload = args[2] as OCPP20TransactionEventRequest
+          const requestParams = args[3] as RequestParams
+          requestParams.onMessageSent?.()
+          sentEventTypes.push(payload.eventType)
+          if (sentEventTypes.length === 1) {
+            firstDeliveryStarted.resolve(undefined)
+            await releaseFirstDelivery.promise
+          } else {
+            secondDeliveryStarted.resolve(undefined)
+            await releaseSecondDelivery.promise
+          }
+          return {} as EmptyObject
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isWebSocketConnectionOpened = () => true
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+
+        const started = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId
+        )
+        await firstDeliveryStarted.promise
+        const ended = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.StopAuthorized,
+          connectorId,
+          transactionId
+        )
+
+        assert.strictEqual(
+          OCPP20ServiceUtils.hasPendingTransactionEventDelivery(connectorStatus, transactionId),
+          true
+        )
+        assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+
+        releaseFirstDelivery.resolve(undefined)
+        await secondDeliveryStarted.promise
+        await started
+        assert.strictEqual(
+          OCPP20ServiceUtils.hasPendingTransactionEventDelivery(connectorStatus, transactionId),
+          true
+        )
+
+        releaseSecondDelivery.resolve(undefined)
+        await ended
+        assert.strictEqual(
+          OCPP20ServiceUtils.hasPendingTransactionEventDelivery(connectorStatus, transactionId),
+          false
+        )
+        assert.deepEqual(sentEventTypes, [
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TransactionEventEnumType.Ended,
+        ])
+        assert.strictEqual(connectorStatus.transactionEventQueue, undefined)
+      })
+
+      await it('scopes parallel Updated deliveries by connector and transaction', async () => {
+        const firstTransactionId = generateUUID()
+        const secondTransactionId = generateUUID()
+        const firstDeliveryStarted = Promise.withResolvers<undefined>()
+        const secondDeliveryStarted = Promise.withResolvers<undefined>()
+        const releaseFirstDelivery = Promise.withResolvers<undefined>()
+        const releaseSecondDelivery = Promise.withResolvers<undefined>()
+        const requestHandlerMock = mock.fn(async (...args: unknown[]) => {
+          const payload = args[2] as OCPP20TransactionEventRequest
+          const requestParams = args[3] as RequestParams
+          requestParams.onMessageSent?.()
+          if (payload.transactionInfo.transactionId === firstTransactionId) {
+            firstDeliveryStarted.resolve(undefined)
+            await releaseFirstDelivery.promise
+          } else {
+            secondDeliveryStarted.resolve(undefined)
+            await releaseSecondDelivery.promise
+          }
+          return {} as EmptyObject
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 2,
+          evseConfiguration: { evsesCount: 2 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isWebSocketConnectionOpened = () => true
+        setupConnectorWithTransaction(station, 1, { transactionId: firstTransactionId })
+        setupConnectorWithTransaction(station, 2, { transactionId: secondTransactionId })
+        const firstConnectorStatus = station.getConnectorStatus(1)
+        const secondConnectorStatus = station.getConnectorStatus(2)
+        assert.ok(firstConnectorStatus != null)
+        assert.ok(secondConnectorStatus != null)
+
+        const firstDelivery = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValueClock,
+          1,
+          firstTransactionId
+        )
+        const secondDelivery = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValueClock,
+          2,
+          secondTransactionId
+        )
+        await Promise.all([firstDeliveryStarted.promise, secondDeliveryStarted.promise])
+
+        assert.strictEqual(
+          OCPP20ServiceUtils.hasPendingTransactionEventDelivery(
+            firstConnectorStatus,
+            firstTransactionId
+          ),
+          true
+        )
+        assert.strictEqual(
+          OCPP20ServiceUtils.hasPendingTransactionEventDelivery(
+            firstConnectorStatus,
+            secondTransactionId
+          ),
+          false
+        )
+        assert.strictEqual(
+          OCPP20ServiceUtils.hasPendingTransactionEventDelivery(
+            secondConnectorStatus,
+            secondTransactionId
+          ),
+          true
+        )
+
+        releaseFirstDelivery.resolve(undefined)
+        await firstDelivery
+        assert.strictEqual(
+          OCPP20ServiceUtils.hasPendingTransactionEventDelivery(
+            firstConnectorStatus,
+            firstTransactionId
+          ),
+          false
+        )
+        assert.strictEqual(
+          OCPP20ServiceUtils.hasPendingTransactionEventDelivery(
+            secondConnectorStatus,
+            secondTransactionId
+          ),
+          true
+        )
+
+        releaseSecondDelivery.resolve(undefined)
+        await secondDelivery
+        assert.strictEqual(
+          OCPP20ServiceUtils.hasPendingTransactionEventDelivery(secondConnectorStatus),
+          false
+        )
+        assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
+        assert.strictEqual(firstConnectorStatus.transactionEventQueue, undefined)
+        assert.strictEqual(secondConnectorStatus.transactionEventQueue, undefined)
       })
 
       for (const eventType of [

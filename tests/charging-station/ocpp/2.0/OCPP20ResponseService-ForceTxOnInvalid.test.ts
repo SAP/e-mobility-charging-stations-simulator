@@ -66,7 +66,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     station = mockStation
-    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    setupConnectorWithTransaction(station, 1, { pending: true, transactionId: 100 })
     const connectorStatus = station.getConnectorStatus(1)
     if (connectorStatus != null) {
       connectorStatus.transactionId = TEST_TRANSACTION_UUID
@@ -163,6 +163,10 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
   // 2.0-T3 — Mid-transaction revocation (Updated) STILL aborts.
   await it('should still de-authorize on Invalid Updated when the flag is true', async () => {
     // Arrange
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionPending = false
+    connectorStatus.transactionStarted = true
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
@@ -323,7 +327,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       },
       websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
-    setupConnectorWithTransaction(flagOffStation, 1, { transactionId: 100 })
+    setupConnectorWithTransaction(flagOffStation, 1, { pending: true, transactionId: 100 })
     const flagOffConnector = flagOffStation.getConnectorStatus(1)
     if (flagOffConnector != null) {
       flagOffConnector.transactionId = TEST_TRANSACTION_UUID
@@ -418,7 +422,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
         },
         websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
-      setupConnectorWithTransaction(cacheStation, 1, { transactionId: 100 })
+      setupConnectorWithTransaction(cacheStation, 1, { pending: true, transactionId: 100 })
       const cacheConnector = cacheStation.getConnectorStatus(1)
       if (cacheConnector != null) {
         cacheConnector.transactionId = TEST_TRANSACTION_UUID

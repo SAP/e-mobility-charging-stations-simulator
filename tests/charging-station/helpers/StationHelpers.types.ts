@@ -149,4 +149,5 @@ export interface MockOCPPRequestService {
   requestHandler: (...args: unknown[]) => Promise<unknown>
   sendError: (...args: unknown[]) => Promise<unknown>
   sendResponse: (...args: unknown[]) => Promise<unknown>
+  validateRequestPayload: (...args: unknown[]) => boolean
 }

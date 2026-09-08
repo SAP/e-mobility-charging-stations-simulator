@@ -66,6 +66,8 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     const connectorStatus = station.getConnectorStatus(1)
     if (connectorStatus != null) {
       connectorStatus.transactionId = TEST_TRANSACTION_UUID
+      connectorStatus.transactionStarted = false
+      connectorStatus.transactionPending = true
     }
     createSpy = mock.method(station, 'createCoherentSession', () => undefined)
     const responseService = new OCPP20ResponseService()

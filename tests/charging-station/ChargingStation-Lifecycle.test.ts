@@ -8,9 +8,19 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ConnectorStatus } from '../../src/types/index.js'
 
 import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import { OCPP16ResponseService } from '../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
+import { OCPP16ServiceUtils } from '../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import { stopRunningTransactions } from '../../src/charging-station/ocpp/OCPPServiceOperations.js'
+import {
+  OCPP16AuthorizationStatus,
+  OCPP16RequestCommand,
+  type OCPP16StopTransactionRequest,
+  type OCPP16StopTransactionResponse,
+  OCPPVersion,
+} from '../../src/types/index.js'
 import { Constants } from '../../src/utils/index.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { setupConnectorWithTransaction, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
 
 await describe('ChargingStation Lifecycle', async () => {
@@ -148,6 +158,131 @@ await describe('ChargingStation Lifecycle', async () => {
       await Promise.all([firstStop, secondStop])
       assert.strictEqual(secondStopSettled, true)
       assert.strictEqual(stationLike.stopping, false)
+    })
+
+    await it('cancels old non-buffered requests before installing the shutdown lifecycle', async () => {
+      const oldLifecycle = new AbortController()
+      const stopGate = Promise.withResolvers<undefined>()
+      const order: string[] = []
+      const stationLike = {
+        lifecycleAbortController: oldLifecycle,
+        logPrefix: () => '',
+        ocppRequestService: {
+          cancelPendingRequests: (
+            _station: ChargingStation,
+            _message?: string,
+            discardBufferedRequests?: boolean
+          ) => {
+            assert.strictEqual(oldLifecycle.signal.aborted, true)
+            assert.strictEqual(discardBufferedRequests, undefined)
+            order.push('cancel')
+          },
+        },
+        performStop: function (): Promise<undefined> {
+          assert.notStrictEqual(this.lifecycleAbortController, oldLifecycle)
+          assert.strictEqual(this.lifecycleAbortController.signal.aborted, false)
+          order.push('performStop')
+          return stopGate.promise
+        },
+        started: true,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_20 },
+        stopping: false,
+      }
+
+      const stopPromise = ChargingStation.prototype.stop.call(stationLike)
+
+      assert.deepEqual(order, ['cancel', 'performStop'])
+      stopGate.resolve(undefined)
+      await stopPromise
+      assert.strictEqual(stationLike.stopping, false)
+    })
+
+    await it('should join an in-flight OCPP 1.6 StopTransaction during station stop', async () => {
+      const responseService = new OCPP16ResponseService()
+      const stopResponse = Promise.withResolvers<OCPP16StopTransactionResponse>()
+      const stopRequestStarted = Promise.withResolvers<undefined>()
+      let stopRequestPending = false
+      let cancellationDuringStopTransaction = false
+      const requestHandler = mock.fn(async (...args: unknown[]) => {
+        if (args[1] !== OCPP16RequestCommand.STOP_TRANSACTION) {
+          return {}
+        }
+        assert.deepStrictEqual(args[3], {
+          rawPayload: true,
+          skipBufferingOnError: true,
+          throwError: true,
+        })
+        stopRequestPending = true
+        stopRequestStarted.resolve(undefined)
+        try {
+          const response = await stopResponse.promise
+          await responseService.responseHandler(
+            args[0] as ChargingStation,
+            OCPP16RequestCommand.STOP_TRANSACTION,
+            response,
+            args[2] as OCPP16StopTransactionRequest
+          )
+          return response
+        } finally {
+          stopRequestPending = false
+        }
+      })
+      const result = createMockChargingStation({
+        connectorsCount: 1,
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: { beginEndMeterValues: false, ocppVersion: OCPPVersion.VERSION_16 },
+      })
+      const activeStation = result.station
+      station = activeStation
+      activeStation.started = true
+      activeStation.isStopping = () => ChargingStation.prototype.isStopping.call(activeStation)
+      setupConnectorWithTransaction(activeStation, 1, { transactionId: 101 })
+      let cancelCalls = 0
+      mock.method(activeStation.ocppRequestService, 'cancelPendingRequests', () => {
+        cancelCalls++
+        if (stopRequestPending) {
+          cancellationDuringStopTransaction = true
+        }
+      })
+      ;(
+        activeStation as unknown as {
+          performStop: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stopTransactions?: boolean
+          ) => Promise<void>
+        }
+      ).performStop = async (reason, stopTransactions) => {
+        stopTransactions === true && (await stopRunningTransactions(activeStation, reason))
+        activeStation.ocppRequestService.cancelPendingRequests(activeStation)
+        activeStation.started = false
+      }
+
+      const transactionStop = OCPP16ServiceUtils.stopTransactionOnConnector(activeStation, 1)
+      await stopRequestStarted.promise
+      const stationStop = ChargingStation.prototype.stop.call(activeStation, undefined, true)
+      await Promise.resolve()
+
+      assert.strictEqual(cancelCalls, 0)
+      assert.strictEqual(stopRequestPending, true)
+      assert.strictEqual(
+        requestHandler.mock.calls.filter(
+          call => call.arguments[1] === OCPP16RequestCommand.STOP_TRANSACTION
+        ).length,
+        1
+      )
+
+      stopResponse.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+      await Promise.all([transactionStop, stationStop])
+
+      const connectorStatus = activeStation.getConnectorStatus(1)
+      if (connectorStatus == null) {
+        assert.fail('Expected connector to be defined')
+      }
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(cancellationDuringStopTransaction, false)
+      assert.strictEqual(cancelCalls, 1)
     })
 
     await it('coalesces transaction queue persistence to one dirty follow-up save', async () => {
@@ -492,7 +627,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(station.getNumberOfConnectors(), 0)
     })
 
-    await it('should cancel requests created while stop settles during delete', async () => {
+    await it('should stop before discarding pending requests during delete', async () => {
       const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       station.started = true
@@ -516,7 +651,160 @@ await describe('ChargingStation Lifecycle', async () => {
 
       await ChargingStation.prototype.delete.call(station, false)
 
-      assert.deepEqual(cleanupOrder, ['stop', 'cancel', 'cancel'])
+      assert.deepEqual(cleanupOrder, ['stop', 'cancel'])
+    })
+
+    await it('should join an active OCPP 1.6 StopTransaction before delete cleanup', async () => {
+      const statusResponse = Promise.withResolvers<unknown>()
+      const stopResponse = Promise.withResolvers<unknown>()
+      const stopRequestStarted = Promise.withResolvers<undefined>()
+      let statusRequestPending = false
+      let stopRequestPending = false
+      let cancellationDuringLifecycleRequest = false
+      const requestHandler = mock.fn(async (...args: unknown[]) => {
+        const command = args[1]
+        if (command === 'StatusNotification') {
+          statusRequestPending = true
+          try {
+            return await statusResponse.promise
+          } finally {
+            statusRequestPending = false
+          }
+        }
+        if (command === 'StopTransaction') {
+          stopRequestPending = true
+          stopRequestStarted.resolve(undefined)
+          try {
+            return await stopResponse.promise
+          } finally {
+            stopRequestPending = false
+          }
+        }
+        return {}
+      })
+      const result = createMockChargingStation({
+        connectorsCount: 1,
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      station = result.station
+      station.started = true
+      setupConnectorWithTransaction(station, 1, { transactionId: 101 })
+      ;(station as unknown as { deleteAbortController: AbortController }).deleteAbortController =
+        new AbortController()
+      ;(
+        station as unknown as {
+          chargingStationWorkerBroadcastChannel: { unref: () => void }
+        }
+      ).chargingStationWorkerBroadcastChannel = { unref: () => undefined }
+      let cancelCalls = 0
+      mock.method(station.ocppRequestService, 'cancelPendingRequests', () => {
+        cancelCalls++
+        if (statusRequestPending) {
+          cancellationDuringLifecycleRequest = true
+          statusResponse.reject(new Error('StatusNotification cancelled by delete'))
+        }
+        if (stopRequestPending) {
+          cancellationDuringLifecycleRequest = true
+          stopResponse.reject(new Error('StopTransaction cancelled by delete'))
+        }
+      })
+      const activeStop = (async () => {
+        await stopRunningTransactions(result.station)
+        result.station.started = false
+      })()
+      ;(station as unknown as { stopPromise?: Promise<void> }).stopPromise = activeStop
+      const stopMock = mock.method(station, 'stop', async () => {
+        await activeStop
+      })
+
+      assert.strictEqual(statusRequestPending, true)
+      statusResponse.resolve({})
+      await stopRequestStarted.promise
+      const deletePromise = ChargingStation.prototype.delete.call(station, false)
+      await Promise.resolve()
+
+      assert.strictEqual(cancelCalls, 0)
+      assert.strictEqual(stopRequestPending, true)
+      stopResponse.resolve({ idTagInfo: { status: 'Accepted' } })
+      await Promise.all([activeStop, deletePromise])
+
+      assert.strictEqual(cancellationDuringLifecycleRequest, false)
+      assert.strictEqual(cancelCalls, 1)
+      assert.strictEqual(stopMock.mock.callCount(), 1)
+      assert.deepEqual(
+        requestHandler.mock.calls.map(call => call.arguments[1]),
+        ['StatusNotification', 'StopTransaction']
+      )
+    })
+
+    await it('should coalesce concurrent deletes while OCPP 2.0 Ended is pending', async () => {
+      const transactionEventResponse = Promise.withResolvers<unknown>()
+      const transactionEventStarted = Promise.withResolvers<undefined>()
+      let transactionEventPending = false
+      let cancellationDuringTransactionEvent = false
+      const requestHandler = mock.fn(async (...args: unknown[]) => {
+        const command = args[1]
+        if (command === 'TransactionEvent') {
+          transactionEventPending = true
+          transactionEventStarted.resolve(undefined)
+          try {
+            return await transactionEventResponse.promise
+          } finally {
+            transactionEventPending = false
+          }
+        }
+        return {}
+      })
+      const result = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_20,
+      })
+      station = result.station
+      station.started = true
+      setupConnectorWithTransaction(station, 1, { transactionId: 'tx-delete-1' })
+      ;(station as unknown as { deleteAbortController: AbortController }).deleteAbortController =
+        new AbortController()
+      ;(
+        station as unknown as {
+          chargingStationWorkerBroadcastChannel: { unref: () => void }
+        }
+      ).chargingStationWorkerBroadcastChannel = { unref: () => undefined }
+      let cancelCalls = 0
+      mock.method(station.ocppRequestService, 'cancelPendingRequests', () => {
+        cancelCalls++
+        if (transactionEventPending) {
+          cancellationDuringTransactionEvent = true
+          transactionEventResponse.reject(new Error('TransactionEvent cancelled by delete'))
+        }
+      })
+      const stopMock = mock.method(station, 'stop', async () => {
+        await stopRunningTransactions(result.station)
+        result.station.started = false
+      })
+
+      const firstDeletePromise = ChargingStation.prototype.delete.call(station, false)
+      await transactionEventStarted.promise
+      const secondDeletePromise = ChargingStation.prototype.delete.call(station, false)
+
+      assert.strictEqual(firstDeletePromise, secondDeletePromise)
+      assert.strictEqual(cancelCalls, 0)
+      assert.strictEqual(transactionEventPending, true)
+      transactionEventResponse.resolve({ idTokenInfo: { status: 'Accepted' } })
+      await Promise.all([firstDeletePromise, secondDeletePromise])
+
+      assert.strictEqual(cancellationDuringTransactionEvent, false)
+      assert.strictEqual(cancelCalls, 1)
+      assert.strictEqual(stopMock.mock.callCount(), 1)
+      const transactionEventCall = requestHandler.mock.calls.find(
+        call => call.arguments[1] === 'TransactionEvent'
+      )
+      assert.strictEqual(
+        (transactionEventCall?.arguments[2] as { eventType?: string }).eventType,
+        'Ended'
+      )
     })
 
     await it('should ignore persisted EVSEs absent from the current template', () => {

@@ -836,9 +836,9 @@ await describe('F06 - TriggerMessage', async () => {
      * @param evse - Optional EVSE scope for the trigger request.
      * @returns The captured TransactionEvent request payloads.
      */
-    function emitTransactionEventTrigger (
+    async function emitTransactionEventTrigger (
       evse?: OCPP20TriggerMessageRequest['evse']
-    ): OCPP20TransactionEventRequest[] {
+    ): Promise<OCPP20TransactionEventRequest[]> {
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.TransactionEvent,
         ...(evse != null && { evse }),
@@ -852,6 +852,7 @@ await describe('F06 - TriggerMessage', async () => {
         request,
         response
       )
+      await flushMicrotasks()
       return requestHandlerMock.mock.calls
         .map(
           call =>
@@ -1038,10 +1039,10 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnknownEvse)
     })
 
-    await it('should emit one TransactionEvent(Updated, Trigger) for a specified EVSE (F06.FR.07)', () => {
+    await it('should emit one TransactionEvent(Updated, Trigger) for a specified EVSE (F06.FR.07)', async () => {
       seedActiveTransaction(1, 'txn-evse-1')
 
-      const payloads = emitTransactionEventTrigger({ id: 1 })
+      const payloads = await emitTransactionEventTrigger({ id: 1 })
 
       assert.strictEqual(payloads.length, 1)
       const payload = payloads[0]
@@ -1068,7 +1069,7 @@ await describe('F06 - TriggerMessage', async () => {
       )
     })
 
-    await it('should still emit a TransactionEvent carrying chargingState when no TxUpdated sample is produced (F06.FR.10)', () => {
+    await it('should still emit a TransactionEvent carrying chargingState when no TxUpdated sample is produced (F06.FR.10)', async () => {
       // Active transaction but no TxUpdatedMeasurands configured: buildMeterValue
       // yields no sampledValue, yet an Accepted trigger MUST still send the event
       // with the mandatory chargingState (F06.FR.07/FR.10), meterValue omitted.
@@ -1077,7 +1078,7 @@ await describe('F06 - TriggerMessage', async () => {
         transactionId: 'txn-evse-1',
       })
 
-      const payloads = emitTransactionEventTrigger({ id: 1 })
+      const payloads = await emitTransactionEventTrigger({ id: 1 })
 
       assert.strictEqual(payloads.length, 1)
       const payload = payloads[0]
@@ -1090,7 +1091,7 @@ await describe('F06 - TriggerMessage', async () => {
       )
     })
 
-    await it('should still emit a TransactionEvent when the meterValue build throws (F06.FR.10)', () => {
+    await it('should still emit a TransactionEvent when the meterValue build throws (F06.FR.10)', async () => {
       seedActiveTransaction(1, 'txn-evse-1')
       // Force buildMeterValue to throw: it resolves the connector via
       // getConnectorIdByTransactionId (which sendTransactionEvent does not use),
@@ -1099,7 +1100,7 @@ await describe('F06 - TriggerMessage', async () => {
         throw new Error('meterValue build failure')
       })
 
-      const payloads = emitTransactionEventTrigger({ id: 1 })
+      const payloads = await emitTransactionEventTrigger({ id: 1 })
 
       assert.strictEqual(payloads.length, 1)
       const payload = payloads[0]
@@ -1108,11 +1109,11 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(payload.meterValue, undefined)
     })
 
-    await it('should emit a TransactionEvent for every EVSE with an active transaction when EVSE is omitted (F06.FR.11)', () => {
+    await it('should emit a TransactionEvent for every EVSE with an active transaction when EVSE is omitted (F06.FR.11)', async () => {
       seedActiveTransaction(1, 'txn-evse-1')
       seedActiveTransaction(3, 'txn-evse-3')
 
-      const payloads = emitTransactionEventTrigger()
+      const payloads = await emitTransactionEventTrigger()
 
       assert.strictEqual(payloads.length, 2)
       const observedTransactions = new Set(
@@ -1125,8 +1126,8 @@ await describe('F06 - TriggerMessage', async () => {
       }
     })
 
-    await it('should emit no TransactionEvent when no transaction is active', () => {
-      const payloads = emitTransactionEventTrigger()
+    await it('should emit no TransactionEvent when no transaction is active', async () => {
+      const payloads = await emitTransactionEventTrigger()
 
       assert.strictEqual(payloads.length, 0)
     })

@@ -7,7 +7,7 @@
 
 import { minutesToMilliseconds } from 'date-fns'
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
@@ -15,12 +15,14 @@ import { buildSignedOCPP16SampledValue } from '../../../../src/charging-station/
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
   EncodingMethodEnumType,
+  OCPP16AuthorizationStatus,
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
   OCPP16MeterValueFormat,
   OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
+  OCPP16RequestCommand,
   type OCPP16SampledValue,
   type OCPP16SignedMeterValue,
   OCPP16VendorParametersKey,
@@ -293,6 +295,36 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       assert.strictEqual(signedSamples[0].context, OCPP16MeterValueContext.TRANSACTION_END)
     })
 
+    await it('should not commit a public key while merely constructing an end reading', () => {
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionId = 42
+      connectorStatus.publicKeySentInTransaction = false
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+      upsertConfigurationKey(
+        station,
+        OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
+        'OncePerTransaction'
+      )
+      upsertConfigurationKey(
+        station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 50000)
+
+      const signedSample = meterValue.sampledValue.find(
+        sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA
+      )
+      assert.ok(signedSample != null)
+      assert.notStrictEqual(
+        (JSON.parse(signedSample.value) as OCPP16SignedMeterValue).publicKey,
+        ''
+      )
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
+    })
+
     await it('should produce signed SampledValue with valid JSON containing all 4 fields', () => {
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
@@ -490,6 +522,53 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
           (sv: OCPP16SampledValue) => sv.format === OCPP16MeterValueFormat.SIGNED_DATA
         )
         assert.strictEqual(signedSamples.length, 0)
+      })
+    })
+
+    await it('should suppress periodic readings as soon as a signed stop begins', async t => {
+      await withMockTimers(t, ['setInterval'], async () => {
+        const statusRequestStarted = Promise.withResolvers<undefined>()
+        const statusResponse = Promise.withResolvers<unknown>()
+        let meterValueRequests = 0
+        mock.method(station.ocppRequestService, 'requestHandler', async (...args: unknown[]) => {
+          if (args[1] === OCPP16RequestCommand.STATUS_NOTIFICATION) {
+            statusRequestStarted.resolve(undefined)
+            return await statusResponse.promise
+          }
+          if (args[1] === OCPP16RequestCommand.METER_VALUES) meterValueRequests++
+          if (args[1] === OCPP16RequestCommand.STOP_TRANSACTION) {
+            ;(args[3] as { onMessageSent?: () => void }).onMessageSent?.()
+            return { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+          }
+          return {}
+        })
+        const connectorStatus = station.getConnectorStatus(1)
+        assert.ok(connectorStatus != null)
+        connectorStatus.publicKeySentInTransaction = false
+        connectorStatus.transactionBeginMeterValue = {
+          sampledValue: [{ value: '0' }],
+          timestamp: new Date('2026-09-08T09:00:00.000Z'),
+        }
+        upsertConfigurationKey(
+          station,
+          OCPP16VendorParametersKey.SampledDataSignUpdatedReadings,
+          'true'
+        )
+        upsertConfigurationKey(
+          station,
+          OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
+          'OncePerTransaction'
+        )
+
+        OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 60)
+        const stop = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+        await statusRequestStarted.promise
+        t.mock.timers.tick(minutesToMilliseconds(1))
+
+        assert.strictEqual(meterValueRequests, 0)
+        assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+        statusResponse.resolve({})
+        await stop
       })
     })
   })

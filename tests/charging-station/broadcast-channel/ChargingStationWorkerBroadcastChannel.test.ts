@@ -10,16 +10,25 @@ import { randomUUID } from 'node:crypto'
 import { afterEach, describe, it, mock } from 'node:test'
 
 import { ChargingStationWorkerBroadcastChannel } from '../../../src/charging-station/broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
+import { OCPP16ServiceUtils } from '../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { AbstractUIService } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
-import { BaseError } from '../../../src/exception/index.js'
+import { BaseError, OCPPError } from '../../../src/exception/index.js'
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequestPayload,
   ConfigurationStatus,
+  ErrorType,
   GenericStatus,
   GetCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
   MeterValueMeasurand,
+  OCPP16AuthorizationStatus,
+  OCPP16MeterValueFormat,
+  OCPP16MeterValueMeasurand,
+  OCPP16MeterValueUnit,
+  OCPP16StopTransactionReason,
+  type OCPP16StopTransactionRequest,
+  OCPP16VendorParametersKey,
   OCPP20AuthorizationStatusEnumType,
   OCPPVersion,
   ProcedureName,
@@ -27,9 +36,14 @@ import {
   ResponseStatus,
 } from '../../../src/types/index.js'
 import { Constants } from '../../../src/utils/index.js'
-import { flushMicrotasks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
-import { TEST_TRANSACTION_ID_STRING } from '../ChargingStationTestConstants.js'
+import {
+  flushMicrotasks,
+  setupConnectorWithTransaction,
+  standardCleanup,
+} from '../../helpers/TestLifecycleHelpers.js'
+import { TEST_PUBLIC_KEY_HEX, TEST_TRANSACTION_ID_STRING } from '../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../helpers/StationHelpers.js'
+import { createMeterValuesTemplate, upsertConfigurationKey } from '../ocpp/1.6/OCPP16TestUtils.js'
 import { createMockStationWithRequestTracking } from '../ocpp/2.0/OCPP20TestUtils.js'
 
 // ============================================================================
@@ -725,6 +739,470 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.TRANSACTION_EVENT)
+    })
+  })
+
+  await describe('STOP_TRANSACTION handler', async () => {
+    await it('should preserve valid UI overrides and transport params while using canonical transaction identity and meterStop', async () => {
+      const response = { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+      const requestHandler = mock.fn((...args: unknown[]) =>
+        Promise.resolve(args[1] === RequestCommand.STOP_TRANSACTION ? response : {})
+      )
+      const { station } = createMockChargingStation({
+        connectorsCount: 2,
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      setupConnectorWithTransaction(station, 2, { energyImport: 1234, transactionId: 202 })
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(handler != null)
+      const timestamp = '2026-09-08T10:00:00.000Z'
+      const transactionData = [{ sampledValue: [], timestamp: new Date(timestamp) }]
+
+      const result = await handler({
+        connectorId: 1,
+        idTag: 'UI-ID-TAG',
+        meterStop: 9999,
+        reason: OCPP16StopTransactionReason.EMERGENCY_STOP,
+        timestamp,
+        transactionData,
+        transactionId: 202,
+      })
+
+      assert.strictEqual(result, response)
+      const stopCall = requestHandler.mock.calls.find(
+        call => call.arguments[1] === RequestCommand.STOP_TRANSACTION
+      )
+      assert.ok(stopCall != null)
+      assert.deepStrictEqual(stopCall.arguments[2], {
+        idTag: 'UI-ID-TAG',
+        meterStop: 1234,
+        reason: OCPP16StopTransactionReason.EMERGENCY_STOP,
+        timestamp: new Date(timestamp),
+        transactionData,
+        transactionId: 202,
+      })
+      assert.deepStrictEqual(stopCall.arguments[3], {
+        rawPayload: true,
+        skipBufferingOnError: true,
+        throwError: true,
+      })
+    })
+
+    await it('should normalize a valid UI timestamp before generating and sending signed data', async () => {
+      let stopPayload: OCPP16StopTransactionRequest | undefined
+      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
+        if (args[1] === RequestCommand.STOP_TRANSACTION) {
+          stopPayload = args[2] as OCPP16StopTransactionRequest
+          ;(args[3] as { onMessageSent?: () => void }).onMessageSent?.()
+          return Promise.resolve({
+            idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED },
+          })
+        }
+        return Promise.resolve({})
+      })
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          meterSerialNumber: 'SIM-001',
+          ocppVersion: OCPPVersion.VERSION_16,
+          transactionDataMeterValues: true,
+        },
+      })
+      setupConnectorWithTransaction(station, 1, { energyImport: 1234, transactionId: 606 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.MeterValues = createMeterValuesTemplate([
+        {
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '0',
+        },
+      ])
+      connectorStatus.publicKeySentInTransaction = false
+      connectorStatus.transactionBeginMeterValue = {
+        sampledValue: [{ value: '0' }],
+        timestamp: new Date('2026-09-08T09:00:00.000Z'),
+      }
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+      upsertConfigurationKey(
+        station,
+        OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
+        'OncePerTransaction'
+      )
+      upsertConfigurationKey(
+        station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(handler != null)
+      const timestamp = '2026-09-08T10:00:00.123+02:00'
+
+      await handler({ timestamp, transactionId: 606 })
+
+      assert.ok(stopPayload != null)
+      assert.ok(stopPayload.timestamp instanceof Date)
+      assert.strictEqual(stopPayload.timestamp.getTime(), new Date(timestamp).getTime())
+      const signedSample = stopPayload.transactionData
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .find(sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA)
+      assert.ok(signedSample != null)
+      const signedMeterValue = JSON.parse(signedSample.value) as {
+        publicKey: string
+        signedMeterData: string
+      }
+      assert.notStrictEqual(signedMeterValue.publicKey, '')
+      assert.match(
+        Buffer.from(signedMeterValue.signedMeterData, 'base64').toString(),
+        /2026-09-08T08:00:00.123Z/
+      )
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+    })
+
+    await it('should default an omitted timestamp and preserve valid Date and RFC3339 instants', async () => {
+      const stopTimestamps: Date[] = []
+      const requestHandler = mock.fn((...args: unknown[]) => {
+        if (args[1] === RequestCommand.STOP_TRANSACTION) {
+          stopTimestamps.push((args[2] as OCPP16StopTransactionRequest).timestamp)
+        }
+        return Promise.resolve({
+          idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED },
+        })
+      })
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 608 })
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(handler != null)
+
+      const beforeDefault = Date.now()
+      await handler({ transactionId: 608 })
+      const afterDefault = Date.now()
+      assert.ok(stopTimestamps[0] instanceof Date)
+      assert.ok(stopTimestamps[0].getTime() >= beforeDefault)
+      assert.ok(stopTimestamps[0].getTime() <= afterDefault)
+
+      const dateTimestamp = new Date('2026-09-08T10:00:00.321Z')
+      await handler({ timestamp: dateTimestamp, transactionId: 608 })
+      assert.notStrictEqual(stopTimestamps[1], dateTimestamp)
+      assert.strictEqual(stopTimestamps[1].getTime(), dateTimestamp.getTime())
+
+      const stringTimestamps = [
+        ['2026-09-08T10:00:00.123456Z', '2026-09-08T10:00:00.123Z'],
+        ['2026-09-08T10:00:00.987+05:30', '2026-09-08T04:30:00.987Z'],
+      ] as const
+      for (const [timestamp, expectedInstant] of stringTimestamps) {
+        await handler({ timestamp, transactionId: 608 })
+        assert.strictEqual(stopTimestamps.at(-1)?.toISOString(), expectedInstant)
+      }
+    })
+
+    await it('should reject invalid explicit UI timestamps before any transaction mutation', async () => {
+      const requestHandler = mock.fn(() => Promise.resolve({}))
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 607 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.publicKeySentInTransaction = false
+      connectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(
+        () => undefined,
+        60_000
+      )
+      const activeTimer = connectorStatus.transactionUpdatedMeterValuesSetInterval
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(handler != null)
+      const invalidTimestamps: unknown[] = [
+        null,
+        undefined,
+        0,
+        'not-an-ISO-timestamp',
+        '2026-09-08T10:00:00',
+        '2026-02-30T10:00:00Z',
+        '2026-09-08T24:00:00Z',
+        '2026-09-08T10:00:00+24:00',
+        new Date(Number.NaN),
+      ]
+
+      for (const timestamp of invalidTimestamps) {
+        await assert.rejects(
+          async () =>
+            await handler({
+              timestamp,
+              transactionId: 607,
+            } as unknown as BroadcastChannelRequestPayload),
+          (error: Error) => {
+            assert.ok(error instanceof OCPPError)
+            assert.strictEqual(error.code, ErrorType.FORMAT_VIOLATION)
+            return true
+          }
+        )
+      }
+
+      assert.strictEqual(requestHandler.mock.callCount(), 0)
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
+      assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, activeTimer)
+    })
+
+    await it('should reject OCPP 2.x before transaction lookup and preserve active timers', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+      setupConnectorWithTransaction(station, 1, { transactionId: 609 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(
+        () => undefined,
+        60_000
+      )
+      connectorStatus.transactionEndedMeterValuesSetInterval = setInterval(() => undefined, 60_000)
+      const updatedTimer = connectorStatus.transactionUpdatedMeterValuesSetInterval
+      const endedTimer = connectorStatus.transactionEndedMeterValuesSetInterval
+      const transactionLookup = mock.method(station, 'getConnectorIdByTransactionId', () => 1)
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(handler != null)
+
+      await assert.rejects(
+        async () => await handler({ transactionId: 609 }),
+        (error: Error) => error instanceof BaseError && error.message.includes('OCPP 1.6')
+      )
+
+      assert.strictEqual(transactionLookup.mock.callCount(), 0)
+      assert.strictEqual(sentRequests.length, 0)
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, updatedTimer)
+      assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, endedTimer)
+    })
+
+    await it('should join an overlapping station stop and return the exact same wire response', async () => {
+      const stopRequestStarted = Promise.withResolvers<undefined>()
+      const stopResponse = Promise.withResolvers<{
+        idTagInfo: { status: OCPP16AuthorizationStatus }
+      }>()
+      const requestHandler = mock.fn(async (...args: unknown[]) => {
+        if (args[1] === RequestCommand.STOP_TRANSACTION) {
+          stopRequestStarted.resolve(undefined)
+          return await stopResponse.promise
+        }
+        return {}
+      })
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+        started: true,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 303 })
+      let stationStopResult: unknown
+      station.stop = async () => {
+        stationStopResult = await OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+      }
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+      const stopStationHandler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_CHARGING_STATION
+      )
+      const stopTransactionHandler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(stopStationHandler != null)
+      assert.ok(stopTransactionHandler != null)
+
+      const stationStop = stopStationHandler({})
+      await stopRequestStarted.promise
+      const uiStop = stopTransactionHandler({ transactionId: 303 })
+      const expectedResponse = {
+        idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED },
+      }
+      stopResponse.resolve(expectedResponse)
+      const uiStopResult = await uiStop
+      await stationStop
+
+      assert.strictEqual(uiStopResult, expectedResponse)
+      assert.strictEqual(stationStopResult, expectedResponse)
+      assert.strictEqual(
+        requestHandler.mock.calls.filter(
+          call => call.arguments[1] === RequestCommand.STOP_TRANSACTION
+        ).length,
+        1
+      )
+    })
+
+    await it('should reject a UI join when a station-initiated StopTransaction fails', async () => {
+      const stopRequestStarted = Promise.withResolvers<undefined>()
+      const stopResponse = Promise.withResolvers<unknown>()
+      const requestHandler = mock.fn(async (...args: unknown[]) => {
+        if (args[1] === RequestCommand.STOP_TRANSACTION) {
+          stopRequestStarted.resolve(undefined)
+          return await stopResponse.promise
+        }
+        return {}
+      })
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 404 })
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(handler != null)
+
+      const stationStop = OCPP16ServiceUtils.stopTransactionOnConnector(
+        station,
+        1,
+        undefined,
+        {},
+        { responseTimeoutMs: 50, throwError: false }
+      )
+      await stopRequestStarted.promise
+      const uiStop = handler({ transactionId: 404 })
+      const failure = new Error('StopTransaction delivery failed')
+      stopResponse.reject(failure)
+      const results = await Promise.allSettled([stationStop, uiStop])
+
+      assert.deepStrictEqual(
+        results.map(result => result.status),
+        ['rejected', 'rejected']
+      )
+      assert.ok(results.every(result => result.status === 'rejected' && result.reason === failure))
+      assert.strictEqual(
+        requestHandler.mock.calls.filter(
+          call => call.arguments[1] === RequestCommand.STOP_TRANSACTION
+        ).length,
+        1
+      )
+      const stopCall = requestHandler.mock.calls.find(
+        call => call.arguments[1] === RequestCommand.STOP_TRANSACTION
+      )
+      assert.deepStrictEqual(stopCall?.arguments[3], {
+        rawPayload: true,
+        responseTimeoutMs: 50,
+        skipBufferingOnError: true,
+        throwError: true,
+      })
+    })
+
+    await it('should coalesce overlapping remote and UI stops before Finishing completes', async () => {
+      const statusRequestStarted = Promise.withResolvers<undefined>()
+      const statusResponse = Promise.withResolvers<unknown>()
+      const stopRequestStarted = Promise.withResolvers<undefined>()
+      const stopResponse = Promise.withResolvers<{
+        idTagInfo: { status: OCPP16AuthorizationStatus }
+      }>()
+      const requestHandler = mock.fn(async (...args: unknown[]) => {
+        if (args[1] === RequestCommand.STATUS_NOTIFICATION) {
+          statusRequestStarted.resolve(undefined)
+          return await statusResponse.promise
+        }
+        if (args[1] === RequestCommand.STOP_TRANSACTION) {
+          stopRequestStarted.resolve(undefined)
+          return await stopResponse.promise
+        }
+        return {}
+      })
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 505 })
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(handler != null)
+
+      const remoteStop = OCPP16ServiceUtils.remoteStopTransaction(station, 1)
+      await statusRequestStarted.promise
+      const uiStop = handler({ transactionId: 505 })
+
+      assert.strictEqual(
+        requestHandler.mock.calls.filter(
+          call => call.arguments[1] === RequestCommand.STATUS_NOTIFICATION
+        ).length,
+        1
+      )
+      assert.strictEqual(
+        requestHandler.mock.calls.filter(
+          call => call.arguments[1] === RequestCommand.STOP_TRANSACTION
+        ).length,
+        0
+      )
+
+      statusResponse.resolve({})
+      await stopRequestStarted.promise
+      assert.strictEqual(
+        requestHandler.mock.calls.filter(
+          call => call.arguments[1] === RequestCommand.STOP_TRANSACTION
+        ).length,
+        1
+      )
+      const expectedResponse = {
+        idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED },
+      }
+      stopResponse.resolve(expectedResponse)
+
+      assert.strictEqual(await uiStop, expectedResponse)
+      assert.deepStrictEqual(await remoteStop, { status: GenericStatus.Accepted })
+    })
+
+    await it('should reject a missing transactionId with a typed error before sending', async () => {
+      const requestHandler = mock.fn(() => Promise.resolve({}))
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(handler != null)
+
+      await assert.rejects(async () => {
+        await handler({})
+      }, BaseError)
+      assert.strictEqual(requestHandler.mock.callCount(), 0)
+    })
+
+    await it('should reject an unknown transactionId with a typed error before sending', async () => {
+      const requestHandler = mock.fn(() => Promise.resolve({}))
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.STOP_TRANSACTION
+      )
+      assert.ok(handler != null)
+
+      await assert.rejects(
+        async () => {
+          await handler({ transactionId: 404 })
+        },
+        (error: Error) => error instanceof BaseError && error.message.includes("'404'")
+      )
+      assert.strictEqual(requestHandler.mock.callCount(), 0)
     })
   })
 

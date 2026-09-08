@@ -16,9 +16,11 @@ import {
   hasFeatureProfile,
   hasReservationExpired,
 } from '../../../charging-station/index.js'
-import { BaseError } from '../../../exception/index.js'
+import { BaseError, OCPPError } from '../../../exception/index.js'
 import {
   type ConfigurationKey,
+  type ConnectorStatus,
+  ErrorType,
   type GenericResponse,
   type MeterValuesRequest,
   type MeterValuesResponse,
@@ -33,17 +35,21 @@ import {
   OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
+  OCPP16MeterValueFormat,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
   type OCPP16SampledValue,
+  type OCPP16SignedMeterValue,
   OCPP16StandardParametersKey,
   type OCPP16StatusNotificationRequest,
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
   OCPP16VendorParametersKey,
   OCPPVersion,
+  PublicKeyWithSignedMeterValueEnumType,
   RequestCommand,
+  type RequestParams,
   type StartTransactionRequest,
   type StartTransactionResponse,
   type StopTransactionReason,
@@ -52,10 +58,12 @@ import {
 } from '../../../types/index.js'
 import {
   clampToSafeTimerValue,
+  clone,
   Constants,
   convertToBoolean,
   convertToDate,
   convertToInt,
+  ensureError,
   isNotEmptyArray,
   logger,
   roundTo,
@@ -83,6 +91,73 @@ import { OCPP16Constants } from './OCPP16Constants.js'
 import { buildOCPP16SampledValue, buildSignedOCPP16SampledValue } from './OCPP16RequestBuilders.js'
 
 const moduleName = 'OCPP16ServiceUtils'
+const RFC3339_TIMESTAMP_PATTERN =
+  /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([Zz]|([+-])(\d{2}):(\d{2}))$/
+const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
+
+const isLeapYear = (year: number): boolean =>
+  year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+
+const hasOcppTimestampYear = (timestamp: Date): boolean => {
+  const year = timestamp.getUTCFullYear()
+  return year >= 0 && year <= 9999 && /^\d{4}-/.test(timestamp.toISOString())
+}
+
+const parseStopTransactionTimestamp = (timestamp: string): Date | undefined => {
+  const match = RFC3339_TIMESTAMP_PATTERN.exec(timestamp)
+  if (match == null) return undefined
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const hour = Number(match[4])
+  const minute = Number(match[5])
+  const second = Number(match[6])
+  const fraction = match.at(7)
+  const offsetHourMatch = match.at(10)
+  const offsetMinuteMatch = match.at(11)
+  const offsetHour = offsetHourMatch == null ? 0 : Number(offsetHourMatch)
+  const offsetMinute = offsetMinuteMatch == null ? 0 : Number(offsetMinuteMatch)
+
+  if (
+    month < 1 ||
+    month > 12 ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 60 ||
+    offsetHour > 23 ||
+    offsetMinute > 59
+  ) {
+    return undefined
+  }
+  const daysInMonth = month === 2 && isLeapYear(year) ? 29 : DAYS_PER_MONTH[month - 1]
+  if (day < 1 || day > daysInMonth) return undefined
+
+  const millisecond = fraction == null ? 0 : Number(fraction.slice(0, 3).padEnd(3, '0'))
+  const localTimestamp = new Date(0)
+  localTimestamp.setUTCFullYear(year, month - 1, day)
+  localTimestamp.setUTCHours(hour, minute, Math.min(second, 59), millisecond)
+  const signedOffsetMinutes =
+    match[8].toUpperCase() === 'Z'
+      ? 0
+      : (match[9] === '+' ? 1 : -1) * (offsetHour * 60 + offsetMinute)
+  const precedingInstant = localTimestamp.getTime() - signedOffsetMinutes * 60_000
+  if (!Number.isFinite(precedingInstant)) return undefined
+
+  if (second === 60) {
+    const precedingSecond = new Date(precedingInstant)
+    const isLeapSecondBoundary =
+      precedingSecond.getUTCHours() === 23 &&
+      precedingSecond.getUTCMinutes() === 59 &&
+      precedingSecond.getUTCSeconds() === 59 &&
+      ((precedingSecond.getUTCMonth() === 5 && precedingSecond.getUTCDate() === 30) ||
+        (precedingSecond.getUTCMonth() === 11 && precedingSecond.getUTCDate() === 31))
+    if (!isLeapSecondBoundary) return undefined
+  }
+
+  const normalizedTimestamp = new Date(precedingInstant + (second === 60 ? 1000 : 0))
+  return hasOcppTimestampYear(normalizedTimestamp) ? normalizedTimestamp : undefined
+}
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPP16ServiceUtils {
@@ -124,6 +199,11 @@ export class OCPP16ServiceUtils {
     [OCPP16RequestCommand.STOP_TRANSACTION, 'StopTransaction'],
   ]
 
+  private static readonly stopTransactionOperations = new WeakMap<
+    ConnectorStatus,
+    { promise: Promise<StopTransactionResponse>; transactionId: number | string }
+  >()
+
   /**
    * Post-hoc signing wrapper for OCPP 1.6 Signed Meter Values whitepaper
    * §3.3.6 (`SampledDataSignUpdatedReadings`). When
@@ -133,10 +213,8 @@ export class OCPP16ServiceUtils {
    * `MeterValue`. Idempotent no-op when signing is disabled or the
    * signing prerequisites are absent.
    *
-   * Mutates `meterValue.sampledValue` in place and updates
-   * `connectorStatus.publicKeySentInTransaction` so the public-key
-   * payload is emitted at most once per transaction (per
-   * `PublicKeyWithSignedMeterValue = OncePerTransaction`).
+   * Mutates `meterValue.sampledValue` in place and records an included
+   * public key for the active transaction.
    * @param chargingStation - Target charging station.
    * @param connectorId - Connector identifier owning the transaction.
    * @param transactionId - Active transaction identifier.
@@ -284,12 +362,14 @@ export class OCPP16ServiceUtils {
    * @param chargingStation - Target charging station
    * @param connectorId - Connector ID associated with the transaction
    * @param meterStop - Final meter reading in Wh at transaction end
+   * @param timestamp - Timestamp shared with the StopTransaction snapshot
    * @returns MeterValue containing the transaction end energy reading
    */
   public static buildTransactionEndMeterValue (
     chargingStation: ChargingStation,
     connectorId: number,
-    meterStop: number | undefined
+    meterStop: number | undefined,
+    timestamp = new Date()
   ): OCPP16MeterValue {
     const sampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
     if (sampledValueTemplate == null) {
@@ -301,7 +381,7 @@ export class OCPP16ServiceUtils {
       sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR
         ? Constants.UNIT_DIVIDER_KILO
         : 1
-    const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
+    const meterValue = { sampledValue: [], timestamp } as OCPP16MeterValue
     meterValue.sampledValue.push(
       buildOCPP16SampledValue(
         sampledValueTemplate,
@@ -327,9 +407,6 @@ export class OCPP16ServiceUtils {
           meterValue.timestamp
         )
         meterValue.sampledValue.push(signedResult.sampledValue)
-        if (signedResult.publicKeyIncluded && connectorStatus != null) {
-          connectorStatus.publicKeySentInTransaction = true
-        }
       }
     }
     return meterValue
@@ -788,10 +865,6 @@ export class OCPP16ServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<GenericResponse> => {
-    await sendAndSetConnectorStatus(chargingStation, {
-      connectorId,
-      status: OCPP16ChargePointStatus.Finishing,
-    })
     const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
       chargingStation,
       connectorId,
@@ -905,8 +978,17 @@ export class OCPP16ServiceUtils {
       )
       return
     }
+    const rawTransactionId = connectorStatus.transactionId
     connectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
-      const transactionId = convertToInt(connectorStatus.transactionId)
+      if (
+        connectorStatus.transactionStarted !== true ||
+        connectorStatus.transactionId !== rawTransactionId ||
+        OCPP16ServiceUtils.stopTransactionOperations.get(connectorStatus)?.transactionId ===
+          rawTransactionId
+      ) {
+        return
+      }
+      const transactionId = convertToInt(rawTransactionId)
       const meterValue = buildMeterValue(
         chargingStation,
         transactionId,
@@ -942,52 +1024,250 @@ export class OCPP16ServiceUtils {
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier with the active transaction
    * @param reason - Optional stop transaction reason
+   * @param requestOverrides - Optional StopTransaction payload overrides
+   * @param requestParams - Optional transport behavior overrides
    * @returns Stop transaction response from the Central System
    */
-  public static async stopTransactionOnConnector (
+  public static stopTransactionOnConnector (
     chargingStation: ChargingStation,
     connectorId: number,
-    reason?: StopTransactionReason
+    reason?: StopTransactionReason,
+    requestOverrides: Partial<StopTransactionRequest> = {},
+    requestParams?: RequestParams
   ): Promise<StopTransactionResponse> {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (connectorStatus?.status !== OCPP16ChargePointStatus.Finishing) {
-      await sendAndSetConnectorStatus(chargingStation, {
-        connectorId,
-        status: OCPP16ChargePointStatus.Finishing,
-      })
+    let connectorStatus: ConnectorStatus | undefined
+    try {
+      connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    } catch (error) {
+      return Promise.reject(ensureError(error))
     }
-    const rawTransactionId = chargingStation.getConnectorStatus(connectorId)?.transactionId
-    const transactionId = rawTransactionId != null ? convertToInt(rawTransactionId) : undefined
-    if (
-      chargingStation.stationInfo?.beginEndMeterValues === true &&
-      chargingStation.stationInfo.ocppStrictCompliance === true &&
-      chargingStation.stationInfo.outOfOrderEndMeterValues === false
-    ) {
-      const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
-        chargingStation,
-        connectorId,
-        chargingStation.getEnergyActiveImportRegisterByTransactionId(rawTransactionId)
+    const rawTransactionId = connectorStatus?.transactionId
+    if (connectorStatus?.transactionStarted !== true || rawTransactionId == null) {
+      return Promise.reject(
+        new BaseError(
+          `${chargingStation.logPrefix()} ${moduleName}.stopTransactionOnConnector: No active transaction on connector ${connectorId.toString()}`
+        )
       )
-      await chargingStation.ocppRequestService.requestHandler<
-        MeterValuesRequest,
-        MeterValuesResponse
-      >(chargingStation, RequestCommand.METER_VALUES, {
-        connectorId,
-        meterValue: [transactionEndMeterValue],
-        transactionId,
-      })
     }
-    return await chargingStation.ocppRequestService.requestHandler<
-      Partial<StopTransactionRequest>,
-      StopTransactionResponse
-    >(chargingStation, RequestCommand.STOP_TRANSACTION, {
-      meterStop: chargingStation.getEnergyActiveImportRegisterByTransactionId(
-        rawTransactionId,
-        true
-      ),
-      transactionId,
-      ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
-    })
+
+    let normalizedTimestamp: Date | undefined
+    if (Object.hasOwn(requestOverrides, 'timestamp')) {
+      try {
+        normalizedTimestamp = OCPP16ServiceUtils.normalizeStopTransactionTimestamp(
+          requestOverrides.timestamp
+        )
+      } catch (error) {
+        return Promise.reject(ensureError(error))
+      }
+    }
+
+    const activeStopTransaction = OCPP16ServiceUtils.stopTransactionOperations.get(connectorStatus)
+    if (activeStopTransaction != null) {
+      if (activeStopTransaction.transactionId === rawTransactionId) {
+        return activeStopTransaction.promise
+      }
+      return Promise.reject(
+        new OCPPError(
+          ErrorType.GENERIC_ERROR,
+          `${chargingStation.logPrefix()} ${moduleName}.stopTransactionOnConnector: Stop transaction ${activeStopTransaction.transactionId.toString()} is still in progress on connector ${connectorId.toString()}; cannot stop replacement transaction ${rawTransactionId.toString()}`,
+          RequestCommand.STOP_TRANSACTION
+        )
+      )
+    }
+
+    const priorPublicKeySentInTransaction = connectorStatus.publicKeySentInTransaction
+    let publicKeyReserved = false
+    const publicKeyDeliveryState = { frameSent: false }
+    const markPublicKeyFrameSent = (): void => {
+      publicKeyDeliveryState.frameSent = true
+      if (connectorStatus.transactionId === rawTransactionId) {
+        connectorStatus.publicKeySentInTransaction = true
+      }
+    }
+    const rollbackPublicKeyReservation = (): void => {
+      if (
+        !publicKeyReserved ||
+        publicKeyDeliveryState.frameSent ||
+        connectorStatus.transactionId !== rawTransactionId
+      ) {
+        return
+      }
+      if (priorPublicKeySentInTransaction == null) {
+        delete connectorStatus.publicKeySentInTransaction
+      } else {
+        connectorStatus.publicKeySentInTransaction = priorPublicKeySentInTransaction
+      }
+    }
+
+    const stopTransactionPromise = (async (): Promise<StopTransactionResponse> => {
+      try {
+        const timestamp = new Date((normalizedTimestamp ?? new Date()).getTime())
+
+        const transactionId = convertToInt(rawTransactionId)
+        const finalEnergy =
+          chargingStation.getEnergyActiveImportRegisterByTransactionId(rawTransactionId)
+        const meterStop = Math.round(finalEnergy)
+        const idTag = requestOverrides.idTag ?? connectorStatus.transactionIdTag
+        const transactionDataEnabled =
+          chargingStation.stationInfo?.transactionDataMeterValues === true
+        const signingForcesTransactionData = OCPP16ServiceUtils.isSigningEnabled(chargingStation)
+        const strictEndMeterValueEnabled =
+          chargingStation.stationInfo?.beginEndMeterValues === true &&
+          chargingStation.stationInfo.ocppStrictCompliance === true &&
+          chargingStation.stationInfo.outOfOrderEndMeterValues === false
+        const hasTransactionDataOverride = Object.hasOwn(requestOverrides, 'transactionData')
+        const snapshotOverrides = clone(requestOverrides)
+        let transactionData = snapshotOverrides.transactionData
+        let transactionEndMeterValue: OCPP16MeterValue | undefined
+
+        if (
+          strictEndMeterValueEnabled ||
+          (!hasTransactionDataOverride && (transactionDataEnabled || signingForcesTransactionData))
+        ) {
+          if (strictEndMeterValueEnabled || transactionDataEnabled) {
+            transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+              chargingStation,
+              connectorId,
+              meterStop,
+              timestamp
+            )
+          } else {
+            try {
+              transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+                chargingStation,
+                connectorId,
+                meterStop,
+                timestamp
+              )
+            } catch (error) {
+              logger.warn(
+                `${chargingStation.logPrefix()} ${moduleName}.stopTransactionOnConnector: Failed to build signed transaction data meter values for StopTransaction:`,
+                error
+              )
+            }
+          }
+        }
+        if (
+          !hasTransactionDataOverride &&
+          transactionEndMeterValue != null &&
+          (transactionDataEnabled || signingForcesTransactionData)
+        ) {
+          transactionData = OCPP16ServiceUtils.buildTransactionDataMeterValues(
+            connectorStatus.transactionBeginMeterValue as OCPP16MeterValue,
+            transactionEndMeterValue
+          )
+        }
+
+        const oncePerTransactionPublicKey =
+          parsePublicKeyWithSignedMeterValue(
+            getConfigurationKey(
+              chargingStation,
+              OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue
+            )?.value
+          ) === PublicKeyWithSignedMeterValueEnumType.OncePerTransaction
+        const endMeterValueHasPublicKey =
+          transactionEndMeterValue != null &&
+          OCPP16ServiceUtils.meterValueHasPublicKey(transactionEndMeterValue)
+        let stopTransactionHasPublicKey =
+          Array.isArray(transactionData) &&
+          transactionData.some(meterValue => OCPP16ServiceUtils.meterValueHasPublicKey(meterValue))
+        if (
+          !hasTransactionDataOverride &&
+          oncePerTransactionPublicKey &&
+          strictEndMeterValueEnabled &&
+          endMeterValueHasPublicKey &&
+          stopTransactionHasPublicKey
+        ) {
+          transactionData = OCPP16ServiceUtils.removePublicKeys(transactionData)
+          stopTransactionHasPublicKey = false
+        }
+
+        const stopTransactionSnapshot: Readonly<StopTransactionRequest> = Object.freeze({
+          ...snapshotOverrides,
+          idTag,
+          meterStop,
+          timestamp,
+          transactionData,
+          transactionId,
+          ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
+        })
+        if (chargingStation.stationInfo?.ocppStrictCompliance !== false) {
+          chargingStation.ocppRequestService.validateRequestPayload(
+            chargingStation,
+            RequestCommand.STOP_TRANSACTION,
+            stopTransactionSnapshot
+          )
+        }
+
+        OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
+        publicKeyReserved =
+          oncePerTransactionPublicKey &&
+          connectorStatus.transactionId === rawTransactionId &&
+          connectorStatus.publicKeySentInTransaction !== true &&
+          (endMeterValueHasPublicKey || stopTransactionHasPublicKey)
+        if (publicKeyReserved) {
+          connectorStatus.publicKeySentInTransaction = true
+        }
+
+        if (connectorStatus.status !== OCPP16ChargePointStatus.Finishing) {
+          await sendAndSetConnectorStatus(
+            chargingStation,
+            {
+              connectorId,
+              status: OCPP16ChargePointStatus.Finishing,
+            },
+            { expectedTransactionId: rawTransactionId, send: true }
+          )
+        }
+        if (strictEndMeterValueEnabled && transactionEndMeterValue != null) {
+          await chargingStation.ocppRequestService.requestHandler<
+            MeterValuesRequest,
+            MeterValuesResponse
+          >(
+            chargingStation,
+            RequestCommand.METER_VALUES,
+            {
+              connectorId,
+              meterValue: [transactionEndMeterValue],
+              transactionId,
+            },
+            {
+              ...(endMeterValueHasPublicKey && { onMessageSent: markPublicKeyFrameSent }),
+              skipBufferingOnError: true,
+            }
+          )
+        }
+        return await chargingStation.ocppRequestService.requestHandler<
+          StopTransactionRequest,
+          StopTransactionResponse
+        >(chargingStation, RequestCommand.STOP_TRANSACTION, stopTransactionSnapshot, {
+          ...requestParams,
+          ...(stopTransactionHasPublicKey && {
+            onMessageSent: () => {
+              markPublicKeyFrameSent()
+              requestParams?.onMessageSent?.()
+            },
+          }),
+          rawPayload: true,
+          skipBufferingOnError: true,
+          throwError: true,
+        })
+      } catch (error) {
+        rollbackPublicKeyReservation()
+        throw error
+      }
+    })()
+
+    const operation = { promise: stopTransactionPromise, transactionId: rawTransactionId }
+    OCPP16ServiceUtils.stopTransactionOperations.set(connectorStatus, operation)
+    stopTransactionPromise
+      .finally(() => {
+        if (OCPP16ServiceUtils.stopTransactionOperations.get(connectorStatus) === operation) {
+          OCPP16ServiceUtils.stopTransactionOperations.delete(connectorStatus)
+        }
+      })
+      .catch(() => undefined)
+    return stopTransactionPromise
   }
 
   /**
@@ -1153,6 +1433,53 @@ export class OCPP16ServiceUtils {
     }
   }
 
+  private static meterValueHasPublicKey (meterValue: unknown): boolean {
+    if (
+      typeof meterValue !== 'object' ||
+      meterValue == null ||
+      !('sampledValue' in meterValue) ||
+      !Array.isArray(meterValue.sampledValue)
+    ) {
+      return false
+    }
+    return meterValue.sampledValue.some((sampledValue: unknown) => {
+      if (typeof sampledValue !== 'object' || sampledValue == null) return false
+      const { format, value } = sampledValue as Partial<OCPP16SampledValue>
+      if (format !== OCPP16MeterValueFormat.SIGNED_DATA || typeof value !== 'string') return false
+      try {
+        const signedMeterValue = JSON.parse(value) as unknown
+        return (
+          typeof signedMeterValue === 'object' &&
+          signedMeterValue != null &&
+          'publicKey' in signedMeterValue &&
+          typeof signedMeterValue.publicKey === 'string' &&
+          signedMeterValue.publicKey.length > 0
+        )
+      } catch {
+        return false
+      }
+    })
+  }
+
+  private static normalizeStopTransactionTimestamp (timestamp: unknown): Date {
+    if (
+      timestamp instanceof Date &&
+      Number.isFinite(timestamp.getTime()) &&
+      hasOcppTimestampYear(timestamp)
+    ) {
+      return timestamp
+    }
+    if (typeof timestamp === 'string') {
+      const normalizedTimestamp = parseStopTransactionTimestamp(timestamp)
+      if (normalizedTimestamp != null) return normalizedTimestamp
+    }
+    throw new OCPPError(
+      ErrorType.FORMAT_VIOLATION,
+      `${moduleName}.stopTransactionOnConnector: Invalid StopTransaction timestamp`,
+      RequestCommand.STOP_TRANSACTION
+    )
+  }
+
   private static readSigningConfigForConnector (
     chargingStation: ChargingStation,
     connectorId: number
@@ -1185,5 +1512,26 @@ export class OCPP16ServiceUtils {
       ),
       signingMethod: prerequisiteResult.signingMethod,
     }
+  }
+
+  private static removePublicKeys (
+    meterValues: OCPP16MeterValue[] | undefined
+  ): OCPP16MeterValue[] | undefined {
+    return meterValues?.map(meterValue => ({
+      ...meterValue,
+      sampledValue: meterValue.sampledValue.map(sampledValue => {
+        if (sampledValue.format !== OCPP16MeterValueFormat.SIGNED_DATA) return sampledValue
+        try {
+          const signedMeterValue = JSON.parse(sampledValue.value) as OCPP16SignedMeterValue
+          if (signedMeterValue.publicKey.length === 0) return sampledValue
+          return {
+            ...sampledValue,
+            value: JSON.stringify({ ...signedMeterValue, publicKey: '' }),
+          }
+        } catch {
+          return sampledValue
+        }
+      }),
+    }))
   }
 }

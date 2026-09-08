@@ -1925,13 +1925,20 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED
     }
     if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
-      const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
-        chargingStation,
-        connectorId,
-        OCPP16StopTransactionReason.UNLOCK_COMMAND
-      )
-      if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-        return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
+      try {
+        const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
+          chargingStation,
+          connectorId,
+          OCPP16StopTransactionReason.UNLOCK_COMMAND
+        )
+        if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+          return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
+        }
+      } catch (error) {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Error while stopping transaction on connector ${connectorId.toString()}:`,
+          error
+        )
       }
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_FAILED
     }

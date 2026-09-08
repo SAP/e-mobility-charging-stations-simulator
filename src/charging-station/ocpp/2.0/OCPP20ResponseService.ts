@@ -434,11 +434,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
           chargingStation.destroyCoherentSession(requestPayload.transactionInfo.transactionId)
         }
         break
-      case OCPP20TransactionEventEnumType.Started:
-        if (connectorStatus != null && !transactionEnding) {
+      case OCPP20TransactionEventEnumType.Started: {
+        const ownsActiveStart =
+          connectorStatus?.transactionId?.toString() ===
+            requestPayload.transactionInfo.transactionId &&
+          (connectorStatus.transactionStarting === true ||
+            connectorStatus.transactionPending === true)
+        if (ownsActiveStart && !transactionEnding) {
           connectorStatus.transactionStarted = true
           connectorStatus.transactionPending = false
-          connectorStatus.transactionId ??= requestPayload.transactionInfo.transactionId
           connectorStatus.transactionIdTag ??= requestPayload.idToken?.idToken
           connectorStatus.transactionStart ??= new Date()
           connectorStatus.transactionEnergyActiveImportRegisterValue ??= 0
@@ -488,6 +492,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
           )
         }
         break
+      }
     }
     if (payload.totalCost != null) {
       logger.info(

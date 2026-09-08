@@ -23,11 +23,17 @@ import { OCPP20Constants } from './2.0/OCPP20Constants.js'
  * @param options.send - Whether to send the status notification.
  * @param options.waitForResponse - Whether local completion waits for the CSMS response.
  * @param options.responseTimeoutMs - Optional CSMS response timeout in milliseconds.
+ * @param options.expectedTransactionId - When set, apply the response locally only while the connector still owns this transaction.
  */
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
   commandParams: StatusNotificationOptions,
-  options?: { responseTimeoutMs?: number; send: boolean; waitForResponse?: boolean }
+  options?: {
+    expectedTransactionId?: number | string
+    responseTimeoutMs?: number
+    send: boolean
+    waitForResponse?: boolean
+  }
 ): Promise<void> => {
   options = { send: true, ...options }
   const { connectorId, errorCode, evseId } = commandParams
@@ -55,12 +61,23 @@ export const sendAndSetConnectorStatus = async (
       await response
     }
   }
-  connectorStatus.status = status
-  connectorStatus.errorCode = errorCode
+  const currentConnectorStatus =
+    options.expectedTransactionId != null
+      ? chargingStation.getConnectorStatus(connectorId, evseId)
+      : connectorStatus
+  if (
+    currentConnectorStatus == null ||
+    (options.expectedTransactionId != null &&
+      currentConnectorStatus.transactionId !== options.expectedTransactionId)
+  ) {
+    return
+  }
+  currentConnectorStatus.status = status
+  currentConnectorStatus.errorCode = errorCode
   chargingStation.emitChargingStationEvent(ChargingStationEvents.connectorStatusChanged, {
     connectorId,
     ...(evseId != null && { evseId }),
-    ...connectorStatus,
+    ...currentConnectorStatus,
   })
 }
 

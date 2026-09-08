@@ -533,6 +533,7 @@ export function createMockChargingStation (
           )
         )
       },
+      validateRequestPayload: () => true,
       ...ocppRequestService,
     },
 

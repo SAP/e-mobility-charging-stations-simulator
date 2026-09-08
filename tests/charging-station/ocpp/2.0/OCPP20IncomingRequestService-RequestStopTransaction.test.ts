@@ -472,6 +472,8 @@ await describe('F03 - Remote Stop Transaction', async () => {
         } satisfies OCPP20RequestStopTransactionResponse
       )
 
+      await flushMicrotasks()
+
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
@@ -512,6 +514,8 @@ await describe('F03 - Remote Stop Transaction', async () => {
           status: RequestStartStopStatusEnumType.Accepted,
         } satisfies OCPP20RequestStopTransactionResponse
       )
+
+      await flushMicrotasks()
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       const args = requestHandlerMock.mock.calls[0].arguments as [

@@ -511,19 +511,35 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private async handleStopTransaction (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<StopTransactionResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      StopTransactionRequest,
-      StopTransactionResponse
-    >(
+    if (this.chargingStation.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStopTransaction: StopTransaction is only supported by OCPP 1.6 charging stations`
+      )
+    }
+    const transactionId = requestPayload?.transactionId
+    if (transactionId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStopTransaction: 'transactionId' field is required`
+      )
+    }
+    const connectorId = this.chargingStation.getConnectorIdByTransactionId(transactionId)
+    if (connectorId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStopTransaction: No active transaction found for transactionId '${transactionId.toString()}'`
+      )
+    }
+    const hasTimestamp = requestPayload != null && Object.hasOwn(requestPayload, 'timestamp')
+    const { idTag, reason, timestamp, transactionData } =
+      requestPayload as Partial<StopTransactionRequest>
+    return await OCPP16ServiceUtils.stopTransactionOnConnector(
       this.chargingStation,
-      RequestCommand.STOP_TRANSACTION,
+      connectorId,
+      reason,
       {
-        meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          requestPayload?.transactionId,
-          true
-        ),
-        ...requestPayload,
-      } as StopTransactionRequest,
+        ...(idTag != null && { idTag }),
+        ...(hasTimestamp && { timestamp }),
+        ...(transactionData != null && { transactionData }),
+      },
       this.requestParams
     )
   }

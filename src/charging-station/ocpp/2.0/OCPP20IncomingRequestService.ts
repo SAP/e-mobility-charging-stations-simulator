@@ -1551,18 +1551,25 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
   }
 
-  private connectorHasQueuedEvents (
+  private connectorHasPendingTransactionEvents (
     connectorStatus: ConnectorStatus,
     transactionId?: string
   ): boolean {
+    const directDeliveryPending = OCPP20ServiceUtils.hasPendingTransactionEventDelivery(
+      connectorStatus,
+      transactionId
+    )
     const queue = connectorStatus.transactionEventQueue
     if (queue == null || !isNotEmptyArray(queue)) {
-      return false
+      return directDeliveryPending
     }
     if (transactionId == null) {
       return true
     }
-    return queue.some(({ request }) => request.transactionInfo.transactionId === transactionId)
+    return (
+      directDeliveryPending ||
+      queue.some(({ request }) => request.transactionInfo.transactionId === transactionId)
+    )
   }
 
   /**
@@ -2377,7 +2384,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     // E14.FR.06: When transactionId is omitted, ongoingIndicator SHALL NOT be set
     if (transactionId == null) {
       return {
-        messagesInQueue: this.hasQueuedTransactionEvents(chargingStation),
+        messagesInQueue: this.hasPendingTransactionEvents(chargingStation),
       }
     }
 
@@ -2387,7 +2394,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       connectorId != null ? chargingStation.getConnectorStatus(connectorId, evseId) : undefined
 
     return {
-      messagesInQueue: this.hasQueuedTransactionEvents(chargingStation, transactionId),
+      messagesInQueue: this.hasPendingTransactionEvents(chargingStation, transactionId),
       ongoingIndicator: connectorStatus != null && !isTransactionEnding(connectorStatus),
     }
   }
@@ -3456,12 +3463,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     )
   }
 
-  private hasQueuedTransactionEvents (
+  private hasPendingTransactionEvents (
     chargingStation: ChargingStation,
     transactionId?: string
   ): boolean {
     for (const { connectorStatus } of chargingStation.iterateConnectors()) {
-      if (this.connectorHasQueuedEvents(connectorStatus, transactionId)) {
+      if (this.connectorHasPendingTransactionEvents(connectorStatus, transactionId)) {
         return true
       }
     }

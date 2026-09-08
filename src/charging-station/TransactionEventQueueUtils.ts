@@ -304,7 +304,57 @@ const compactOversizedLifecycleEvent = (
     triggerReason: request.triggerReason,
   }
   refreshQueuedEventBytes(accounting, queuedEvent)
-  return changed || (accounting.eventBytes.get(queuedEvent) ?? 0) < previousBytes
+  changed = changed || (accounting.eventBytes.get(queuedEvent) ?? 0) < previousBytes
+  if (
+    (accounting.eventBytes.get(queuedEvent) ?? 0) + 2 <=
+    Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+  ) {
+    return changed
+  }
+
+  if (queuedEvent.request.meterValue != null) {
+    delete queuedEvent.request.meterValue
+    refreshQueuedEventBytes(accounting, queuedEvent)
+    changed = true
+  }
+  if (
+    (accounting.eventBytes.get(queuedEvent) ?? 0) + 2 <=
+    Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+  ) {
+    return changed
+  }
+
+  const compactedRequest = queuedEvent.request
+  const compactedTransactionInfo = compactedRequest.transactionInfo
+  const bytesBeforeIdentityCompaction = accounting.eventBytes.get(queuedEvent) ?? 0
+  queuedEvent.request = {
+    eventType: compactedRequest.eventType,
+    ...(compactedRequest.evse != null && {
+      evse: {
+        ...(typeof compactedRequest.evse.connectorId === 'number' && {
+          connectorId: compactedRequest.evse.connectorId,
+        }),
+        id: compactedRequest.evse.id,
+      },
+    }),
+    ...(compactedRequest.idToken != null && {
+      idToken: {
+        idToken: compactedRequest.idToken.idToken,
+        type: compactedRequest.idToken.type,
+      },
+    }),
+    seqNo: compactedRequest.seqNo,
+    timestamp: compactedRequest.timestamp,
+    transactionInfo: {
+      ...(typeof compactedTransactionInfo.remoteStartId === 'number' && {
+        remoteStartId: compactedTransactionInfo.remoteStartId,
+      }),
+      transactionId: compactedTransactionInfo.transactionId,
+    },
+    triggerReason: compactedRequest.triggerReason,
+  }
+  refreshQueuedEventBytes(accounting, queuedEvent)
+  return changed || (accounting.eventBytes.get(queuedEvent) ?? 0) < bytesBeforeIdentityCompaction
 }
 
 const transferPublicKeys = (
@@ -453,6 +503,15 @@ export const boundTransactionEventQueue = (
   const isOverHardBounds = (): boolean =>
     queue.length > Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH ||
     accounting.bytes > Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+  const compactLifecycleEvent = (queuedEvent: QueuedTransactionEvent): boolean => {
+    const transactionId = queuedEvent.request.transactionInfo.transactionId
+    const hadPublicKey = findPublicKey(queuedEvent) != null
+    const eventChanged = compactOversizedLifecycleEvent(accounting, queuedEvent)
+    if (hadPublicKey && !queuedTransactionEventHasPublicKey(queuedEvent, transactionId)) {
+      removedPublicKeyTransactionIds.add(transactionId)
+    }
+    return eventChanged
+  }
   if (!isOverHardBounds()) {
     return { bytes: accounting.bytes, changed, removedEvents }
   }
@@ -467,7 +526,7 @@ export const boundTransactionEventQueue = (
 
   for (const queuedEvent of queue) {
     if (!isOverHardBounds()) break
-    if (!compactOversizedLifecycleEvent(accounting, queuedEvent)) continue
+    if (!compactLifecycleEvent(queuedEvent)) continue
     changed = true
   }
 
@@ -587,7 +646,7 @@ export const boundTransactionEventQueue = (
       continue
     }
 
-    if (protectedEvent != null && compactOversizedLifecycleEvent(accounting, protectedEvent)) {
+    if (protectedEvent != null && compactLifecycleEvent(protectedEvent)) {
       changed = true
       continue
     }

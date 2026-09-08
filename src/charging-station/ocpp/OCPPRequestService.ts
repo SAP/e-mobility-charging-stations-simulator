@@ -221,6 +221,29 @@ export abstract class OCPPRequestService {
     }
   }
 
+  /**
+   * Validates outgoing request payload against JSON schema
+   * @param chargingStation - The charging station instance sending the request
+   * @param commandName - OCPP command name to validate against
+   * @param payload - JSON payload to validate
+   * @returns `true` when payload validation succeeds; `false` otherwise.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public validateRequestPayload<T extends JsonType>(
+    chargingStation: ChargingStation,
+    commandName: IncomingRequestCommand | RequestCommand,
+    payload: T
+  ): boolean {
+    return validatePayload(
+      chargingStation,
+      commandName,
+      payload,
+      this.payloadValidatorFunctions.get(commandName as RequestCommand),
+      'request',
+      true
+    )
+  }
+
   protected abstract buildRequestPayload (
     chargingStation: ChargingStation,
     commandName: RequestCommand,
@@ -302,29 +325,6 @@ export abstract class OCPPRequestService {
         commandName as IncomingRequestCommand
       ),
       'incoming request response',
-      true
-    )
-  }
-
-  /**
-   * Validates outgoing request payload against JSON schema
-   * @param chargingStation - The charging station instance sending the request
-   * @param commandName - OCPP command name to validate against
-   * @param payload - JSON payload to validate
-   * @returns `true` when payload validation succeeds; `false` otherwise.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  protected validateRequestPayload<T extends JsonType>(
-    chargingStation: ChargingStation,
-    commandName: IncomingRequestCommand | RequestCommand,
-    payload: T
-  ): boolean {
-    return validatePayload(
-      chargingStation,
-      commandName,
-      payload,
-      this.payloadValidatorFunctions.get(commandName as RequestCommand),
-      'request',
       true
     )
   }
