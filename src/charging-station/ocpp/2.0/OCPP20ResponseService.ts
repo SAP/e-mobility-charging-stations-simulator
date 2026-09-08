@@ -40,7 +40,10 @@ import {
   type ResponseHandler,
 } from '../../../types/index.js'
 import { convertToDate, logger } from '../../../utils/index.js'
-import { hasQueuedEndedTransactionEvent } from '../../TransactionEventQueueUtils.js'
+import {
+  hasQueuedEndedTransactionEvent,
+  shiftBoundedTransactionEvent,
+} from '../../TransactionEventQueueUtils.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
@@ -413,16 +416,24 @@ export class OCPP20ResponseService extends OCPPResponseService {
       OCPP20ServiceUtils.isReplayedTransactionEventRequest(requestPayload)
 
     switch (requestPayload.eventType) {
-      case OCPP20TransactionEventEnumType.Ended:
-        if (replayedTransactionEvent) break
+      case OCPP20TransactionEventEnumType.Ended: {
+        let replayedHeadDequeued = false
+        if (replayedTransactionEvent) {
+          if (connectorStatus?.transactionEventQueue?.[0]?.request !== requestPayload) break
+          shiftBoundedTransactionEvent(connectorStatus)
+          replayedHeadDequeued = true
+        }
         if (connectorId != null && connectorStatus != null) {
-          await OCPP20ServiceUtils.cleanupEndedTransaction(
+          const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
             chargingStation,
             connectorId,
             connectorStatus,
             evseId,
             requestPayload.transactionInfo.transactionId
           )
+          if (replayedHeadDequeued && !transactionFinalized) {
+            chargingStation.saveTransactionEventQueues()
+          }
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`
           )
@@ -437,6 +448,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
           chargingStation.destroyCoherentSession(requestPayload.transactionInfo.transactionId)
         }
         break
+      }
       case OCPP20TransactionEventEnumType.Started: {
         const ownsRestoredQueuedStart =
           connectorStatus?.transactionRestored === true &&

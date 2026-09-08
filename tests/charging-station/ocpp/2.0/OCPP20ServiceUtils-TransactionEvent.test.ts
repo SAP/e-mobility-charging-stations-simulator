@@ -17,6 +17,7 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { CoherentSession } from '../../../../src/charging-station/meter-values/types.js'
 import type { ConnectorStatus, EmptyObject } from '../../../../src/types/index.js'
 
+import { prepareConnectorStatus } from '../../../../src/charging-station/HelpersConnectorStatus.js'
 import { addConfigurationKey } from '../../../../src/charging-station/index.js'
 import { createTestableResponseService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
@@ -1889,6 +1890,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
         let online = false
         const snapshots: {
+          connectorStatus: ConnectorStatus
           eventTypes: OCPP20TransactionEventEnumType[]
           status: ConnectorStatusEnum | undefined
           transactionId: number | string | undefined
@@ -1936,6 +1938,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
         const saveQueueSpy = mock.method(station, 'saveTransactionEventQueues', () => {
           snapshots.push({
+            connectorStatus: JSON.parse(JSON.stringify(connectorStatus)) as ConnectorStatus,
             eventTypes:
               connectorStatus.transactionEventQueue?.map(event => event.request.eventType) ?? [],
             status: connectorStatus.status,
@@ -1950,8 +1953,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           for (let index = 0; index < 10; index++) await flushMicrotasks()
 
           assert.deepEqual(connectorStatus.transactionEventQueue, [])
-          assert.strictEqual(connectorStatus.transactionStarted, true)
-          assert.strictEqual(connectorStatus.transactionId, transactionId)
+          assert.strictEqual(connectorStatus.transactionStarted, false)
+          assert.strictEqual(connectorStatus.transactionId, undefined)
+          assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Occupied)
           station.saveTransactionEventQueues()
 
           t.mock.timers.tick(3000)
@@ -1971,19 +1975,51 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             true
           )
         }
-        assert.deepEqual(snapshots[0], {
-          eventTypes: [],
-          status: ConnectorStatusEnum.Occupied,
-          transactionId,
-          transactionStarted: true,
-        })
+        assert.deepEqual(
+          {
+            eventTypes: snapshots[0].eventTypes,
+            status: snapshots[0].status,
+            transactionId: snapshots[0].transactionId,
+            transactionStarted: snapshots[0].transactionStarted,
+          },
+          {
+            eventTypes: [],
+            status: ConnectorStatusEnum.Occupied,
+            transactionId: undefined,
+            transactionStarted: false,
+          }
+        )
         assert.deepEqual(snapshots[1], snapshots[0])
-        assert.deepEqual(snapshots.at(-1), {
-          eventTypes: [],
-          status: ConnectorStatusEnum.Available,
-          transactionId: undefined,
-          transactionStarted: false,
-        })
+        const finalSnapshot = snapshots.at(-1)
+        assert.deepEqual(
+          finalSnapshot == null
+            ? undefined
+            : {
+                eventTypes: finalSnapshot.eventTypes,
+                status: finalSnapshot.status,
+                transactionId: finalSnapshot.transactionId,
+                transactionStarted: finalSnapshot.transactionStarted,
+              },
+          {
+            eventTypes: [],
+            status: ConnectorStatusEnum.Available,
+            transactionId: undefined,
+            transactionStarted: false,
+          }
+        )
+        const restoredConnectorStatus = prepareConnectorStatus(snapshots[0].connectorStatus)
+        assert.strictEqual(restoredConnectorStatus.transactionRestored, false)
+        assert.deepEqual(restoredConnectorStatus.transactionEventQueue, [])
+        const evseStatus = station.getEvseStatus(1)
+        assert.ok(evseStatus != null)
+        evseStatus.connectors.set(1, restoredConnectorStatus)
+        const startUpdatedSpy = mock.method(
+          OCPP20ServiceUtils,
+          'startUpdatedMeterValues',
+          () => undefined
+        )
+        OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(station)
+        assert.strictEqual(startUpdatedSpy.mock.callCount(), 0)
       })
 
       await it('should preserve FIFO order when draining queue', async () => {

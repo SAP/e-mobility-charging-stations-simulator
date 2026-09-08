@@ -605,6 +605,7 @@ export class OCPP20ServiceUtils {
    * @param connectorStatus - Connector status to reset
    * @param evseId - Optional EVSE identifier for EVSE-local connector ids
    * @param expectedTransactionId - Transaction that is allowed to own the connector cleanup
+   * @returns Whether the expected transaction was finalized
    */
   public static async cleanupEndedTransaction (
     chargingStation: ChargingStation,
@@ -612,12 +613,12 @@ export class OCPP20ServiceUtils {
     connectorStatus: ConnectorStatus,
     evseId?: number,
     expectedTransactionId?: string
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (
       expectedTransactionId != null &&
       connectorStatus.transactionId?.toString() !== expectedTransactionId
     ) {
-      return
+      return false
     }
     if (
       connectorStatus.transactionStarted !== true &&
@@ -625,32 +626,38 @@ export class OCPP20ServiceUtils {
       connectorStatus.transactionStarting !== true &&
       connectorStatus.transactionEnding !== true
     ) {
-      return
+      return false
     }
-    // Snapshot transactionId BEFORE any mutation below deletes it, so the
-    // coherent session (if any) can still be destroyed after the reset.
     const txId = connectorStatus.transactionId
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
+    resetConnectorStatus(connectorStatus)
+    chargingStation.destroyCoherentSession(txId)
+    connectorStatus.locked = false
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
       .lifecycleAbortSignal
     if (postTransactionDelay > 0) {
-      // Keep the connector transaction state complete until the delayed cleanup.
-      // Persistence can run concurrently, and transactionStarted without its id
-      // is not a restart-safe snapshot.
-      // Destroy the coherent session BEFORE sleeping so an intervening
-      // stop cannot leak it. `destroyCoherentSession` is idempotent so the
-      // post-sleep call remains valid.
-      chargingStation.destroyCoherentSession(txId)
+      // Persist the terminal transaction state before delaying the connector
+      // status transition. A restart must never observe an acknowledged Ended
+      // event as dequeued while the connector still owns its transaction.
+      chargingStation.saveTransactionEventQueues()
       if (lifecycleAbortSignal == null) {
         await sleep(secondsToMilliseconds(postTransactionDelay))
       } else {
         await interruptibleSleep(secondsToMilliseconds(postTransactionDelay), lifecycleAbortSignal)
       }
     }
-    resetConnectorStatus(connectorStatus)
-    chargingStation.destroyCoherentSession(txId)
-    connectorStatus.locked = false
+    const currentConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+    if (
+      currentConnectorStatus !== connectorStatus ||
+      connectorStatus.transactionId != null ||
+      connectorStatus.transactionStarted === true ||
+      connectorStatus.transactionPending === true ||
+      connectorStatus.transactionStarting === true ||
+      connectorStatus.transactionEnding === true
+    ) {
+      return true
+    }
     if (!chargingStation.started || lifecycleAbortSignal?.aborted === true) {
       connectorStatus.status =
         chargingStation.isChargingStationAvailable() &&
@@ -658,7 +665,7 @@ export class OCPP20ServiceUtils {
           ? OCPP20ConnectorStatusEnumType.Available
           : OCPP20ConnectorStatusEnumType.Unavailable
       chargingStation.saveTransactionEventQueues()
-      return
+      return true
     }
     sendPostTransactionStatus(chargingStation, connectorId, evseId, {
       responseTimeoutMs: OCPP20ServiceUtils.readVariableAsIntervalMs(
@@ -675,6 +682,7 @@ export class OCPP20ServiceUtils {
       )
     })
     chargingStation.saveTransactionEventQueues()
+    return true
   }
 
   /**
@@ -2394,15 +2402,15 @@ export class OCPP20ServiceUtils {
           shiftBoundedTransactionEvent(connectorStatus)
           queueChanged = true
           if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
-            chargingStation.saveTransactionEventQueues()
-            queueChanged = false
-            await OCPP20ServiceUtils.cleanupEndedTransaction(
+            const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
               chargingStation,
               connectorId,
               connectorStatus,
               evseId,
               queuedEvent.request.transactionInfo.transactionId
             )
+            if (!transactionFinalized) chargingStation.saveTransactionEventQueues()
+            queueChanged = false
           }
         }
       } catch (error) {
@@ -2473,15 +2481,15 @@ export class OCPP20ServiceUtils {
             shiftBoundedTransactionEvent(connectorStatus)
             queueChanged = true
             if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
-              chargingStation.saveTransactionEventQueues()
-              queueChanged = false
-              await OCPP20ServiceUtils.cleanupEndedTransaction(
+              const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
                 chargingStation,
                 connectorId,
                 connectorStatus,
                 evseId,
                 queuedEvent.request.transactionInfo.transactionId
               )
+              if (!transactionFinalized) chargingStation.saveTransactionEventQueues()
+              queueChanged = false
             }
           }
           continue

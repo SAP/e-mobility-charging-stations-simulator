@@ -52,6 +52,7 @@ await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
     connectorStatus.transactionStarted = true
     connectorStatus.transactionId = 'tx-1'
     connectorStatus.locked = true
+    connectorStatus.status = ConnectorStatusEnum.Finishing
   })
 
   afterEach(() => {
@@ -61,7 +62,25 @@ await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
   await it('should delay Available transition after transaction end', async t => {
     // Act
     await withMockTimers(t, ['setTimeout'], async () => {
+      connectorStatus.transactionEnding = true
+      connectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(
+        () => undefined,
+        60_000
+      )
+      connectorStatus.transactionEndedMeterValuesSetInterval = setInterval(() => undefined, 60_000)
+      const saveQueueSpy = mock.method(station, 'saveTransactionEventQueues')
       const promise = OCPP20ServiceUtils.cleanupEndedTransaction(station, 1, connectorStatus)
+
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(connectorStatus.transactionEnding, undefined)
+      assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+      assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
+      assert.strictEqual(connectorStatus.locked, false)
+      assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Finishing)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+      assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
+
       for (let i = 0; i < 10; i++) {
         await flushMicrotasks()
       }
@@ -97,6 +116,28 @@ await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
     const requestParams = requestHandlerMock.mock.calls[0].arguments[3] as
       undefined | { responseTimeoutMs?: number }
     assert.strictEqual(requestParams?.responseTimeoutMs, 30_000)
+  })
+
+  await it('should preserve a replacement transaction started during the delay', async t => {
+    await withMockTimers(t, ['setTimeout'], async () => {
+      const cleanup = OCPP20ServiceUtils.cleanupEndedTransaction(station, 1, connectorStatus)
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+
+      connectorStatus.transactionStarted = true
+      connectorStatus.transactionId = 'tx-2'
+      connectorStatus.locked = true
+      connectorStatus.status = ConnectorStatusEnum.Occupied
+      t.mock.timers.tick(3000)
+      await flushMicrotasks()
+      await cleanup
+
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(connectorStatus.transactionId, 'tx-2')
+      assert.strictEqual(connectorStatus.locked, true)
+      assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Occupied)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
   })
 
   await it('should abort post-transaction delay with the station lifecycle', async t => {
