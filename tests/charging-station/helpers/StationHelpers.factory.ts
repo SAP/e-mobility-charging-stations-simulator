@@ -552,6 +552,12 @@ export function createMockChargingStation (
     powerDivider: 1,
 
     removeAllListeners: () => station,
+    removeBufferedMessage (message: string): boolean {
+      const messageIndex = this.messageQueue.indexOf(message)
+      if (messageIndex === -1) return false
+      this.messageQueue.splice(messageIndex, 1)
+      return true
+    },
 
     removeListener: () => station,
 

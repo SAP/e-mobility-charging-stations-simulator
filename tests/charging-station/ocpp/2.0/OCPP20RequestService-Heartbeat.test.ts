@@ -5,10 +5,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
-
+import { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import { OCPPConstants } from '../../../../src/charging-station/ocpp/OCPPConstants.js'
+import { OCPPError } from '../../../../src/exception/index.js'
 import {
+  ErrorType,
   type OCPP20HeartbeatRequest,
   OCPP20RequestCommand,
   OCPPVersion,
@@ -357,6 +358,173 @@ await describe('G02 - Heartbeat', async () => {
 
     assert.deepStrictEqual(bufferedStation.messageQueue, [serializedMessage])
     assert.strictEqual(context.station.requests.size, 1)
+  })
+
+  await it('retracts an acknowledged force-buffered request during an unrelated flush', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] })
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.recordRequestStatistic = () => undefined
+    context.station.emitChargingStationEvent = () => undefined
+    context.station.isStopping = () => true
+    const wireMessages: string[] = []
+    let initialSendCallback: ((error?: Error) => void) | undefined
+    let bufferedSendCallback: ((error?: Error) => void) | undefined
+    mock.method(wsConnection, 'send', (data: unknown, callback?: (error?: Error) => void) => {
+      wireMessages.push(String(data))
+      if (wireMessages.length === 1) {
+        initialSendCallback = callback
+      } else if (wireMessages.length === 2) {
+        bufferedSendCallback = callback
+      } else {
+        callback?.()
+      }
+    })
+    const responseService = (
+      context.requestService as unknown as {
+        ocppResponseService: { responseHandler: () => Promise<undefined> }
+      }
+    ).ocppResponseService
+    mock.method(responseService, 'responseHandler', () => Promise.resolve(undefined))
+
+    const pendingRequest = context.requestService.requestHandler(
+      context.station,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+      {
+        bufferOnErrorDuringStationStop: true,
+        responseTimeoutMs: 3_600_000,
+        skipBufferingOnError: true,
+        throwError: true,
+      }
+    )
+    const rejectedRequest = assert.rejects(pendingRequest, /cancelled during station stop/)
+    await flushMicrotasks()
+    const serializedRequest = wireMessages[0]
+    const unrelatedMessage = '[2,"unrelated","Heartbeat",{}]'
+    context.station.bufferMessage(unrelatedMessage)
+
+    context.requestService.cancelPendingRequests(
+      context.station,
+      'Request cancelled during station stop'
+    )
+    await rejectedRequest
+    const bufferedStation = context.station as unknown as { messageQueue: string[] }
+    assert.deepStrictEqual(bufferedStation.messageQueue, [unrelatedMessage, serializedRequest])
+    const cachedRequest = [...context.station.requests.values()][0]
+
+    const sendMessageBuffer = (
+      ChargingStation.prototype as unknown as {
+        sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+      }
+    ).sendMessageBuffer
+    ;(
+      context.station as unknown as { sendMessageBuffer: typeof sendMessageBuffer }
+    ).sendMessageBuffer = sendMessageBuffer
+    sendMessageBuffer.call(context.station, () => undefined)
+    assert.deepStrictEqual(wireMessages, [serializedRequest, unrelatedMessage])
+
+    cachedRequest[0]({ currentTime: new Date().toISOString() }, {})
+    assert.deepStrictEqual(bufferedStation.messageQueue, [unrelatedMessage])
+    assert.strictEqual(context.station.requests.size, 0)
+
+    bufferedSendCallback?.()
+    t.mock.timers.tick(60_000)
+    await flushMicrotasks()
+
+    assert.deepStrictEqual(bufferedStation.messageQueue, [])
+    assert.deepStrictEqual(wireMessages, [serializedRequest, unrelatedMessage])
+    initialSendCallback?.(new Error('late send failure'))
+    cachedRequest[0]({ currentTime: new Date().toISOString() }, {})
+    assert.deepStrictEqual(wireMessages, [serializedRequest, unrelatedMessage])
+  })
+
+  await it('retracts a force-buffered request when CALLERROR terminates it', async () => {
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.recordRequestStatistic = () => undefined
+    context.station.emitChargingStationEvent = () => undefined
+    context.station.isStopping = () => true
+    mock.method(wsConnection, 'send', () => undefined)
+
+    const pendingRequest = context.requestService.requestHandler(
+      context.station,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+      {
+        bufferOnErrorDuringStationStop: true,
+        responseTimeoutMs: 3_600_000,
+        skipBufferingOnError: true,
+        throwError: true,
+      }
+    )
+    const rejectedRequest = assert.rejects(pendingRequest, /cancelled during station stop/)
+    await flushMicrotasks()
+    context.requestService.cancelPendingRequests(
+      context.station,
+      'Request cancelled during station stop'
+    )
+    await rejectedRequest
+    const bufferedStation = context.station as unknown as { messageQueue: string[] }
+    assert.strictEqual(bufferedStation.messageQueue.length, 1)
+    const cachedRequest = [...context.station.requests.values()][0]
+
+    cachedRequest[1](new OCPPError(ErrorType.GENERIC_ERROR, 'Terminal CALLERROR'))
+    cachedRequest[1](new OCPPError(ErrorType.GENERIC_ERROR, 'Duplicate CALLERROR'))
+
+    assert.deepStrictEqual(bufferedStation.messageQueue, [])
+    assert.strictEqual(context.station.requests.size, 0)
+  })
+
+  await it('does not remove the next frame when an in-flight buffered frame is retracted', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] })
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    const targetMessage = '[2,"target","Heartbeat",{}]'
+    const unrelatedMessage = '[2,"unrelated","Heartbeat",{}]'
+    const wireMessages: string[] = []
+    const sendCallbacks: ((error?: Error) => void)[] = []
+    mock.method(wsConnection, 'send', (data: unknown, callback?: (error?: Error) => void) => {
+      wireMessages.push(String(data))
+      if (callback != null) sendCallbacks.push(callback)
+    })
+    context.station.bufferMessage(targetMessage)
+    context.station.bufferMessage(unrelatedMessage)
+    const stationBuffer = context.station as unknown as {
+      bufferedMessageInFlight?: { message: string; retracted: boolean }
+      clearIntervalFlushMessageBuffer: () => void
+      messageQueue: string[]
+      removeBufferedMessage: (message: string) => boolean
+      sendMessageBuffer: (onComplete: () => void) => void
+    }
+    stationBuffer.clearIntervalFlushMessageBuffer = () => undefined
+    stationBuffer.removeBufferedMessage = (
+      ChargingStation.prototype as unknown as {
+        removeBufferedMessage: (this: ChargingStation, message: string) => boolean
+      }
+    ).removeBufferedMessage
+    stationBuffer.sendMessageBuffer = (
+      ChargingStation.prototype as unknown as {
+        sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+      }
+    ).sendMessageBuffer
+
+    stationBuffer.sendMessageBuffer(() => undefined)
+    assert.deepStrictEqual(wireMessages, [targetMessage])
+    assert.strictEqual(stationBuffer.removeBufferedMessage(targetMessage), true)
+    assert.deepStrictEqual(stationBuffer.messageQueue, [unrelatedMessage])
+
+    sendCallbacks.shift()?.()
+    assert.deepStrictEqual(stationBuffer.messageQueue, [unrelatedMessage])
+    t.mock.timers.tick(60_000)
+    await flushMicrotasks()
+
+    assert.deepStrictEqual(wireMessages, [targetMessage, unrelatedMessage])
+    sendCallbacks.shift()?.()
+    assert.deepStrictEqual(stationBuffer.messageQueue, [])
   })
 
   await it('does not resurrect a buffered request after cancellation', async t => {

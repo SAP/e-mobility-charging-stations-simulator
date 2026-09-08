@@ -220,6 +220,7 @@ export class ChargingStation extends EventEmitter {
   private alignedMeterValuesSetTimeout?: NodeJS.Timeout
   private alignedMeterValuesStartup?: Promise<void>
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
+  private bufferedMessageInFlight?: { message: string; retracted: boolean }
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
   private configurationFile: string
   private configurationFileHash: string
@@ -426,6 +427,7 @@ export class ChargingStation extends EventEmitter {
 
   /** Clears buffered OCPP messages that must no longer be replayed. */
   public clearMessageBuffer (): void {
+    if (this.bufferedMessageInFlight != null) this.bufferedMessageInFlight.retracted = true
     this.messageQueue.length = 0
     this.clearIntervalFlushMessageBuffer()
   }
@@ -1130,6 +1132,24 @@ export class ChargingStation extends EventEmitter {
     if (this.stationInfo?.enableStatistics === true) {
       this.performanceStatistics?.addRequestStatistic(command, messageType)
     }
+  }
+
+  /**
+   * Retracts one exact serialized OCPP frame from deferred replay.
+   * If that frame is currently being flushed, its eventual send callback is
+   * prevented from removing the next queued frame.
+   * @param message - Exact serialized OCPP frame to retract
+   * @returns Whether a matching queued frame was removed
+   */
+  public removeBufferedMessage (message: string): boolean {
+    const messageIndex = this.messageQueue.indexOf(message)
+    if (messageIndex === -1) return false
+    this.messageQueue.splice(messageIndex, 1)
+    if (messageIndex === 0 && this.bufferedMessageInFlight?.message === message) {
+      this.bufferedMessageInFlight.retracted = true
+    }
+    if (isEmpty(this.messageQueue)) this.clearIntervalFlushMessageBuffer()
+    return true
   }
 
   /**
@@ -3188,15 +3208,20 @@ export class ChargingStation extends EventEmitter {
         ;[, , commandName] = parsedMessage as OutgoingRequest
         beginId = PerformanceStatistics.beginMeasure(commandName)
       }
+      const bufferedMessageInFlight = { message, retracted: false }
+      this.bufferedMessageInFlight = bufferedMessageInFlight
       this.wsConnection?.send(message, (error?: Error) => {
         if (isRequest && commandName != null && beginId != null) {
           PerformanceStatistics.endMeasure(commandName, beginId)
+        }
+        if (this.bufferedMessageInFlight === bufferedMessageInFlight) {
+          delete this.bufferedMessageInFlight
         }
         if (error == null) {
           logger.debug(
             `${this.logPrefix()} ${moduleName}.sendMessageBuffer: >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
           )
-          this.messageQueue.shift()
+          if (!bufferedMessageInFlight.retracted) this.removeBufferedMessage(message)
         } else {
           logger.error(
             `${this.logPrefix()} ${moduleName}.sendMessageBuffer: Error while sending buffered ${getMessageTypeString(messageType)} OCPP message '${message}':`,

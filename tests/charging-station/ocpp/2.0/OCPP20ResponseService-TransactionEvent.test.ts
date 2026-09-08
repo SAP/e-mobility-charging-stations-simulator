@@ -28,6 +28,7 @@ import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { boundTransactionEventQueue } from '../../../../src/charging-station/TransactionEventQueueUtils.js'
 import {
+  ConnectorStatusEnum,
   OCPP20AuthorizationStatusEnumType,
   OCPP20MessageFormatEnumType,
   OCPP20TransactionEventEnumType,
@@ -35,6 +36,7 @@ import {
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
+  flushMicrotasks,
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
@@ -132,6 +134,42 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(requestHandler.mock.callCount(), 0)
     assert.strictEqual(startUpdated.mock.callCount(), 0)
     assert.strictEqual(startEnded.mock.callCount(), 0)
+  })
+
+  await it('does not commit a delayed Occupied status after the transaction has ended', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionPending = true
+    connectorStatus.locked = false
+    const occupiedResponse = Promise.withResolvers<Record<string, never>>()
+    const requestHandler = mock.method(
+      station.ocppRequestService,
+      'requestHandler',
+      (() => occupiedResponse.promise) as typeof station.ocppRequestService.requestHandler
+    )
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      buildTransactionEventRequest(TEST_TRANSACTION_UUID, OCPP20TransactionEventEnumType.Started)
+    )
+
+    assert.strictEqual(requestHandler.mock.callCount(), 1)
+    assert.strictEqual(connectorStatus.transactionStarted, true)
+    station.started = false
+    await testable.handleResponseTransactionEvent(
+      station,
+      {},
+      buildTransactionEventRequest(TEST_TRANSACTION_UUID, OCPP20TransactionEventEnumType.Ended)
+    )
+    assert.strictEqual(connectorStatus.transactionId, undefined)
+    assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
+
+    occupiedResponse.resolve({})
+    await flushMicrotasks()
+
+    assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
   })
 
   await it('should skip de-authorization follow-up while the transaction is ending', async () => {

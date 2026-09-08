@@ -409,6 +409,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
       hasQueuedEndedTransactionEvent(connectorStatus, requestPayload.transactionInfo.transactionId)
     const transactionEnding =
       connectorStatus != null && (isTransactionEnding(connectorStatus) || endedTransactionQueued)
+    const ownsReplayedQueueHead =
+      connectorStatus?.transactionEventQueue?.[0]?.request === requestPayload
 
     switch (requestPayload.eventType) {
       case OCPP20TransactionEventEnumType.Ended:
@@ -418,7 +420,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
             connectorId,
             connectorStatus,
             evseId,
-            requestPayload.transactionInfo.transactionId
+            requestPayload.transactionInfo.transactionId,
+            { persistTransactionEventQueue: !ownsReplayedQueueHead }
           )
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`
@@ -460,11 +463,18 @@ export class OCPP20ResponseService extends OCPPResponseService {
             connectorStatus.locked = true
           }
           if (connectorId != null && isIdTokenAccepted) {
-            sendAndSetConnectorStatus(chargingStation, {
-              connectorId,
-              connectorStatus: ConnectorStatusEnum.Occupied,
-              ...(evseId != null && { evseId }),
-            }).catch((error: unknown) => {
+            sendAndSetConnectorStatus(
+              chargingStation,
+              {
+                connectorId,
+                connectorStatus: ConnectorStatusEnum.Occupied,
+                ...(evseId != null && { evseId }),
+              },
+              {
+                expectedTransactionId: requestPayload.transactionInfo.transactionId,
+                send: true,
+              }
+            ).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error sending StatusNotification(Occupied):`,
                 error

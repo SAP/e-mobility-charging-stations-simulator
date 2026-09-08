@@ -1883,6 +1883,84 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.locked, false)
       })
 
+      await it('persists replayed Ended cleanup only after shifting the acknowledged head', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        let online = false
+        const snapshots: {
+          eventTypes: OCPP20TransactionEventEnumType[]
+          status: ConnectorStatusEnum | undefined
+          transactionId: number | string | undefined
+          transactionStarted: boolean | undefined
+        }[] = []
+        const responseService = createTestableResponseService(new OCPP20ResponseService())
+        const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<EmptyObject> => {
+          const command = args[1] as OCPP20RequestCommand
+          if (command === OCPP20RequestCommand.TRANSACTION_EVENT) {
+            const request = args[2] as OCPP20TransactionEventRequest
+            const requestParams = args[3] as RequestParams
+            requestParams.onMessageSent?.()
+            await responseService.handleResponseTransactionEvent(station, {}, request)
+            requestParams.onResponseReceived?.()
+          }
+          return {}
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          started: true,
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isWebSocketConnectionOpened = () => online
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        connectorStatus.locked = true
+
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.StopAuthorized,
+          connectorId,
+          transactionId
+        )
+        assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
+        const saveQueueSpy = mock.method(station, 'saveTransactionEventQueues', () => {
+          snapshots.push({
+            eventTypes:
+              connectorStatus.transactionEventQueue?.map(event => event.request.eventType) ?? [],
+            status: connectorStatus.status,
+            transactionId: connectorStatus.transactionId,
+            transactionStarted: connectorStatus.transactionStarted,
+          })
+        })
+        online = true
+
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+
+        assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
+        assert.strictEqual(
+          snapshots.some(
+            snapshot =>
+              snapshot.transactionStarted !== true &&
+              snapshot.eventTypes.includes(OCPP20TransactionEventEnumType.Ended)
+          ),
+          false
+        )
+        assert.deepEqual(snapshots.at(-1), {
+          eventTypes: [],
+          status: ConnectorStatusEnum.Available,
+          transactionId: undefined,
+          transactionStarted: false,
+        })
+      })
+
       await it('should preserve FIFO order when draining queue', async () => {
         const connectorId = 1
         const transactionId = generateUUID()

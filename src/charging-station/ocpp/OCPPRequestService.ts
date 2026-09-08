@@ -417,8 +417,10 @@ export abstract class OCPPRequestService {
       return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
         let responseTimeout: NodeJS.Timeout | undefined
         let sendTimeout: NodeJS.Timeout | undefined
+        let bufferedMessage: string | undefined
         let sendErrorHandled = false
         let sendErrorBuffered = false
+        let terminalResponseHandled = false
         const clearResponseTimeout = (): void => {
           if (responseTimeout != null) {
             clearTimeout(responseTimeout)
@@ -431,14 +433,25 @@ export abstract class OCPPRequestService {
             sendTimeout = undefined
           }
         }
+        const prepareTerminalResponse = (): boolean => {
+          if (terminalResponseHandled) return false
+          terminalResponseHandled = true
+          clearResponseTimeout()
+          clearSendTimeout()
+          if (bufferedMessage != null) {
+            chargingStation.removeBufferedMessage(bufferedMessage)
+            bufferedMessage = undefined
+          }
+          return true
+        }
+
         /**
          * Function that will receive the request's response
          * @param payload - The response payload
          * @param requestPayload - The original request payload
          */
         const responseCallback = (payload: JsonType, requestPayload: JsonType): void => {
-          clearResponseTimeout()
-          clearSendTimeout()
+          if (!prepareTerminalResponse()) return
           chargingStation.recordRequestStatistic(commandName, MessageType.CALL_RESULT_MESSAGE)
           try {
             params.onResponseReceived?.()
@@ -475,8 +488,7 @@ export abstract class OCPPRequestService {
          * @param requestStatistic - Whether to record request statistics
          */
         const errorCallback = (ocppError: OCPPError, requestStatistic = true): void => {
-          clearResponseTimeout()
-          clearSendTimeout()
+          if (!prepareTerminalResponse()) return
           if (requestStatistic) {
             chargingStation.recordRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE)
           }
@@ -501,6 +513,7 @@ export abstract class OCPPRequestService {
           clearResponseTimeout()
           clearSendTimeout()
           if (forceBuffer || shouldBufferOnError()) {
+            bufferedMessage = messageToSend
             chargingStation.bufferMessage(messageToSend)
             sendErrorBuffered = true
             if (messageType === MessageType.CALL_MESSAGE) {

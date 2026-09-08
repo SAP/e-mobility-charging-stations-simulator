@@ -602,13 +602,16 @@ export class OCPP20ServiceUtils {
    * @param connectorStatus - Connector status to reset
    * @param evseId - Optional EVSE identifier for EVSE-local connector ids
    * @param expectedTransactionId - Transaction that is allowed to own the connector cleanup
+   * @param options - Cleanup persistence behavior
+   * @param options.persistTransactionEventQueue - Whether to persist the queue immediately
    */
   public static async cleanupEndedTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
     connectorStatus: ConnectorStatus,
     evseId?: number,
-    expectedTransactionId?: string
+    expectedTransactionId?: string,
+    options?: { persistTransactionEventQueue?: boolean }
   ): Promise<void> {
     if (
       expectedTransactionId != null &&
@@ -646,7 +649,9 @@ export class OCPP20ServiceUtils {
     resetConnectorStatus(connectorStatus)
     chargingStation.destroyCoherentSession(txId)
     connectorStatus.locked = false
-    chargingStation.saveTransactionEventQueues()
+    if (options?.persistTransactionEventQueue !== false) {
+      chargingStation.saveTransactionEventQueues()
+    }
     if (!chargingStation.started || lifecycleAbortSignal?.aborted === true) {
       connectorStatus.status =
         chargingStation.isChargingStationAvailable() &&
@@ -2376,7 +2381,8 @@ export class OCPP20ServiceUtils {
             connectorId,
             connectorStatus,
             evseId,
-            queuedEvent.request.transactionInfo.transactionId
+            queuedEvent.request.transactionInfo.transactionId,
+            { persistTransactionEventQueue: queue[0] !== queuedEvent }
           )
         }
         if (queue[0] === queuedEvent) {
@@ -2453,7 +2459,8 @@ export class OCPP20ServiceUtils {
               connectorId,
               connectorStatus,
               evseId,
-              queuedEvent.request.transactionInfo.transactionId
+              queuedEvent.request.transactionInfo.transactionId,
+              { persistTransactionEventQueue: queue[0] !== queuedEvent }
             )
           }
           if (queue[0] === queuedEvent) {
