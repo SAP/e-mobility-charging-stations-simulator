@@ -1182,6 +1182,12 @@ export class OCPP16ServiceUtils {
           stopTransactionHasPublicKey = false
         }
 
+        const strictEndMeterValueIsSolePublicKeyCarrier =
+          oncePerTransactionPublicKey &&
+          strictEndMeterValueEnabled &&
+          endMeterValueHasPublicKey &&
+          !stopTransactionHasPublicKey
+
         const stopTransactionSnapshot: Readonly<StopTransactionRequest> = Object.freeze({
           ...snapshotOverrides,
           idTag,
@@ -1232,6 +1238,7 @@ export class OCPP16ServiceUtils {
             },
             {
               ...(endMeterValueHasPublicKey && { onMessageSent: markPublicKeyFrameSent }),
+              ...(strictEndMeterValueIsSolePublicKeyCarrier && { throwError: true }),
               skipBufferingOnError: true,
             }
           )

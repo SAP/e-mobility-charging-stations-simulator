@@ -1429,6 +1429,105 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
     })
 
+    await it('should not send a keyless stop after the sole strict end key fails before dispatch or during send', async () => {
+      const preSendFailure = new Error('MeterValues pre-send failure')
+      const sendFailure = new Error('MeterValues send failure')
+      const meterValuesPayloads: { meterValue: OCPP16MeterValue[] }[] = []
+      const meterValuesRequestParams: {
+        onMessageSent?: () => void
+        skipBufferingOnError?: boolean
+        throwError?: boolean
+      }[] = []
+      const stopPayloads: OCPP16StopTransactionRequest[] = []
+      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
+        if (args[1] === OCPP16RequestCommand.METER_VALUES) {
+          const payload = args[2] as { meterValue: OCPP16MeterValue[] }
+          const params = args[3] as (typeof meterValuesRequestParams)[number]
+          meterValuesPayloads.push(payload)
+          meterValuesRequestParams.push(params)
+          if (meterValuesPayloads.length === 1) {
+            // Match OCPPRequestService: a pre-send failure is swallowed unless the caller
+            // explicitly requests propagation.
+            return params.throwError === true
+              ? Promise.reject(preSendFailure)
+              : Promise.resolve(null)
+          }
+          if (meterValuesPayloads.length === 2) return Promise.reject(sendFailure)
+          params.onMessageSent?.()
+          return Promise.resolve({})
+        }
+        if (args[1] === OCPP16RequestCommand.STOP_TRANSACTION) {
+          stopPayloads.push(args[2] as OCPP16StopTransactionRequest)
+          return Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+        }
+        return Promise.resolve({})
+      })
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler, validateRequestPayload: () => true },
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          beginEndMeterValues: true,
+          meterSerialNumber: 'SIM-001',
+          ocppStrictCompliance: true,
+          ocppVersion: OCPPVersion.VERSION_16,
+          outOfOrderEndMeterValues: false,
+          transactionDataMeterValues: true,
+        },
+      })
+      configureSignedStop(station, 100)
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+
+      await assert.rejects(OCPP16ServiceUtils.stopTransactionOnConnector(station, 1), error => {
+        assert.strictEqual(error, preSendFailure)
+        return true
+      })
+      assert.strictEqual(stopPayloads.length, 0)
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
+
+      await assert.rejects(OCPP16ServiceUtils.stopTransactionOnConnector(station, 1), error => {
+        assert.strictEqual(error, sendFailure)
+        return true
+      })
+      assert.strictEqual(stopPayloads.length, 0)
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
+
+      await OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+
+      assert.deepStrictEqual(
+        meterValuesRequestParams.map(params => ({
+          skipBufferingOnError: params.skipBufferingOnError,
+          throwError: params.throwError,
+        })),
+        [
+          { skipBufferingOnError: true, throwError: true },
+          { skipBufferingOnError: true, throwError: true },
+          { skipBufferingOnError: true, throwError: true },
+        ]
+      )
+      assert.strictEqual(meterValuesPayloads.length, 3)
+      for (const payload of meterValuesPayloads) {
+        const signedSample = payload.meterValue[0].sampledValue.find(
+          sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA
+        )
+        assert.ok(signedSample != null)
+        assert.notStrictEqual(
+          (JSON.parse(signedSample.value) as { publicKey: string }).publicKey,
+          ''
+        )
+      }
+      assert.strictEqual(stopPayloads.length, 1)
+      const stopSignedSample = stopPayloads[0].transactionData
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .find(sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA)
+      assert.ok(stopSignedSample != null)
+      assert.strictEqual(
+        (JSON.parse(stopSignedSample.value) as { publicKey: string }).publicKey,
+        ''
+      )
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+    })
+
     await it('should retain end keys in both strict frames for EveryMeterValue', async () => {
       let meterValuesPayload: undefined | { meterValue: OCPP16MeterValue[] }
       let stopPayload: OCPP16StopTransactionRequest | undefined

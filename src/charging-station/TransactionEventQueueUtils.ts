@@ -22,6 +22,12 @@ export interface EnqueuedTransactionEventQueue extends BoundedTransactionEventQu
   inserted: boolean
 }
 
+interface FirstEventIdentity {
+  evse?: NonNullable<QueuedTransactionEvent['request']['evse']>
+  idToken?: NonNullable<QueuedTransactionEvent['request']['idToken']>
+  remoteStartId?: number
+}
+
 interface TransactionEventQueueAccounting {
   bytes: number
   endedEventCounts: Map<string, number>
@@ -394,11 +400,29 @@ const transferPublicKeys = (
 
 const transferFirstEventIdentity = (
   accounting: TransactionEventQueueAccounting,
-  removedEvents: ReadonlySet<QueuedTransactionEvent>
+  removedEvents: ReadonlySet<QueuedTransactionEvent>,
+  transferredIdentities: Map<QueuedTransactionEvent, FirstEventIdentity>
 ): void => {
   for (const removedEvent of removedEvents) {
-    if (removedEvent.request.eventType !== OCPP20TransactionEventEnumType.Started) continue
-    const { transactionId } = removedEvent.request.transactionInfo
+    const removedRequest = removedEvent.request
+    const identity =
+      removedRequest.eventType === OCPP20TransactionEventEnumType.Started
+        ? {
+            ...(removedRequest.evse != null && { evse: structuredClone(removedRequest.evse) }),
+            ...(removedRequest.idToken != null && {
+              idToken: structuredClone(removedRequest.idToken),
+            }),
+            ...(typeof removedRequest.transactionInfo.remoteStartId === 'number' &&
+              Number.isFinite(removedRequest.transactionInfo.remoteStartId) &&
+              Number.isInteger(removedRequest.transactionInfo.remoteStartId) && {
+              remoteStartId: removedRequest.transactionInfo.remoteStartId,
+            }),
+          }
+        : transferredIdentities.get(removedEvent)
+    transferredIdentities.delete(removedEvent)
+    if (identity == null) continue
+
+    const { transactionId } = removedRequest.transactionInfo
     let replacementEvent: QueuedTransactionEvent | undefined
     for (const queuedEvent of accounting.queue) {
       if (
@@ -414,24 +438,22 @@ const transferFirstEventIdentity = (
     if (replacementEvent == null) continue
 
     let changed = false
-    if (removedEvent.request.evse != null) {
-      replacementEvent.request.evse = { ...removedEvent.request.evse }
+    if (identity.evse != null) {
+      replacementEvent.request.evse = structuredClone(identity.evse)
       changed = true
     }
-    if (removedEvent.request.idToken != null) {
-      replacementEvent.request.idToken = { ...removedEvent.request.idToken }
+    if (identity.idToken != null) {
+      replacementEvent.request.idToken = structuredClone(identity.idToken)
       changed = true
     }
-    const { remoteStartId } = removedEvent.request.transactionInfo
     if (
       replacementEvent.request.transactionInfo.remoteStartId == null &&
-      typeof remoteStartId === 'number' &&
-      Number.isFinite(remoteStartId) &&
-      Number.isInteger(remoteStartId)
+      identity.remoteStartId != null
     ) {
-      replacementEvent.request.transactionInfo.remoteStartId = remoteStartId
+      replacementEvent.request.transactionInfo.remoteStartId = identity.remoteStartId
       changed = true
     }
+    transferredIdentities.set(replacementEvent, identity)
     if (changed) refreshQueuedEventBytes(accounting, replacementEvent)
   }
 }
@@ -498,6 +520,7 @@ export const boundTransactionEventQueue = (
   const { queue } = accounting
   const removedEvents: QueuedTransactionEvent[] = []
   const removedPublicKeyTransactionIds = new Set<string>()
+  const transferredFirstEventIdentities = new Map<QueuedTransactionEvent, FirstEventIdentity>()
   let changed = false
 
   const isOverHardBounds = (): boolean =>
@@ -533,7 +556,7 @@ export const boundTransactionEventQueue = (
   const remove = (candidates: readonly QueuedTransactionEvent[]): void => {
     if (candidates.length === 0) return
     const candidateSet = new Set(candidates)
-    transferFirstEventIdentity(accounting, candidateSet)
+    transferFirstEventIdentity(accounting, candidateSet, transferredFirstEventIdentities)
     const publicKeys = new Map<string, string>()
     for (const candidate of candidates) {
       const transactionId = candidate.request.transactionInfo.transactionId

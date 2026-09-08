@@ -470,6 +470,94 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(emptyResult.bytes, getTransactionEventQueueBytes([]))
   })
 
+  await it('transfers first-event identity through repeated residual evictions', () => {
+    const transactionId = '00000000-0000-4000-8000-000000000205'
+    const startedRequest: OCPP20TransactionEventRequest = {
+      eventType: OCPP20TransactionEventEnumType.Started,
+      evse: { connectorId: 2, id: 1 },
+      idToken: {
+        additionalInfo: [{ additionalIdToken: 'FIRST-EVENT-REFERENCE', type: 'ReferenceNumber' }],
+        idToken: 'first-event-token',
+        type: OCPP20IdTokenEnumType.Local,
+      },
+      seqNo: 0,
+      timestamp: new Date(7_000_000),
+      transactionInfo: { remoteStartId: 205, transactionId },
+      triggerReason: OCPP20TriggerReasonEnumType.RemoteStart,
+    }
+    const firstUpdatedRequest: OCPP20TransactionEventRequest = {
+      eventType: OCPP20TransactionEventEnumType.Updated,
+      meterValue: lifecycleMeterValues(7100),
+      seqNo: 1,
+      timestamp: new Date(7_100_000),
+      transactionInfo: { transactionId },
+      triggerReason: OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+    }
+    const secondUpdatedRequest: OCPP20TransactionEventRequest = {
+      eventType: OCPP20TransactionEventEnumType.Updated,
+      meterValue: oversizedLifecycleMeterValues(new Date(7_200_000)),
+      seqNo: 2,
+      timestamp: new Date(7_200_000),
+      transactionInfo: { transactionId },
+      triggerReason: OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+    }
+    const endedRequest: OCPP20TransactionEventRequest = {
+      eventType: OCPP20TransactionEventEnumType.Ended,
+      seqNo: 3,
+      timestamp: new Date(7_300_000),
+      transactionInfo: { transactionId },
+      triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+    }
+    for (const request of [
+      startedRequest,
+      firstUpdatedRequest,
+      secondUpdatedRequest,
+      endedRequest,
+    ]) {
+      assertSchemaValid(request)
+    }
+    const startedEvent = toQueuedEvent(startedRequest)
+    const firstUpdatedEvent = toQueuedEvent(firstUpdatedRequest)
+    const secondUpdatedEvent = toQueuedEvent(secondUpdatedRequest)
+    const endedEvent = toQueuedEvent(endedRequest)
+    assert.ok(
+      getTransactionEventQueueBytes([secondUpdatedEvent]) >
+        Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+    )
+    const connectorStatus = {
+      transactionEventQueue: [startedEvent, firstUpdatedEvent, secondUpdatedEvent, endedEvent],
+      transactionId,
+    } as unknown as ConnectorStatus
+
+    const result = boundTransactionEventQueue(connectorStatus, endedEvent)
+
+    const queue = connectorStatus.transactionEventQueue
+    assert.ok(queue != null)
+    assert.deepEqual(result.removedEvents, [firstUpdatedEvent, startedEvent, secondUpdatedEvent])
+    assert.deepEqual(queue, [endedEvent])
+    assert.deepEqual(endedRequest.evse, { connectorId: 2, id: 1 })
+    assert.deepEqual(endedRequest.idToken, {
+      additionalInfo: [{ additionalIdToken: 'FIRST-EVENT-REFERENCE', type: 'ReferenceNumber' }],
+      idToken: 'first-event-token',
+      type: OCPP20IdTokenEnumType.Local,
+    })
+    assert.strictEqual(endedRequest.transactionInfo.remoteStartId, 205)
+    assert.notStrictEqual(endedRequest.evse, startedRequest.evse)
+    assert.notStrictEqual(endedRequest.idToken, startedRequest.idToken)
+    assert.notStrictEqual(
+      endedRequest.idToken.additionalInfo,
+      startedRequest.idToken?.additionalInfo
+    )
+    assert.notStrictEqual(
+      endedRequest.idToken.additionalInfo[0],
+      startedRequest.idToken?.additionalInfo?.[0]
+    )
+    assert.ok(result.bytes <= Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES)
+    assert.strictEqual(result.bytes, getTransactionEventQueueBytes(queue))
+    assert.strictEqual(hasQueuedEndedTransactionEvent(connectorStatus, transactionId), true)
+    assertSchemaValid(endedRequest)
+  })
+
   await it('keeps a remoteStartId already present on the replay survivor', () => {
     const transactionId = '00000000-0000-4000-8000-000000000204'
     const startedEvent = toQueuedEvent({
