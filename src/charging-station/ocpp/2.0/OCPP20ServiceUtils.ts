@@ -779,7 +779,11 @@ export class OCPP20ServiceUtils {
   private static readonly replayedTransactionEventRequests =
     new WeakSet<OCPP20TransactionEventRequest>()
 
-  private static readonly retryableTransactionEventQueueFailures = new WeakSet<ConnectorStatus>()
+  private static readonly retryableTransactionEventQueueFailures = new WeakMap<
+    ConnectorStatus,
+    object
+  >()
+
   private static readonly saturatedTransactionEventQueues = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventQueueDrains = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventSendChains = new WeakMap<
@@ -2909,7 +2913,7 @@ export class OCPP20ServiceUtils {
       OCPP20ServiceUtils.incrementPendingTransactionEventDelivery(connectorStatus, transactionId)
       try {
         const retryableQueueFailureBeforeDelivery =
-          OCPP20ServiceUtils.retryableTransactionEventQueueFailures.has(connectorStatus)
+          OCPP20ServiceUtils.retryableTransactionEventQueueFailures.get(connectorStatus)
         const response = await OCPP20ServiceUtils.serializeTransactionEventDelivery(
           connectorStatus,
           async () => {
@@ -3027,7 +3031,9 @@ export class OCPP20ServiceUtils {
           }
         )
         if (
-          retryableQueueFailureBeforeDelivery &&
+          retryableQueueFailureBeforeDelivery != null &&
+          OCPP20ServiceUtils.retryableTransactionEventQueueFailures.get(connectorStatus) ===
+            retryableQueueFailureBeforeDelivery &&
           OCPP20ServiceUtils.retryableTransactionEventQueueFailures.delete(connectorStatus)
         ) {
           OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
@@ -3661,7 +3667,7 @@ export class OCPP20ServiceUtils {
               queuedEvent.request.transactionInfo.transactionId &&
             queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Started
           if (ownsRestoredStartedEvent) {
-            OCPP20ServiceUtils.retryableTransactionEventQueueFailures.add(connectorStatus)
+            OCPP20ServiceUtils.retryableTransactionEventQueueFailures.set(connectorStatus, {})
             chargingStation.saveTransactionEventQueues()
             queueChanged = false
             logger.error(
@@ -3725,7 +3731,7 @@ export class OCPP20ServiceUtils {
                   evseId
                 )
               } else {
-                OCPP20ServiceUtils.retryableTransactionEventQueueFailures.add(connectorStatus)
+                OCPP20ServiceUtils.retryableTransactionEventQueueFailures.set(connectorStatus, {})
               }
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Preserving queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()} because discarding it would lose interval energy:`,
@@ -3965,7 +3971,8 @@ export class OCPP20ServiceUtils {
     connectorStatus: ConnectorStatus,
     evseId?: number
   ): void {
-    OCPP20ServiceUtils.retryableTransactionEventQueueFailures.add(connectorStatus)
+    const retryMarker = {}
+    OCPP20ServiceUtils.retryableTransactionEventQueueFailures.set(connectorStatus, retryMarker)
     const retryDelayMs = Math.max(
       1000,
       secondsToMilliseconds(
@@ -3979,7 +3986,13 @@ export class OCPP20ServiceUtils {
       )
     )
     setTimeout(() => {
-      if (OCPP20ServiceUtils.isChargingStationStopping(chargingStation)) return
+      if (
+        OCPP20ServiceUtils.isChargingStationStopping(chargingStation) ||
+        OCPP20ServiceUtils.retryableTransactionEventQueueFailures.get(connectorStatus) !==
+          retryMarker
+      ) {
+        return
+      }
       OCPP20ServiceUtils.retryableTransactionEventQueueFailures.delete(connectorStatus)
       OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
         chargingStation,

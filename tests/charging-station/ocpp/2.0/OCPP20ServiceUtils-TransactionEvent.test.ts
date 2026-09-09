@@ -2451,7 +2451,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
         const attemptTimes: number[] = []
         const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
-          attemptTimes.push(Date.now())
+          attemptTimes.push(Number(process.hrtime.bigint() / 1_000_000n))
           const requestParams = args[3] as RequestParams
           requestParams.onMessageSent?.()
           return Promise.reject(new Error('CSMS rejected event'))

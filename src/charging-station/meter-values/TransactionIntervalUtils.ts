@@ -64,6 +64,7 @@ interface IntervalMeterValue {
 }
 
 interface IntervalSampledValue {
+  location?: string
   measurand?: string
   phase?: string
   unit?: string
@@ -76,7 +77,8 @@ export const truncateTransactionIntervalValue = (value: number): number =>
 
 export const getRepresentedTransactionIntervalEnergyWh = (
   meterValue: IntervalMeterValue,
-  numberOfPhases: number
+  numberOfPhases: number,
+  inletToOutputEfficiency = 1
 ): number => {
   let representedEnergyWh = 0
   for (const sampledValue of meterValue.sampledValue) {
@@ -90,9 +92,11 @@ export const getRepresentedTransactionIntervalEnergyWh = (
     const unitMultiplier = unit === 'kWh' ? 1000 : unit === 'MWh' ? 1_000_000 : 1
     const decimalMultiplier = 10 ** (sampledValue.unitOfMeasure?.multiplier ?? 0)
     const phaseMultiplier = /^L[123](?:-N)?$/.test(sampledValue.phase ?? '') ? numberOfPhases : 1
+    const locationMultiplier =
+      sampledValue.location === 'Inlet' && inletToOutputEfficiency > 0 ? inletToOutputEfficiency : 1
     representedEnergyWh = Math.max(
       representedEnergyWh,
-      value * unitMultiplier * decimalMultiplier * phaseMultiplier
+      value * unitMultiplier * decimalMultiplier * phaseMultiplier * locationMultiplier
     )
   }
   return representedEnergyWh

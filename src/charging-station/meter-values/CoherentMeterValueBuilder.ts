@@ -748,7 +748,11 @@ export const buildCoherentMeterValue = (
         connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
       const representedIntervalEnergy = getRepresentedTransactionIntervalEnergyWh(
         meterValue,
-        session.numberOfPhases
+        session.numberOfPhases,
+        session.currentType === CurrentType.DC &&
+          (evseIdOverride ?? context.getEvseIdByConnectorId(session.connectorId)) !== 0
+          ? (context.stationInfo?.conversionEfficiency ?? 1)
+          : 1
       )
       recordTransactionIntervalConsumption(
         meterValue,

@@ -68,6 +68,41 @@ await describe('TransactionIntervalUtils', async () => {
       ),
       9
     )
+    assert.strictEqual(
+      getRepresentedTransactionIntervalEnergyWh(
+        {
+          sampledValue: [
+            {
+              location: 'Inlet',
+              measurand: 'Energy.Active.Import.Interval',
+              unit: 'Wh',
+              value: 100,
+            },
+          ],
+        },
+        1,
+        0.9
+      ),
+      90
+    )
+    assert.strictEqual(
+      getRepresentedTransactionIntervalEnergyWh(
+        {
+          sampledValue: [
+            {
+              location: 'Inlet',
+              measurand: 'Energy.Active.Import.Interval',
+              phase: 'L1',
+              unit: 'Wh',
+              value: 100 / 3,
+            },
+          ],
+        },
+        3,
+        0.9
+      ),
+      90
+    )
   })
 
   await it('does not carry a failed interval into a replacement transaction', () => {

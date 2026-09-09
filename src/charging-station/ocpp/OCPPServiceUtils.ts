@@ -2604,7 +2604,10 @@ const buildIdentifiedMeterValue = (
           connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
         const representedIntervalEnergy = getRepresentedTransactionIntervalEnergyWh(
           meterValue,
-          chargingStation.getNumberOfPhases()
+          chargingStation.getNumberOfPhases(),
+          chargingStation.stationInfo?.currentOutType === CurrentType.DC && evseId !== 0
+            ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
+            : 1
         )
         recordTransactionIntervalConsumption(
           meterValue,
