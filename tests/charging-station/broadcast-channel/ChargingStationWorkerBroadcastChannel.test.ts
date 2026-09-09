@@ -30,6 +30,8 @@ import {
   type OCPP16StopTransactionRequest,
   OCPP16VendorParametersKey,
   OCPP20AuthorizationStatusEnumType,
+  OCPP20ComponentName,
+  OCPP20RequiredVariableName,
   OCPPVersion,
   ProcedureName,
   RequestCommand,
@@ -1354,6 +1356,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.METER_VALUES)
+      assert.strictEqual('connectorId' in sentRequests[0].payload, false)
       assert.ok(
         sentRequests[0].payload.evseId != null,
         'OCPP 2.0.1 meter values payload should contain evseId'
@@ -1362,6 +1365,97 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         Array.isArray(sentRequests[0].payload.meterValue),
         'OCPP 2.0.1 meter values payload should contain meterValue array'
       )
+    })
+    await it('should route an EVSE-only meter request to its active connector', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+      const evseStatus = station.getEvseStatus(1)
+      const connector1 = station.getConnectorStatus(1, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connector1 != null)
+      connector1.transactionId = undefined
+      connector1.transactionStarted = false
+      const connector2 = {
+        ...connector1,
+        energyActiveImportRegisterValue: 222,
+        transactionEnergyActiveImportRegisterValue: 222,
+        transactionId: 'tx-active-connector-2',
+        transactionStarted: true,
+      }
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+          value: 222,
+        },
+      ]
+      evseStatus.connectors.set(2, connector2)
+      upsertConfigurationKey(
+        station,
+        `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxUpdatedMeasurands}`,
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      testable.requestHandler({
+        data: [
+          randomUUID(),
+          BroadcastChannelProcedureName.METER_VALUES,
+          { evseId: 1, hashIds: [station.stationInfo?.hashId] },
+        ],
+      })
+      await flushMicrotasks()
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.ok(Array.isArray(sentRequests[0].payload.meterValue))
+      assert.ok(sentRequests[0].payload.meterValue.length > 0)
+    })
+
+    await it('should preserve a caller-supplied MeterValues payload', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+          value: 10,
+        },
+      ]
+      connectorStatus.transactionId = TEST_TRANSACTION_ID_STRING
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      const rawMeterValue = [
+        {
+          sampledValue: [
+            {
+              measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+              value: 321,
+            },
+          ],
+          timestamp: new Date(123),
+        },
+      ]
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      testable.requestHandler({
+        data: [
+          randomUUID(),
+          BroadcastChannelProcedureName.METER_VALUES,
+          {
+            connectorId: 1,
+            hashIds: [station.stationInfo?.hashId],
+            meterValue: rawMeterValue,
+          },
+        ],
+      })
+      await flushMicrotasks()
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.deepStrictEqual(sentRequests[0].payload.meterValue, rawMeterValue)
+      assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 0)
     })
   })
 

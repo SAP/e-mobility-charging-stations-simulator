@@ -70,6 +70,11 @@ import {
   truncateId,
 } from '../../../utils/index.js'
 import { isCoherentModeActive } from '../../meter-values/index.js'
+import {
+  captureTransactionIntervalState,
+  completeTransactionIntervalState,
+  restoreTransactionIntervalState,
+} from '../../meter-values/TransactionIntervalUtils.js'
 import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
@@ -990,17 +995,20 @@ export class OCPP16ServiceUtils {
         return
       }
       const transactionId = convertToInt(rawTransactionId)
+      const intervalState = captureTransactionIntervalState(connectorStatus)
       const meterValue = buildMeterValue(
         chargingStation,
         transactionId,
         interval
       ) as OCPP16MeterValue
+      completeTransactionIntervalState(intervalState, 'default', [meterValue])
       OCPP16ServiceUtils.appendSignedUpdatedReadings(
         chargingStation,
         connectorId,
         transactionId,
         meterValue
       )
+      const deliveryState = { buffered: false, callError: false, responseReceived: false }
       chargingStation.ocppRequestService
         .requestHandler<MeterValuesRequest, MeterValuesResponse>(
           chargingStation,
@@ -1009,9 +1017,31 @@ export class OCPP16ServiceUtils {
             connectorId,
             meterValue: [meterValue],
             transactionId,
+          },
+          {
+            onError: (_error, isCallError) => {
+              deliveryState.callError = isCallError
+              if (isCallError) {
+                restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
+              }
+            },
+            onRequestBuffered: () => {
+              deliveryState.buffered = true
+            },
+            onResponseReceived: () => {
+              deliveryState.responseReceived = true
+            },
+            throwError: true,
           }
         )
         .catch((error: unknown) => {
+          if (
+            !deliveryState.buffered &&
+            !deliveryState.callError &&
+            !deliveryState.responseReceived
+          ) {
+            restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
+          }
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error while sending '${RequestCommand.METER_VALUES}':`,
             error
@@ -1043,6 +1073,7 @@ export class OCPP16ServiceUtils {
       return Promise.reject(ensureError(error))
     }
     const rawTransactionId = connectorStatus?.transactionId
+    const lifecycleAbortSignal = chargingStation.lifecycleAbortSignal
 
     let normalizedTimestamp: Date | undefined
     if (Object.hasOwn(requestOverrides, 'timestamp')) {
@@ -1098,6 +1129,7 @@ export class OCPP16ServiceUtils {
     let terminalMeterValuesRequest: MeterValuesRequest | undefined
     let stopTransactionHasPublicKey = false
     let stopTransactionSnapshot: Readonly<StopTransactionRequest> | undefined
+    let bufferStopTransactionWithoutSending = false
     let transactionEndingOwned = false
     const clearTransactionEnding = (): void => {
       if (transactionEndingOwned) {
@@ -1271,38 +1303,84 @@ export class OCPP16ServiceUtils {
             if (terminalMeterValuesHasPublicKey) markPublicKeyFrameSent()
             meterValuesReplay.resolve(undefined)
           }
+          const lifecycleAbort = Promise.withResolvers<'aborted'>()
+          const onLifecycleAbort = (): void => {
+            lifecycleAbort.resolve('aborted')
+          }
+          if (lifecycleAbortSignal.aborted) {
+            onLifecycleAbort()
+          } else {
+            lifecycleAbortSignal.addEventListener('abort', onLifecycleAbort, { once: true })
+          }
           try {
-            await chargingStation.ocppRequestService.requestHandler<
-              MeterValuesRequest,
-              MeterValuesResponse
-            >(chargingStation, RequestCommand.METER_VALUES, terminalMeterValuesRequest, {
-              onError: (error, isCallError) => {
-                if (isCallError) {
-                  markMeterValuesDelivered()
-                } else if (!meterValuesReplaySent) {
-                  publicKeyDeliveryState.frameCached = false
-                  meterValuesReplayError = error
-                  meterValuesReplay.resolve(undefined)
-                }
-              },
-              onMessageSent: markMeterValuesDelivered,
-              onResponseReceived: markMeterValuesDelivered,
-              ...(strictEndMeterValueIsSolePublicKeyCarrier && { throwError: true }),
-              skipBufferingOnError: false,
-            })
-          } catch (error) {
-            if (
-              !OCPP16ServiceUtils.hasCachedRequestPayload(
-                chargingStation,
-                RequestCommand.METER_VALUES,
-                terminalMeterValuesRequest
+            try {
+              const meterValuesRequest = Promise.resolve(
+                chargingStation.ocppRequestService.requestHandler<
+                  MeterValuesRequest,
+                  MeterValuesResponse
+                >(chargingStation, RequestCommand.METER_VALUES, terminalMeterValuesRequest, {
+                  bufferOnErrorDuringStationStop: true,
+                  onError: (error, isCallError) => {
+                    if (isCallError) {
+                      markMeterValuesDelivered()
+                    } else if (!meterValuesReplaySent) {
+                      publicKeyDeliveryState.frameCached = false
+                      meterValuesReplayError = error
+                      meterValuesReplay.resolve(undefined)
+                    }
+                  },
+                  onMessageSent: markMeterValuesDelivered,
+                  onResponseReceived: markMeterValuesDelivered,
+                  ...(strictEndMeterValueIsSolePublicKeyCarrier && { throwError: true }),
+                  skipBufferingOnError: false,
+                })
               )
-            ) {
-              throw error
+              const requestOutcome = await Promise.race([
+                meterValuesRequest.then(() => 'settled' as const),
+                lifecycleAbort.promise,
+              ])
+              if (requestOutcome === 'aborted') {
+                bufferStopTransactionWithoutSending = OCPP16ServiceUtils.bufferCachedRequestPayload(
+                  chargingStation,
+                  RequestCommand.METER_VALUES,
+                  terminalMeterValuesRequest,
+                  new OCPPError(
+                    ErrorType.GENERIC_ERROR,
+                    'Charging station stopped while awaiting terminal MeterValues response',
+                    RequestCommand.METER_VALUES
+                  )
+                )
+                if (bufferStopTransactionWithoutSending) {
+                  publicKeyDeliveryState.frameCached = terminalMeterValuesHasPublicKey
+                } else {
+                  await meterValuesRequest
+                }
+              }
+            } catch (error) {
+              if (
+                !OCPP16ServiceUtils.hasCachedRequestPayload(
+                  chargingStation,
+                  RequestCommand.METER_VALUES,
+                  terminalMeterValuesRequest
+                )
+              ) {
+                throw error
+              }
+              publicKeyDeliveryState.frameCached = terminalMeterValuesHasPublicKey
+              await Promise.race([meterValuesReplay.promise, lifecycleAbort.promise])
+              bufferStopTransactionWithoutSending =
+                (lifecycleAbortSignal.aborted || chargingStation.isStopping()) &&
+                OCPP16ServiceUtils.hasCachedRequestPayload(
+                  chargingStation,
+                  RequestCommand.METER_VALUES,
+                  terminalMeterValuesRequest
+                )
+              if (!bufferStopTransactionWithoutSending && meterValuesReplayError != null) {
+                throw meterValuesReplayError
+              }
             }
-            publicKeyDeliveryState.frameCached = terminalMeterValuesHasPublicKey
-            await meterValuesReplay.promise
-            if (meterValuesReplayError != null) throw meterValuesReplayError
+          } finally {
+            lifecycleAbortSignal.removeEventListener('abort', onLifecycleAbort)
           }
         }
         const stopTransactionResponse = await chargingStation.ocppRequestService.requestHandler<
@@ -1317,6 +1395,7 @@ export class OCPP16ServiceUtils {
             },
           }),
           bufferOnErrorDuringStationStop: true,
+          ...(bufferStopTransactionWithoutSending && { bufferWithoutSending: true }),
           onError: (error, isCallError) => {
             if (!isCallError) {
               publicKeyDeliveryState.frameCached = false
@@ -1402,6 +1481,21 @@ export class OCPP16ServiceUtils {
         error
       )
     }
+  }
+
+  private static bufferCachedRequestPayload (
+    chargingStation: ChargingStation,
+    commandName: RequestCommand,
+    payload: unknown,
+    error: OCPPError
+  ): boolean {
+    for (const cachedRequest of chargingStation.requests.values()) {
+      const [, , cachedCommandName, cachedPayload, bufferRequest] = cachedRequest
+      if (cachedCommandName === commandName && cachedPayload === payload) {
+        return bufferRequest?.(error) === true
+      }
+    }
+    return false
   }
 
   /**

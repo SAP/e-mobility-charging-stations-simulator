@@ -113,7 +113,13 @@ export abstract class OCPPRequestService {
     for (const [messageId, [, errorCallback, , , cancelPendingSend]] of [
       ...chargingStation.requests.entries(),
     ]) {
-      if (bufferedRequestIds?.has(messageId) === true) continue
+      if (bufferedRequestIds?.has(messageId) === true) {
+        // A replay already in flight must stay queued and stop the active drain;
+        // a merely queued CALL is retained without changing its position.
+        chargingStation.retainBufferedRequest(messageId)
+        cancelPendingSend?.(cancellationError)
+        continue
+      }
       // Preserve shutdown-critical CALLs before their send timers and initiating promises are settled.
       if (!discardBufferedRequests && cancelPendingSend?.(cancellationError) === true) continue
       chargingStation.requests.delete(messageId)
@@ -517,6 +523,44 @@ export abstract class OCPPRequestService {
         const shouldBufferOnError = (): boolean =>
           params.skipBufferingOnError === false ||
           (params.bufferOnErrorDuringStationStop === true && chargingStation.isStopping())
+        const notifyMessageSent = (): void => {
+          clearResponseTimeout()
+          if (
+            messageType === MessageType.CALL_MESSAGE &&
+            params.responseTimeoutMs != null &&
+            params.responseTimeoutMs > 0
+          ) {
+            responseTimeout = setTimeout(() => {
+              errorCallback(
+                new OCPPError(
+                  ErrorType.GENERIC_ERROR,
+                  `Timeout ${formatDurationMilliSeconds(params.responseTimeoutMs ?? 0)} waiting for response to message id '${messageId}'`,
+                  commandName,
+                  messagePayload instanceof OCPPError ? messagePayload.details : undefined
+                ),
+                false
+              )
+            }, params.responseTimeoutMs)
+          }
+          try {
+            params.onMessageSent?.()
+          } catch (error: unknown) {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: onMessageSent callback failed for message id '${messageId}':`,
+              error
+            )
+          }
+        }
+        const notifyRequestBuffered = (): void => {
+          try {
+            params.onRequestBuffered?.()
+          } catch (error: unknown) {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: onRequestBuffered callback failed for message id '${messageId}':`,
+              error
+            )
+          }
+        }
         const handleSendError = (ocppError: OCPPError, forceBuffer = false): boolean => {
           if (sendErrorHandled) return sendErrorBuffered
           sendErrorHandled = true
@@ -526,6 +570,7 @@ export abstract class OCPPRequestService {
             bufferedMessage = messageToSend
             chargingStation.bufferMessage(messageToSend)
             sendErrorBuffered = true
+            notifyRequestBuffered()
             if (messageType === MessageType.CALL_MESSAGE) {
               this.setCachedRequest(
                 chargingStation,
@@ -534,8 +579,9 @@ export abstract class OCPPRequestService {
                 commandName,
                 responseCallback,
                 errorCallback,
-                undefined,
-                params.onMessageSent
+                cancelPendingSend,
+                notifyMessageSent,
+                clearResponseTimeout
               )
             }
           } else if (messageType === MessageType.CALL_MESSAGE) {
@@ -544,7 +590,26 @@ export abstract class OCPPRequestService {
           reject(ocppError)
           return sendErrorBuffered
         }
+        const forceBufferPendingRequest = (ocppError: OCPPError): boolean => {
+          if (!sendErrorHandled) return handleSendError(ocppError, true)
+          if (terminalResponseHandled) return false
+          clearResponseTimeout()
+          clearSendTimeout()
+          if (bufferedMessage == null || !chargingStation.retainBufferedMessage(bufferedMessage)) {
+            const wasBuffered = bufferedMessage != null
+            bufferedMessage = messageToSend
+            chargingStation.bufferMessage(messageToSend, wasBuffered)
+          }
+          if (!sendErrorBuffered) notifyRequestBuffered()
+          sendErrorBuffered = true
+          reject(ocppError)
+          return true
+        }
 
+        const cancelPendingSend: PendingRequestCancellationCallback | undefined =
+          messageType === MessageType.CALL_MESSAGE && params.bufferOnErrorDuringStationStop === true
+            ? forceBufferPendingRequest
+            : undefined
         chargingStation.recordRequestStatistic(commandName, messageType)
         const messageToSend = this.buildMessageToSend(
           chargingStation,
@@ -554,10 +619,6 @@ export abstract class OCPPRequestService {
           commandName
         )
         if (messageType === MessageType.CALL_MESSAGE) {
-          const cancelPendingSend: PendingRequestCancellationCallback | undefined =
-            params.bufferOnErrorDuringStationStop === true
-              ? ocppError => handleSendError(ocppError, true)
-              : undefined
           this.setCachedRequest(
             chargingStation,
             messageId,
@@ -566,8 +627,21 @@ export abstract class OCPPRequestService {
             responseCallback,
             errorCallback,
             cancelPendingSend,
-            params.onMessageSent
+            notifyMessageSent,
+            clearResponseTimeout
           )
+          if (params.bufferWithoutSending === true) {
+            handleSendError(
+              new OCPPError(
+                ErrorType.GENERIC_ERROR,
+                `Buffered message id '${messageId}' without sending`,
+                commandName,
+                messagePayload instanceof OCPPError ? messagePayload.details : undefined
+              ),
+              true
+            )
+            return
+          }
         }
         if (chargingStation.isWebSocketConnectionOpened()) {
           const beginId = PerformanceStatistics.beginMeasure(commandName)
@@ -605,19 +679,10 @@ export abstract class OCPPRequestService {
                   commandName,
                   responseCallback,
                   errorCallback,
-                  undefined,
-                  params.onMessageSent
+                  cancelPendingSend,
+                  notifyMessageSent,
+                  clearResponseTimeout
                 )
-              }
-              const notifyMessageSent = (): void => {
-                try {
-                  params.onMessageSent?.()
-                } catch (error: unknown) {
-                  logger.error(
-                    `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: onMessageSent callback failed for message id '${messageId}':`,
-                    error
-                  )
-                }
               }
               logger.debug(
                 `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: >> Command '${commandName}' sent ${getMessageTypeString(
@@ -625,19 +690,6 @@ export abstract class OCPPRequestService {
                 )} payload: ${messageToSend}`
               )
               if (messageType === MessageType.CALL_MESSAGE) {
-                if (params.responseTimeoutMs != null && params.responseTimeoutMs > 0) {
-                  responseTimeout = setTimeout(() => {
-                    errorCallback(
-                      new OCPPError(
-                        ErrorType.GENERIC_ERROR,
-                        `Timeout ${formatDurationMilliSeconds(params.responseTimeoutMs ?? 0)} waiting for response to message id '${messageId}'`,
-                        commandName,
-                        messagePayload instanceof OCPPError ? messagePayload.details : undefined
-                      ),
-                      false
-                    )
-                  }, params.responseTimeoutMs)
-                }
                 notifyMessageSent()
               } else {
                 // Resolve response
@@ -691,7 +743,8 @@ export abstract class OCPPRequestService {
     responseCallback: ResponseCallback,
     errorCallback: ErrorCallback,
     cancelPendingSend?: PendingRequestCancellationCallback,
-    onMessageSent?: () => void
+    onMessageSent?: () => void,
+    onTransportLost?: () => void
   ): void {
     chargingStation.requests.set(messageId, [
       responseCallback,
@@ -700,6 +753,7 @@ export abstract class OCPPRequestService {
       messagePayload,
       cancelPendingSend,
       onMessageSent,
+      onTransportLost,
     ])
   }
 }

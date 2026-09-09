@@ -14,6 +14,7 @@ import type { ConnectorStatus, EvseStatus } from '../../src/types/index.js'
 import { prepareConnectorStatus } from '../../src/charging-station/HelpersConnectorStatus.js'
 import {
   AvailabilityType,
+  OCPP20ConnectorStatusEnumType,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
 } from '../../src/types/index.js'
@@ -168,7 +169,18 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const evseConnectors = new Map<number, ConnectorStatus>()
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
+        locked: true,
         MeterValues: [],
+        postTransactionDelayTransactionId: 'ended-transaction',
+        status: OCPP20ConnectorStatusEnumType.Occupied,
+        transactionEnergyActiveImportIntervalBaselines: {
+          'SampledDataCtrlr.TxEndedMeasurands': 10,
+          'SampledDataCtrlr.TxUpdatedMeasurands': 20,
+        },
+        transactionEnergyActiveImportIntervalCarry: {
+          'SampledDataCtrlr.TxEndedMeasurands': 9,
+          'SampledDataCtrlr.TxUpdatedMeasurands': 2,
+        },
         transactionEventQueue: [],
         transactionUpdatedMeterValuesSetInterval: undefined,
       })
@@ -180,6 +192,9 @@ await describe('ChargingStationConfigurationUtils', async () => {
       internals.evses.set(1, {
         availability: AvailabilityType.Operative,
         connectors: evseConnectors,
+        energyActiveImportIntervalBaseline: 20,
+        energyActiveImportRegisterLastUpdatedAt: new Date(),
+        energyActiveImportRegisterValue: 25,
       })
 
       const result = buildEvsesStatus(station)
@@ -189,9 +204,31 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const evse1 = result[1][1]
       assert.ok('connectorsStatus' in evse1)
       assert.ok(!('connectors' in evse1))
+      assert.ok(!('energyActiveImportRegisterLastUpdatedAt' in evse1))
+      assert.strictEqual(evse1.energyActiveImportIntervalBaseline, 20)
+      assert.strictEqual(evse1.energyActiveImportRegisterValue, 25)
       const connectorsStatus = evse1.connectorsStatus as [number, ConnectorStatus][]
       assert.strictEqual(connectorsStatus.length, 1)
       assert.strictEqual(connectorsStatus[0][0], 1)
+      assert.strictEqual(connectorsStatus[0][1].locked, false)
+      assert.strictEqual(connectorsStatus[0][1].status, OCPP20ConnectorStatusEnumType.Unavailable)
+      assert.deepEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalBaselines, {
+        'SampledDataCtrlr.TxUpdatedMeasurands': 20,
+      })
+      assert.deepEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalCarry, {
+        'SampledDataCtrlr.TxUpdatedMeasurands': 2,
+      })
+      assert.strictEqual('postTransactionDelayTransactionId' in connectorsStatus[0][1], false)
+      const runtimeConnector = evseConnectors.get(1)
+      assert.ok(runtimeConnector)
+      runtimeConnector.transactionId = 'replacement-transaction'
+      runtimeConnector.transactionStarted = true
+      const replacementConnector = (
+        buildEvsesStatus(station)[1][1].connectorsStatus as [number, ConnectorStatus][]
+      )[0][1]
+      assert.strictEqual(replacementConnector.locked, true)
+      assert.strictEqual(replacementConnector.status, OCPP20ConnectorStatusEnumType.Occupied)
+      assert.strictEqual('postTransactionDelayTransactionId' in replacementConnector, false)
     })
 
     await it('should strip ephemeral fields and preserve queued transaction events', () => {

@@ -211,6 +211,8 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   delete connectorStatus.transactionId
   delete connectorStatus.transactionIdTag
   delete connectorStatus.transactionGroupIdToken
+  delete connectorStatus.transactionEnergyActiveImportIntervalBaselines
+  delete connectorStatus.transactionEnergyActiveImportIntervalCarry
   delete connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
   delete connectorStatus.transactionBeginMeterValue
@@ -255,6 +257,38 @@ const prepareQueuedTransactionEvent = (candidate: unknown): QueuedTransactionEve
     return undefined
   }
   const queuedEvent = candidate as unknown as QueuedTransactionEvent
+  if (queuedEvent.transactionEnergyActiveImportIntervalBaselines != null) {
+    if (!isJsonObject(queuedEvent.transactionEnergyActiveImportIntervalBaselines)) {
+      delete queuedEvent.transactionEnergyActiveImportIntervalBaselines
+    } else {
+      queuedEvent.transactionEnergyActiveImportIntervalBaselines = Object.fromEntries(
+        Object.entries(queuedEvent.transactionEnergyActiveImportIntervalBaselines).filter(
+          (entry): entry is [string, number] =>
+            typeof entry[1] === 'number' && Number.isFinite(entry[1]) && entry[1] >= 0
+        )
+      )
+    }
+  }
+  if (queuedEvent.transactionEnergyActiveImportIntervalConsumption != null) {
+    if (!isJsonObject(queuedEvent.transactionEnergyActiveImportIntervalConsumption)) {
+      delete queuedEvent.transactionEnergyActiveImportIntervalConsumption
+    } else {
+      queuedEvent.transactionEnergyActiveImportIntervalConsumption = Object.fromEntries(
+        Object.entries(queuedEvent.transactionEnergyActiveImportIntervalConsumption).filter(
+          (entry): entry is [string, number] =>
+            typeof entry[1] === 'number' && Number.isFinite(entry[1]) && entry[1] > 0
+        )
+      )
+    }
+  }
+  if (
+    queuedEvent.transactionEnergyActiveImportRegisterValue != null &&
+    (typeof queuedEvent.transactionEnergyActiveImportRegisterValue !== 'number' ||
+      !Number.isFinite(queuedEvent.transactionEnergyActiveImportRegisterValue) ||
+      queuedEvent.transactionEnergyActiveImportRegisterValue < 0)
+  ) {
+    delete queuedEvent.transactionEnergyActiveImportRegisterValue
+  }
   const queuedTimestamp = convertPersistedDate(queuedEvent.timestamp)
   const requestTimestamp = convertPersistedDate(queuedEvent.request.timestamp)
   if (queuedTimestamp == null || requestTimestamp == null) return undefined
@@ -309,6 +343,32 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
       restoredTransactionEnergy < 0)
   ) {
     connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+  }
+  const intervalBaselines = connectorStatus.transactionEnergyActiveImportIntervalBaselines
+  if (intervalBaselines != null) {
+    if (!isJsonObject(intervalBaselines)) {
+      delete connectorStatus.transactionEnergyActiveImportIntervalBaselines
+    } else {
+      connectorStatus.transactionEnergyActiveImportIntervalBaselines = Object.fromEntries(
+        Object.entries(intervalBaselines).filter(
+          (entry): entry is [string, number] =>
+            typeof entry[1] === 'number' && Number.isFinite(entry[1]) && entry[1] >= 0
+        )
+      )
+    }
+  }
+  const intervalCarry = connectorStatus.transactionEnergyActiveImportIntervalCarry
+  if (intervalCarry != null) {
+    if (!isJsonObject(intervalCarry)) {
+      delete connectorStatus.transactionEnergyActiveImportIntervalCarry
+    } else {
+      connectorStatus.transactionEnergyActiveImportIntervalCarry = Object.fromEntries(
+        Object.entries(intervalCarry).filter(
+          (entry): entry is [string, number] =>
+            typeof entry[1] === 'number' && Number.isFinite(entry[1]) && entry[1] > 0
+        )
+      )
+    }
   }
   const transactionEnergyLastUpdatedAt = convertPersistedDate(
     connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt

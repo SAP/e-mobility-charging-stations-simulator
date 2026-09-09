@@ -19,14 +19,23 @@ import { stopRunningTransactions } from '../../src/charging-station/ocpp/OCPPSer
 import {
   OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
+  OCPP16MeterValueMeasurand,
+  OCPP16MeterValueUnit,
   OCPP16RequestCommand,
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
+  OCPP16VendorParametersKey,
   OCPPVersion,
 } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/index.js'
 import { setupConnectorWithTransaction, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_PUBLIC_KEY_HEX } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
+import {
+  createMeterValuesTemplate,
+  createOCPP16RequestTestContext,
+  upsertConfigurationKey,
+} from './ocpp/1.6/OCPP16TestUtils.js'
 
 await describe('ChargingStation Lifecycle', async () => {
   await describe('Start/Stop Operations', async () => {
@@ -165,6 +174,29 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(stationLike.stopping, false)
     })
 
+    await it('retracts an in-flight OCPP 1.6 CALL when shutdown begins', async () => {
+      const inFlight = {
+        isRequest: true,
+        message: '[2,"terminal","StopTransaction",{}]',
+        retracted: false,
+        stopDrain: false,
+      }
+      const stationLike = {
+        bufferedMessageInFlight: inFlight,
+        lifecycleAbortController: new AbortController(),
+        logPrefix: () => '',
+        performStop: () => Promise.resolve(),
+        started: true,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
+        stopping: false,
+      }
+
+      await ChargingStation.prototype.stop.call(stationLike)
+
+      assert.strictEqual(inFlight.retracted, true)
+      assert.strictEqual(inFlight.stopDrain, true)
+    })
+
     await it('cancels old non-buffered requests before installing the shutdown lifecycle', async () => {
       const oldLifecycle = new AbortController()
       const stopGate = Promise.withResolvers<undefined>()
@@ -294,6 +326,283 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(connectorStatus.transactionId, undefined)
       assert.strictEqual(cancellationDuringStopTransaction, false)
       assert.strictEqual(cancelCalls, 1)
+    })
+
+    await it('buffers StopTransaction behind cached terminal MeterValues when shutdown interrupts replay', async () => {
+      const transportFailure = new Error('terminal MeterValues transport failure')
+      const firstSendFailed = Promise.withResolvers<undefined>()
+      const unavailableConnectorIds: number[] = []
+      const wireMessages: string[] = []
+      const replayCallbacks: (() => void)[] = []
+      const replayedCommands: OCPP16RequestCommand[] = []
+      let replaying = false
+      const { requestService, station: activeStation } = createOCPP16RequestTestContext({
+        stationInfo: {
+          beginEndMeterValues: true,
+          meterSerialNumber: 'SIM-001',
+          ocppStrictCompliance: true,
+          outOfOrderEndMeterValues: false,
+          transactionDataMeterValues: true,
+        },
+      })
+      station = activeStation
+      const lifecycleAbortController = new AbortController()
+      Object.assign(activeStation, {
+        internalStopMessageSequence: () => undefined,
+        lifecycleAbortController,
+        ocppIncomingRequestService: { stop: () => undefined },
+        stopAlignedMeterValues: () => undefined,
+      })
+      Object.defineProperty(activeStation, 'lifecycleAbortSignal', {
+        configurable: true,
+        get: () =>
+          (
+            activeStation as unknown as {
+              lifecycleAbortController: AbortController
+            }
+          ).lifecycleAbortController.signal,
+      })
+      activeStation.started = true
+      activeStation.isStopping = () => ChargingStation.prototype.isStopping.call(activeStation)
+      activeStation.recordRequestStatistic = () => undefined
+      activeStation.ocppRequestService = requestService
+      const acceptedBootNotificationResponse = activeStation.bootNotificationResponse
+      assert.ok(acceptedBootNotificationResponse != null)
+      setupConnectorWithTransaction(activeStation, 1, { transactionId: 103 })
+      const connectorStatus = activeStation.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.status = OCPP16ChargePointStatus.Finishing
+      connectorStatus.MeterValues = createMeterValuesTemplate([
+        {
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '0',
+        },
+      ])
+      connectorStatus.publicKeySentInTransaction = false
+      connectorStatus.transactionBeginMeterValue = {
+        sampledValue: [{ value: '0' }],
+        timestamp: new Date('2026-09-08T09:00:00.000Z'),
+      }
+      upsertConfigurationKey(
+        activeStation,
+        OCPP16VendorParametersKey.SampledDataSignReadings,
+        'true'
+      )
+      upsertConfigurationKey(
+        activeStation,
+        OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
+        'OncePerTransaction'
+      )
+      upsertConfigurationKey(
+        activeStation,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
+      const wsConnection = activeStation.wsConnection
+      assert.ok(wsConnection != null)
+      mock.method(
+        wsConnection,
+        'send',
+        (data: unknown, callback?: (error?: Error) => void): void => {
+          const message = String(data)
+          wireMessages.push(message)
+          const [, messageId, command, payload] = JSON.parse(message) as [
+            number,
+            string,
+            OCPP16RequestCommand,
+            Record<string, unknown>
+          ]
+          if (replaying) {
+            replayedCommands.push(command)
+            replayCallbacks.push(() => {
+              callback?.()
+            })
+            return
+          }
+          if (command === OCPP16RequestCommand.METER_VALUES) {
+            callback?.(transportFailure)
+            firstSendFailed.resolve(undefined)
+            return
+          }
+          callback?.()
+          if (
+            command === OCPP16RequestCommand.STATUS_NOTIFICATION &&
+            payload.status === OCPP16ChargePointStatus.Unavailable
+          ) {
+            unavailableConnectorIds.push(payload.connectorId as number)
+          }
+          const cachedRequest = activeStation.requests.get(messageId)
+          cachedRequest?.[0](
+            command === OCPP16RequestCommand.STOP_TRANSACTION
+              ? { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+              : {},
+            cachedRequest[3]
+          )
+        }
+      )
+      const performStop = (
+        ChargingStation.prototype as unknown as {
+          performStop: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stopTransactions?: boolean
+          ) => Promise<void>
+        }
+      ).performStop
+      ;(
+        activeStation as unknown as {
+          performStop: typeof performStop
+        }
+      ).performStop = performStop
+      Object.assign(activeStation, {
+        configurationFileHash: 'terminal-meter-values-shutdown-regression',
+        saveConfiguration: () => undefined,
+        sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
+      })
+      const stopMessageSequence = (
+        ChargingStation.prototype as unknown as {
+          stopMessageSequence: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stopTransactions?: boolean
+          ) => Promise<void>
+        }
+      ).stopMessageSequence
+      ;(
+        activeStation as unknown as {
+          stopMessageSequence: typeof stopMessageSequence
+        }
+      ).stopMessageSequence = async (reason, stopTransactions) => {
+        assert.strictEqual(lifecycleAbortController.signal.aborted, true)
+        assert.notStrictEqual(activeStation.lifecycleAbortSignal, lifecycleAbortController.signal)
+        assert.strictEqual(activeStation.lifecycleAbortSignal.aborted, false)
+        await stopMessageSequence.call(activeStation, reason, stopTransactions)
+      }
+
+      const callerStop = OCPP16ServiceUtils.stopTransactionOnConnector(activeStation, 1)
+      const rejectedCallerStop = assert.rejects(
+        callerStop,
+        /Buffered message id .* without sending/
+      )
+      await firstSendFailed.promise
+      const stationStop = ChargingStation.prototype.stop.call(activeStation, undefined, true)
+      await Promise.all([rejectedCallerStop, stationStop])
+
+      const stationInternals = activeStation as unknown as { messageQueue: string[] }
+      const bufferedCommands = stationInternals.messageQueue.map(
+        message => (JSON.parse(message) as [number, string, OCPP16RequestCommand])[2]
+      )
+      assert.deepStrictEqual(bufferedCommands, [
+        OCPP16RequestCommand.METER_VALUES,
+        OCPP16RequestCommand.STOP_TRANSACTION,
+      ])
+      const wireCommands = wireMessages.map(
+        message => (JSON.parse(message) as [number, string, OCPP16RequestCommand])[2]
+      )
+      assert.deepStrictEqual(
+        wireCommands.filter(
+          command =>
+            command === OCPP16RequestCommand.METER_VALUES ||
+            command === OCPP16RequestCommand.STOP_TRANSACTION
+        ),
+        [OCPP16RequestCommand.METER_VALUES]
+      )
+      assert.deepStrictEqual(
+        unavailableConnectorIds.sort((a, b) => a - b),
+        [1, 2]
+      )
+      assert.strictEqual(activeStation.requests.size, 2)
+      for (const message of stationInternals.messageQueue) {
+        const [, messageId] = JSON.parse(message) as [number, string]
+        assert.strictEqual(activeStation.requests.has(messageId), true)
+      }
+      assert.strictEqual(connectorStatus.transactionEnding, true)
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+
+      replaying = true
+      activeStation.bootNotificationResponse = acceptedBootNotificationResponse
+      activeStation.wsConnection = wsConnection
+      activeStation.isWebSocketConnectionOpened = () => true
+      const sendMessageBuffer = (
+        ChargingStation.prototype as unknown as {
+          sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+        }
+      ).sendMessageBuffer
+      ;(
+        activeStation as unknown as { sendMessageBuffer: typeof sendMessageBuffer }
+      ).sendMessageBuffer = sendMessageBuffer
+      sendMessageBuffer.call(activeStation, () => undefined)
+      assert.deepStrictEqual(replayedCommands, [OCPP16RequestCommand.METER_VALUES])
+      replayCallbacks.shift()?.()
+      sendMessageBuffer.call(activeStation, () => undefined)
+      assert.deepStrictEqual(replayedCommands, [
+        OCPP16RequestCommand.METER_VALUES,
+        OCPP16RequestCommand.STOP_TRANSACTION,
+      ])
+      replayCallbacks.shift()?.()
+      assert.strictEqual(stationInternals.messageQueue.length, 0)
+    })
+
+    await it('releases a buffered-message drain when the connection closes', () => {
+      const { station: activeStation } = createOCPP16RequestTestContext()
+      station = activeStation
+      const bufferedMessage = JSON.stringify([
+        2,
+        'interrupted-buffer-message',
+        OCPP16RequestCommand.HEARTBEAT,
+        {},
+      ])
+      const stationInternals = activeStation as unknown as {
+        flushingMessageBuffer: boolean
+        messageQueue: string[]
+      }
+      stationInternals.flushingMessageBuffer = true
+      stationInternals.messageQueue = [bufferedMessage]
+      activeStation.wsConnection = null
+      const sendMessageBuffer = (
+        ChargingStation.prototype as unknown as {
+          sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+        }
+      ).sendMessageBuffer
+      let completed = false
+
+      sendMessageBuffer.call(activeStation, () => {
+        completed = true
+        stationInternals.flushingMessageBuffer = false
+      })
+
+      assert.strictEqual(completed, true)
+      assert.strictEqual(stationInternals.flushingMessageBuffer, false)
+      assert.deepStrictEqual(stationInternals.messageQueue, [bufferedMessage])
+    })
+
+    await it('schedules buffered response replay while registration is pending', t => {
+      t.mock.timers.enable({ apis: ['setInterval'] })
+      const { station: activeStation } = createOCPP16RequestTestContext()
+      station = activeStation
+      const flushMessageBufferSpy = mock.fn()
+      const stationInternals = activeStation as unknown as {
+        flushMessageBuffer: () => void
+        flushMessageBufferSetInterval?: NodeJS.Timeout
+        messageQueue: string[]
+        setIntervalFlushMessageBuffer: () => void
+      }
+      stationInternals.flushMessageBuffer = flushMessageBufferSpy
+      stationInternals.messageQueue = ['[3,"pending-response",{}]']
+      activeStation.isWebSocketConnectionOpened = () => true
+      mock.method(activeStation, 'inAcceptedState', () => false)
+      stationInternals.setIntervalFlushMessageBuffer = (
+        ChargingStation.prototype as unknown as {
+          setIntervalFlushMessageBuffer: (this: ChargingStation) => void
+        }
+      ).setIntervalFlushMessageBuffer
+
+      stationInternals.setIntervalFlushMessageBuffer.call(activeStation)
+      t.mock.timers.tick(Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL_MS)
+
+      assert.strictEqual(flushMessageBufferSpy.mock.callCount(), 1)
+      if (stationInternals.flushMessageBufferSetInterval != null) {
+        clearInterval(stationInternals.flushMessageBufferSetInterval)
+      }
     })
 
     await it('buffers an unacknowledged StopTransaction once when station stop times out', async t => {
@@ -445,6 +754,7 @@ await describe('ChargingStation Lifecycle', async () => {
       ).sendMessageBuffer = sendMessageBuffer
       activeStation.bootNotificationResponse = acceptedBootNotificationResponse
       activeStation.wsConnection = wsConnection
+      activeStation.isWebSocketConnectionOpened = () => true
       sendMessageBuffer.call(activeStation, () => undefined)
 
       assert.strictEqual(stationInternals.messageQueue.length, 0)

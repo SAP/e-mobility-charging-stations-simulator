@@ -1125,6 +1125,61 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.strictEqual(stopAttempts, 2)
     })
 
+    await it('should buffer sent terminal MeterValues before StopTransaction when lifecycle aborts without a response', async () => {
+      const meterValuesSent = Promise.withResolvers<undefined>()
+      const lifecycleAbortController = new AbortController()
+      const wireMessages: string[] = []
+      const { requestService, station } = createOCPP16RequestTestContext({
+        stationInfo: {
+          beginEndMeterValues: true,
+          meterSerialNumber: 'SIM-001',
+          ocppStrictCompliance: true,
+          outOfOrderEndMeterValues: false,
+          transactionDataMeterValues: true,
+        },
+      })
+      Object.defineProperty(station, 'lifecycleAbortSignal', {
+        configurable: true,
+        value: lifecycleAbortController.signal,
+      })
+      station.ocppRequestService = requestService
+      station.recordRequestStatistic = () => undefined
+      configureSignedStop(station, 100)
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.status = OCPP16ChargePointStatus.Finishing
+      const wsConnection = station.wsConnection
+      assert.ok(wsConnection != null)
+      mock.method(
+        wsConnection,
+        'send',
+        (data: unknown, callback?: (error?: Error) => void): void => {
+          wireMessages.push(String(data))
+          callback?.()
+          meterValuesSent.resolve(undefined)
+        }
+      )
+
+      const stop = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+      const rejectedStop = assert.rejects(stop, /Buffered message id .* without sending/)
+      await meterValuesSent.promise
+      lifecycleAbortController.abort()
+      await rejectedStop
+
+      const { messageQueue } = station as unknown as { messageQueue: string[] }
+      assert.deepStrictEqual(
+        wireMessages.map(message => (JSON.parse(message) as [number, string, string])[2]),
+        [OCPP16RequestCommand.METER_VALUES]
+      )
+      assert.deepStrictEqual(
+        messageQueue.map(message => (JSON.parse(message) as [number, string, string])[2]),
+        [OCPP16RequestCommand.METER_VALUES, OCPP16RequestCommand.STOP_TRANSACTION]
+      )
+      assert.strictEqual(station.requests.size, 2)
+      assert.strictEqual(connectorStatus.transactionEnding, true)
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+    })
+
     await it('should send StopTransaction when replay response precedes the send callback', async t => {
       t.mock.timers.enable({ apis: ['setTimeout'] })
       const transportFailure = new Error('terminal MeterValues transport failure')

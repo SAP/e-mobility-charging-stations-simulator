@@ -10,7 +10,11 @@ import { WebSocket } from 'ws'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
-import { ChargingStationEvents, WebSocketCloseEventStatusCode } from '../../src/types/index.js'
+import {
+  ChargingStationEvents,
+  OCPP20RequestCommand,
+  WebSocketCloseEventStatusCode,
+} from '../../src/types/index.js'
 import { logger } from '../../src/utils/index.js'
 import {
   flushMicrotasks,
@@ -24,8 +28,10 @@ import {
 } from './helpers/StationHelpers.realStation.js'
 
 interface StationInternals {
+  acknowledgedBufferedMessages: Set<string>
   getReconnectDelay: () => number
   initialize: () => void
+  messageQueue: string[]
   onClose: (wsConnection: WebSocket, code: WebSocketCloseEventStatusCode, reason: Buffer) => void
   onError: (wsConnection: WebSocket, error: Error) => void
   openWSConnection: () => void
@@ -83,6 +89,31 @@ await describe('ChargingStation reconnect decision on WebSocket close', async ()
 
     assert.strictEqual(reconnectCount(), 1)
     assert.strictEqual(station.wsConnection, null)
+  })
+
+  await it('restores acknowledged buffered calls when their socket closes', () => {
+    const { socket, station } = makeStation()
+    const internals = station as unknown as StationInternals
+    const message = '[2,"replay-after-close","Heartbeat",{}]'
+    let suspendedTimeouts = 0
+    internals.acknowledgedBufferedMessages.add(message)
+    station.requests.set('replay-after-close', [
+      () => undefined,
+      () => undefined,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+      undefined,
+      undefined,
+      () => {
+        suspendedTimeouts++
+      },
+    ])
+
+    internals.onClose(socket, WebSocketCloseEventStatusCode.CLOSE_NORMAL, Buffer.from(''))
+
+    assert.deepStrictEqual(internals.messageQueue, [message])
+    assert.strictEqual(internals.acknowledgedBufferedMessages.size, 0)
+    assert.strictEqual(suspendedTimeouts, 1)
   })
 
   await it('should stay disconnected after a requested close', () => {

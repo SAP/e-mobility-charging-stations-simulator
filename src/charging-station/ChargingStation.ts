@@ -47,6 +47,9 @@ import {
   MapStringifyFormat,
   MessageType,
   MeterValueMeasurand,
+  OCPP20ComponentName,
+  OCPP20ReadingContextEnumType,
+  OCPP20RequiredVariableName,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -117,6 +120,7 @@ import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/index
 import { CoherentMeterValuesManager } from './CoherentMeterValuesManager.js'
 import {
   addConfigurationKey,
+  buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
   setConfigurationKeyValue,
@@ -215,12 +219,20 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
+  private acceptedMessageSequenceStartup?: Promise<void>
+  private readonly acknowledgedBufferedMessages = new Set<string>()
   private alignedMeterValuesGeneration = 0
   private alignedMeterValuesRestartPending = false
   private alignedMeterValuesSetTimeout?: NodeJS.Timeout
   private alignedMeterValuesStartup?: Promise<void>
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
-  private bufferedMessageInFlight?: { message: string; retracted: boolean }
+  private bufferedMessageInFlight?: {
+    isRequest: boolean
+    message: string
+    retracted: boolean
+    stopDrain?: boolean
+  }
+
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
   private configurationFile: string
   private configurationFileHash: string
@@ -317,21 +329,20 @@ export class ChargingStation extends EventEmitter {
       parentPort?.postMessage(buildUpdatedMessage(this))
     })
     this.on(ChargingStationEvents.accepted, () => {
-      this.startMessageSequence(
+      this.startAcceptedMessageSequence(
         this.wsConnectionRetryCount > 0
           ? true
           : this.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration
-      )
-        .then(() => this.startAlignedMeterValuesAfterReplay())
-        .catch((error: unknown) => {
-          logger.error(
-            `${this.logPrefix()} ${moduleName}.onAccepted: Error while starting the message sequence:`,
-            error
-          )
-        })
+      ).catch((error: unknown) => {
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.onAccepted: Error while starting accepted-state services:`,
+          error
+        )
+      })
       this.wsConnectionRetryCount = 0
     })
     this.on(ChargingStationEvents.rejected, () => {
+      this.acceptedMessageSequenceStartup = undefined
       this.wsConnectionRetryCount = 0
     })
     this.on(ChargingStationEvents.connected, () => {
@@ -340,6 +351,7 @@ export class ChargingStation extends EventEmitter {
       }
     })
     this.on(ChargingStationEvents.disconnected, () => {
+      this.acceptedMessageSequenceStartup = undefined
       try {
         this.internalStopMessageSequence()
       } catch (error) {
@@ -402,10 +414,15 @@ export class ChargingStation extends EventEmitter {
 
   /**
    * Buffers an OCPP message for deferred sending when connection is unavailable.
-   * @param message - The OCPP message to buffer
+   * @param message - The OCPP message to buffer.
+   * @param prepend - Whether to restore the message ahead of queued successors.
    */
-  public bufferMessage (message: string): void {
-    this.messageQueue.push(message)
+  public bufferMessage (message: string, prepend = false): void {
+    if (prepend) {
+      this.messageQueue.unshift(message)
+    } else {
+      this.messageQueue.push(message)
+    }
     this.setIntervalFlushMessageBuffer()
   }
 
@@ -428,6 +445,7 @@ export class ChargingStation extends EventEmitter {
   /** Clears buffered OCPP messages that must no longer be replayed. */
   public clearMessageBuffer (): void {
     if (this.bufferedMessageInFlight != null) this.bufferedMessageInFlight.retracted = true
+    this.acknowledgedBufferedMessages.clear()
     this.messageQueue.length = 0
     this.clearIntervalFlushMessageBuffer()
   }
@@ -567,13 +585,15 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
-   * Returns the ids of buffered CALL frames awaiting replay.
-   * Malformed buffered frames are ignored here and handled by the normal flush path.
-   * @returns Buffered OCPP CALL message ids
+   * Restores acknowledged-but-unanswered replayed CALLs to their original FIFO prefix,
+   * then returns the ids of all buffered CALL frames. Malformed frames are ignored here
+   * and handled by the normal flush path.
+   * @returns Buffered OCPP CALL message ids.
    */
   public getBufferedRequestIds (): Set<string> {
+    this.restoreAcknowledgedBufferedMessages()
     const messageIds = new Set<string>()
-    for (const message of this.messageQueue) {
+    for (const message of [...this.messageQueue, ...this.acknowledgedBufferedMessages.values()]) {
       try {
         const parsedMessage = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
         if (parsedMessage[0] === MessageType.CALL_MESSAGE) messageIds.add(parsedMessage[1])
@@ -1078,6 +1098,9 @@ export class ChargingStation extends EventEmitter {
     if (params.terminateOpened) {
       this.terminateWSConnection()
     }
+    if (this.wsConnection != null && !this.isWebSocketConnectionOpened()) {
+      this.restoreAcknowledgedBufferedMessages()
+    }
 
     if (this.isWebSocketConnectionOpened()) {
       logger.warn(
@@ -1148,8 +1171,9 @@ export class ChargingStation extends EventEmitter {
    */
   public removeBufferedMessage (message: string): boolean {
     const messageIndex = this.messageQueue.indexOf(message)
-    if (messageIndex === -1) return false
+    if (messageIndex === -1) return this.acknowledgedBufferedMessages.delete(message)
     this.messageQueue.splice(messageIndex, 1)
+    this.acknowledgedBufferedMessages.delete(message)
     if (messageIndex === 0 && this.bufferedMessageInFlight?.message === message) {
       this.bufferedMessageInFlight.retracted = true
     }
@@ -1221,8 +1245,71 @@ export class ChargingStation extends EventEmitter {
     this.start()
   }
 
-  /** Restarts the autonomous clock-aligned MeterValues timer (e.g. after an Interval change). */
-  public restartAlignedMeterValues (): void {
+  /**
+   * Restarts the autonomous clock-aligned MeterValues timer.
+   * @param previousInterval - Previous interval in milliseconds, used to settle elapsed energy.
+   * @param settleDisabledInterval - Settle the current interval while disabling aligned sampling.
+   */
+  public restartAlignedMeterValues (
+    previousInterval?: number,
+    settleDisabledInterval = false
+  ): void {
+    const disabledIntervalSeconds = settleDisabledInterval
+      ? OCPP20ServiceUtils.readAlignedDataIntervalSeconds(this)
+      : undefined
+    const settlementInterval =
+      previousInterval ??
+      (disabledIntervalSeconds != null ? secondsToMilliseconds(disabledIntervalSeconds) : undefined)
+    if (
+      this.started &&
+      !this.stopping &&
+      settlementInterval != null &&
+      settlementInterval > 0 &&
+      (settleDisabledInterval ||
+        OCPP20ServiceUtils.readVariableAsBoolean(
+          this,
+          OCPP20ComponentName.AlignedDataCtrlr,
+          OCPP20RequiredVariableName.Enabled,
+          false
+        ))
+    ) {
+      const timestamp = new Date()
+      const energyNominalInterval = OCPP20ServiceUtils.getTransactionEnergyNominalInterval(
+        this,
+        settlementInterval
+      )
+      for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
+        if (
+          connectorStatus.transactionStarted !== true ||
+          connectorStatus.transactionId == null ||
+          connectorStatus.transactionEnding === true ||
+          connectorStatus.transactionRestored === true
+        ) {
+          continue
+        }
+        try {
+          OCPP20ServiceUtils.buildTransactionMeterValue(
+            this,
+            connectorId,
+            evseId,
+            connectorStatus.transactionId,
+            settlementInterval,
+            buildConfigKey(
+              OCPP20ComponentName.AlignedDataCtrlr,
+              OCPP20RequiredVariableName.Measurands
+            ),
+            OCPP20ReadingContextEnumType.SAMPLE_CLOCK,
+            timestamp,
+            energyNominalInterval,
+            true
+          )
+        } catch (error: unknown) {
+          logger.warn(
+            `${this.logPrefix()} ${moduleName}.restartAlignedMeterValues: Failed to settle connector ${connectorId.toString()}: ${getErrorMessage(error)}`
+          )
+        }
+      }
+    }
     this.stopAlignedMeterValues()
     if (!this.started || this.stopping) {
       this.alignedMeterValuesRestartPending = false
@@ -1242,10 +1329,113 @@ export class ChargingStation extends EventEmitter {
     this.startHeartbeat()
   }
 
+  /**
+   * Restarts active OCPP 2.0 transaction sampling timers after an interval change.
+   * @param kind - Timer family to restart.
+   * @param interval - New interval in milliseconds.
+   * @param previousInterval - Previous interval in milliseconds, used to settle elapsed energy.
+   */
+  public restartTransactionMeterValues (
+    kind: 'ended' | 'updated',
+    interval: number,
+    previousInterval?: number
+  ): void {
+    const timestamp = new Date()
+    const previousEnergyNominalInterval =
+      previousInterval != null && previousInterval > 0
+        ? OCPP20ServiceUtils.getTransactionEnergyNominalInterval(this, previousInterval, {
+          ...(kind === 'ended' && { txEndedInterval: previousInterval }),
+          ...(kind === 'updated' && { txUpdatedInterval: previousInterval }),
+        })
+        : undefined
+    for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
+      if (
+        connectorStatus.transactionStarted !== true ||
+        connectorStatus.transactionId == null ||
+        connectorStatus.transactionEnding === true ||
+        connectorStatus.transactionRestored === true
+      ) {
+        continue
+      }
+      if (previousInterval != null && previousInterval > 0) {
+        try {
+          OCPP20ServiceUtils.buildTransactionMeterValue(
+            this,
+            connectorId,
+            evseId,
+            connectorStatus.transactionId,
+            previousInterval,
+            buildConfigKey(
+              OCPP20ComponentName.SampledDataCtrlr,
+              kind === 'updated'
+                ? OCPP20RequiredVariableName.TxUpdatedMeasurands
+                : OCPP20RequiredVariableName.TxEndedMeasurands
+            ),
+            kind === 'updated'
+              ? OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
+              : OCPP20ReadingContextEnumType.TRANSACTION_END,
+            timestamp,
+            previousEnergyNominalInterval,
+            true
+          )
+        } catch (error: unknown) {
+          logger.warn(
+            `${this.logPrefix()} ${moduleName}.restartTransactionMeterValues: Failed to settle connector ${connectorId.toString()}: ${getErrorMessage(error)}`
+          )
+        }
+      }
+      if (kind === 'updated') {
+        OCPP20ServiceUtils.stopUpdatedMeterValues(this, connectorId, evseId)
+        OCPP20ServiceUtils.startUpdatedMeterValues(this, connectorId, interval, evseId)
+      } else {
+        OCPP20ServiceUtils.stopEndedMeterValues(this, connectorId, evseId)
+        OCPP20ServiceUtils.startEndedMeterValues(this, connectorId, interval, evseId)
+      }
+    }
+  }
+
   /** Restarts the WebSocket ping interval. */
   public restartWebSocketPing (): void {
     this.stopWebSocketPing()
     this.startWebSocketPing()
+  }
+
+  /**
+   * Keeps an exact deferred frame queued when its in-flight replay is cancelled.
+   * @param message - Exact serialized OCPP frame to retain
+   * @returns Whether a matching queued frame exists
+   */
+  public retainBufferedMessage (message: string): boolean {
+    const messageIndex = this.messageQueue.indexOf(message)
+    if (messageIndex !== -1) {
+      if (messageIndex === 0 && this.bufferedMessageInFlight?.message === message) {
+        this.bufferedMessageInFlight.retracted = true
+        this.bufferedMessageInFlight.stopDrain = true
+      }
+      return true
+    }
+    if (!this.acknowledgedBufferedMessages.has(message)) return false
+    this.restoreAcknowledgedBufferedMessages()
+    return true
+  }
+
+  /**
+   * Keeps a buffered CALL identified by its OCPP message id.
+   * @param messageId - OCPP unique message identifier
+   * @returns Whether a matching queued request exists
+   */
+  public retainBufferedRequest (messageId: string): boolean {
+    for (const message of [...this.messageQueue, ...this.acknowledgedBufferedMessages.values()]) {
+      try {
+        const parsedMessage = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
+        if (parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId) {
+          return this.retainBufferedMessage(message)
+        }
+      } catch {
+        // Malformed frames cannot match a request id and are handled by the flush path.
+      }
+    }
+    return false
   }
 
   /** Persists the current OCPP configuration to storage. */
@@ -1315,6 +1505,42 @@ export class ChargingStation extends EventEmitter {
       }
       this.saveStationInfo()
       this.emitChargingStationEvent(ChargingStationEvents.updated)
+    }
+  }
+
+  /** Settles elapsed transaction energy before changing the active measurand family. */
+  public settleTransactionEnergyMeterValues (): void {
+    if (!this.started || this.stopping) return
+    const meteringConfiguration = OCPP20ServiceUtils.getTransactionEnergyMeteringConfiguration(this)
+    if (meteringConfiguration == null) return
+    const timestamp = new Date()
+    for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
+      if (
+        connectorStatus.transactionStarted !== true ||
+        connectorStatus.transactionId == null ||
+        connectorStatus.transactionEnding === true ||
+        connectorStatus.transactionRestored === true
+      ) {
+        continue
+      }
+      try {
+        OCPP20ServiceUtils.buildTransactionMeterValue(
+          this,
+          connectorId,
+          evseId,
+          connectorStatus.transactionId,
+          meteringConfiguration.interval,
+          meteringConfiguration.measurandsKey,
+          meteringConfiguration.context,
+          timestamp,
+          meteringConfiguration.interval,
+          true
+        )
+      } catch (error: unknown) {
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.settleTransactionEnergyMeterValues: Failed to settle connector ${connectorId.toString()}: ${getErrorMessage(error)}`
+        )
+      }
     }
   }
 
@@ -1532,14 +1758,22 @@ export class ChargingStation extends EventEmitter {
     }
 
     this.stopping = true
+    if (this.bufferedMessageInFlight != null) {
+      this.bufferedMessageInFlight.stopDrain = true
+      if (this.bufferedMessageInFlight.isRequest) {
+        this.bufferedMessageInFlight.retracted = true
+      }
+    }
+    this.lifecycleAbortController?.abort()
     if (isOCPP20x(this.stationInfo?.ocppVersion)) {
-      this.lifecycleAbortController?.abort()
       // Settle old-generation non-buffered requests before shutdown work joins
       // the strict per-connector delivery chain. Buffered CALLs remain available
-      // for replay; shutdown-generated requests use the fresh lifecycle signal.
+      // for replay.
       this.ocppRequestService.cancelPendingRequests(this)
-      this.lifecycleAbortController = new AbortController()
     }
+    // Shutdown work uses a fresh generation while operations that began before
+    // stop() observe the aborted generation and release their lifecycle waits.
+    this.lifecycleAbortController = new AbortController()
     const stopPromise = this.performStop(reason, stopTransactions)
     this.stopPromise = stopPromise
     try {
@@ -1633,7 +1867,11 @@ export class ChargingStation extends EventEmitter {
   }
 
   private flushMessageBuffer (): void {
-    if (!this.flushingMessageBuffer && isNotEmptyArray<string>(this.messageQueue)) {
+    if (
+      !this.isStopping() &&
+      !this.flushingMessageBuffer &&
+      isNotEmptyArray<string>(this.messageQueue)
+    ) {
       this.flushingMessageBuffer = true
       this.sendMessageBuffer(() => {
         this.flushingMessageBuffer = false
@@ -2326,6 +2564,20 @@ export class ChargingStation extends EventEmitter {
           ])
       for (const [evseId, evseStatusConfiguration] of evseEntries) {
         const evseStatus = clone(evseStatusConfiguration)
+        if (
+          typeof evseStatus.energyActiveImportRegisterValue !== 'number' ||
+          !Number.isFinite(evseStatus.energyActiveImportRegisterValue) ||
+          evseStatus.energyActiveImportRegisterValue < 0
+        ) {
+          delete evseStatus.energyActiveImportRegisterValue
+        }
+        if (
+          typeof evseStatus.energyActiveImportIntervalBaseline !== 'number' ||
+          !Number.isFinite(evseStatus.energyActiveImportIntervalBaseline) ||
+          evseStatus.energyActiveImportIntervalBaseline < 0
+        ) {
+          delete evseStatus.energyActiveImportIntervalBaseline
+        }
         delete evseStatus.connectorsStatus
         const connIsTupleFormat =
           evseStatusConfiguration.connectorsStatus != null &&
@@ -2647,6 +2899,7 @@ export class ChargingStation extends EventEmitter {
       return
     }
     this.wsConnection = null
+    this.restoreAcknowledgedBufferedMessages()
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
     switch (code) {
@@ -2833,7 +3086,10 @@ export class ChargingStation extends EventEmitter {
         } succeeded`
       )
       let registrationRetryCount = 0
-      if (!this.inAcceptedState()) {
+      const wasAcceptedAtOpen = this.inAcceptedState()
+      if (isNotEmptyArray(this.messageQueue)) this.setIntervalFlushMessageBuffer()
+      this.flushMessageBuffer()
+      if (!wasAcceptedAtOpen) {
         do {
           await this.ocppRequestService.requestHandler<
             BootNotificationRequest,
@@ -2869,7 +3125,7 @@ export class ChargingStation extends EventEmitter {
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `${this.logPrefix()} ${moduleName}.onOpen: Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${this.stationInfo?.registrationMaxRetries?.toString()})`
         )
-      } else {
+      } else if (wasAcceptedAtOpen) {
         await this.startAlignedMeterValuesAfterReplay()
       }
       this.emitChargingStationEvent(ChargingStationEvents.updated)
@@ -3049,6 +3305,21 @@ export class ChargingStation extends EventEmitter {
     resolve?.()
   }
 
+  private restoreAcknowledgedBufferedMessages (): void {
+    if (this.acknowledgedBufferedMessages.size === 0) return
+    for (const message of this.acknowledgedBufferedMessages) {
+      try {
+        const [, messageId] = JSON.parse(message) as OutgoingRequest
+        this.requests.get(messageId)?.[6]?.()
+      } catch {
+        // Invalid buffered frames are discarded by sendMessageBuffer after reconnect.
+      }
+    }
+    this.messageQueue.unshift(...this.acknowledgedBufferedMessages.values())
+    this.acknowledgedBufferedMessages.clear()
+    this.setIntervalFlushMessageBuffer()
+  }
+
   private saveAutomaticTransactionGeneratorConfiguration (): void {
     if (this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration === true) {
       this.saveConfiguration()
@@ -3192,33 +3463,72 @@ export class ChargingStation extends EventEmitter {
   }
 
   private sendMessageBuffer (onCompleteCallback: () => void, messageIdx?: number): void {
+    if (this.isStopping() || !this.isWebSocketConnectionOpened()) {
+      onCompleteCallback()
+      return
+    }
+    const replayLifecycleSignal = this.lifecycleAbortController?.signal
     if (isNotEmptyArray<string>(this.messageQueue)) {
-      const message = this.messageQueue[0]
+      const messageIndex = this.inAcceptedState()
+        ? 0
+        : this.messageQueue.findIndex(bufferedMessage => {
+          try {
+            const [messageType] = JSON.parse(bufferedMessage) as
+                ErrorResponse | OutgoingRequest | Response
+            return messageType !== MessageType.CALL_MESSAGE
+          } catch {
+            return true
+          }
+        })
+      if (messageIndex < 0) {
+        onCompleteCallback()
+        return
+      }
+      const message = this.messageQueue[messageIndex]
       let beginId: string | undefined
       let commandName: RequestCommand | undefined
       let messageId: string | undefined
       let parsedMessage: ErrorResponse | OutgoingRequest | Response
       messageIdx ??= 0
       try {
-        parsedMessage = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
+        const parsedBufferedMessage: unknown = JSON.parse(message)
+        if (!Array.isArray(parsedBufferedMessage)) {
+          throw new TypeError('Buffered OCPP message is not an array')
+        }
+        parsedMessage = parsedBufferedMessage as ErrorResponse | OutgoingRequest | Response
       } catch (error) {
         logger.error(
           `${this.logPrefix()} ${moduleName}.sendMessageBuffer: Error while parsing buffered OCPP message '${message}' to JSON:`,
           error
         )
-        this.messageQueue.shift()
+        this.messageQueue.splice(messageIndex, 1)
         this.sendMessageBuffer(onCompleteCallback, messageIdx)
         return
       }
       const [messageType] = parsedMessage
       const isRequest = messageType === MessageType.CALL_MESSAGE
+      if (isRequest && !this.inAcceptedState()) {
+        onCompleteCallback()
+        return
+      }
       if (isRequest) {
         ;[, messageId, commandName] = parsedMessage as OutgoingRequest
         beginId = PerformanceStatistics.beginMeasure(commandName)
       }
-      const bufferedMessageInFlight = { message, retracted: false }
+      const bufferedMessageInFlight: {
+        isRequest: boolean
+        message: string
+        retracted: boolean
+        stopDrain?: boolean
+      } = { isRequest, message, retracted: false }
       this.bufferedMessageInFlight = bufferedMessageInFlight
-      this.wsConnection?.send(message, (error?: Error) => {
+      const replayConnection = this.wsConnection
+      if (replayConnection == null) {
+        delete this.bufferedMessageInFlight
+        onCompleteCallback()
+        return
+      }
+      replayConnection.send(message, (error?: Error) => {
         if (isRequest && commandName != null && beginId != null) {
           PerformanceStatistics.endMeasure(commandName, beginId)
         }
@@ -3226,25 +3536,33 @@ export class ChargingStation extends EventEmitter {
           delete this.bufferedMessageInFlight
         }
         if (error == null) {
-          if (isRequest && messageId != null) {
-            try {
-              this.requests.get(messageId)?.[5]?.()
-            } catch (error: unknown) {
-              logger.error(
-                `${this.logPrefix()} ${moduleName}.sendMessageBuffer: onMessageSent callback failed for buffered message id '${messageId}':`,
-                error
-              )
+          if (!bufferedMessageInFlight.retracted && replayConnection === this.wsConnection) {
+            if (isRequest && messageId != null) {
+              try {
+                this.requests.get(messageId)?.[5]?.()
+              } catch (error: unknown) {
+                logger.error(
+                  `${this.logPrefix()} ${moduleName}.sendMessageBuffer: onMessageSent callback failed for buffered message id '${messageId}':`,
+                  error
+                )
+              }
             }
+            logger.debug(
+              `${this.logPrefix()} ${moduleName}.sendMessageBuffer: >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
+            )
+            this.removeBufferedMessage(message)
+            if (isRequest) this.acknowledgedBufferedMessages.add(message)
           }
-          logger.debug(
-            `${this.logPrefix()} ${moduleName}.sendMessageBuffer: >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
-          )
-          if (!bufferedMessageInFlight.retracted) this.removeBufferedMessage(message)
         } else {
           logger.error(
             `${this.logPrefix()} ${moduleName}.sendMessageBuffer: Error while sending buffered ${getMessageTypeString(messageType)} OCPP message '${message}':`,
             error
           )
+        }
+        if (bufferedMessageInFlight.stopDrain === true) {
+          onCompleteCallback()
+          this.flushMessageBuffer()
+          return
         }
         // eslint-disable-next-line promise/no-promise-in-callback -- exponential-backoff sleep inside a WebSocket callback; failures on the outer send are surfaced separately
         sleep(
@@ -3255,6 +3573,11 @@ export class ChargingStation extends EventEmitter {
           })
         )
           .then(() => {
+            if (replayLifecycleSignal?.aborted === true) {
+              onCompleteCallback()
+              this.flushMessageBuffer()
+              return undefined
+            }
             if (messageIdx != null) {
               ++messageIdx
             }
@@ -3272,13 +3595,42 @@ export class ChargingStation extends EventEmitter {
 
   private setIntervalFlushMessageBuffer (): void {
     this.flushMessageBufferSetInterval ??= setInterval(() => {
-      if (this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
+      if (this.isWebSocketConnectionOpened()) {
         this.flushMessageBuffer()
       }
       if (!this.isWebSocketConnectionOpened() || isEmpty(this.messageQueue)) {
         this.clearIntervalFlushMessageBuffer()
       }
     }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL_MS)
+  }
+
+  private async startAcceptedMessageSequence (ATGStopAbsoluteDuration?: boolean): Promise<void> {
+    this.acceptedMessageSequenceStartup ??= (async () => {
+      try {
+        await this.startMessageSequence(ATGStopAbsoluteDuration)
+      } catch (error) {
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.startAcceptedMessageSequence: Error while starting the message sequence:`,
+          error
+        )
+      }
+      if (
+        this.started &&
+        !this.stopping &&
+        this.isWebSocketConnectionOpened() &&
+        this.inAcceptedState()
+      ) {
+        await this.startAlignedMeterValuesAfterReplay()
+      }
+    })()
+    const startup = this.acceptedMessageSequenceStartup
+    try {
+      await startup
+    } finally {
+      if (this.acceptedMessageSequenceStartup === startup) {
+        this.acceptedMessageSequenceStartup = undefined
+      }
+    }
   }
 
   private async startAlignedMeterValuesAfterReplay (): Promise<void> {
@@ -3317,11 +3669,15 @@ export class ChargingStation extends EventEmitter {
   }
 
   private async startMessageSequence (ATGStopAbsoluteDuration?: boolean): Promise<void> {
+    const responseTimeoutMs = isOCPP20x(this.stationInfo?.ocppVersion)
+      ? OCPP20ServiceUtils.getMessageTimeout(this)
+      : secondsToMilliseconds(Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS)
     if (this.stationInfo?.autoRegister === true) {
       await this.ocppRequestService.requestHandler<
         BootNotificationRequest,
         BootNotificationResponse
       >(this, RequestCommand.BOOT_NOTIFICATION, this.bootNotificationRequest, {
+        responseTimeoutMs,
         skipBufferingOnError: true,
       })
     }
@@ -3332,19 +3688,30 @@ export class ChargingStation extends EventEmitter {
       this.startHeartbeat()
     }
     for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
-      await sendAndSetConnectorStatus(this, {
-        connectorId,
-        ...(evseId != null && { evseId }),
-        status: getBootConnectorStatus(this, connectorId, connectorStatus),
-      })
+      await sendAndSetConnectorStatus(
+        this,
+        {
+          connectorId,
+          ...(evseId != null && { evseId }),
+          status: getBootConnectorStatus(this, connectorId, connectorStatus),
+        },
+        { responseTimeoutMs, send: true }
+      )
     }
     if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
       await this.ocppRequestService.requestHandler<
         FirmwareStatusNotificationRequest,
         FirmwareStatusNotificationResponse
-      >(this, RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-        status: FirmwareStatus.Installed,
-      })
+      >(
+        this,
+        RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+        {
+          status: FirmwareStatus.Installed,
+        },
+        {
+          responseTimeoutMs,
+        }
+      )
       this.stationInfo.firmwareStatus = FirmwareStatus.Installed
     }
 

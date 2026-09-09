@@ -81,8 +81,6 @@ import {
   type OCPP20LogStatusNotificationResponse,
   OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
-  type OCPP20MeterValuesRequest,
-  type OCPP20MeterValuesResponse,
   type OCPP20NotifyCustomerInformationRequest,
   type OCPP20NotifyCustomerInformationResponse,
   type OCPP20NotifyReportRequest,
@@ -161,6 +159,7 @@ import {
   hasPendingReservations,
   resetConnectorStatus,
 } from '../../index.js'
+import { getTransactionIntervalConsumptions } from '../../meter-values/TransactionIntervalUtils.js'
 import {
   AuthContext,
   AuthResultStatus,
@@ -175,7 +174,6 @@ import {
 } from '../OCPPConnectorStatusOperations.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import {
-  buildMeterValue,
   createPayloadValidatorMap,
   isIncomingRequestCommandSupported,
 } from '../OCPPServiceUtils.js'
@@ -1592,17 +1590,35 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     errorHandler: (error: unknown) => void
   ): void {
     const meterValues: OCPP20MeterValue[] = []
-    for (const connector of evseStatus.connectors.values()) {
+    const timestamp = new Date()
+    const intervalStates = new Map(
+      [...evseStatus.connectors.values()].map(connectorStatus => [
+        connectorStatus,
+        {
+          consumed: 0,
+          transactionId: connectorStatus.transactionId?.toString(),
+        },
+      ])
+    )
+    for (const [connectorId, connector] of evseStatus.connectors) {
       if (connector.transactionId == null) continue
       let meterValue: OCPP20MeterValue
       try {
-        meterValue = buildMeterValue(
+        meterValue = OCPP20ServiceUtils.buildTransactionMeterValue(
           chargingStation,
+          connectorId,
+          evseId,
           connector.transactionId,
           alignedInterval,
           alignedMeasurandsKey,
-          OCPP20ReadingContextEnumType.TRIGGER
-        ) as OCPP20MeterValue
+          OCPP20ReadingContextEnumType.TRIGGER,
+          timestamp
+        )
+        const intervalState = intervalStates.get(connector)
+        if (intervalState != null) {
+          intervalState.consumed =
+            getTransactionIntervalConsumptions([meterValue])?.[alignedMeasurandsKey] ?? 0
+        }
       } catch (error) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.emitEvseMeterValues: ${getErrorMessage(error)}`
@@ -1628,17 +1644,30 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         timestamp: new Date(),
       })
     }
-    chargingStation.ocppRequestService
-      .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
-        chargingStation,
-        OCPP20RequestCommand.METER_VALUES,
-        {
-          evseId,
-          meterValue: meterValues,
+    OCPP20ServiceUtils.sendClockAlignedMeterValuesRequest(
+      chargingStation,
+      evseId,
+      { evseId, meterValue: meterValues },
+      undefined,
+      [...intervalStates].map(([connectorStatus, intervalState]) => ({
+        consumed: intervalState.consumed,
+        generation: intervalState.transactionId,
+        key: connectorStatus,
+        restore: (consumed: number) => {
+          if (
+            consumed <= 0 ||
+            connectorStatus.transactionId?.toString() !== intervalState.transactionId
+          ) {
+            return
+          }
+          connectorStatus.transactionEnergyActiveImportIntervalCarry ??= {}
+          connectorStatus.transactionEnergyActiveImportIntervalCarry[alignedMeasurandsKey] =
+            (connectorStatus.transactionEnergyActiveImportIntervalCarry[alignedMeasurandsKey] ??
+              0) + consumed
         },
-        { skipBufferingOnError: true, triggerMessage: true }
-      )
-      .catch(errorHandler)
+      })),
+      true
+    ).catch(errorHandler)
   }
 
   private getRestoredConnectorStatus (
@@ -4538,6 +4567,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       OCPP20ComponentName.SampledDataCtrlr,
       OCPP20RequiredVariableName.TxUpdatedMeasurands
     )
+    const timestamp = new Date()
     for (const { connectorId, evseId, transactionId } of this.resolveActiveTransactionConnectors(
       chargingStation,
       evse
@@ -4548,15 +4578,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       // is the F06.FR.07-mandatory core, so omit the meterValue field on failure.
       let eventPayload: { meterValue?: [OCPP20MeterValue] } = {}
       try {
-        const meterValue = buildMeterValue(
+        const meterValue = OCPP20ServiceUtils.buildTransactionMeterValue(
           chargingStation,
+          connectorId,
+          evseId,
           transactionId,
           txUpdatedInterval,
           txUpdatedMeasurandsKey,
           OCPP20ReadingContextEnumType.TRIGGER,
-          false,
-          { connectorId, evseId }
-        ) as OCPP20MeterValue
+          timestamp
+        )
         // OCPP 2.0.1 `MeterValueType.sampledValue` cardinality is `1..*`, while
         // `TransactionEventRequest.meterValue` is `0..*`: when TxUpdatedMeasurands
         // yields no sampled values, omit the `meterValue` field entirely rather
@@ -4575,7 +4606,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         OCPP20TriggerReasonEnumType.Trigger,
         connectorId,
         transactionId,
-        { ...eventPayload, evseId }
+        { ...eventPayload, evseId, timestamp }
       ).catch(errorHandler)
     }
   }

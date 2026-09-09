@@ -46,6 +46,7 @@ export type CachedRequest = [
   IncomingRequestCommand | RequestCommand,
   JsonType,
   PendingRequestCancellationCallback?,
+  (() => void)?,
   (() => void)?
 ]
 
@@ -66,7 +67,7 @@ export type IncomingRequest = [MessageType.CALL_MESSAGE, string, IncomingRequest
 export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand, JsonType]
 
 /**
- * Cancels a request whose WebSocket send has not been acknowledged yet.
+ * Cancels a pending request while retaining its serialized CALL for replay when requested.
  * Returns whether the serialized CALL was retained for replay.
  */
 export type PendingRequestCancellationCallback = (ocppError: OCPPError) => boolean
@@ -91,11 +92,15 @@ export const RequestCommand = {
 export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand
 
 export interface RequestParams {
-  /** Preserve a failed send for reconnect replay when station shutdown is in progress. */
+  /** Preserve a pending CALL for reconnect replay when station shutdown is in progress. */
   bufferOnErrorDuringStationStop?: boolean
+  /** Internal CALL-only path: cache the built frame without attempting a transport send. */
+  bufferWithoutSending?: boolean
   /** Called when a CALL ends with CALLERROR or a local cancellation/timeout. */
   onError?: (error: OCPPError, isCallError: boolean) => void
   onMessageSent?: () => void
+  /** Called when the serialized CALL is retained for reconnect replay. */
+  onRequestBuffered?: () => void
   onResponseReceived?: () => void
   rawPayload?: boolean
   responseTimeoutMs?: number

@@ -27,6 +27,7 @@ export interface ConnectorStatus {
   locked?: boolean
   maximumPower?: number // In W
   MeterValues: SampledValueTemplate[]
+  postTransactionDelayTransactionId?: number | string
   publicKeySentInTransaction?: boolean
   remoteStartId?: number
   reservation?: Reservation
@@ -37,6 +38,8 @@ export interface ConnectorStatus {
   transactionEndedMeterValues?: MeterValue[]
   transactionEndedMeterValuesSetInterval?: NodeJS.Timeout
   transactionEnding?: boolean
+  transactionEnergyActiveImportIntervalBaselines?: Record<string, number> // In Wh
+  transactionEnergyActiveImportIntervalCarry?: Record<string, number> // In Wh
   transactionEnergyActiveImportRegisterLastUpdatedAt?: Date
   transactionEnergyActiveImportRegisterValue?: number // In Wh
   transactionEventQueue?: QueuedTransactionEvent[]
@@ -60,4 +63,7 @@ export interface QueuedTransactionEvent {
   request: OCPP20TransactionEventRequest
   seqNo: number
   timestamp: Date
+  transactionEnergyActiveImportIntervalBaselines?: Record<string, number>
+  transactionEnergyActiveImportIntervalConsumption?: Record<string, number>
+  transactionEnergyActiveImportRegisterValue?: number
 }

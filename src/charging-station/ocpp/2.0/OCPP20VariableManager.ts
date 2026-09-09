@@ -1,4 +1,4 @@
-import { millisecondsToSeconds } from 'date-fns'
+import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
 
 import { BaseError } from '../../../exception/index.js'
 import {
@@ -1095,7 +1095,20 @@ export class OCPP20VariableManager {
 
     let rebootRequired = false
     const configurationKeyName = computeScopedConfigurationKeyName(variableMetadata, component)
-    const previousValue = getConfigurationKey(chargingStation, configurationKeyName)?.value
+    const previousValue =
+      this.getRuntimeOverrides(stationId).get(variableKey) ??
+      getConfigurationKey(chargingStation, configurationKeyName)?.value
+
+    const componentName = component.name.toLowerCase()
+    const variableName = variable.name.toLowerCase()
+    const changesEnergyMeasurands =
+      previousValue !== attributeValue &&
+      ((componentName === OCPP20ComponentName.SampledDataCtrlr.toLowerCase() &&
+        (variableName === OCPP20RequiredVariableName.TxUpdatedMeasurands.toLowerCase() ||
+          variableName === OCPP20RequiredVariableName.TxEndedMeasurands.toLowerCase())) ||
+        (componentName === OCPP20ComponentName.AlignedDataCtrlr.toLowerCase() &&
+          variableName === OCPP20RequiredVariableName.Measurands.toLowerCase()))
+    if (changesEnergyMeasurands) chargingStation.settleTransactionEnergyMeterValues()
 
     if (isPersistent(variableMetadata) && !isWriteOnly(variableMetadata)) {
       const configKey = getConfigurationKey(chargingStation, configurationKeyName)
@@ -1137,14 +1150,23 @@ export class OCPP20VariableManager {
       const variableName = variable.name.toLowerCase()
       if (variableName === OCPP20RequiredVariableName.AlignedDataInterval.toLowerCase()) {
         const alignedDataInterval = convertToIntOrNaN(attributeValue)
-        if (!Number.isNaN(alignedDataInterval) && alignedDataInterval > 0) {
-          chargingStation.restartAlignedMeterValues()
-        } else {
-          chargingStation.stopAlignedMeterValues()
+        const previousAlignedDataInterval = convertToIntOrNaN(previousValue)
+        if (
+          !Number.isNaN(alignedDataInterval) &&
+          alignedDataInterval >= 0 &&
+          previousValue !== attributeValue
+        ) {
+          chargingStation.restartAlignedMeterValues(
+            !Number.isNaN(previousAlignedDataInterval) && previousAlignedDataInterval > 0
+              ? secondsToMilliseconds(previousAlignedDataInterval)
+              : undefined
+          )
         }
       } else if (variableName === OCPP20RequiredVariableName.Enabled.toLowerCase()) {
         if (attributeValue.trim().toLowerCase() === 'true') {
           chargingStation.restartAlignedMeterValues()
+        } else if (previousValue?.trim().toLowerCase() === 'true') {
+          chargingStation.restartAlignedMeterValues(undefined, true)
         } else {
           chargingStation.stopAlignedMeterValues()
         }
@@ -1153,6 +1175,39 @@ export class OCPP20VariableManager {
     // Apply volatile runtime override generically (single location)
     if (isVolatile(variableMetadata)) {
       this.getRuntimeOverrides(stationId).set(variableKey, attributeValue)
+    }
+    if (component.name.toLowerCase() === OCPP20ComponentName.SampledDataCtrlr.toLowerCase()) {
+      const variableName = variable.name.toLowerCase()
+      const intervalSeconds = convertToIntOrNaN(attributeValue)
+      const previousIntervalSeconds = convertToIntOrNaN(
+        previousValue ??
+          (variableName === OCPP20RequiredVariableName.TxUpdatedInterval.toLowerCase()
+            ? Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS.toString()
+            : '0')
+      )
+      if (
+        !Number.isNaN(intervalSeconds) &&
+        intervalSeconds >= 0 &&
+        previousValue !== attributeValue
+      ) {
+        const previousInterval =
+          !Number.isNaN(previousIntervalSeconds) && previousIntervalSeconds > 0
+            ? secondsToMilliseconds(previousIntervalSeconds)
+            : undefined
+        if (variableName === OCPP20RequiredVariableName.TxUpdatedInterval.toLowerCase()) {
+          chargingStation.restartTransactionMeterValues(
+            'updated',
+            secondsToMilliseconds(intervalSeconds),
+            previousInterval
+          )
+        } else if (variableName === OCPP20RequiredVariableName.TxEndedInterval.toLowerCase()) {
+          chargingStation.restartTransactionMeterValues(
+            'ended',
+            secondsToMilliseconds(intervalSeconds),
+            previousInterval
+          )
+        }
+      }
     }
 
     if (rebootRequired) {

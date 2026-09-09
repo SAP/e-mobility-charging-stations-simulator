@@ -17,7 +17,7 @@
  * skipped; enabled non-physical templates with finite fixed values are emitted.
  * Only measurands enabled by the caller-resolved allow-list are included.
  * The energy register is advanced unconditionally by the caller through
- * {@link ./CoherentSampleComputer.advanceEnergyRegister} independent of
+ * {@link ./CoherentSampleComputer.advanceTransactionEnergyRegister} independent of
  * whether the Energy measurand is emitted.
  */
 
@@ -33,6 +33,8 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
+  OCPP16MeterValueFormat,
+  OCPPVersion,
 } from '../../types/index.js'
 import {
   Constants,
@@ -44,13 +46,21 @@ import {
   roundTo,
 } from '../../utils/index.js'
 import {
-  advanceEnergyRegister,
+  advanceConnectorEnergyRegister,
   advanceStationEnergyRegister,
+  advanceTransactionEnergyRegister,
   computeCoherentSampleAtTime,
+  consumePendingSharedEnergy,
   getCoherentSampleSnapshot,
+  recordPendingSharedEnergy,
   ROUNDING_SCALE,
 } from './CoherentSampleComputer.js'
-import { buildSampledValueFamilyKey } from './MeterValueUtils.js'
+import { buildSampledValueFamilyKey, canonicalizeCustomData } from './MeterValueUtils.js'
+import {
+  getRepresentedTransactionIntervalEnergyWh,
+  recordTransactionIntervalConsumption,
+  truncateTransactionIntervalValue,
+} from './TransactionIntervalUtils.js'
 
 const moduleName = 'CoherentMeterValueBuilder'
 
@@ -127,6 +137,7 @@ const MEASURAND_EMIT_ORDER = [
   MeterValueMeasurand.VOLTAGE,
   MeterValueMeasurand.POWER_ACTIVE_IMPORT,
   MeterValueMeasurand.CURRENT_IMPORT,
+  MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
   MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
 ] as const satisfies readonly MeterValueMeasurand[]
 
@@ -176,6 +187,21 @@ const groupTemplatesByMeasurand = (
 
 const isLineToNeutralTemplate = (t: SampledValueTemplate): boolean =>
   phaseFamily(t.phase) === 'LineToNeutral'
+
+const energyIntervalFallbackIdentity = (
+  template: SampledValueTemplate,
+  context: MeterValueContext | undefined,
+  ocppVersion: OCPPVersion | undefined
+): string =>
+  JSON.stringify([
+    template.phase,
+    template.location ?? MeterValueLocation.OUTLET,
+    (template.unit as MeterValueUnit | undefined) ?? MeterValueUnit.WATT_HOUR,
+    context ?? template.context ?? MeterValueContext.SAMPLE_PERIODIC,
+    ocppVersion === OCPPVersion.VERSION_16
+      ? (template.format ?? OCPP16MeterValueFormat.RAW)
+      : canonicalizeCustomData(template.customData),
+  ])
 
 const templateFamilyKey = (
   template: SampledValueTemplate,
@@ -274,10 +300,11 @@ const applyRegisterValuesWithoutPhases = (
  * @param currentType - Session current topology.
  * @param connectorStatus - Connector status (for the energy register).
  * @param energyRegisterWhOverride - Explicit register selected by caller semantics.
+ * @param energyIntervalWhOverride - Transaction interval energy selected by caller semantics.
  * @returns Value to emit, or `undefined` if the combination is unsupported.
  *
- * Supported measurands: `Current.Import`, `Energy.Active.Import.Register`,
- * `Power.Active.Import`, `SoC`, `Voltage`. Other OCPP-defined measurands
+ * Supported measurands: `Current.Import`, `Energy.Active.Import.Interval`,
+ * `Energy.Active.Import.Register`, `Power.Active.Import`, `SoC`, `Voltage`. Other OCPP-defined measurands
  * (notably `Power.Factor`, `Power.Reactive.Import`, `Frequency`,
  * `Temperature`) return `undefined` so the emission path logs and skips
  * the template. `EvProfile.powerFactor` scales the AC current/power chain
@@ -292,7 +319,8 @@ const resolvePhasedValue = (
   numberOfPhases: number,
   currentType: CurrentType,
   connectorStatus: ConnectorStatus,
-  energyRegisterWhOverride?: number
+  energyRegisterWhOverride?: number,
+  energyIntervalWhOverride?: number
 ): number | undefined => {
   const family = phaseFamily(phase)
   if (family === 'Unsupported') return undefined
@@ -312,6 +340,13 @@ const resolvePhasedValue = (
       if (family === 'LineToLine') return undefined
       if (family === 'Neutral') return 0
       return sample.currentA
+    case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL:
+      if (family === 'LineToLine' || family === 'Neutral') return undefined
+      if (family === 'LineToNeutral') {
+        if (numberOfPhases <= 0) return undefined
+        return (energyIntervalWhOverride ?? sample.deltaEnergyWh) / numberOfPhases
+      }
+      return energyIntervalWhOverride ?? sample.deltaEnergyWh
     case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER: {
       if (family === 'LineToLine' || family === 'Neutral') return undefined
       const register = Math.max(
@@ -356,6 +391,7 @@ const KILO_UNIT_BY_MEASURAND: ReadonlyMap<MeterValueMeasurand, MeterValueUnit> =
   MeterValueMeasurand,
   MeterValueUnit
 >([
+  [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL, MeterValueUnit.KILO_WATT_HOUR],
   [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, MeterValueUnit.KILO_WATT_HOUR],
   [MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueUnit.KILO_WATT],
 ])
@@ -470,6 +506,7 @@ const projectEnergyRegisterWh = (
  * @param connectorStatusOverride - Exact connector state when connector ids are EVSE-local.
  * @param evseIdOverride - Exact EVSE id when connector ids are EVSE-local.
  * @param energyRegisterWhOverride - Explicit register selected by caller semantics.
+ * @param energyIntervalWhOverride - Transaction interval energy already committed by a peer.
  * @returns MeterValue projected in stable measurand/template order.
  */
 const serializeCoherentMeterValue = (
@@ -485,7 +522,8 @@ const serializeCoherentMeterValue = (
   timestamp = new Date(),
   connectorStatusOverride?: ConnectorStatus,
   evseIdOverride?: number,
-  energyRegisterWhOverride?: number
+  energyRegisterWhOverride?: number,
+  energyIntervalWhOverride?: number
 ): MeterValue => {
   const connectorStatus = connectorStatusOverride ?? context.getConnectorStatus(connectorId)
   if (connectorStatus == null) {
@@ -493,6 +531,41 @@ const serializeCoherentMeterValue = (
   }
   const templates = resolveTemplates(context, connectorId, connectorStatus, evseIdOverride)
   const groups = groupTemplatesByMeasurand(templates)
+  if (enabledMeasurands?.has(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) === true) {
+    const intervalTemplates = groups.get(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) ?? []
+    const intervalTemplateIdentities = new Set(
+      intervalTemplates.map(template =>
+        energyIntervalFallbackIdentity(template, mvContext, context.stationInfo?.ocppVersion)
+      )
+    )
+    const intervalFallbacks = (groups.get(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) ?? [])
+      .filter(template => {
+        const intervalTemplate = {
+          ...template,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+        } as SampledValueTemplate
+        return !intervalTemplateIdentities.has(
+          energyIntervalFallbackIdentity(
+            intervalTemplate,
+            mvContext,
+            context.stationInfo?.ocppVersion
+          )
+        )
+      })
+      .map(
+        template =>
+          ({
+            ...template,
+            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          }) as SampledValueTemplate
+      )
+    if (intervalFallbacks.length > 0) {
+      groups.set(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL, [
+        ...intervalTemplates,
+        ...intervalFallbacks,
+      ])
+    }
+  }
   if (registerValuesWithoutPhases === true) {
     applyRegisterValuesWithoutPhases(groups, mvContext)
   }
@@ -533,7 +606,8 @@ const serializeCoherentMeterValue = (
         numberOfPhases,
         currentType,
         connectorStatus,
-        templateEnergyRegisterWh
+        templateEnergyRegisterWh,
+        energyIntervalWhOverride
       )
       if (raw == null) {
         logger.warn(
@@ -542,11 +616,15 @@ const serializeCoherentMeterValue = (
         continue
       }
       const physicalValue =
-        measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+        measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT ||
+        measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
           ? projectDcOutputValue(context, currentType, effectiveEvseId, template, raw)
           : raw
       const unitDivider = resolveUnitDivider(measurand, template.unit as MeterValueUnit | undefined)
-      const scaled = roundTo(physicalValue / unitDivider, ROUNDING_SCALE)
+      const scaled =
+        measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+          ? truncateTransactionIntervalValue(physicalValue / unitDivider)
+          : roundTo(physicalValue / unitDivider, ROUNDING_SCALE)
       sampledValue.push(buildVersionedSampledValue(template, scaled, mvContext))
     }
   }
@@ -592,7 +670,10 @@ export const buildCoherentMeterValue = (
   connectorStatusOverride?: ConnectorStatus,
   evseIdOverride?: number,
   useTransactionEnergyRegister = false,
-  explicitEnergyRegisterWhOverride?: number
+  explicitEnergyRegisterWhOverride?: number,
+  commitEnergyRegisters = true,
+  deferEnergyInterval = false,
+  intervalBaselineKey = 'default'
 ): MeterValue => {
   const connectorStatus = connectorStatusOverride ?? context.getConnectorStatus(session.connectorId)
   if (connectorStatus == null) {
@@ -602,26 +683,46 @@ export const buildCoherentMeterValue = (
     return { sampledValue: [], timestamp: new Date() }
   }
   const snapshotOnly = mvContext === MeterValueContext.TRANSACTION_BEGIN
+  const intervalBaseline =
+    connectorStatus.transactionEnergyActiveImportIntervalBaselines?.[intervalBaselineKey] ?? 0
+  const carriedIntervalEnergy =
+    connectorStatus.transactionEnergyActiveImportIntervalCarry?.[intervalBaselineKey] ?? 0
   const sample = snapshotOnly
     ? getCoherentSampleSnapshot(context, connectorStatus, session)
     : computeCoherentSampleAtTime(context, connectorStatus, session, options, evseIdOverride)
+  let committedSharedEnergyWh = 0
   if (!snapshotOnly) {
-    advanceEnergyRegister(connectorStatus, sample.deltaEnergyWh)
-    advanceStationEnergyRegister(
-      context,
-      evseIdOverride ?? context.getEvseIdByConnectorId(session.connectorId),
-      session.currentType,
-      MeterValueLocation.OUTLET,
-      sample.deltaEnergyWh
-    )
+    advanceTransactionEnergyRegister(connectorStatus, sample.deltaEnergyWh)
+    const previousEnergyUpdate = connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
+    if (previousEnergyUpdate == null || timestamp > previousEnergyUpdate) {
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = timestamp
+    }
+    if (commitEnergyRegisters) {
+      committedSharedEnergyWh = consumePendingSharedEnergy(session, sample.deltaEnergyWh)
+      advanceConnectorEnergyRegister(connectorStatus, committedSharedEnergyWh)
+      advanceStationEnergyRegister(
+        context,
+        evseIdOverride ?? context.getEvseIdByConnectorId(session.connectorId),
+        session.currentType,
+        MeterValueLocation.OUTLET,
+        committedSharedEnergyWh
+      )
+    } else {
+      recordPendingSharedEnergy(session, sample.deltaEnergyWh)
+    }
   }
   const energyRegisterWhOverride =
     explicitEnergyRegisterWhOverride != null
-      ? explicitEnergyRegisterWhOverride + (snapshotOnly ? 0 : sample.deltaEnergyWh)
+      ? explicitEnergyRegisterWhOverride + committedSharedEnergyWh
       : useTransactionEnergyRegister
         ? (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
         : undefined
-  return serializeCoherentMeterValue(
+  const intervalEnergyValue =
+    Math.max(
+      0,
+      (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) - intervalBaseline
+    ) + carriedIntervalEnergy
+  const meterValue = serializeCoherentMeterValue(
     context,
     session.connectorId,
     session.numberOfPhases,
@@ -634,8 +735,34 @@ export const buildCoherentMeterValue = (
     timestamp,
     connectorStatus,
     evseIdOverride,
-    energyRegisterWhOverride
+    energyRegisterWhOverride,
+    intervalEnergyValue
   )
+  if (!snapshotOnly && !deferEnergyInterval) {
+    const emitsIntervalEnergy = meterValue.sampledValue.some(
+      sampledValue => sampledValue.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+    )
+    if (emitsIntervalEnergy) {
+      connectorStatus.transactionEnergyActiveImportIntervalBaselines ??= {}
+      connectorStatus.transactionEnergyActiveImportIntervalBaselines[intervalBaselineKey] =
+        connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+      const representedIntervalEnergy = getRepresentedTransactionIntervalEnergyWh(
+        meterValue,
+        session.numberOfPhases
+      )
+      recordTransactionIntervalConsumption(
+        meterValue,
+        intervalBaselineKey,
+        representedIntervalEnergy
+      )
+      connectorStatus.transactionEnergyActiveImportIntervalCarry ??= {}
+      connectorStatus.transactionEnergyActiveImportIntervalCarry[intervalBaselineKey] = Math.max(
+        0,
+        intervalEnergyValue - representedIntervalEnergy
+      )
+    }
+  }
+  return meterValue
 }
 
 /**

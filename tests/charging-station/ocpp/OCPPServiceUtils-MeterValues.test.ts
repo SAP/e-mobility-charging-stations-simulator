@@ -104,6 +104,28 @@ await describe('buildMeterValue', async () => {
       assert.ok(Array.isArray(meterValue.sampledValue))
     })
 
+    await it('should project OCPP 1.6 DC inlet register energy', () => {
+      assert.ok(station.stationInfo != null)
+      station.stationInfo.conversionEfficiency = 0.8
+      station.stationInfo.currentOutType = CurrentType.DC
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.energyActiveImportRegisterValue = 800
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 800
+      connectorStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          location: MeterValueLocation.INLET,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+      ] as unknown as SampledValueTemplate[]
+
+      const meterValue = buildMeterValue(station, TEST_TRANSACTION_ID, 0)
+
+      assert.strictEqual(meterValue.sampledValue[0]?.value, '1000')
+    })
+
     await it('should throw when transactionId not found', () => {
       assert.throws(
         () => buildMeterValue(station, 999, 0),

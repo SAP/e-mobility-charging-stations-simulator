@@ -38,6 +38,7 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
+  OCPP16MeterValueFormat,
   OCPP20ComponentName,
   type OCPP20MeterValue,
   OCPP20OptionalVariableName,
@@ -85,6 +86,11 @@ import {
   canonicalizeCustomData,
 } from '../meter-values/MeterValueUtils.js'
 import {
+  getRepresentedTransactionIntervalEnergyWh,
+  recordTransactionIntervalConsumption,
+  truncateTransactionIntervalValue,
+} from '../meter-values/TransactionIntervalUtils.js'
+import {
   buildOCPP16BootNotificationRequest,
   buildOCPP16SampledValue,
 } from './1.6/OCPP16RequestBuilders.js'
@@ -129,6 +135,7 @@ interface MultiPhaseMeasurandData {
 }
 
 interface SingleValueMeasurandData {
+  phaseValues?: { template: SampledValueTemplate; value: number }[]
   template: SampledValueTemplate
   value: number
 }
@@ -440,32 +447,35 @@ const buildEnergyMeasurandValue = (
   interval: number,
   evseId?: number,
   measurandsKey?: ConfigurationKeyType,
-  snapshot = false,
-  connectorLocalFallback = false
+  snapshotOnly = false,
+  connectorLocalFallback = false,
+  timeScale = 1,
+  allowPhaseFallback = true
 ): null | SingleValueMeasurandData => {
-  if (
-    snapshot &&
-    resolveEnabledMeasurands(chargingStation, measurandsKey)?.has(
-      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-    ) === false
-  ) {
-    return null
-  }
-  const energyTemplate = getSampledValueTemplate(
+  const enabledMeasurands = resolveEnabledMeasurands(chargingStation, measurandsKey)
+  const energyMeasurand =
+    enabledMeasurands?.has(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) !== false
+      ? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      : enabledMeasurands.has(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL)
+        ? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+        : undefined
+  if (snapshotOnly && energyMeasurand == null) return null
+  const configuredEnergyTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
     measurandsKey,
-    undefined,
+    energyMeasurand,
     evseId,
     undefined,
     connectorLocalFallback
   )
-  if (energyTemplate == null) {
-    return null
-  }
-  if (snapshot) {
-    return { template: energyTemplate, value: 0 }
-  }
+  const intervalTemplates =
+    allowPhaseFallback && energyMeasurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+      ? resolveEnergyIntervalTemplates(chargingStation, connectorId, evseId, undefined)
+      : []
+  const energyTemplate = configuredEnergyTemplate ?? intervalTemplates.at(0)
+  if (energyTemplate == null) return null
+  if (snapshotOnly) return { template: energyTemplate, value: 0 }
 
   checkMeasurandPowerDivider(chargingStation, energyTemplate.measurand)
   const unitDivider =
@@ -478,7 +488,8 @@ const buildEnergyMeasurandValue = (
     (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
     2
   )
-  const connectorMinimumEnergyRounded = roundTo(energyTemplate.minimumValue ?? 0, 2)
+  const minimumEnergy = energyTemplate.minimumValue ?? 0
+  const connectorMinimumEnergyRounded = roundTo(minimumEnergy * unitDivider * timeScale, 2)
 
   const energyValueRounded = isNotEmptyString(energyTemplate.value)
     ? getRandomFloatFluctuatedRounded(
@@ -487,9 +498,9 @@ const buildEnergyMeasurandValue = (
         connectorMaximumEnergyRounded,
         connectorMinimumEnergyRounded,
         {
-          fallbackValue: connectorMinimumEnergyRounded,
+          fallbackValue: minimumEnergy,
           limitationEnabled: chargingStation.stationInfo?.customValueLimitationMeterValues,
-          unitMultiplier: unitDivider,
+          unitMultiplier: unitDivider * timeScale,
         }
       ),
       energyTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
@@ -506,7 +517,9 @@ const updateConnectorEnergyValues = (
   chargingStation: ChargingStation,
   connectorStatus: ConnectorStatus | undefined,
   energyValue: number,
-  evseId?: number
+  evseId?: number,
+  transactionEnergyValue = energyValue,
+  timestamp?: Date
 ): void => {
   if (connectorStatus != null) {
     if (
@@ -516,7 +529,7 @@ const updateConnectorEnergyValues = (
       connectorStatus.transactionEnergyActiveImportRegisterValue >= 0
     ) {
       connectorStatus.energyActiveImportRegisterValue += energyValue
-      connectorStatus.transactionEnergyActiveImportRegisterValue += energyValue
+      connectorStatus.transactionEnergyActiveImportRegisterValue += transactionEnergyValue
     } else {
       connectorStatus.energyActiveImportRegisterValue = 0
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
@@ -528,6 +541,20 @@ const updateConnectorEnergyValues = (
       MeterValueLocation.OUTLET,
       energyValue
     )
+    if (
+      evseId != null &&
+      timestamp != null &&
+      chargingStation.stationInfo?.meteringPerTransaction !== true
+    ) {
+      const evseStatus = chargingStation.getEvseStatus(evseId)
+      if (
+        evseStatus != null &&
+        (evseStatus.energyActiveImportRegisterLastUpdatedAt == null ||
+          timestamp > evseStatus.energyActiveImportRegisterLastUpdatedAt)
+      ) {
+        evseStatus.energyActiveImportRegisterLastUpdatedAt = timestamp
+      }
+    }
   }
 }
 
@@ -994,12 +1021,16 @@ export const buildEmptyMeterValue = (): MeterValue => ({
 interface ResolvedMeterValueIdentity {
   advanceEnergy?: boolean
   connectorId?: number
+  deferEnergyInterval?: boolean
+  energyElapsedInterval?: number
+  energyNominalInterval?: number
   energyRegisterWhOverride?: number
   evseId?: number
   idle?: boolean
   sampledValueBaseline?: OCPP20SampledValue[]
   sampledValueTemplates?: SampledValueTemplate[]
   snapshot?: boolean
+  suppressSigning?: boolean
   timestamp?: Date
   transactionId?: number | string
 }
@@ -1294,6 +1325,63 @@ const resolveClockAlignedTemplates = (
     : (chargingStation.getConnectorStatus(connectorId, evseId)?.MeterValues ?? [])
 }
 
+const getEnergyTemplateIdentity = (
+  template: SampledValueTemplate,
+  ocppVersion: OCPPVersion | undefined,
+  context: MeterValueContext | undefined
+): string => {
+  const resolved = resolveSampledValueFields(template, 0, context, template.phase)
+  return JSON.stringify([
+    resolved.phase,
+    resolved.location,
+    resolved.unit,
+    resolved.context,
+    ocppVersion === OCPPVersion.VERSION_16
+      ? (template.format ?? OCPP16MeterValueFormat.RAW)
+      : canonicalizeCustomData(template.customData),
+  ])
+}
+
+const addEnergyIntervalTemplateFallbacks = (
+  templates: readonly SampledValueTemplate[],
+  ocppVersion: OCPPVersion | undefined,
+  context: MeterValueContext | undefined
+): SampledValueTemplate[] => {
+  const explicitIntervalIdentities = new Set(
+    templates
+      .filter(template => template.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL)
+      .map(template => getEnergyTemplateIdentity(template, ocppVersion, context))
+  )
+  return templates.flatMap((template): SampledValueTemplate[] => {
+    const measurand = template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    if (
+      measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER ||
+      explicitIntervalIdentities.has(getEnergyTemplateIdentity(template, ocppVersion, context))
+    ) {
+      return [template]
+    }
+    return [
+      template,
+      {
+        ...template,
+        measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+      } as SampledValueTemplate,
+    ]
+  })
+}
+
+const resolveEnergyIntervalTemplates = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  evseId: number | undefined,
+  context: MeterValueContext | undefined
+): SampledValueTemplate[] =>
+  addEnergyIntervalTemplateFallbacks(
+    resolveClockAlignedTemplates(chargingStation, connectorId, evseId),
+    chargingStation.stationInfo?.ocppVersion,
+    context
+  ).filter(template => template.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL)
+
 const resolveSnapshotUnitDivider = (
   measurand: MeterValueMeasurand,
   unit: string | undefined
@@ -1310,30 +1398,41 @@ const resolveSnapshotUnitDivider = (
 
 const projectSnapshotDcOutputValue = (
   chargingStation: ChargingStation,
+  connectorId: number,
   evseId: number | undefined,
   location: MeterValueLocation | undefined,
   measurand: MeterValueMeasurand,
   outputValue: number,
   baselineAlreadyProjected: boolean
 ): number => {
+  const projectionDirection =
+    measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT ||
+    measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL ||
+    measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      ? 'import'
+      : measurand === MeterValueMeasurand.POWER_ACTIVE_EXPORT ||
+          measurand === MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_INTERVAL ||
+          measurand === MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_REGISTER
+        ? 'export'
+        : undefined
   if (
-    evseId == null ||
     chargingStation.stationInfo?.currentOutType !== CurrentType.DC ||
-    (measurand !== MeterValueMeasurand.POWER_ACTIVE_IMPORT &&
-      measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
+    projectionDirection == null
   ) {
     return outputValue
   }
   const configuredEfficiency = chargingStation.stationInfo.conversionEfficiency ?? 1
   const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
-  if (evseId === 0) {
-    return baselineAlreadyProjected && location === MeterValueLocation.OUTLET
+  if (evseId === 0 || (evseId == null && connectorId === 0)) {
+    if (!baselineAlreadyProjected || location !== MeterValueLocation.OUTLET) return outputValue
+    return projectionDirection === 'import'
       ? outputValue * conversionEfficiency
-      : outputValue
+      : outputValue / conversionEfficiency
   }
-  return !baselineAlreadyProjected && location === MeterValueLocation.INLET
+  if (baselineAlreadyProjected || location !== MeterValueLocation.INLET) return outputValue
+  return projectionDirection === 'import'
     ? outputValue / conversionEfficiency
-    : outputValue
+    : outputValue * conversionEfficiency
 }
 
 const areSnapshotUnitsCompatible = (
@@ -1396,6 +1495,61 @@ const resolveSnapshotPhaseFamily = (
     default:
       return 'Unsupported'
   }
+}
+
+const buildEnergyIntervalSampledValues = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  evseId: number | undefined,
+  templates: readonly SampledValueTemplate[],
+  energyWh: number,
+  buildVersionedSampledValue: BuildVersionedSampledValue,
+  context?: MeterValueContext,
+  projectDcForLocation = true
+): SampledValue[] => {
+  const sampledValues: SampledValue[] = []
+  const numberOfPhases = chargingStation.getNumberOfPhases()
+  for (const template of templates) {
+    const phaseFamily = resolveSnapshotPhaseFamily(template.phase)
+    if (phaseFamily !== 'Aggregate' && phaseFamily !== 'Line') continue
+    if (phaseFamily === 'Line') {
+      const linePhaseIndex = resolveLinePhaseIndex(template.phase)
+      if (
+        chargingStation.stationInfo?.currentOutType !== CurrentType.AC ||
+        linePhaseIndex == null ||
+        linePhaseIndex > numberOfPhases
+      ) {
+        continue
+      }
+    }
+    const outputValue = phaseFamily === 'Line' ? energyWh / numberOfPhases : energyWh
+    const physicalValue = projectDcForLocation
+      ? projectSnapshotDcOutputValue(
+        chargingStation,
+        connectorId,
+        evseId,
+        template.location,
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+        outputValue,
+        false
+      )
+      : outputValue
+    sampledValues.push(
+      buildVersionedSampledValue(
+        template,
+        truncateTransactionIntervalValue(
+          physicalValue /
+            resolveSnapshotUnitDivider(
+              MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+              template.unit as string | undefined
+            )
+        ),
+        context,
+        template.phase
+      )
+    )
+  }
+  return sampledValues
 }
 
 const applySnapshotRegisterValuesWithoutPhases = (
@@ -1477,10 +1631,18 @@ const expandClockAlignedSnapshotSamples = (
       ? ({ ...template, location: MeterValueLocation.INLET } as SampledValueTemplate)
       : template
   })
+  const templatesWithIntervalFallback =
+    enabledMeasurands?.has(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) === true
+      ? addEnergyIntervalTemplateFallbacks(
+        resolvedTemplates,
+        chargingStation.stationInfo?.ocppVersion,
+        context
+      )
+      : resolvedTemplates
   const templatesBeforePhaseSuppression = (() => {
-    if (sampledValueTemplates == null) return resolvedTemplates
+    if (sampledValueTemplates == null) return templatesWithIntervalFallback
     const templatesByIdentity = new Map<string, SampledValueTemplate>()
-    for (const template of resolvedTemplates) {
+    for (const template of templatesWithIntervalFallback) {
       const identity = resolveSampledValueFields(template, 0, context, template.phase)
       const key = JSON.stringify([
         identity.measurand,
@@ -1505,10 +1667,13 @@ const expandClockAlignedSnapshotSamples = (
     const phaseFamily = resolveSnapshotPhaseFamily(template.phase)
     if (phaseFamily === 'Unsupported') continue
     const resolvedIdentity = resolveSampledValueFields(template, 0, context, template.phase)
+    const resolvedLinePhaseIndex = resolveLinePhaseIndex(template.phase)
     const exactSource = baseline.find(
       sample =>
         (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
-        sample.phase === template.phase &&
+        (sample.phase === template.phase ||
+          (resolvedLinePhaseIndex != null &&
+            resolveLinePhaseIndex(sample.phase) === resolvedLinePhaseIndex)) &&
         canonicalizeCustomData(sample.customData) === canonicalizeCustomData(template.customData) &&
         (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
         (!preferBaseline ||
@@ -1606,7 +1771,8 @@ const expandClockAlignedSnapshotSamples = (
     } else if (source != null && preferBaseline) {
       rawValue = source.value * resolveSnapshotUnitDivider(measurand, source.unitOfMeasure?.unit)
       if (
-        measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT &&
+        (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT ||
+          measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) &&
         source.phase == null &&
         phaseFamily === 'Line'
       ) {
@@ -1678,7 +1844,8 @@ const expandClockAlignedSnapshotSamples = (
     } else if (source != null) {
       rawValue = source.value * resolveSnapshotUnitDivider(measurand, source.unitOfMeasure?.unit)
       if (
-        measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT &&
+        (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT ||
+          measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) &&
         source.phase == null &&
         phaseFamily === 'Line'
       ) {
@@ -1703,6 +1870,7 @@ const expandClockAlignedSnapshotSamples = (
     if (rawValue == null) continue
     const physicalValue = projectSnapshotDcOutputValue(
       chargingStation,
+      connectorId,
       evseId,
       resolvedIdentity.location,
       measurand,
@@ -1809,7 +1977,19 @@ export const buildMeterValue = (
   measurandsKey?: ConfigurationKeyType,
   context?: MeterValueContext,
   debug = false,
-  identity?: Pick<ResolvedMeterValueIdentity, 'connectorId' | 'evseId'>
+  identity?: Pick<
+    ResolvedMeterValueIdentity,
+    | 'advanceEnergy'
+    | 'connectorId'
+    | 'deferEnergyInterval'
+    | 'energyElapsedInterval'
+    | 'energyNominalInterval'
+    | 'energyRegisterWhOverride'
+    | 'evseId'
+    | 'snapshot'
+    | 'suppressSigning'
+    | 'timestamp'
+  >
 ): MeterValue => {
   if (transactionId == null) {
     return buildEmptyMeterValue()
@@ -1833,10 +2013,14 @@ export const buildMeterValue = (
  * @param identity - Direct connector/EVSE identification.
  * @param identity.advanceEnergy - Whether this aligned sample owns energy accumulation.
  * @param identity.connectorId - Connector identifier.
+ * @param identity.deferEnergyInterval - Whether to retain interval energy for later delivery.
+ * @param identity.energyElapsedInterval - Physical energy interval for this observation.
+ * @param identity.energyNominalInterval - Physical energy integration interval in milliseconds.
  * @param identity.energyRegisterWhOverride - Optional station-level aggregate energy in Wh.
  * @param identity.idle - Whether the aggregate meter point is idle.
  * @param identity.sampledValueBaseline - Optional pre-aggregated physical samples.
  * @param identity.sampledValueTemplates - Optional aggregate template union.
+ * @param identity.suppressSigning - Whether this sample is not delivered and must not consume signing state.
  * @param identity.evseId - EVSE identifier.
  * @param identity.timestamp - Optional UTC slot timestamp shared across the aligned sweep.
  * @param identity.transactionId - Optional active transaction identifier.
@@ -1850,11 +2034,15 @@ export const buildClockAlignedConnectorMeterValue = (
   identity: {
     advanceEnergy?: boolean
     connectorId: number
+    deferEnergyInterval?: boolean
+    energyElapsedInterval?: number
+    energyNominalInterval?: number
     energyRegisterWhOverride?: number
     evseId: number
     idle?: boolean
     sampledValueBaseline?: OCPP20SampledValue[]
     sampledValueTemplates?: SampledValueTemplate[]
+    suppressSigning?: boolean
     timestamp?: Date
     transactionId?: number | string
   },
@@ -1888,13 +2076,17 @@ const buildIdentifiedMeterValue = (
 ): MeterValue => {
   const {
     buildUnsignedVersionedSampledValue,
-    buildVersionedSampledValue: buildSignedVersionedSampledValue,
+    buildVersionedSampledValue: buildConfiguredVersionedSampledValue,
     connectorId,
     evseId,
     signingConfig,
     signingState,
   } = createVersionedSampledValueDispatcher(chargingStation, identity, context)
   const snapshot = identity.snapshot === true
+  const suppressSigning = identity.suppressSigning === true
+  const buildSignedVersionedSampledValue = suppressSigning
+    ? buildUnsignedVersionedSampledValue
+    : buildConfiguredVersionedSampledValue
   // Coherent MeterValues strategy gate. Placed AFTER the versioned dispatcher
   // is available (so the coherent path can emit versioned SampledValues) and
   // BEFORE the random/fixed measurand generation runs. When coherent mode
@@ -1933,6 +2125,7 @@ const buildIdentifiedMeterValue = (
   }
   const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
   const transactionBegin = context === MeterValueContext.TRANSACTION_BEGIN
+  const intervalBaselineKey = measurandsKey ?? 'default'
   if (isCoherentModeActive(coherentSession)) {
     const timestamp = identity.timestamp ?? new Date()
     if (signingConfig != null) signingConfig.timestamp = timestamp
@@ -1954,7 +2147,12 @@ const buildIdentifiedMeterValue = (
       evseId,
       identity.transactionId != null &&
         chargingStation.stationInfo?.meteringPerTransaction === true,
-      identity.energyRegisterWhOverride
+      identity.energyRegisterWhOverride,
+      identity.snapshot === true
+        ? identity.advanceEnergy === true
+        : identity.advanceEnergy !== false,
+      identity.deferEnergyInterval === true,
+      intervalBaselineKey
     )
     if (transactionBegin && connectorStatus != null) {
       connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt =
@@ -1975,6 +2173,7 @@ const buildIdentifiedMeterValue = (
     // coherent-session model change.
     if (
       !snapshot &&
+      !suppressSigning &&
       identity.transactionId != null &&
       signingState.publicKeyIncluded &&
       connectorStatus != null
@@ -2225,80 +2424,225 @@ const buildIdentifiedMeterValue = (
   // Energy.Active.Import.Register measurand (default)
   const advanceEnergy = identity.advanceEnergy === true
   const ownsEnergy =
-    !transactionBegin && identity.transactionId != null && (!snapshot || advanceEnergy)
+    !transactionBegin &&
+    identity.transactionId != null &&
+    identity.advanceEnergy !== false &&
+    (!snapshot || advanceEnergy)
   let snapshotEnergyRegisterWhOverride = identity.energyRegisterWhOverride
   const previousEnergyUpdate =
     connectorStatus?.transactionEnergyActiveImportRegisterLastUpdatedAt ??
     connectorStatus?.transactionStart
-  const energyInterval = transactionBegin
+  const transactionEnergyInterval = transactionBegin
     ? 0
-    : ownsEnergy && previousEnergyUpdate != null
+    : identity.transactionId != null && previousEnergyUpdate != null
       ? Math.max(0, meterValue.timestamp.getTime() - previousEnergyUpdate.getTime())
       : interval
+  const energyInterval =
+    !transactionBegin && identity.energyElapsedInterval != null
+      ? Math.max(0, identity.energyElapsedInterval)
+      : transactionEnergyInterval
+  const energyNominalInterval =
+    identity.energyNominalInterval ??
+    (isOCPP20x(chargingStation.stationInfo?.ocppVersion) && interval > 0 ? interval : undefined)
+  const energyValueTimeScale =
+    energyNominalInterval != null && energyNominalInterval > 0
+      ? energyInterval / energyNominalInterval
+      : 1
   const energyMeasurand = buildEnergyMeasurandValue(
     chargingStation,
     connectorId,
     energyInterval,
     evseId,
     measurandsKey,
-    transactionBegin || (snapshot && !advanceEnergy),
-    snapshot
+    transactionBegin || (snapshot && identity.advanceEnergy == null),
+    snapshot,
+    energyValueTimeScale,
+    true
   )
   if (energyMeasurand != null) {
+    const transactionEnergyBeforeBuild =
+      connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0
+    const intervalBaseline =
+      connectorStatus?.transactionEnergyActiveImportIntervalBaselines?.[intervalBaselineKey] ?? 0
+    const carriedIntervalEnergy =
+      connectorStatus?.transactionEnergyActiveImportIntervalCarry?.[intervalBaselineKey] ?? 0
+    const pendingIntervalEnergy =
+      Math.max(0, transactionEnergyBeforeBuild - intervalBaseline) + carriedIntervalEnergy
+    const deferEnergyInterval = identity.deferEnergyInterval === true
+    const transactionEnergyValue =
+      identity.energyElapsedInterval != null && energyInterval > 0
+        ? roundTo(
+          energyMeasurand.value * Math.min(1, transactionEnergyInterval / energyInterval),
+          2
+        )
+        : energyMeasurand.value
     // Aligned snapshots may own accumulation when periodic TxUpdated samples
     // do not include the cumulative energy register.
     if (ownsEnergy) {
-      updateConnectorEnergyValues(chargingStation, connectorStatus, energyMeasurand.value, evseId)
+      updateConnectorEnergyValues(
+        chargingStation,
+        connectorStatus,
+        energyMeasurand.value,
+        evseId,
+        transactionEnergyValue,
+        meterValue.timestamp
+      )
       if (
         connectorStatus != null &&
         (previousEnergyUpdate == null || meterValue.timestamp > previousEnergyUpdate)
       ) {
         connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = meterValue.timestamp
       }
+    } else if (
+      identity.advanceEnergy === false &&
+      connectorStatus?.transactionEnergyActiveImportRegisterLastUpdatedAt?.getTime() !==
+        meterValue.timestamp.getTime() &&
+      !transactionBegin &&
+      identity.transactionId != null &&
+      connectorStatus != null
+    ) {
+      connectorStatus.transactionEnergyActiveImportRegisterValue =
+        Math.max(0, connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) +
+        energyMeasurand.value
+      if (previousEnergyUpdate == null || meterValue.timestamp > previousEnergyUpdate) {
+        connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = meterValue.timestamp
+      }
     }
     if (ownsEnergy && snapshotEnergyRegisterWhOverride != null) {
       snapshotEnergyRegisterWhOverride += energyMeasurand.value
     }
+    const intervalEnergyValue =
+      connectorStatus != null && identity.transactionId != null
+        ? Math.max(
+          0,
+          (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) - intervalBaseline
+        ) + carriedIntervalEnergy
+        : transactionEnergyValue
     const unitDivider =
       energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR
         ? Constants.UNIT_DIVIDER_KILO
         : 1
-    const energySampledValue = buildVersionedSampledValue(
-      energyMeasurand.template,
-      roundTo(
-        (snapshot
-          ? Math.max(
-            0,
-            snapshotEnergyRegisterWhOverride ??
-                connectorStatus?.energyActiveImportRegisterValue ??
-                0
-          )
-          : chargingStation.getEnergyActiveImportRegisterByConnectorId(
+    if (energyMeasurand.template.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) {
+      const intervalTemplates = resolveEnergyIntervalTemplates(
+        chargingStation,
+        connectorId,
+        evseId,
+        context
+      )
+      const intervalSampledValues = buildEnergyIntervalSampledValues(
+        chargingStation,
+        connectorId,
+        evseId,
+        intervalTemplates.length > 0 ? intervalTemplates : [energyMeasurand.template],
+        intervalEnergyValue,
+        buildVersionedSampledValue,
+        context,
+        !snapshot
+      )
+      meterValue.sampledValue.push(...intervalSampledValues)
+    } else {
+      const registerEnergyWh = Math.max(
+        0,
+        snapshotEnergyRegisterWhOverride ??
+          (snapshot
+            ? (connectorStatus?.energyActiveImportRegisterValue ?? 0)
+            : chargingStation.getEnergyActiveImportRegisterByConnectorId(
+              connectorId,
+              false,
+              evseId
+            ))
+      )
+      const energySampledValue = buildVersionedSampledValue(
+        energyMeasurand.template,
+        roundTo(
+          projectSnapshotDcOutputValue(
+            chargingStation,
             connectorId,
-            false,
-            evseId
-          )) / unitDivider,
-        2
-      ),
-      context
-    )
-    meterValue.sampledValue.push(energySampledValue)
+            evseId,
+            energyMeasurand.template.location,
+            MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            registerEnergyWh,
+            false
+          ) / unitDivider,
+          2
+        ),
+        context
+      )
+      meterValue.sampledValue.push(energySampledValue)
+      if (
+        resolveEnabledMeasurands(chargingStation, measurandsKey)?.has(
+          MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+        ) === true
+      ) {
+        const intervalEnergyTemplates = resolveEnergyIntervalTemplates(
+          chargingStation,
+          connectorId,
+          evseId,
+          context
+        )
+        meterValue.sampledValue.push(
+          ...buildEnergyIntervalSampledValues(
+            chargingStation,
+            connectorId,
+            evseId,
+            intervalEnergyTemplates,
+            intervalEnergyValue,
+            buildVersionedSampledValue,
+            context,
+            !snapshot
+          )
+        )
+      }
+    }
+    if (connectorStatus != null && identity.transactionId != null) {
+      const emitsIntervalEnergy = meterValue.sampledValue.some(
+        sampledValue => sampledValue.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      if (emitsIntervalEnergy && !deferEnergyInterval) {
+        connectorStatus.transactionEnergyActiveImportIntervalBaselines ??= {}
+        connectorStatus.transactionEnergyActiveImportIntervalBaselines[intervalBaselineKey] =
+          connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+        const representedIntervalEnergy = getRepresentedTransactionIntervalEnergyWh(
+          meterValue,
+          chargingStation.getNumberOfPhases()
+        )
+        recordTransactionIntervalConsumption(
+          meterValue,
+          intervalBaselineKey,
+          representedIntervalEnergy
+        )
+        connectorStatus.transactionEnergyActiveImportIntervalCarry ??= {}
+        connectorStatus.transactionEnergyActiveImportIntervalCarry[intervalBaselineKey] = Math.max(
+          0,
+          intervalEnergyValue - representedIntervalEnergy
+        )
+      }
+    }
     const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
       connectorId,
       evseId
     )
+    const validationInterval =
+      pendingIntervalEnergy > 0 ? (energyNominalInterval ?? interval) : energyInterval
+    const validationTimeScale =
+      energyNominalInterval != null && energyNominalInterval > 0
+        ? validationInterval / energyNominalInterval
+        : 1
     const connectorMaximumEnergyRounded = roundTo(
-      (connectorMaximumAvailablePower * energyInterval) / Constants.MS_PER_HOUR,
+      (connectorMaximumAvailablePower * validationInterval) / Constants.MS_PER_HOUR,
       2
     )
-    const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)
+    const connectorMinimumEnergyRounded = roundTo(
+      (energyMeasurand.template.minimumValue ?? 0) * unitDivider * validationTimeScale,
+      2
+    )
     validateMeasurandValue(
       chargingStation,
       connectorId,
-      energyMeasurand.value,
+      intervalEnergyValue,
       connectorMinimumEnergyRounded,
       connectorMaximumEnergyRounded,
-      energySampledValue.measurand,
+      energyMeasurand.template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
       debug,
       { interval: energyInterval }
     )
@@ -2327,6 +2671,7 @@ const buildIdentifiedMeterValue = (
   // Other transactional builds preserve the existing eager-commit behavior.
   if (
     !snapshot &&
+    !suppressSigning &&
     identity.transactionId != null &&
     signingState.publicKeyIncluded &&
     connectorStatus != null

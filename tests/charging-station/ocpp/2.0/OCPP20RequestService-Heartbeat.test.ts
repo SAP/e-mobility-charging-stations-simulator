@@ -413,6 +413,7 @@ await describe('G02 - Heartbeat', async () => {
     const bufferedStation = context.station as unknown as { messageQueue: string[] }
     assert.deepStrictEqual(bufferedStation.messageQueue, [unrelatedMessage, serializedRequest])
     const cachedRequest = [...context.station.requests.values()][0]
+    context.station.isStopping = () => false
 
     const sendMessageBuffer = (
       ChargingStation.prototype as unknown as {
@@ -621,6 +622,71 @@ await describe('G02 - Heartbeat', async () => {
     context.requestService.cancelPendingRequests(context.station, undefined, true)
 
     assert.strictEqual(bufferedStation.messageQueue.length, 0)
+  })
+
+  await it('replays a response behind a blocked CALL while registration is pending', () => {
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.isStopping = () => false
+    context.station.inAcceptedState = () => false
+    const wireMessages: string[] = []
+    let sendCallback: ((error?: Error) => void) | undefined
+    mock.method(wsConnection, 'send', (data: unknown, callback?: (error?: Error) => void) => {
+      wireMessages.push(String(data))
+      sendCallback = callback
+    })
+    const blockedCall = '[2,"call","Heartbeat",{}]'
+    const allowedResponse = '[3,"response",{}]'
+    context.station.bufferMessage(blockedCall)
+    context.station.bufferMessage(allowedResponse)
+    const sendMessageBuffer = (
+      ChargingStation.prototype as unknown as {
+        sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+      }
+    ).sendMessageBuffer
+    ;(
+      context.station as unknown as { sendMessageBuffer: typeof sendMessageBuffer }
+    ).sendMessageBuffer = sendMessageBuffer
+
+    sendMessageBuffer.call(context.station, () => undefined)
+    assert.deepStrictEqual(wireMessages, [allowedResponse])
+    sendCallback?.()
+    const bufferedStation = context.station as unknown as { messageQueue: string[] }
+    assert.deepStrictEqual(bufferedStation.messageQueue, [blockedCall])
+  })
+
+  await it('discards only a selected non-array frame behind a pending CALL', () => {
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.isStopping = () => false
+    context.station.inAcceptedState = () => false
+    const wireMessages: string[] = []
+    let sendCallback: ((error?: Error) => void) | undefined
+    mock.method(wsConnection, 'send', (data: unknown, callback?: (error?: Error) => void) => {
+      wireMessages.push(String(data))
+      sendCallback = callback
+    })
+    const blockedCall = '[2,"call","Heartbeat",{}]'
+    const allowedResponse = '[3,"response",{}]'
+    context.station.bufferMessage(blockedCall)
+    context.station.bufferMessage('{}')
+    context.station.bufferMessage(allowedResponse)
+    const sendMessageBuffer = (
+      ChargingStation.prototype as unknown as {
+        sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+      }
+    ).sendMessageBuffer
+    ;(
+      context.station as unknown as { sendMessageBuffer: typeof sendMessageBuffer }
+    ).sendMessageBuffer = sendMessageBuffer
+
+    sendMessageBuffer.call(context.station, () => undefined)
+    assert.deepStrictEqual(wireMessages, [allowedResponse])
+    sendCallback?.()
+    const bufferedStation = context.station as unknown as { messageQueue: string[] }
+    assert.deepStrictEqual(bufferedStation.messageQueue, [blockedCall])
   })
 
   await it('notifies when a CALLRESULT arrives before response handling completes', async () => {

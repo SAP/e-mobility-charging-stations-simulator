@@ -160,6 +160,7 @@ export function createMockChargingStation (
     __injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
       this.coherentSessions.set(transactionId, session)
     },
+    acknowledgedBufferedMessages: new Set<string>(),
     addReservation (reservation: Record<string, unknown>): void {
       // Check if reservation with same ID exists and remove it
       const existingReservation = this.getReservationBy(
@@ -174,8 +175,8 @@ export function createMockChargingStation (
         connectorStatus.reservation = reservation as unknown as Reservation
       }
     },
-    automaticTransactionGenerator: undefined,
 
+    automaticTransactionGenerator: undefined,
     bootNotificationRequest: undefined,
 
     bootNotificationResponse: {
@@ -189,10 +190,17 @@ export function createMockChargingStation (
         interval: number
         status: RegistrationStatusEnumType
       },
-    bufferMessage (message: string): void {
-      this.messageQueue.push(message)
+    bufferedMessageInFlight: undefined as
+      undefined | { isRequest: boolean; message: string; retracted: boolean; stopDrain?: boolean },
+    bufferMessage (message: string, prepend = false): void {
+      if (prepend) {
+        this.messageQueue.unshift(message)
+      } else {
+        this.messageQueue.push(message)
+      }
     },
     clearMessageBuffer (): void {
+      this.acknowledgedBufferedMessages.clear()
       this.messageQueue.length = 0
     },
     closeWSConnection (): void {
@@ -243,8 +251,12 @@ export function createMockChargingStation (
       return false // Default to false in mock
     },
     getBufferedRequestIds (): Set<string> {
+      if (this.acknowledgedBufferedMessages.size > 0) {
+        this.messageQueue.unshift(...this.acknowledgedBufferedMessages.values())
+        this.acknowledgedBufferedMessages.clear()
+      }
       const messageIds = new Set<string>()
-      for (const message of this.messageQueue) {
+      for (const message of [...this.messageQueue, ...this.acknowledgedBufferedMessages.values()]) {
         try {
           const parsedMessage = JSON.parse(message) as unknown[]
           if (
@@ -554,8 +566,12 @@ export function createMockChargingStation (
     removeAllListeners: () => station,
     removeBufferedMessage (message: string): boolean {
       const messageIndex = this.messageQueue.indexOf(message)
-      if (messageIndex === -1) return false
+      if (messageIndex === -1) return this.acknowledgedBufferedMessages.delete(message)
       this.messageQueue.splice(messageIndex, 1)
+      this.acknowledgedBufferedMessages.delete(message)
+      if (messageIndex === 0 && this.bufferedMessageInFlight?.message === message) {
+        this.bufferedMessageInFlight.retracted = true
+      }
       return true
     },
 
@@ -567,8 +583,8 @@ export function createMockChargingStation (
         delete connectorStatus.reservation
       }
     },
-    requests,
 
+    requests,
     restartHeartbeat (): void {
       this.stopHeartbeat()
       this.startHeartbeat()
@@ -576,6 +592,35 @@ export function createMockChargingStation (
 
     restartWebSocketPing (): void {
       /* empty */
+    },
+
+    retainBufferedMessage (message: string): boolean {
+      const messageIndex = this.messageQueue.indexOf(message)
+      if (messageIndex !== -1) {
+        if (messageIndex === 0 && this.bufferedMessageInFlight?.message === message) {
+          this.bufferedMessageInFlight.retracted = true
+          this.bufferedMessageInFlight.stopDrain = true
+        }
+        return true
+      }
+      if (!this.acknowledgedBufferedMessages.has(message)) return false
+      this.messageQueue.unshift(...this.acknowledgedBufferedMessages.values())
+      this.acknowledgedBufferedMessages.clear()
+      return true
+    },
+
+    retainBufferedRequest (messageId: string): boolean {
+      for (const message of [...this.messageQueue, ...this.acknowledgedBufferedMessages.values()]) {
+        try {
+          const parsedMessage = JSON.parse(message) as unknown[]
+          if (parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId) {
+            return this.retainBufferedMessage(message)
+          }
+        } catch {
+          // Malformed frames cannot match a request id.
+        }
+      }
+      return false
     },
 
     saveOcppConfiguration (): void {

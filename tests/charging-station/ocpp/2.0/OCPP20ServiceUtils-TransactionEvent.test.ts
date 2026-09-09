@@ -36,6 +36,7 @@ import {
   AttributeEnumType,
   ConnectorStatusEnum,
   CurrentType,
+  ErrorType,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
@@ -1990,7 +1991,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             transactionStarted: false,
           }
         )
-        assert.deepEqual(snapshots[1], snapshots[0])
         const finalSnapshot = snapshots.at(-1)
         assert.deepEqual(
           finalSnapshot == null
@@ -2378,13 +2378,19 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepEqual(connectorStatus.transactionEventQueue, [])
       })
 
-      await it('should retry a sent TransactionEvent after CSMS rejection', async () => {
+      await it('retries a transport failure and forwards each attempt error', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
+        const transportError = new OCPPError(
+          ErrorType.GENERIC_ERROR,
+          'Transport failed',
+          OCPP20RequestCommand.TRANSACTION_EVENT
+        )
         const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
           const requestParams = args[3] as RequestParams
           requestParams.onMessageSent?.()
-          return Promise.reject(new Error('CSMS rejected event'))
+          requestParams.onError?.(transportError, false)
+          return Promise.reject(transportError)
         })
         const { station: retryStation } = createMockChargingStation({
           baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -2413,6 +2419,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
         retryStation.isWebSocketConnectionOpened = () => true
         setupConnectorWithTransaction(retryStation, connectorId, { transactionId })
+        const errorCallback = mock.fn((_error: OCPPError, _isCallError: boolean) => undefined)
 
         await assert.rejects(
           OCPP20ServiceUtils.sendTransactionEvent(
@@ -2422,12 +2429,18 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             connectorId,
             transactionId,
             {},
-            { skipBufferingOnError: true, throwError: true }
+            {
+              onError: errorCallback,
+              skipBufferingOnError: true,
+              throwError: true,
+            }
           ),
-          /CSMS rejected event/
+          /Transport failed/
         )
 
         assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
+        assert.strictEqual(errorCallback.mock.callCount(), 2)
+        assert.ok(errorCallback.mock.calls.every(call => !call.arguments[1]))
         const connectorStatus = retryStation.getConnectorStatus(connectorId)
         assert(connectorStatus != null)
         assert.strictEqual(connectorStatus.transactionEventQueue, undefined)
@@ -4964,7 +4977,292 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(connectorStatus.transactionRestored, undefined)
     })
 
-    await it('keeps a restored owning Started event recoverable after repeated terminal replay failures', async () => {
+    for (const restored of [false, true]) {
+      await it(`drops a ${restored ? 'restored' : 'live queued'} transaction group after one CALLERROR and continues`, async () => {
+        const connectorId = 1
+        const failedTransactionId = generateUUID()
+        const replacementTransactionId = generateUUID()
+        let online = false
+        const requestHandlerMock = mock.fn((...args: unknown[]): Promise<unknown> => {
+          if (args[1] !== OCPP20RequestCommand.TRANSACTION_EVENT) return Promise.resolve({})
+          const request = args[2] as OCPP20TransactionEventRequest
+          const requestParams = args[3] as RequestParams
+          requestParams.onMessageSent?.()
+          if (request.transactionInfo.transactionId === failedTransactionId) {
+            const callError = new OCPPError(
+              ErrorType.GENERIC_ERROR,
+              'Rejected restored transaction',
+              OCPP20RequestCommand.TRANSACTION_EVENT
+            )
+            requestParams.onError?.(callError, true)
+            return Promise.reject(callError)
+          }
+          requestParams.onResponseReceived?.()
+          return Promise.resolve({})
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.started = false
+        station.isStopping = () => false
+        station.isWebSocketConnectionOpened = () => online
+        addConfigurationKey(
+          station,
+          `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+          '3',
+          undefined,
+          { save: false }
+        )
+        addConfigurationKey(
+          station,
+          `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttemptInterval}.TransactionEvent`,
+          '0',
+          undefined,
+          { save: false }
+        )
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(station, connectorId)
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          failedTransactionId
+        )
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          failedTransactionId
+        )
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(station, connectorId)
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        connectorStatus.transactionEnergyActiveImportIntervalBaselines = {
+          'SampledDataCtrlr.TxEndedMeasurands': 4,
+          test: 4,
+        }
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 40
+        const replacementBeginMeterValue: OCPP20MeterValue = {
+          sampledValue: [
+            {
+              measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+              value: 42,
+            },
+          ],
+          timestamp: new Date('2026-09-08T12:00:00.000Z'),
+        }
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          replacementTransactionId,
+          { meterValue: [replacementBeginMeterValue] }
+        )
+        connectorStatus.transactionEnergyActiveImportIntervalBaselines = {
+          'SampledDataCtrlr.TxEndedMeasurands': 23,
+          test: 23,
+        }
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 123
+        const replacementIdToken = 'REPLACEMENT-CABLE-FIRST'
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          replacementTransactionId,
+          {
+            idToken: {
+              idToken: replacementIdToken,
+              type: OCPP20IdTokenEnumType.ISO14443,
+            },
+          }
+        )
+        assert.deepEqual(
+          connectorStatus.transactionEventQueue?.at(-1)
+            ?.transactionEnergyActiveImportIntervalBaselines,
+          { test: 23 }
+        )
+        delete connectorStatus.transactionEnergyActiveImportIntervalBaselines
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          replacementTransactionId
+        )
+        connectorStatus.transactionId = failedTransactionId
+        connectorStatus.transactionStarted = false
+        connectorStatus.transactionStarting = true
+        connectorStatus.transactionRestored = true
+        const destroySessionSpy = mock.method(station, 'destroyCoherentSession')
+        online = true
+
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+
+        const attemptedTransactionIds = requestHandlerMock.mock.calls
+          .filter(call => call.arguments[1] === OCPP20RequestCommand.TRANSACTION_EVENT)
+          .map(
+            call =>
+              (call.arguments[2] as OCPP20TransactionEventRequest).transactionInfo.transactionId
+          )
+        assert.deepEqual(attemptedTransactionIds, [
+          failedTransactionId,
+          replacementTransactionId,
+          replacementTransactionId,
+          replacementTransactionId,
+        ])
+        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.strictEqual(connectorStatus.transactionId, replacementTransactionId)
+        assert.strictEqual(connectorStatus.transactionIdTag, replacementIdToken)
+        assert.strictEqual(connectorStatus.transactionStarted, false)
+        assert.strictEqual(connectorStatus.transactionStarting, true)
+        assert.strictEqual(connectorStatus.transactionRestored, true)
+        assert.strictEqual(connectorStatus.transactionSeqNo, 2)
+        assert.strictEqual(
+          connectorStatus.transactionEnergyActiveImportIntervalBaselines,
+          undefined
+        )
+        assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 123)
+        assert.deepEqual(connectorStatus.transactionBeginMeterValue, replacementBeginMeterValue)
+        assert.deepEqual(
+          destroySessionSpy.mock.calls.map(call => call.arguments[0]),
+          [failedTransactionId]
+        )
+      })
+    }
+
+    await it('does not clear a replacement transaction installed during CALLERROR handling', async () => {
+      const connectorId = 1
+      const failedTransactionId = generateUUID()
+      const replacementTransactionId = generateUUID()
+      let online = false
+      const stationHolder: { station?: ChargingStation } = {}
+      const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
+        const requestParams = args[3] as RequestParams
+        requestParams.onMessageSent?.()
+        const currentStation = stationHolder.station
+        assert.ok(currentStation != null)
+        const connectorStatus = currentStation.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        connectorStatus.transactionId = replacementTransactionId
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionStarting = false
+        delete connectorStatus.transactionRestored
+        const callError = new OCPPError(
+          ErrorType.GENERIC_ERROR,
+          'Rejected restored transaction',
+          OCPP20RequestCommand.TRANSACTION_EVENT
+        )
+        requestParams.onError?.(callError, true)
+        return Promise.reject(callError)
+      })
+      const createdStation = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler: requestHandlerMock },
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      const station = createdStation.station
+      stationHolder.station = station
+      station.started = false
+      station.isStopping = () => false
+      station.isWebSocketConnectionOpened = () => online
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(station, connectorId)
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        station,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        failedTransactionId
+      )
+      const connectorStatus = station.getConnectorStatus(connectorId)
+      assert.ok(connectorStatus?.transactionEventQueue != null)
+      connectorStatus.transactionId = failedTransactionId
+      connectorStatus.transactionStarted = false
+      connectorStatus.transactionStarting = true
+      connectorStatus.transactionRestored = true
+      const destroySessionSpy = mock.method(station, 'destroyCoherentSession')
+      online = true
+
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      assert.strictEqual(connectorStatus.transactionId, replacementTransactionId)
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(connectorStatus.transactionRestored, undefined)
+      assert.deepEqual(
+        destroySessionSpy.mock.calls.map(call => call.arguments[0]),
+        [failedTransactionId]
+      )
+    })
+
+    await it('does not clear a replacement transaction after a stale Ended response', async () => {
+      const connectorId = 1
+      const endedTransactionId = generateUUID()
+      const replacementTransactionId = generateUUID()
+      const requestStarted = Promise.withResolvers<undefined>()
+      const responseGate = Promise.withResolvers<undefined>()
+      const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<unknown> => {
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        requestStarted.resolve(undefined)
+        await responseGate.promise
+        requestParams?.onResponseReceived?.()
+        return {}
+      })
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler: requestHandlerMock },
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      station.started = true
+      station.isStopping = () => false
+      station.isWebSocketConnectionOpened = () => true
+      setupConnectorWithTransaction(station, connectorId, {
+        transactionId: endedTransactionId,
+      })
+
+      const ended = OCPP20ServiceUtils.sendTransactionEvent(
+        station,
+        OCPP20TransactionEventEnumType.Ended,
+        OCPP20TriggerReasonEnumType.EVCommunicationLost,
+        connectorId,
+        endedTransactionId,
+        { evseId: 1 }
+      )
+      await requestStarted.promise
+      const connectorStatus = station.getConnectorStatus(connectorId, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionId = replacementTransactionId
+      connectorStatus.transactionStarted = true
+      connectorStatus.transactionStarting = false
+      connectorStatus.transactionSeqNo = 0
+      connectorStatus.transactionIdTag = 'REPLACEMENT'
+      responseGate.resolve(undefined)
+
+      await ended
+
+      assert.strictEqual(connectorStatus.transactionId, replacementTransactionId)
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(connectorStatus.transactionStarting, false)
+      assert.strictEqual(connectorStatus.transactionSeqNo, 0)
+      assert.strictEqual(connectorStatus.transactionIdTag, 'REPLACEMENT')
+    })
+
+    await it('keeps a restored owning Started event recoverable after transport failures', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       let online = false

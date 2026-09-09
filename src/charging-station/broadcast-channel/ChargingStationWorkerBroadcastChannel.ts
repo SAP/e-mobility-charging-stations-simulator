@@ -27,8 +27,11 @@ import {
   type OCPP16MeterValue,
   OCPP20AuthorizationStatusEnumType,
   type OCPP20AuthorizeResponse,
+  OCPP20ComponentName,
   type OCPP20Get15118EVCertificateResponse,
   type OCPP20GetCertificateStatusResponse,
+  OCPP20ReadingContextEnumType,
+  OCPP20RequiredVariableName,
   type OCPP20SignCertificateResponse,
   type OCPP20TransactionEventResponse,
   OCPPVersion,
@@ -52,7 +55,12 @@ import {
   isOCPP20x,
   logger,
 } from '../../utils/index.js'
-import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
+import { buildConfigKey, getConfigurationKey } from '../ConfigurationKeyUtils.js'
+import {
+  captureTransactionIntervalState,
+  completeTransactionIntervalState,
+  restoreTransactionIntervalState,
+} from '../meter-values/TransactionIntervalUtils.js'
 import {
   buildMeterValue,
   OCPP16ServiceUtils,
@@ -432,20 +440,30 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<MeterValuesResponse> {
     const payloadEvseId = (requestPayload as undefined | { evseId?: number })?.evseId
-    const connectorId =
-      requestPayload?.connectorId ??
-      (payloadEvseId != null
-        ? this.chargingStation.getConnectorIdByEvseId(payloadEvseId)
-        : undefined)
+    let connectorId = requestPayload?.connectorId
+    if (connectorId == null && payloadEvseId != null) {
+      const evseStatus = this.chargingStation.getEvseStatus(payloadEvseId)
+      for (const [candidateConnectorId, connectorStatus] of evseStatus?.connectors ?? []) {
+        if (connectorStatus.transactionStarted === true && connectorStatus.transactionId != null) {
+          connectorId = candidateConnectorId
+          break
+        }
+      }
+      connectorId ??= this.chargingStation.getConnectorIdByEvseId(payloadEvseId)
+    }
     if (connectorId == null) {
       throw new BaseError(
         `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Missing connectorId or evseId in request payload`
       )
     }
-    const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
     const isOcpp2 = isOCPP20x(this.chargingStation.stationInfo?.ocppVersion)
+    const evseId =
+      payloadEvseId ??
+      (isOcpp2 ? this.chargingStation.getEvseIdByConnectorId(connectorId) : undefined)
+    const connectorStatus = this.chargingStation.getConnectorStatus(connectorId, evseId)
+    const transactionId = connectorStatus?.transactionId
     const interval = isOcpp2
-      ? OCPP20ServiceUtils.getAlignedDataInterval(this.chargingStation)
+      ? OCPP20ServiceUtils.getTxUpdatedInterval(this.chargingStation)
       : (() => {
           const key = getConfigurationKey(
             this.chargingStation,
@@ -455,40 +473,97 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             ? secondsToMilliseconds(convertToInt(key.value))
             : Constants.DEFAULT_METER_VALUES_INTERVAL_MS
         })()
-    const meterValue = buildMeterValue(this.chargingStation, transactionId, interval)
-    // OCPP 1.6 Signed Meter Values whitepaper §3.3.6: mirror the periodic
-    // loop (`OCPP16ServiceUtils.startUpdatedMeterValues`) and append a paired
-    // SignedData SampledValue when signing is enabled for the connector.
-    // Guarded on `!isOcpp2` because OCPP 2.0.x signing is applied inline
-    // inside `buildMeterValue` (via the versioned dispatcher's signing hook);
-    // post-hoc wrapping is the 1.6 pattern only. Guarded on `transactionId
-    // != null` because signing a MeterValue outside an active transaction
-    // has no defined semantics in the whitepaper.
-    if (!isOcpp2 && transactionId != null) {
-      OCPP16ServiceUtils.appendSignedUpdatedReadings(
-        this.chargingStation,
-        connectorId,
-        convertToInt(transactionId),
-        meterValue as OCPP16MeterValue
+    const requestedMeterValues = (
+      requestPayload as undefined | { meterValue?: MeterValuesRequest['meterValue'] }
+    )?.meterValue
+    const intervalBaselineKey = isOcpp2
+      ? buildConfigKey(
+        OCPP20ComponentName.SampledDataCtrlr,
+        OCPP20RequiredVariableName.TxUpdatedMeasurands
       )
+      : 'default'
+    const intervalState =
+      requestedMeterValues == null && connectorStatus != null && transactionId != null
+        ? captureTransactionIntervalState(connectorStatus)
+        : undefined
+    const meterValues = (() => {
+      if (requestedMeterValues != null) return requestedMeterValues
+      const meterValue =
+        isOcpp2 && transactionId != null
+          ? OCPP20ServiceUtils.buildTransactionMeterValue(
+            this.chargingStation,
+            connectorId,
+            evseId,
+            transactionId,
+            interval,
+            buildConfigKey(
+              OCPP20ComponentName.SampledDataCtrlr,
+              OCPP20RequiredVariableName.TxUpdatedMeasurands
+            ),
+            OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
+          )
+          : buildMeterValue(this.chargingStation, transactionId, interval)
+      // OCPP 1.6 Signed Meter Values whitepaper §3.3.6: mirror the periodic
+      // loop (`OCPP16ServiceUtils.startUpdatedMeterValues`) and append a paired
+      // SignedData SampledValue when signing is enabled for the connector.
+      // OCPP 2.0.x signing is applied inline by the versioned dispatcher.
+      if (!isOcpp2 && transactionId != null) {
+        OCPP16ServiceUtils.appendSignedUpdatedReadings(
+          this.chargingStation,
+          connectorId,
+          convertToInt(transactionId),
+          meterValue as OCPP16MeterValue
+        )
+      }
+      return [meterValue]
+    })()
+    if (intervalState != null && connectorStatus != null) {
+      completeTransactionIntervalState(intervalState, intervalBaselineKey, meterValues)
     }
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      MeterValuesRequest,
-      MeterValuesResponse
-    >(
-      this.chargingStation,
-      RequestCommand.METER_VALUES,
-      {
-        ...(isOcpp2
+    const deliveryState = { callError: false, responseReceived: false }
+    const requestParams: RequestParams = {
+      ...this.requestParams,
+      ...(requestedMeterValues == null && { skipBufferingOnError: true }),
+      onError: (error, isCallError) => {
+        deliveryState.callError = isCallError
+        this.requestParams.onError?.(error, isCallError)
+      },
+      onResponseReceived: () => {
+        deliveryState.responseReceived = true
+        this.requestParams.onResponseReceived?.()
+      },
+    }
+    try {
+      return await this.chargingStation.ocppRequestService.requestHandler<
+        MeterValuesRequest,
+        MeterValuesResponse
+      >(
+        this.chargingStation,
+        RequestCommand.METER_VALUES,
+        (isOcpp2
           ? {
-              evseId: payloadEvseId ?? this.chargingStation.getEvseIdByConnectorId(connectorId),
+              ...(requestPayload?.customData != null && { customData: requestPayload.customData }),
+              evseId,
+              meterValue: meterValues,
             }
-          : { connectorId }),
-        meterValue: [meterValue],
-        ...requestPayload,
-      } as MeterValuesRequest,
-      this.requestParams
-    )
+          : {
+              ...requestPayload,
+              connectorId,
+              meterValue: meterValues,
+            }) as MeterValuesRequest,
+        requestParams
+      )
+    } catch (error) {
+      if (
+        intervalState != null &&
+        connectorStatus != null &&
+        !deliveryState.responseReceived &&
+        (deliveryState.callError || requestParams.skipBufferingOnError === true)
+      ) {
+        restoreTransactionIntervalState(intervalState, connectorStatus, intervalBaselineKey)
+      }
+      throw error
+    }
   }
 
   private async handleStatusNotification (

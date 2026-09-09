@@ -16,6 +16,7 @@ import {
   getTransactionEventQueueBytes,
   hasQueuedEndedTransactionEvent,
   queuedTransactionEventHasPublicKey,
+  setTransactionEventQueueInFlight,
   shiftBoundedTransactionEvent,
 } from '../../src/charging-station/TransactionEventQueueUtils.js'
 import {
@@ -89,6 +90,108 @@ const oversizedLifecycleMeterValues = (timestamp: Date): OCPP20MeterValue[] => [
 ]
 
 await describe('TransactionEventQueueUtils', async () => {
+  await it('preserves additive interval energy while decimating queued updates', () => {
+    const transactionId = '00000000-0000-4000-8000-000000000200'
+    const eventCount = Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1
+    const transactionEventQueue = Array.from({ length: eventCount }, (_, seqNo) => {
+      const timestamp = new Date(seqNo * 1000)
+      return toQueuedEvent({
+        eventType: OCPP20TransactionEventEnumType.Updated,
+        meterValue: [
+          {
+            sampledValue: [
+              {
+                context: OCPP20ReadingContextEnumType.SAMPLE_PERIODIC,
+                measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+                unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
+                value: 1,
+              },
+            ],
+            timestamp,
+          },
+        ],
+        seqNo,
+        timestamp,
+        transactionInfo: { transactionId },
+        triggerReason: OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+      })
+    })
+    const connectorStatus = { transactionEventQueue } as ConnectorStatus
+
+    const result = boundTransactionEventQueue(connectorStatus)
+
+    const queue = connectorStatus.transactionEventQueue
+    assert.ok(queue != null)
+    assert.ok(result.removedEvents.length > 0)
+    assert.ok(queue.length <= Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
+    assert.ok(result.bytes <= Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES)
+    for (const queuedEvent of queue) {
+      for (const meterValue of queuedEvent.request.meterValue ?? []) {
+        if (
+          meterValue.sampledValue.some(
+            sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+          )
+        ) {
+          assert.strictEqual(
+            meterValue.timestamp.getTime(),
+            queuedEvent.request.timestamp.getTime()
+          )
+        }
+      }
+    }
+    const retainedEnergy = queue
+      .flatMap(queuedEvent => queuedEvent.request.meterValue ?? [])
+      .flatMap(meterValue => meterValue.sampledValue)
+      .filter(sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL)
+      .reduce((total, sample) => total + sample.value, 0)
+    assert.strictEqual(retainedEnergy, eventCount)
+    assert.strictEqual(result.bytes, getTransactionEventQueueBytes(queue))
+  })
+
+  await it('conserves unsigned interval energy while compacting an Ended history', () => {
+    const transactionId = '00000000-0000-4000-8000-000000000206'
+    const sampleCount = 425
+    const meterValue = Array.from({ length: sampleCount }, (_, index) => ({
+      sampledValue: [
+        {
+          context: OCPP20ReadingContextEnumType.TRANSACTION_END,
+          customData: { padding: 'x'.repeat(2500), vendorId: 'test' },
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
+          value: 1,
+        },
+      ],
+      timestamp: new Date(index * 1000),
+    }))
+    const request: OCPP20TransactionEventRequest = {
+      eventType: OCPP20TransactionEventEnumType.Ended,
+      meterValue,
+      seqNo: 1,
+      timestamp: new Date(sampleCount * 1000),
+      transactionInfo: { transactionId },
+      triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+    }
+    const connectorStatus = { transactionId } as ConnectorStatus
+
+    const result = enqueueBoundedTransactionEvent(connectorStatus, toQueuedEvent(request))
+
+    const queue = connectorStatus.transactionEventQueue
+    assert.ok(queue != null)
+    assert.strictEqual(queue.length, 1)
+    assert.ok((queue[0].request.meterValue?.length ?? 0) < sampleCount)
+    const retainedEnergy =
+      queue[0].request.meterValue
+        ?.flatMap(value => value.sampledValue)
+        .filter(
+          sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )
+        .reduce((total, sample) => total + sample.value, 0) ?? 0
+    assert.strictEqual(retainedEnergy, sampleCount)
+    assert.ok(result.bytes <= Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES)
+    assert.strictEqual(result.bytes, getTransactionEventQueueBytes(queue))
+    assertSchemaValid(queue[0].request)
+  })
+
   await it('retains both endpoints of every signed billing identity under the byte cap', () => {
     const transactionId = '00000000-0000-4000-8000-000000000201'
     const measurands = [
@@ -468,6 +571,160 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(hasQueuedEndedTransactionEvent(connectorStatus, transactionId), false)
     const emptyResult = boundTransactionEventQueue(connectorStatus)
     assert.strictEqual(emptyResult.bytes, getTransactionEventQueueBytes([]))
+  })
+
+  await it('carries interval energy when a rejected queued update is discarded', () => {
+    const transactionId = '00000000-0000-4000-8000-000000000206'
+    const intervalEvent = (seqNo: number, value: number): QueuedTransactionEvent =>
+      toQueuedEvent({
+        eventType: OCPP20TransactionEventEnumType.Updated,
+        meterValue: [
+          {
+            sampledValue: [
+              {
+                context: OCPP20ReadingContextEnumType.SAMPLE_PERIODIC,
+                measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+                unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
+                value,
+              },
+            ],
+            timestamp: new Date(seqNo * 1000),
+          },
+        ],
+        seqNo,
+        timestamp: new Date(seqNo * 1000),
+        transactionInfo: { transactionId },
+        triggerReason: OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+      })
+    const connectorStatus = {
+      transactionEventQueue: [intervalEvent(1, 10), intervalEvent(2, 20)],
+      transactionId,
+    } as unknown as ConnectorStatus
+
+    assert.strictEqual(shiftBoundedTransactionEvent(connectorStatus, true)?.seqNo, 1)
+
+    const queue = connectorStatus.transactionEventQueue
+    assert.ok(queue != null)
+    assert.strictEqual(queue.length, 1)
+    assert.strictEqual(queue[0].request.meterValue?.[0].sampledValue[0].value, 30)
+
+    const signedEvent = intervalEvent(5, 40)
+    const signedSample = signedEvent.request.meterValue?.[0].sampledValue[0]
+    assert.ok(signedSample != null)
+    signedSample.signedMeterValue = {
+      encodingMethod: 'OCMF',
+      publicKey: '',
+      signedMeterData: 'signed-data',
+      signingMethod: '',
+    }
+    const signedConnectorStatus = {
+      transactionEventQueue: [signedEvent, intervalEvent(6, 50)],
+      transactionId,
+    } as unknown as ConnectorStatus
+    assert.strictEqual(shiftBoundedTransactionEvent(signedConnectorStatus, true)?.seqNo, 5)
+    const retainedSamples =
+      signedConnectorStatus.transactionEventQueue?.[0].request.meterValue?.flatMap(
+        meterValue => meterValue.sampledValue
+      )
+    if (retainedSamples == null) assert.fail('Expected retained interval samples')
+    assert.deepStrictEqual(
+      retainedSamples.map(sampledValue => sampledValue.value).sort((left, right) => left - right),
+      [40, 50]
+    )
+    assert.ok(retainedSamples.some(sampledValue => sampledValue.signedMeterValue != null))
+
+    assert.strictEqual(
+      boundTransactionEventQueue(connectorStatus).bytes,
+      getTransactionEventQueueBytes(queue)
+    )
+
+    const loneConnectorStatus = {
+      transactionEventQueue: [intervalEvent(3, 30)],
+      transactionId,
+    } as unknown as ConnectorStatus
+    assert.strictEqual(shiftBoundedTransactionEvent(loneConnectorStatus, true), undefined)
+    assert.strictEqual(loneConnectorStatus.transactionEventQueue?.length, 1)
+
+    const zeroConnectorStatus = {
+      transactionEventQueue: [intervalEvent(4, 0)],
+      transactionId,
+    } as unknown as ConnectorStatus
+    assert.strictEqual(shiftBoundedTransactionEvent(zeroConnectorStatus, true)?.seqNo, 4)
+    assert.strictEqual(zeroConnectorStatus.transactionEventQueue?.length, 0)
+  })
+
+  await it('does not evict an in-flight replay while bounding a concurrent enqueue', () => {
+    const transactionId = '00000000-0000-4000-8000-000000000210'
+    const event = (seqNo: number, payloadSize: number): QueuedTransactionEvent =>
+      toQueuedEvent({
+        customData: { payload: 'x'.repeat(payloadSize), vendorId: 'test' },
+        eventType: OCPP20TransactionEventEnumType.Updated,
+        seqNo,
+        timestamp: new Date(seqNo * 1000),
+        transactionInfo: { transactionId },
+        triggerReason: OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+      })
+    const inFlightEvent = event(1, 900_000)
+    const concurrentEvent = event(2, 300_000)
+    const connectorStatus = {
+      transactionEventQueue: [inFlightEvent, concurrentEvent],
+      transactionId,
+    } as unknown as ConnectorStatus
+    setTransactionEventQueueInFlight(connectorStatus, inFlightEvent)
+    try {
+      boundTransactionEventQueue(connectorStatus, concurrentEvent)
+    } finally {
+      setTransactionEventQueueInFlight(connectorStatus)
+    }
+
+    assert.deepStrictEqual(connectorStatus.transactionEventQueue, [inFlightEvent])
+  })
+
+  await it('carries interval consumption when the newest update cannot fit', () => {
+    const transactionId = '00000000-0000-4000-8000-000000000207'
+    const baselineKey = 'AlignedDataCtrlr.Measurands'
+    const request: OCPP20TransactionEventRequest = {
+      eventType: OCPP20TransactionEventEnumType.Updated,
+      idToken: {
+        additionalInfo: Array.from({ length: 15_000 }, (_, index) => ({
+          additionalIdToken: index.toString().padStart(36, '0'),
+          type: 'x'.repeat(50),
+        })),
+        idToken: 'active-token',
+        type: OCPP20IdTokenEnumType.Local,
+      },
+      meterValue: [
+        {
+          sampledValue: [
+            {
+              measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+              unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
+              value: 10,
+            },
+          ],
+          timestamp: new Date(5_000),
+        },
+      ],
+      seqNo: 5,
+      timestamp: new Date(5_000),
+      transactionInfo: { transactionId },
+      triggerReason: OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+    }
+    const event = {
+      ...toQueuedEvent(request),
+      transactionEnergyActiveImportIntervalConsumption: { [baselineKey]: 10 },
+    }
+    assert.ok(getTransactionEventQueueBytes([event]) > Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES)
+    const connectorStatus = { transactionId } as ConnectorStatus
+
+    const result = enqueueBoundedTransactionEvent(connectorStatus, event)
+
+    assert.ok(result.removedEvents.includes(event))
+    assert.strictEqual(connectorStatus.transactionEventQueue?.length, 0)
+    assert.strictEqual(
+      connectorStatus.transactionEnergyActiveImportIntervalCarry?.[baselineKey],
+      10
+    )
   })
 
   await it('transfers first-event identity through repeated residual evictions', () => {
