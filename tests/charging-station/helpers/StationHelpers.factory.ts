@@ -247,6 +247,9 @@ export function createMockChargingStation (
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     emitChargingStationEvent: () => {},
     evses,
+    flushMessageBuffer (): void {
+      /* empty */
+    },
     getAuthorizeRemoteTxRequests (): boolean {
       return false // Default to false in mock
     },
@@ -470,6 +473,8 @@ export function createMockChargingStation (
       }
     },
 
+    lifecycleAbortSignal: new AbortController().signal,
+
     listenerCount: () => 0,
 
     lockConnector (connectorId: number): void {
@@ -627,6 +632,9 @@ export function createMockChargingStation (
       /* empty */
     },
     saveTransactionEventQueues (): void {
+      /* empty */
+    },
+    settleTransactionEnergyMeterValues (): void {
       /* empty */
     },
     start (): void {
