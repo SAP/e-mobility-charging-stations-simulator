@@ -1812,7 +1812,9 @@ export class OCPP20ServiceUtils {
                   normalizedSample.location,
                   canonicalizeCustomData(normalizedSample.customData),
                 ])
-                if (!samplesByIdentity.has(identity)) { samplesByIdentity.set(identity, normalizedSample) }
+                if (!samplesByIdentity.has(identity)) {
+                  samplesByIdentity.set(identity, normalizedSample)
+                }
               }
               return [...samplesByIdentity.values()]
             })()
