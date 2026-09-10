@@ -7,7 +7,7 @@
     "pnpm": ">=10.9.0"
   },
   "volta": {
-    "node": "24.20.0",
+    "node": "24.21.0",
     "pnpm": "12.3.4"
   },
   "packageManager": "pnpm@12.3.4",
@@ -112,11 +112,11 @@
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.39.5",
-    "eslint-plugin-jsdoc": "^64.3.5",
+    "eslint-plugin-jsdoc": "^64.3.6",
     "eslint-plugin-perfectionist": "^5.11.0",
     "eslint-plugin-vue": "^10.10.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.4.1",
+    "lint-staged": "^17.5.0",
     "neostandard": "^0.13.0",
     "prettier": "^3.9.6",
     "rimraf": "^6.1.3",
