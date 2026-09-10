@@ -139,15 +139,18 @@ export class Constants {
 
   static readonly ENV_SIMULATOR_COLD_START = 'SIMULATOR_COLD_START'
 
+  /** Maximum station-local outgoing OCPP CALLs retained behind the active CALL. */
+  static readonly MAX_OUTGOING_CALL_WAITERS = 1024
+
   static readonly MAX_RANDOM_INTEGER = 281_474_976_710_655 // 2^48 - 1 (randomInt() limit)
 
   // Node.js setInterval/setTimeout maximum safe delay value (2^31-1 ms ≈ 24.8 days)
   // Values exceeding this limit cause Node.js to reset the delay to 1ms
   static readonly MAX_SETINTERVAL_DELAY_MS = 2_147_483_647
 
-  /** Hard serialized-size safety bound for durable OCPP 2.0.1 TransactionEvent backlogs. */
+  /** Serialized-size compaction target for durable OCPP 2.0.1 TransactionEvent backlogs. */
   static readonly MAX_TRANSACTION_EVENT_QUEUE_BYTES = 1024 * 1024
-  /** Hard safety bound for durable OCPP 2.0.1 TransactionEvent backlogs per connector. */
+  /** Queue-length compaction target for durable OCPP 2.0.1 TransactionEvent backlogs. */
   static readonly MAX_TRANSACTION_EVENT_QUEUE_LENGTH = 10_000
   /** Milliseconds per day; equal to `24 * MS_PER_HOUR`. */
   static readonly MS_PER_DAY = DAY_IN_MS

@@ -18,6 +18,9 @@ import {
   ChargingProfilePurposeType,
   type ConnectorStatus,
   ConnectorStatusEnum,
+  OCPP20ComponentName,
+  OCPP20ReadingContextEnumType,
+  OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
 } from '../types/index.js'
 import {
@@ -28,8 +31,10 @@ import {
   isNotEmptyArray,
   logger,
 } from '../utils/index.js'
+import { buildConfigKey } from './ConfigurationKeyUtils.js'
 import { getSingleChargingSchedule } from './HelpersChargingProfile.js'
 import { getMaxNumberOfConnectors } from './HelpersConfig.js'
+import { getRepresentedTransactionIntervalEnergyWh } from './meter-values/TransactionIntervalUtils.js'
 import {
   boundTransactionEventQueue,
   queuedTransactionEventHasPublicKey,
@@ -181,9 +186,10 @@ export const resetAuthorizeConnectorStatus = (connectorStatus: ConnectorStatus):
  * Full connector reset: drops the transaction bookkeeping and the
  * transaction-scoped energy counter, filters out non-station-scope
  * charging profiles, and clears authorization + reservation state. The
- * station-scoped `energyActiveImportRegisterValue` is deliberately
- * preserved (persistent energy register per OCPP), and `availability` is
- * untouched. Safe to call on a `null` / `undefined` connector (no-op).
+ * physical `energyActiveImportRegisterValue` and
+ * `energyActiveImportIntervalBaselines` are deliberately preserved across
+ * transactions, and `availability` is untouched. Safe to call on a `null` /
+ * `undefined` connector (no-op).
  * @param connectorStatus - Target connector status to reset in place, or `null` / `undefined` for a no-op.
  */
 export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefined): void => {
@@ -222,12 +228,28 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
     delete connectorStatus.transactionEndedMeterValuesSetInterval
   }
   delete connectorStatus.transactionSeqNo
+  delete connectorStatus.transactionStartedExhaustedTransactionId
   delete connectorStatus.publicKeySentInTransaction
   delete connectorStatus.transactionEvseSent
   delete connectorStatus.transactionIdTokenSent
   delete connectorStatus.transactionDeauthorized
   delete connectorStatus.transactionDeauthorizedEnergyWh
 }
+
+const STATION_INTERVAL_BASELINE_PREFIX = 'station:'
+
+const sanitizeEnergyIntervalBaselines = (value: unknown): Record<string, number> =>
+  isJsonObject(value)
+    ? Object.fromEntries(
+      Object.entries(value).filter(
+        (entry): entry is [string, number] =>
+          entry[0].length > 0 &&
+            typeof entry[1] === 'number' &&
+            Number.isFinite(entry[1]) &&
+            entry[1] >= 0
+      )
+    )
+    : {}
 
 const convertPersistedDate = (value: unknown): Date | undefined => {
   if (!(value instanceof Date) && typeof value !== 'string' && typeof value !== 'number') {
@@ -312,15 +334,27 @@ const prepareQueuedTransactionEvent = (candidate: unknown): QueuedTransactionEve
 }
 
 /**
- * Post-load rehydration hook: coerces the persisted reservation
- * `expiryDate` back into a `Date` instance (or drops the reservation
- * when the value cannot be parsed), and returns the same reference so
- * callers can chain.
+ * Rehydrates and sanitizes persisted connector state, migrates legacy
+ * station interval baselines, reconstructs queued event dates and active
+ * transaction ownership, and returns the same reference for chaining.
  * @param connectorStatus - Target connector status to rehydrate in place.
+ * @param numberOfPhases - Physical phase count used to normalize legacy interval samples.
+ * @param inletToOutputEfficiency - DC inlet-to-output efficiency used for legacy interval samples.
  * @returns The same `connectorStatus` reference, after rehydration.
  */
-export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): ConnectorStatus => {
+export const prepareConnectorStatus = (
+  connectorStatus: ConnectorStatus,
+  numberOfPhases = 3,
+  inletToOutputEfficiency = 1
+): ConnectorStatus => {
   delete connectorStatus.transactionStarting
+  if (
+    typeof connectorStatus.transactionStartedExhaustedTransactionId !== 'string' ||
+    connectorStatus.transactionStartedExhaustedTransactionId.length === 0 ||
+    connectorStatus.transactionStartedExhaustedTransactionId.length > 36
+  ) {
+    delete connectorStatus.transactionStartedExhaustedTransactionId
+  }
   if (connectorStatus.reservation != null) {
     const reservationExpiryDate = convertToDate(connectorStatus.reservation.expiryDate)
     if (reservationExpiryDate != null) {
@@ -344,18 +378,33 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
   ) {
     connectorStatus.transactionEnergyActiveImportRegisterValue = 0
   }
-  const intervalBaselines = connectorStatus.transactionEnergyActiveImportIntervalBaselines
-  if (intervalBaselines != null) {
-    if (!isJsonObject(intervalBaselines)) {
-      delete connectorStatus.transactionEnergyActiveImportIntervalBaselines
-    } else {
-      connectorStatus.transactionEnergyActiveImportIntervalBaselines = Object.fromEntries(
-        Object.entries(intervalBaselines).filter(
-          (entry): entry is [string, number] =>
-            typeof entry[1] === 'number' && Number.isFinite(entry[1]) && entry[1] >= 0
-        )
+  const intervalBaselines = sanitizeEnergyIntervalBaselines(
+    connectorStatus.transactionEnergyActiveImportIntervalBaselines
+  )
+  const physicalIntervalBaselines = {
+    ...Object.fromEntries(
+      Object.entries(intervalBaselines).filter(
+        ([key]) =>
+          key.startsWith(STATION_INTERVAL_BASELINE_PREFIX) &&
+          key.length > STATION_INTERVAL_BASELINE_PREFIX.length
       )
-    }
+    ),
+    ...sanitizeEnergyIntervalBaselines(connectorStatus.energyActiveImportIntervalBaselines),
+  }
+  if (Object.keys(physicalIntervalBaselines).length > 0) {
+    connectorStatus.energyActiveImportIntervalBaselines = physicalIntervalBaselines
+  } else {
+    delete connectorStatus.energyActiveImportIntervalBaselines
+  }
+  const transactionIntervalBaselines = Object.fromEntries(
+    Object.entries(intervalBaselines).filter(
+      ([key]) => !key.startsWith(STATION_INTERVAL_BASELINE_PREFIX)
+    )
+  )
+  if (Object.keys(transactionIntervalBaselines).length > 0) {
+    connectorStatus.transactionEnergyActiveImportIntervalBaselines = transactionIntervalBaselines
+  } else {
+    delete connectorStatus.transactionEnergyActiveImportIntervalBaselines
   }
   const intervalCarry = connectorStatus.transactionEnergyActiveImportIntervalCarry
   if (intervalCarry != null) {
@@ -399,6 +448,47 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
           : undefined
       const queuedEvent = prepareQueuedTransactionEvent(candidate)
       if (queuedEvent != null) {
+        if (
+          queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated &&
+          queuedEvent.transactionEnergyActiveImportIntervalConsumption == null &&
+          queuedEvent.request.transactionInfo.transactionId === transactionId &&
+          queuedEvent.request.meterValue != null
+        ) {
+          const intervalConsumption: Record<string, number> = {}
+          for (const sampleClock of [true, false]) {
+            const baselineKey = buildConfigKey(
+              sampleClock
+                ? OCPP20ComponentName.AlignedDataCtrlr
+                : OCPP20ComponentName.SampledDataCtrlr,
+              sampleClock
+                ? OCPP20RequiredVariableName.Measurands
+                : OCPP20RequiredVariableName.TxUpdatedMeasurands
+            )
+            for (const meterValue of queuedEvent.request.meterValue) {
+              const cadenceMeterValue = {
+                ...meterValue,
+                sampledValue: meterValue.sampledValue.filter(
+                  sampledValue =>
+                    (sampledValue.context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK) ===
+                    sampleClock
+                ),
+              }
+              if (cadenceMeterValue.sampledValue.length === 0) continue
+              const representedEnergyWh = getRepresentedTransactionIntervalEnergyWh(
+                cadenceMeterValue,
+                numberOfPhases,
+                inletToOutputEfficiency
+              )
+              if (representedEnergyWh > 0) {
+                intervalConsumption[baselineKey] =
+                  (intervalConsumption[baselineKey] ?? 0) + representedEnergyWh
+              }
+            }
+          }
+          if (Object.keys(intervalConsumption).length > 0) {
+            queuedEvent.transactionEnergyActiveImportIntervalConsumption = intervalConsumption
+          }
+        }
         preparedQueue.push(queuedEvent)
       } else if (transactionId != null && candidateTransactionId === transactionId) {
         removedActiveTransactionEvent = true
@@ -438,7 +528,30 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
       connectorStatus.publicKeySentInTransaction = false
     }
   }
-  const transactionId = connectorStatus.transactionId?.toString()
+  let transactionId = connectorStatus.transactionId?.toString()
+  const hasQueuedTransactionEvent =
+    transactionId != null &&
+    connectorStatus.transactionEventQueue?.some(
+      queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId
+    ) === true
+  if (
+    transactionId != null &&
+    connectorStatus.transactionStarted !== true &&
+    connectorStatus.transactionStartedExhaustedTransactionId === transactionId &&
+    !hasQueuedTransactionEvent
+  ) {
+    resetConnectorStatus(connectorStatus)
+    transactionId = undefined
+  }
+  const ownsExhaustedStartedTransaction =
+    transactionId != null &&
+    connectorStatus.transactionStartedExhaustedTransactionId === transactionId
+  if (
+    connectorStatus.transactionStartedExhaustedTransactionId != null &&
+    !ownsExhaustedStartedTransaction
+  ) {
+    delete connectorStatus.transactionStartedExhaustedTransactionId
+  }
   const ownsQueuedStartedEvent =
     connectorStatus.transactionStarted !== true &&
     transactionId != null &&
@@ -447,9 +560,29 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
         queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Started &&
         queuedEvent.request.transactionInfo.transactionId === transactionId
     ) === true
-  if (ownsQueuedStartedEvent) connectorStatus.transactionStarting = true
+  const ownsQueuedEndedEvent =
+    transactionId != null &&
+    connectorStatus.transactionEventQueue?.some(
+      queuedEvent =>
+        queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended &&
+        queuedEvent.request.transactionInfo.transactionId === transactionId
+    ) === true
+  if (ownsQueuedEndedEvent) {
+    delete connectorStatus.transactionStarting
+    connectorStatus.transactionEnding = true
+  } else if (
+    connectorStatus.transactionStarted !== true &&
+    (ownsQueuedStartedEvent || ownsExhaustedStartedTransaction)
+  ) {
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionStarting = true
+  }
   connectorStatus.transactionRestored =
-    transactionId != null && (connectorStatus.transactionStarted === true || ownsQueuedStartedEvent)
+    transactionId != null &&
+    (connectorStatus.transactionStarted === true ||
+      ownsQueuedStartedEvent ||
+      ownsQueuedEndedEvent ||
+      ownsExhaustedStartedTransaction)
   if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
     connectorStatus.chargingProfiles = connectorStatus.chargingProfiles
       .filter(

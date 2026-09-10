@@ -19,6 +19,7 @@ export interface ConnectorStatus {
   availability: AvailabilityType
   bootStatus?: ConnectorStatusEnum
   chargingProfiles?: ChargingProfile[]
+  energyActiveImportIntervalBaselines?: Record<string, number> // In Wh
   energyActiveImportRegisterValue?: number // In Wh
   errorCode?: OCPP16ChargePointErrorCode
   idTagAuthorized?: boolean
@@ -54,6 +55,7 @@ export interface ConnectorStatus {
   transactionSeqNo?: number
   transactionStart?: Date
   transactionStarted?: boolean
+  transactionStartedExhaustedTransactionId?: string
   transactionStarting?: boolean
   transactionUpdatedMeterValuesSetInterval?: NodeJS.Timeout
   type?: ConnectorEnumType

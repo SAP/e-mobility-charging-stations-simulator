@@ -65,6 +65,7 @@ import {
   generateUUID,
   getErrorMessage,
   interruptibleSleep,
+  isJsonObject,
   isNotEmptyArray,
   logger,
   roundTo,
@@ -82,15 +83,22 @@ import {
 } from '../../meter-values/CoherentSampleComputer.js'
 import { resolveRootSeed } from '../../meter-values/CoherentSession.js'
 import { canonicalizeCustomData } from '../../meter-values/MeterValueUtils.js'
-import { getTransactionIntervalConsumptions } from '../../meter-values/TransactionIntervalUtils.js'
+import {
+  getRepresentedTransactionIntervalEnergyWh,
+  getTransactionIntervalConsumptions,
+  truncateTransactionIntervalValue,
+} from '../../meter-values/TransactionIntervalUtils.js'
 import {
   enqueueBoundedTransactionEvent,
+  getMutableSignedMeterValue,
   hasQueuedEndedTransactionEvent,
   invalidateTransactionEventQueueAccounting,
+  isTransactionEventQueueStaged,
   queuedTransactionEventHasPublicKey,
   setTransactionEventQueueInFlight,
+  setTransactionEventQueueStaged,
   shiftBoundedTransactionEvent,
-  transactionEventHasUnsignedIntervalEnergy,
+  transferDiscardedTransactionEventIntervalEnergy,
 } from '../../TransactionEventQueueUtils.js'
 import {
   mapOCPP20AuthorizationStatus,
@@ -110,6 +118,35 @@ import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata } from './OCPP20VariableRegistry.js'
 
 const moduleName = 'OCPP20ServiceUtils'
+
+type TransactionEventDeliveryOutcome =
+  'aborted' | 'exhausted' | 'offline' | 'pre-send-failed' | 'response-handling-failed'
+
+class TransactionEventDeliveryError extends OCPPError {
+  public readonly confirmedRejected: boolean
+  public readonly definitelyUnsent: boolean
+  public readonly outcome: TransactionEventDeliveryOutcome
+
+  constructor (
+    outcome: TransactionEventDeliveryOutcome,
+    cause: unknown,
+    confirmedRejected = false,
+    definitelyUnsent = false
+  ) {
+    const error =
+      cause instanceof OCPPError
+        ? cause
+        : new OCPPError(
+          ErrorType.GENERIC_ERROR,
+          getErrorMessage(cause),
+          OCPP20RequestCommand.TRANSACTION_EVENT
+        )
+    super(error.code, error.message, error.command, error.details)
+    this.confirmedRejected = confirmedRejected
+    this.definitelyUnsent = definitelyUnsent
+    this.outcome = outcome
+  }
+}
 
 const isAbortSignalAborted = (signal?: AbortSignal): boolean => signal?.aborted === true
 
@@ -146,6 +183,138 @@ const getTransactionObservationInterval = (
   return previousUpdate != null
     ? Math.max(0, timestamp.getTime() - previousUpdate.getTime())
     : fallbackInterval
+}
+
+interface EndedIntervalEnergyCoverage {
+  readonly coveredDebtIntervals: readonly EnergyInterval[]
+  readonly legacyCoveredEnergyWh: number
+  readonly recoveryEnergyWh: number
+}
+
+interface EnergyInterval {
+  end: number
+  start: number
+}
+
+const getEnergyIntervalLength = ({ end, start }: EnergyInterval): number => Math.max(0, end - start)
+
+const mergeEnergyIntervals = (intervals: readonly EnergyInterval[]): EnergyInterval[] => {
+  const sortedIntervals = intervals
+    .filter(interval => interval.end > interval.start)
+    .map(interval => ({ ...interval }))
+    .sort((left, right) => left.start - right.start || left.end - right.end)
+  const mergedIntervals: EnergyInterval[] = []
+  for (const interval of sortedIntervals) {
+    const previousInterval = mergedIntervals.at(-1)
+    if (previousInterval == null || interval.start > previousInterval.end) {
+      mergedIntervals.push(interval)
+    } else {
+      previousInterval.end = Math.max(previousInterval.end, interval.end)
+    }
+  }
+  return mergedIntervals
+}
+
+const subtractEnergyInterval = (
+  intervals: readonly EnergyInterval[],
+  coveredInterval: EnergyInterval | undefined
+): EnergyInterval[] => {
+  if (coveredInterval == null) return intervals.map(interval => ({ ...interval }))
+  const remainingIntervals: EnergyInterval[] = []
+  for (const interval of intervals) {
+    if (coveredInterval.end <= interval.start || coveredInterval.start >= interval.end) {
+      remainingIntervals.push({ ...interval })
+      continue
+    }
+    if (coveredInterval.start > interval.start) {
+      remainingIntervals.push({
+        end: Math.min(interval.end, coveredInterval.start),
+        start: interval.start,
+      })
+    }
+    if (coveredInterval.end < interval.end) {
+      remainingIntervals.push({
+        end: interval.end,
+        start: Math.max(interval.start, coveredInterval.end),
+      })
+    }
+  }
+  return remainingIntervals
+}
+
+const takeEnergyIntervals = (
+  intervals: readonly EnergyInterval[],
+  requestedEnergyWh: number
+): EnergyInterval[] => {
+  const selectedIntervals: EnergyInterval[] = []
+  let remainingEnergyWh = requestedEnergyWh
+  for (const interval of intervals) {
+    if (remainingEnergyWh <= 0) break
+    const intervalLength = getEnergyIntervalLength(interval)
+    const selectedLength = Math.min(intervalLength, remainingEnergyWh)
+    if (selectedLength > 0) {
+      selectedIntervals.push({ end: interval.start + selectedLength, start: interval.start })
+      remainingEnergyWh -= selectedLength
+    }
+  }
+  return selectedIntervals
+}
+
+const getEnergyIntervalOverlap = (left: EnergyInterval, right: EnergyInterval): number =>
+  Math.max(0, Math.min(left.end, right.end) - Math.max(left.start, right.start))
+
+const buildEndedIntervalEnergyCoverage = (
+  connectorStatus: ConnectorStatus,
+  representedIntervals: readonly EnergyInterval[],
+  unmappedRepresentedEnergyWh: number
+): EndedIntervalEnergyCoverage => {
+  const carry = connectorStatus.transactionEnergyActiveImportIntervalCarry ?? {}
+  const baselines = connectorStatus.transactionEnergyActiveImportIntervalBaselines ?? {}
+  const debtIntervals: EnergyInterval[] = []
+  let maximumLegacyCarryWh = 0
+  for (const [key, carryWh] of Object.entries(carry)) {
+    if (!Number.isFinite(carryWh) || carryWh <= 0) continue
+    const baselineWh = baselines[key]
+    if (typeof baselineWh === 'number' && Number.isFinite(baselineWh)) {
+      debtIntervals.push({ end: baselineWh, start: baselineWh - carryWh })
+    } else {
+      maximumLegacyCarryWh = Math.max(maximumLegacyCarryWh, carryWh)
+    }
+  }
+  const mergedDebtIntervals = mergeEnergyIntervals(debtIntervals)
+  const mergedRepresentedIntervals = mergeEnergyIntervals(representedIntervals)
+  const uncoveredDebtIntervals = mergedRepresentedIntervals.reduce(
+    (remainingIntervals, representedInterval) =>
+      subtractEnergyInterval(remainingIntervals, representedInterval),
+    mergedDebtIntervals
+  )
+  const uncoveredKnownEnergyWh = uncoveredDebtIntervals.reduce(
+    (total, interval) => total + getEnergyIntervalLength(interval),
+    0
+  )
+  const positionedRepresentedEnergyWh = mergedRepresentedIntervals.reduce(
+    (total, interval) => total + getEnergyIntervalLength(interval),
+    0
+  )
+  // Legacy carry without a baseline has no physical position. Treat legacy entries as
+  // overlapping one another and with all represented energy so recovery remains conservative.
+  const uncoveredLegacyEnergyWh = Math.max(
+    0,
+    maximumLegacyCarryWh - positionedRepresentedEnergyWh - unmappedRepresentedEnergyWh
+  )
+  const recoveryEnergyWh = truncateTransactionIntervalValue(
+    Math.max(uncoveredKnownEnergyWh, uncoveredLegacyEnergyWh)
+  )
+  const recoveryIntervals = takeEnergyIntervals(uncoveredDebtIntervals, recoveryEnergyWh)
+  return {
+    coveredDebtIntervals: mergeEnergyIntervals([
+      ...mergedRepresentedIntervals,
+      ...recoveryIntervals,
+    ]),
+    legacyCoveredEnergyWh:
+      positionedRepresentedEnergyWh + unmappedRepresentedEnergyWh + recoveryEnergyWh,
+    recoveryEnergyWh,
+  }
 }
 
 const getSharedEnergyObservationInterval = (
@@ -219,9 +388,9 @@ const consumeConnectorEnergySinceBaseline = (
 ): number => {
   const currentEnergy = connectorStatus.energyActiveImportRegisterValue ?? 0
   const baseline =
-    connectorStatus.transactionEnergyActiveImportIntervalBaselines?.[baselineKey] ?? initialBaseline
-  connectorStatus.transactionEnergyActiveImportIntervalBaselines ??= {}
-  connectorStatus.transactionEnergyActiveImportIntervalBaselines[baselineKey] = currentEnergy
+    connectorStatus.energyActiveImportIntervalBaselines?.[baselineKey] ?? initialBaseline
+  connectorStatus.energyActiveImportIntervalBaselines ??= {}
+  connectorStatus.energyActiveImportIntervalBaselines[baselineKey] = currentEnergy
   return Math.max(0, currentEnergy - baseline)
 }
 
@@ -337,11 +506,14 @@ const mergeIntervalBaselineRestores = (
 }
 
 const runIntervalBaselineRestores = (
+  chargingStation: ChargingStation,
   restores: ReadonlyMap<object, IntervalBaselineRestore>
 ): void => {
+  if (restores.size === 0) return
   for (const { consumed = 0, restore } of [...restores.values()].toReversed()) {
     restore(consumed)
   }
+  chargingStation.saveTransactionEventQueues()
 }
 
 const getClockAlignedAdditiveUnitFamily = (
@@ -725,6 +897,11 @@ export class OCPP20ServiceUtils {
     Map<number, ClockAlignedMeterValuesSendState>
   >()
 
+  private static readonly endedIntervalEnergyCoverages = new WeakMap<
+    readonly OCPP20MeterValue[],
+    EndedIntervalEnergyCoverage
+  >()
+
   private static readonly incomingRequestSchemaNames: readonly [
     OCPP20IncomingRequestCommand,
     string
@@ -778,11 +955,6 @@ export class OCPP20ServiceUtils {
 
   private static readonly replayedTransactionEventRequests =
     new WeakSet<OCPP20TransactionEventRequest>()
-
-  private static readonly retryableTransactionEventQueueFailures = new WeakMap<
-    ConnectorStatus,
-    object
-  >()
 
   private static readonly saturatedTransactionEventQueues = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventQueueDrains = new WeakSet<ConnectorStatus>()
@@ -1190,76 +1362,105 @@ export class OCPP20ServiceUtils {
       return false
     }
     const txId = connectorStatus.transactionId
-    const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
-    OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
-    resetConnectorStatus(connectorStatus)
-    chargingStation.destroyCoherentSession(txId)
-    // Persist an unlocked terminal state: the in-memory lock only represents
-    // this process' unplug-delay timer and cannot be resumed after a restart.
-    connectorStatus.locked = false
-    const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
-      .lifecycleAbortSignal
-    if (postTransactionDelay > 0 && !chargingStation.isStopping()) {
-      connectorStatus.postTransactionDelayTransactionId = txId
-      chargingStation.saveTransactionEventQueues()
-      // The connector remains occupied during the configured unplug delay.
-      connectorStatus.locked = true
-      if (lifecycleAbortSignal == null) {
-        await sleep(secondsToMilliseconds(postTransactionDelay))
-      } else {
-        await interruptibleSleep(secondsToMilliseconds(postTransactionDelay), lifecycleAbortSignal)
+    const saveTerminalState = (): void => {
+      try {
+        chargingStation.saveTransactionEventQueues()
+      } catch (error: unknown) {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.cleanupEndedTransaction: Failed to persist terminal transaction state:`,
+          error
+        )
       }
     }
-    if (
-      connectorStatus.postTransactionDelayTransactionId != null &&
-      connectorStatus.postTransactionDelayTransactionId !== txId
-    ) {
+    const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
+    try {
+      OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
+      resetConnectorStatus(connectorStatus)
+      chargingStation.destroyCoherentSession(txId)
+      // Persist an unlocked terminal state: the in-memory lock only represents
+      // this process' unplug-delay timer and cannot be resumed after a restart.
+      connectorStatus.locked = false
+      const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
+        .lifecycleAbortSignal
+      if (postTransactionDelay > 0 && !chargingStation.isStopping()) {
+        connectorStatus.postTransactionDelayTransactionId = txId
+        saveTerminalState()
+        // The connector remains occupied during the configured unplug delay.
+        connectorStatus.locked = true
+        if (lifecycleAbortSignal == null) {
+          await sleep(secondsToMilliseconds(postTransactionDelay))
+        } else {
+          await interruptibleSleep(
+            secondsToMilliseconds(postTransactionDelay),
+            lifecycleAbortSignal
+          )
+        }
+      }
+      if (
+        connectorStatus.postTransactionDelayTransactionId != null &&
+        connectorStatus.postTransactionDelayTransactionId !== txId
+      ) {
+        return true
+      }
+      if (connectorStatus.postTransactionDelayTransactionId === txId) {
+        delete connectorStatus.postTransactionDelayTransactionId
+      }
+      const currentConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+      if (
+        currentConnectorStatus !== connectorStatus ||
+        connectorStatus.transactionId != null ||
+        connectorStatus.transactionStarted === true ||
+        connectorStatus.transactionPending === true ||
+        connectorStatus.transactionStarting === true ||
+        connectorStatus.transactionEnding === true
+      ) {
+        return true
+      }
+      connectorStatus.locked = false
+      if (
+        !chargingStation.started ||
+        chargingStation.isStopping() ||
+        lifecycleAbortSignal?.aborted === true
+      ) {
+        connectorStatus.status =
+          chargingStation.isChargingStationAvailable() &&
+          connectorStatus.availability === AvailabilityType.Operative
+            ? OCPP20ConnectorStatusEnumType.Available
+            : OCPP20ConnectorStatusEnumType.Unavailable
+        return true
+      }
+      sendPostTransactionStatus(chargingStation, connectorId, evseId, {
+        responseTimeoutMs: OCPP20ServiceUtils.readVariableAsIntervalMs(
+          chargingStation,
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20RequiredVariableName.MessageTimeout,
+          Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS
+        ),
+        waitForResponse: false,
+      }).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.cleanupEndedTransaction: Failed to send post-transaction status:`,
+          error
+        )
+      })
       return true
+    } finally {
+      const currentTransactionId = connectorStatus.transactionId?.toString()
+      const currentPostTransactionDelayId = connectorStatus.postTransactionDelayTransactionId
+      if (
+        (currentTransactionId == null || currentTransactionId === txId?.toString()) &&
+        (currentPostTransactionDelayId == null || currentPostTransactionDelayId === txId)
+      ) {
+        resetConnectorStatus(connectorStatus)
+        connectorStatus.locked = false
+        connectorStatus.status =
+          chargingStation.isChargingStationAvailable() &&
+          connectorStatus.availability === AvailabilityType.Operative
+            ? OCPP20ConnectorStatusEnumType.Available
+            : OCPP20ConnectorStatusEnumType.Unavailable
+      }
+      saveTerminalState()
     }
-    if (connectorStatus.postTransactionDelayTransactionId === txId) {
-      delete connectorStatus.postTransactionDelayTransactionId
-    }
-    const currentConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
-    if (
-      currentConnectorStatus !== connectorStatus ||
-      connectorStatus.transactionId != null ||
-      connectorStatus.transactionStarted === true ||
-      connectorStatus.transactionPending === true ||
-      connectorStatus.transactionStarting === true ||
-      connectorStatus.transactionEnding === true
-    ) {
-      return true
-    }
-    connectorStatus.locked = false
-    if (
-      !chargingStation.started ||
-      chargingStation.isStopping() ||
-      lifecycleAbortSignal?.aborted === true
-    ) {
-      connectorStatus.status =
-        chargingStation.isChargingStationAvailable() &&
-        connectorStatus.availability === AvailabilityType.Operative
-          ? OCPP20ConnectorStatusEnumType.Available
-          : OCPP20ConnectorStatusEnumType.Unavailable
-      chargingStation.saveTransactionEventQueues()
-      return true
-    }
-    sendPostTransactionStatus(chargingStation, connectorId, evseId, {
-      responseTimeoutMs: OCPP20ServiceUtils.readVariableAsIntervalMs(
-        chargingStation,
-        OCPP20ComponentName.OCPPCommCtrlr,
-        OCPP20RequiredVariableName.MessageTimeout,
-        Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS
-      ),
-      waitForResponse: false,
-    }).catch((error: unknown) => {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.cleanupEndedTransaction: Failed to send post-transaction status:`,
-        error
-      )
-    })
-    chargingStation.saveTransactionEventQueues()
-    return true
   }
 
   /**
@@ -1421,24 +1622,20 @@ export class OCPP20ServiceUtils {
     const stationIntervalBaselinesBeforeBuild = new Map(
       [...chargingStation.iterateConnectors(true)].map(({ connectorStatus }) => [
         connectorStatus,
-        connectorStatus.transactionEnergyActiveImportIntervalBaselines?.[
-          stationIntervalBaselineKey
-        ],
+        connectorStatus.energyActiveImportIntervalBaselines?.[stationIntervalBaselineKey],
       ])
     )
     const restoreStationIntervalBaselines = (): void => {
       for (const [connectorStatus, baseline] of stationIntervalBaselinesBeforeBuild) {
         if (baseline == null) {
-          const baselines = connectorStatus.transactionEnergyActiveImportIntervalBaselines
+          const baselines = connectorStatus.energyActiveImportIntervalBaselines
           if (baselines != null) {
             const { [stationIntervalBaselineKey]: _removed, ...remainingBaselines } = baselines
-            connectorStatus.transactionEnergyActiveImportIntervalBaselines = remainingBaselines
+            connectorStatus.energyActiveImportIntervalBaselines = remainingBaselines
           }
         } else {
-          connectorStatus.transactionEnergyActiveImportIntervalBaselines ??= {}
-          connectorStatus.transactionEnergyActiveImportIntervalBaselines[
-            stationIntervalBaselineKey
-          ] = baseline
+          connectorStatus.energyActiveImportIntervalBaselines ??= {}
+          connectorStatus.energyActiveImportIntervalBaselines[stationIntervalBaselineKey] = baseline
         }
       }
     }
@@ -1458,7 +1655,6 @@ export class OCPP20ServiceUtils {
       }
     )
     for (const { evseId, evseStatus } of evses) {
-      const evseIntervalBaselineBeforeBuild = evseStatus.energyActiveImportIntervalBaseline
       let evseInTransaction = false
       for (const connectorStatus of evseStatus.connectors.values()) {
         if (hasOngoingTransaction(connectorStatus)) {
@@ -1470,6 +1666,25 @@ export class OCPP20ServiceUtils {
       const connectors = [...evseStatus.connectors.entries()].sort(
         ([leftConnectorId], [rightConnectorId]) => leftConnectorId - rightConnectorId
       )
+      const hasConnectorStationBaselineAtStart = connectors.some(
+        ([, connectorStatus]) =>
+          connectorStatus.energyActiveImportIntervalBaselines?.[stationIntervalBaselineKey] != null
+      )
+      const legacyEvseBaseline = evseStatus.energyActiveImportIntervalBaseline
+      const hasValidLegacyEvseBaseline =
+        typeof legacyEvseBaseline === 'number' &&
+        Number.isFinite(legacyEvseBaseline) &&
+        legacyEvseBaseline >= 0
+      const useInitialActiveIntervalObservation =
+        usesEvseMeterTemplate &&
+        evseInTransaction &&
+        chargingStation.stationInfo?.meteringPerTransaction !== true &&
+        !hasConnectorStationBaselineAtStart &&
+        !hasValidLegacyEvseBaseline
+      const initialActiveIntervalSamples = new Map<string, OCPP20SampledValue>()
+      const initialCoherentIntervalTotals = new Map<string, number>()
+      const initialLegacyIntervalMaximums = new Map<string, number>()
+      let stationIntervalBaselinesSeeded = false
       const stationIntervalInitialBaselines = new Map(
         connectors.map(([connectorId, connectorStatus]) => {
           const transactionRegister =
@@ -1613,7 +1828,7 @@ export class OCPP20ServiceUtils {
         if (evseInTransaction && transactionId == null && usesEvseMeterTemplate) continue
         try {
           let sharedObservationEnergyWh: number | undefined
-          let stationAlignedTransactionEnergyWh: number | undefined
+          let stationAlignedPhysicalIntervalEnergyWh: number | undefined
           const stationBaseline =
             evseId === 0
               ? aggregateClockAlignedSamples(
@@ -1748,27 +1963,113 @@ export class OCPP20ServiceUtils {
             }
           }
           if (!isNotEmptyArray(meterValue.sampledValue)) continue
+          const configuredEfficiency =
+            chargingStation.stationInfo?.currentOutType === CurrentType.DC
+              ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
+              : 1
+          const dcEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
+          if (useInitialActiveIntervalObservation && transactionId != null) {
+            const normalizedMeterValue = normalizePhysicalMeterValueForStationAggregation(
+              meterValue,
+              chargingStation.stationInfo?.currentOutType,
+              dcEfficiency
+            )
+            for (const sampledValue of normalizedMeterValue.sampledValue) {
+              if (
+                sampledValue.measurand !== OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+              ) {
+                continue
+              }
+              const identity = JSON.stringify([
+                sampledValue.measurand,
+                sampledValue.context,
+                sampledValue.location,
+                sampledValue.phase,
+                canonicalizeCustomData(sampledValue.customData),
+              ])
+              const coherentSession = chargingStation.getCoherentSession(transactionId)
+              if (coherentSession != null) {
+                initialCoherentIntervalTotals.set(
+                  identity,
+                  (initialCoherentIntervalTotals.get(identity) ?? 0) + sampledValue.value
+                )
+              } else {
+                initialLegacyIntervalMaximums.set(
+                  identity,
+                  Math.max(initialLegacyIntervalMaximums.get(identity) ?? 0, sampledValue.value)
+                )
+              }
+              initialActiveIntervalSamples.set(identity, {
+                ...sampledValue,
+                value:
+                  (initialCoherentIntervalTotals.get(identity) ?? 0) +
+                  (initialLegacyIntervalMaximums.get(identity) ?? 0),
+              })
+            }
+          }
           if (
             canSendNonTransactional &&
             alignedIntervalEnergySamples &&
-            transactionId != null &&
             meterValue.sampledValue.some(
               sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
             )
           ) {
-            if (sharedEvseEnergyOwnerConnectorId == null) {
-              stationAlignedTransactionEnergyWh = consumeConnectorEnergySinceBaseline(
+            if (usesEvseMeterTemplate) {
+              // A persisted aggregate EVSE baseline predates connector-scoped physical
+              // baselines. Use it once, then seed every connector without deleting it so
+              // a failed EVSE 0 request can roll back and retry the same migration.
+              if (
+                !hasConnectorStationBaselineAtStart &&
+                hasValidLegacyEvseBaseline &&
+                !stationIntervalBaselinesSeeded
+              ) {
+                const sharedEvseEnergy = connectors.reduce(
+                  (total, [, physicalConnectorStatus]) =>
+                    total +
+                    Math.max(0, physicalConnectorStatus.energyActiveImportRegisterValue ?? 0),
+                  0
+                )
+                stationAlignedPhysicalIntervalEnergyWh = Math.max(
+                  0,
+                  sharedEvseEnergy - legacyEvseBaseline
+                )
+                for (const [physicalConnectorId, physicalConnectorStatus] of connectors) {
+                  consumeConnectorEnergySinceBaseline(
+                    physicalConnectorStatus,
+                    stationIntervalBaselineKey,
+                    stationIntervalInitialBaselines.get(physicalConnectorId) ?? 0
+                  )
+                }
+                stationIntervalBaselinesSeeded = true
+              } else if (useInitialActiveIntervalObservation) {
+                if (!stationIntervalBaselinesSeeded) {
+                  for (const [physicalConnectorId, physicalConnectorStatus] of connectors) {
+                    consumeConnectorEnergySinceBaseline(
+                      physicalConnectorStatus,
+                      stationIntervalBaselineKey,
+                      stationIntervalInitialBaselines.get(physicalConnectorId) ?? 0
+                    )
+                  }
+                  stationIntervalBaselinesSeeded = true
+                }
+              } else {
+                stationAlignedPhysicalIntervalEnergyWh = connectors.reduce(
+                  (total, [physicalConnectorId, physicalConnectorStatus]) =>
+                    total +
+                    consumeConnectorEnergySinceBaseline(
+                      physicalConnectorStatus,
+                      stationIntervalBaselineKey,
+                      stationIntervalInitialBaselines.get(physicalConnectorId) ?? 0
+                    ),
+                  0
+                )
+              }
+            } else {
+              stationAlignedPhysicalIntervalEnergyWh = consumeConnectorEnergySinceBaseline(
                 connectorStatus,
                 stationIntervalBaselineKey,
                 stationIntervalInitialBaselines.get(connectorId) ?? 0
               )
-            } else if (connectorId === sharedEvseEnergyOwnerConnectorId) {
-              const sharedEvseEnergy = evseStatus.energyActiveImportRegisterValue ?? 0
-              stationAlignedTransactionEnergyWh = Math.max(
-                0,
-                sharedEvseEnergy - (evseStatus.energyActiveImportIntervalBaseline ?? 0)
-              )
-              evseStatus.energyActiveImportIntervalBaseline = sharedEvseEnergy
             }
           }
           if (
@@ -1779,16 +2080,18 @@ export class OCPP20ServiceUtils {
             sampledValueTemplates.push(...connectorStatus.MeterValues)
           }
           if (evseId !== 0) {
-            const configuredEfficiency =
-              chargingStation.stationInfo?.currentOutType === CurrentType.DC
-                ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
-                : 1
-            const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
+            const transactionAlignedIntervalEnergyWh =
+              transactionIntervalCarryBeforeBuild +
+              Math.max(
+                0,
+                (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) -
+                  transactionRegisterBeforeBuild
+              )
             const sharedIntervalSamples = (() => {
               if (
-                stationAlignedTransactionEnergyWh == null ||
-                transactionId == null ||
-                chargingStation.stationInfo?.meteringPerTransaction === true
+                stationAlignedPhysicalIntervalEnergyWh == null ||
+                (chargingStation.stationInfo?.meteringPerTransaction === true &&
+                  transactionAlignedIntervalEnergyWh > 0)
               ) {
                 return []
               }
@@ -1807,8 +2110,8 @@ export class OCPP20ServiceUtils {
                   value:
                     chargingStation.stationInfo?.currentOutType === CurrentType.DC &&
                     sample.location === OCPP20LocationEnumType.Inlet
-                      ? stationAlignedTransactionEnergyWh / conversionEfficiency
-                      : stationAlignedTransactionEnergyWh,
+                      ? stationAlignedPhysicalIntervalEnergyWh / dcEfficiency
+                      : stationAlignedPhysicalIntervalEnergyWh,
                 }
                 const identity = JSON.stringify([
                   normalizedSample.measurand,
@@ -1822,20 +2125,21 @@ export class OCPP20ServiceUtils {
               }
               return [...samplesByIdentity.values()]
             })()
-            const transactionAlignedIntervalEnergyWh =
-              transactionIntervalCarryBeforeBuild +
-              Math.max(
-                0,
-                (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) -
-                  transactionRegisterBeforeBuild
-              )
             const stationIntervalRatio =
-              stationAlignedTransactionEnergyWh != null && transactionAlignedIntervalEnergyWh > 0
-                ? stationAlignedTransactionEnergyWh / transactionAlignedIntervalEnergyWh
+              stationAlignedPhysicalIntervalEnergyWh != null &&
+              transactionAlignedIntervalEnergyWh > 0
+                ? stationAlignedPhysicalIntervalEnergyWh / transactionAlignedIntervalEnergyWh
                 : 1
-            const physicalMeterValueSource =
-              sharedEvseEnergyOwnerConnectorId != null &&
-              connectorId !== sharedEvseEnergyOwnerConnectorId
+            const physicalMeterValueSource = useInitialActiveIntervalObservation
+              ? {
+                  ...meterValue,
+                  sampledValue: meterValue.sampledValue.filter(
+                    sample =>
+                      sample.measurand !== OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+                  ),
+                }
+              : sharedEvseEnergyOwnerConnectorId != null &&
+                  connectorId !== sharedEvseEnergyOwnerConnectorId
                 ? {
                     ...meterValue,
                     sampledValue: meterValue.sampledValue.filter(
@@ -1868,7 +2172,7 @@ export class OCPP20ServiceUtils {
             const physicalMeterValue = normalizePhysicalMeterValueForStationAggregation(
               physicalMeterValueSource,
               chargingStation.stationInfo?.currentOutType,
-              conversionEfficiency
+              dcEfficiency
             )
             const stationMeterValue =
               physicalEvseRegisterSamples != null
@@ -1924,6 +2228,12 @@ export class OCPP20ServiceUtils {
           )
         }
       }
+      if (initialActiveIntervalSamples.size > 0) {
+        physicalMeterValues.push({
+          sampledValue: [...initialActiveIntervalSamples.values()],
+          timestamp,
+        })
+      }
       if (
         suppressEvseEmission ||
         !canSendNonTransactional ||
@@ -1968,22 +2278,7 @@ export class OCPP20ServiceUtils {
             evseId,
             { evseId, meterValue: requestMeterValues },
             responseTimeoutMs,
-            [
-              {
-                key: evseStatus,
-                restore:
-                  evseId === 0
-                    ? restoreStationIntervalBaselines
-                    : () => {
-                        if (evseIntervalBaselineBeforeBuild == null) {
-                          delete evseStatus.energyActiveImportIntervalBaseline
-                        } else {
-                          evseStatus.energyActiveImportIntervalBaseline =
-                            evseIntervalBaselineBeforeBuild
-                        }
-                      },
-              },
-            ]
+            evseId === 0 ? [{ key: evseStatus, restore: restoreStationIntervalBaselines }] : []
           ),
       })
     }
@@ -2727,18 +3022,32 @@ export class OCPP20ServiceUtils {
           !chargingStation.inAcceptedState() ||
           OCPP20ServiceUtils.isChargingStationStopping(chargingStation)
         ) {
-          runIntervalBaselineRestores(pending.restoreIntervalBaselines)
+          runIntervalBaselineRestores(chargingStation, pending.restoreIntervalBaselines)
           delete sendState.pending
           break
         }
-        const responseState = { received: false }
+        const responseState = {
+          confirmedRejected: false,
+          received: false,
+          sent: false,
+          transportErrorAmbiguous: false,
+        }
         try {
           await chargingStation.ocppRequestService.requestHandler<
             OCPP20MeterValuesRequest,
             OCPP20MeterValuesResponse
           >(chargingStation, OCPP20RequestCommand.METER_VALUES, pending.request, {
+            onError: (_error, isCallError) => {
+              if (isCallError) responseState.confirmedRejected = true
+            },
+            onMessageSent: () => {
+              responseState.sent = true
+            },
             onResponseReceived: () => {
               responseState.received = true
+            },
+            onTransportError: (_error, deliveryAmbiguous) => {
+              responseState.transportErrorAmbiguous = deliveryAmbiguous
             },
             responseTimeoutMs: pending.responseTimeoutMs,
             skipBufferingOnError: true,
@@ -2747,9 +3056,13 @@ export class OCPP20ServiceUtils {
           })
         } catch (error: unknown) {
           const hasLaterPending = stationStates.get(evseId)?.pending != null
-          if (!responseState.received) {
+          if (
+            !responseState.received &&
+            (responseState.confirmedRejected ||
+              (!responseState.sent && !responseState.transportErrorAmbiguous))
+          ) {
             if (hasLaterPending) restorePending(pending)
-            else runIntervalBaselineRestores(pending.restoreIntervalBaselines)
+            else runIntervalBaselineRestores(chargingStation, pending.restoreIntervalBaselines)
           }
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.METER_VALUES}':`,
@@ -2844,9 +3157,10 @@ export class OCPP20ServiceUtils {
           connectorStatus.publicKeySentInTransaction !== true &&
           connectorStatus.transactionId?.toString() === transactionId &&
           request.meterValue?.some(meterValue =>
-            meterValue.sampledValue.some(
-              sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
-            )
+            meterValue.sampledValue.some(sampledValue => {
+              const publicKey = sampledValue.signedMeterValue?.publicKey
+              return typeof publicKey === 'string' && publicKey.length > 0
+            })
           ) === true
         if (reservesPublicKey) connectorStatus.publicKeySentInTransaction = true
         return reservesPublicKey
@@ -2882,6 +3196,54 @@ export class OCPP20ServiceUtils {
         )
         return { idTokenInfo: undefined }
       }
+      let deleteEmptyStagedQueue = false
+      let stagedEnded: QueuedTransactionEvent | undefined
+      if (eventType === OCPP20TransactionEventEnumType.Ended) {
+        deleteEmptyStagedQueue = connectorStatus.transactionEventQueue == null
+        OCPP20ServiceUtils.enqueueTransactionEvent(
+          chargingStation,
+          connectorStatus,
+          transactionEventRequest
+        )
+        stagedEnded = connectorStatus.transactionEventQueue?.find(
+          queuedEvent => queuedEvent.request === transactionEventRequest
+        )
+        if (stagedEnded != null) {
+          setTransactionEventQueueStaged(connectorStatus, stagedEnded, true)
+          try {
+            await chargingStation.persistTransactionEventQueues()
+            OCPP20ServiceUtils.consumeEndedIntervalEnergyCarry(
+              connectorStatus,
+              transactionEventRequest.meterValue
+            )
+          } catch (error: unknown) {
+            setTransactionEventQueueStaged(connectorStatus, stagedEnded, false)
+            throw error
+          }
+        }
+      }
+      const removeStagedEnded = (persistRemoval = true): void => {
+        if (stagedEnded == null) return
+        const queue = connectorStatus.transactionEventQueue
+        let removed = false
+        if (queue?.at(0) === stagedEnded) {
+          removed = shiftBoundedTransactionEvent(connectorStatus) === stagedEnded
+        } else {
+          const stagedIndex = queue?.indexOf(stagedEnded) ?? -1
+          if (stagedIndex >= 0) {
+            queue?.splice(stagedIndex, 1)
+            invalidateTransactionEventQueueAccounting(connectorStatus)
+            removed = true
+          }
+        }
+        if (removed) {
+          if (queue?.length === 0 && deleteEmptyStagedQueue) {
+            delete connectorStatus.transactionEventQueue
+            invalidateTransactionEventQueueAccounting(connectorStatus)
+          }
+          if (persistRemoval) chargingStation.saveTransactionEventQueues()
+        }
+      }
       if (
         eventType === OCPP20TransactionEventEnumType.Updated &&
         OCPP20ServiceUtils.transactionEventSendChains.has(connectorStatus)
@@ -2903,7 +3265,7 @@ export class OCPP20ServiceUtils {
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
       )
-      const deliveryState = { callError: false, responseReceived: false, sent: false }
+      const deliveryState = { responseReceived: false }
       let deliveryPending = true
       const finishPendingDelivery = (): void => {
         if (!deliveryPending) return
@@ -2912,8 +3274,6 @@ export class OCPP20ServiceUtils {
       }
       OCPP20ServiceUtils.incrementPendingTransactionEventDelivery(connectorStatus, transactionId)
       try {
-        const retryableQueueFailureBeforeDelivery =
-          OCPP20ServiceUtils.retryableTransactionEventQueueFailures.get(connectorStatus)
         const response = await OCPP20ServiceUtils.serializeTransactionEventDelivery(
           connectorStatus,
           async () => {
@@ -2934,47 +3294,47 @@ export class OCPP20ServiceUtils {
                   evseId,
                   queuedEventsBeforeRequest
                 )
-                if (
-                  connectorStatus.transactionEventQueue?.some(queuedEvent =>
-                    queuedEventsBeforeRequest.has(queuedEvent)
-                  ) === true ||
-                  !chargingStation.isWebSocketConnectionOpened() ||
-                  !chargingStation.inAcceptedState()
-                ) {
+              }
+              if (
+                connectorStatus.transactionEventQueue?.some(queuedEvent =>
+                  queuedEventsBeforeRequest.has(queuedEvent)
+                ) === true ||
+                !chargingStation.isWebSocketConnectionOpened() ||
+                !chargingStation.inAcceptedState()
+              ) {
+                if (stagedEnded == null) {
                   OCPP20ServiceUtils.enqueueTransactionEvent(
                     chargingStation,
                     connectorStatus,
                     transactionEventRequest,
                     transactionEventRequest.offline === true
                   )
-                  return { idTokenInfo: undefined }
                 }
+                return { idTokenInfo: undefined }
               }
               if (
                 transactionOwnedWhenQueued &&
                 eventType !== OCPP20TransactionEventEnumType.Started &&
                 connectorStatus.transactionId?.toString() !== transactionId
               ) {
+                removeStagedEnded()
                 logger.warn(
                   `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Dropping stale ${eventType} for transaction ${transactionId}`
                 )
                 return { idTokenInfo: undefined }
               }
-              return await OCPP20ServiceUtils.sendBuiltTransactionEvent(
+              const response = await OCPP20ServiceUtils.sendBuiltTransactionEvent(
                 chargingStation,
                 transactionEventRequest,
                 {
                   ...requestParams,
                   onError: (error, isCallError) => {
-                    deliveryState.callError = isCallError
                     requestParams?.onError?.(error, isCallError)
                   },
-                  onMessageSent: () => {
-                    deliveryState.sent = true
-                    requestParams?.onMessageSent?.()
-                  },
+                  onMessageSent: requestParams?.onMessageSent,
                   onResponseReceived: () => {
                     deliveryState.responseReceived = true
+                    removeStagedEnded(false)
                     finishPendingDelivery()
                     requestParams?.onResponseReceived?.()
                   },
@@ -2982,17 +3342,22 @@ export class OCPP20ServiceUtils {
                 },
                 lifecycleAbortSignal
               )
+              removeStagedEnded()
+              return response
             } catch (error) {
+              const replayDefinitelyUnsent =
+                error instanceof TransactionEventDeliveryError &&
+                error.outcome === 'exhausted' &&
+                error.definitelyUnsent
+              const retainForLater =
+                error instanceof TransactionEventDeliveryError &&
+                (error.outcome === 'aborted' ||
+                  error.outcome === 'offline' ||
+                  replayDefinitelyUnsent)
               if (
                 !deliveryState.responseReceived &&
                 requestParams?.skipBufferingOnError !== true &&
-                ((transactionEventHasUnsignedIntervalEnergy(transactionEventRequest) &&
-                  (eventType === OCPP20TransactionEventEnumType.Updated ||
-                    !deliveryState.callError)) ||
-                  OCPP20ServiceUtils.isChargingStationStopping(chargingStation) ||
-                  !deliveryState.sent ||
-                  !chargingStation.isWebSocketConnectionOpened() ||
-                  !chargingStation.inAcceptedState())
+                retainForLater
               ) {
                 OCPP20ServiceUtils.enqueueTransactionEvent(
                   chargingStation,
@@ -3000,49 +3365,57 @@ export class OCPP20ServiceUtils {
                   transactionEventRequest,
                   transactionEventRequest.offline === true
                 )
+                logger.info(
+                  `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Delivery interrupted, queueing TransactionEvent with seqNo=${transactionEventRequest.seqNo.toString()}`
+                )
                 if (
-                  eventType === OCPP20TransactionEventEnumType.Ended &&
-                  deliveryState.sent &&
-                  !deliveryState.callError &&
+                  replayDefinitelyUnsent &&
                   chargingStation.isWebSocketConnectionOpened() &&
                   chargingStation.inAcceptedState()
                 ) {
-                  OCPP20ServiceUtils.scheduleRetainedEndedTransactionEventRetry(
+                  OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
                     chargingStation,
                     connectorId,
                     connectorStatus,
                     evseId
                   )
                 }
-                logger.info(
-                  `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Delivery failed, queueing TransactionEvent with seqNo=${transactionEventRequest.seqNo.toString()}`
-                )
                 return { idTokenInfo: undefined }
+              }
+              removeStagedEnded()
+              if (
+                error instanceof TransactionEventDeliveryError &&
+                (error.outcome === 'pre-send-failed' ||
+                  (error.outcome === 'exhausted' && error.confirmedRejected))
+              ) {
+                OCPP20ServiceUtils.preserveDiscardedUpdatedIntervalEnergy(
+                  connectorStatus,
+                  transactionEventRequest
+                )
+                chargingStation.saveTransactionEventQueues()
               }
               if (
                 reservesPublicKey &&
-                !deliveryState.sent &&
-                connectorStatus.transactionId?.toString() === transactionId
+                error instanceof TransactionEventDeliveryError &&
+                (error.outcome === 'pre-send-failed' ||
+                  (error.outcome === 'exhausted' &&
+                    (error.confirmedRejected || error.definitelyUnsent)))
               ) {
-                connectorStatus.publicKeySentInTransaction = false
+                OCPP20ServiceUtils.transferRejectedTransactionEventPublicKey(
+                  connectorStatus,
+                  transactionEventRequest
+                )
+                chargingStation.saveTransactionEventQueues()
               }
               throw error
+            } finally {
+              if (stagedEnded != null) {
+                setTransactionEventQueueStaged(connectorStatus, stagedEnded, false)
+              }
             }
           }
         )
-        if (
-          retryableQueueFailureBeforeDelivery != null &&
-          OCPP20ServiceUtils.retryableTransactionEventQueueFailures.get(connectorStatus) ===
-            retryableQueueFailureBeforeDelivery &&
-          OCPP20ServiceUtils.retryableTransactionEventQueueFailures.delete(connectorStatus)
-        ) {
-          OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
-            chargingStation,
-            connectorId,
-            connectorStatus,
-            evseId
-          )
-        }
+
         return response
       } finally {
         finishPendingDelivery()
@@ -3486,13 +3859,35 @@ export class OCPP20ServiceUtils {
       []) as OCPP20MeterValue[]
     const beginMeterValue = connectorStatus?.transactionBeginMeterValue as
       OCPP20MeterValue | undefined
+    const measurandsKey = buildConfigKey(
+      OCPP20ComponentName.SampledDataCtrlr,
+      OCPP20RequiredVariableName.TxEndedMeasurands
+    )
+    const historicalBaselineWh =
+      connectorStatus?.transactionEnergyActiveImportIntervalBaselines?.[measurandsKey]
+    const historicalRepresentedEnergyWh = OCPP20ServiceUtils.getRepresentedEndedIntervalEnergyWh(
+      chargingStation,
+      endedMeterValues,
+      evseId
+    )
+    const representedIntervals: EnergyInterval[] = []
+    let unmappedRepresentedEnergyWh = 0
+    if (
+      typeof historicalBaselineWh === 'number' &&
+      Number.isFinite(historicalBaselineWh) &&
+      historicalRepresentedEnergyWh > 0
+    ) {
+      representedIntervals.push({
+        end: historicalBaselineWh,
+        start: historicalBaselineWh - historicalRepresentedEnergyWh,
+      })
+    } else {
+      unmappedRepresentedEnergyWh += historicalRepresentedEnergyWh
+    }
+    let finalMeterValue: OCPP20MeterValue = { sampledValue: [], timestamp: new Date() }
 
     try {
-      const measurandsKey = buildConfigKey(
-        OCPP20ComponentName.SampledDataCtrlr,
-        OCPP20RequiredVariableName.TxEndedMeasurands
-      )
-      const finalMeterValue = OCPP20ServiceUtils.buildTransactionMeterValue(
+      finalMeterValue = OCPP20ServiceUtils.buildTransactionMeterValue(
         chargingStation,
         connectorId,
         evseId,
@@ -3501,23 +3896,104 @@ export class OCPP20ServiceUtils {
         measurandsKey,
         OCPP20ReadingContextEnumType.TRANSACTION_END
       )
-      if (isNotEmptyArray(finalMeterValue.sampledValue)) {
-        return [
-          ...(beginMeterValue != null ? [beginMeterValue] : []),
-          ...endedMeterValues,
-          finalMeterValue,
-        ]
-      }
     } catch (error) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: ${getErrorMessage(error)}`
       )
     }
-    const meterValues: OCPP20MeterValue[] = [
+
+    const finalRepresentedEnergyWh = OCPP20ServiceUtils.getRepresentedEndedIntervalEnergyWh(
+      chargingStation,
+      [finalMeterValue],
+      evseId
+    )
+    const finalBaselineWh =
+      connectorStatus?.transactionEnergyActiveImportIntervalBaselines?.[measurandsKey]
+    if (
+      typeof finalBaselineWh === 'number' &&
+      Number.isFinite(finalBaselineWh) &&
+      finalRepresentedEnergyWh > 0
+    ) {
+      representedIntervals.push({
+        end: finalBaselineWh,
+        start: finalBaselineWh - finalRepresentedEnergyWh,
+      })
+    } else {
+      unmappedRepresentedEnergyWh += finalRepresentedEnergyWh
+    }
+    const meterValues = [
       ...(beginMeterValue != null ? [beginMeterValue] : []),
       ...endedMeterValues,
+      finalMeterValue,
     ]
-    return isNotEmptyArray(meterValues) ? meterValues : []
+    const endedIntervalEnergyCoverage =
+      connectorStatus != null
+        ? buildEndedIntervalEnergyCoverage(
+          connectorStatus,
+          representedIntervals,
+          unmappedRepresentedEnergyWh
+        )
+        : undefined
+    const recoverableIntervalEnergy = endedIntervalEnergyCoverage?.recoveryEnergyWh ?? 0
+    if (recoverableIntervalEnergy > 0) {
+      finalMeterValue.sampledValue.push({
+        context: OCPP20ReadingContextEnumType.TRANSACTION_END,
+        location: OCPP20LocationEnumType.Outlet,
+        measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+        unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
+        value: recoverableIntervalEnergy,
+      })
+    }
+    const endedRequestMeterValues = isNotEmptyArray(finalMeterValue.sampledValue)
+      ? meterValues
+      : meterValues.slice(0, -1)
+    if (endedIntervalEnergyCoverage != null && isNotEmptyArray(endedRequestMeterValues)) {
+      OCPP20ServiceUtils.endedIntervalEnergyCoverages.set(
+        endedRequestMeterValues,
+        endedIntervalEnergyCoverage
+      )
+    }
+    return endedRequestMeterValues
+  }
+
+  private static consumeEndedIntervalEnergyCarry (
+    connectorStatus: ConnectorStatus,
+    meterValues: readonly OCPP20MeterValue[] | undefined
+  ): void {
+    const carry = connectorStatus.transactionEnergyActiveImportIntervalCarry
+    if (carry == null || meterValues == null) return
+    const coverage = OCPP20ServiceUtils.endedIntervalEnergyCoverages.get(meterValues)
+    if (coverage == null) return
+    OCPP20ServiceUtils.endedIntervalEnergyCoverages.delete(meterValues)
+    const baselines = connectorStatus.transactionEnergyActiveImportIntervalBaselines ?? {}
+    for (const [key, value] of Object.entries(carry)) {
+      if (!Number.isFinite(value) || value <= 0) {
+        Reflect.deleteProperty(carry, key)
+        continue
+      }
+      const baseline = baselines[key]
+      const coveredEnergyWh =
+        typeof baseline === 'number' && Number.isFinite(baseline)
+          ? coverage.coveredDebtIntervals.reduce(
+            (total, coveredInterval) =>
+              total +
+                getEnergyIntervalOverlap(
+                  { end: baseline, start: baseline - value },
+                  coveredInterval
+                ),
+            0
+          )
+          : coverage.legacyCoveredEnergyWh
+      const remaining = Math.max(0, value - Math.min(value, coveredEnergyWh))
+      if (remaining > 0) {
+        carry[key] = remaining
+      } else {
+        Reflect.deleteProperty(carry, key)
+      }
+    }
+    if (Object.keys(carry).length === 0) {
+      delete connectorStatus.transactionEnergyActiveImportIntervalCarry
+    }
   }
 
   private static decrementPendingTransactionEventDelivery (
@@ -3546,7 +4022,6 @@ export class OCPP20ServiceUtils {
     eligibleEvents?: ReadonlySet<QueuedTransactionEvent>
   ): Promise<void> {
     const queue: QueuedTransactionEvent[] = connectorStatus.transactionEventQueue ?? []
-    OCPP20ServiceUtils.retryableTransactionEventQueueFailures.delete(connectorStatus)
     if (queue.length === 0) return
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending ${queue.length.toString()} queued TransactionEvents for connector ${connectorId.toString()}`
@@ -3562,8 +4037,23 @@ export class OCPP20ServiceUtils {
     let queueChanged = false
     while (queue.length > 0) {
       const queuedEvent = queue[0]
+      if (isTransactionEventQueueStaged(queuedEvent)) break
       if (eligibleEvents != null && !eligibleEvents.has(queuedEvent)) break
-      const responseState = { callError: false, received: false, sent: false }
+      const exhaustedStartedTransactionId = connectorStatus.transactionStartedExhaustedTransactionId
+      if (
+        queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Started &&
+        exhaustedStartedTransactionId != null &&
+        exhaustedStartedTransactionId !== queuedEvent.request.transactionInfo.transactionId
+      ) {
+        OCPP20ServiceUtils.restoreNextQueuedStartedTransaction(
+          chargingStation,
+          connectorId,
+          connectorStatus,
+          exhaustedStartedTransactionId,
+          evseId
+        )
+        delete connectorStatus.transactionStartedExhaustedTransactionId
+      }
       const wasQueuedStartedEvent =
         queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Started
       try {
@@ -3577,15 +4067,6 @@ export class OCPP20ServiceUtils {
             chargingStation,
             queuedEvent.request,
             {
-              onError: (_error, isCallError) => {
-                responseState.callError = isCallError
-              },
-              onMessageSent: () => {
-                responseState.sent = true
-              },
-              onResponseReceived: () => {
-                responseState.received = true
-              },
               responseTimeoutMs,
               skipBufferingOnError: true,
             },
@@ -3608,163 +4089,84 @@ export class OCPP20ServiceUtils {
             )
             if (!transactionFinalized) chargingStation.saveTransactionEventQueues()
             queueChanged = false
+          } else if (
+            await OCPP20ServiceUtils.reconcileExhaustedStartedTransaction(
+              chargingStation,
+              connectorId,
+              connectorStatus,
+              queuedEvent.request.transactionInfo.transactionId,
+              evseId
+            )
+          ) {
+            queueChanged = false
           }
         }
       } catch (error) {
-        if (responseState.callError && wasQueuedStartedEvent) {
+        const disposeMessage =
+          error instanceof TransactionEventDeliveryError &&
+          (error.outcome === 'exhausted' ||
+            error.outcome === 'pre-send-failed' ||
+            error.outcome === 'response-handling-failed')
+        if (!disposeMessage) {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Delivery interrupted for queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()}, preserving it and the remaining queue:`,
+            error
+          )
+          chargingStation.saveTransactionEventQueues()
+          queueChanged = false
+          break
+        }
+        const preserveIntervalEnergy =
+          queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated &&
+          (error.outcome === 'pre-send-failed' ||
+            (error.outcome === 'exhausted' && (error.confirmedRejected || error.definitelyUnsent)))
+        if (queue[0] === queuedEvent) {
           const failedTransactionId = queuedEvent.request.transactionInfo.transactionId
-          for (let index = queue.length - 1; index >= 0; index--) {
-            if (queue[index].request.transactionInfo.transactionId === failedTransactionId) {
-              queue.splice(index, 1)
-            }
+          shiftBoundedTransactionEvent(connectorStatus, preserveIntervalEnergy)
+          if (
+            error.outcome === 'pre-send-failed' ||
+            (error.outcome === 'exhausted' && (error.confirmedRejected || error.definitelyUnsent))
+          ) {
+            OCPP20ServiceUtils.transferRejectedTransactionEventPublicKey(
+              connectorStatus,
+              queuedEvent.request
+            )
           }
-          invalidateTransactionEventQueueAccounting(connectorStatus)
-          OCPP20ServiceUtils.retryableTransactionEventQueueFailures.delete(connectorStatus)
-          const currentConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
-          const stillOwnsFailedTransaction =
-            currentConnectorStatus === connectorStatus &&
-            connectorStatus.transactionId?.toString() === failedTransactionId
-          if (stillOwnsFailedTransaction) {
-            const replacementRestored = OCPP20ServiceUtils.restoreNextQueuedStartedTransaction(
+          queueChanged = true
+          const disposalReason =
+            error.outcome === 'response-handling-failed'
+              ? 'after its response handler failed'
+              : error.outcome === 'pre-send-failed'
+                ? 'after a local pre-send failure'
+                : 'after configured delivery attempts'
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Discarding queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()} ${disposalReason}:`,
+            error
+          )
+          if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
+            const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
+              chargingStation,
+              connectorId,
+              connectorStatus,
+              evseId,
+              failedTransactionId
+            )
+            if (!transactionFinalized) chargingStation.saveTransactionEventQueues()
+            queueChanged = false
+          } else if (
+            await OCPP20ServiceUtils.reconcileExhaustedStartedTransaction(
               chargingStation,
               connectorId,
               connectorStatus,
               failedTransactionId,
-              evseId
+              evseId,
+              wasQueuedStartedEvent
             )
-            if (!replacementRestored) {
-              const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
-                chargingStation,
-                connectorId,
-                connectorStatus,
-                evseId,
-                failedTransactionId
-              )
-              if (!transactionFinalized) {
-                chargingStation.destroyCoherentSession(failedTransactionId)
-                chargingStation.saveTransactionEventQueues()
-              }
-            }
-          } else {
-            chargingStation.destroyCoherentSession(failedTransactionId)
-            chargingStation.saveTransactionEventQueues()
-          }
-          queueChanged = false
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Discarding transaction ${failedTransactionId} after queued TransactionEvent(Started) CALLERROR:`,
-            error
-          )
-          continue
-        }
-        if (
-          !OCPP20ServiceUtils.isChargingStationStopping(chargingStation) &&
-          (responseState.received || chargingStation.isWebSocketConnectionOpened())
-        ) {
-          const ownsRestoredStartedEvent =
-            connectorStatus.transactionRestored === true &&
-            connectorStatus.transactionStarted !== true &&
-            connectorStatus.transactionId?.toString() ===
-              queuedEvent.request.transactionInfo.transactionId &&
-            queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Started
-          if (ownsRestoredStartedEvent) {
-            OCPP20ServiceUtils.retryableTransactionEventQueueFailures.set(connectorStatus, {})
-            chargingStation.saveTransactionEventQueues()
+          ) {
             queueChanged = false
-            logger.error(
-              `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Preserving restored owning TransactionEvent(Started) with seqNo=${queuedEvent.seqNo.toString()} after configured delivery attempts:`,
-              error
-            )
-            break
           }
-          if (!responseState.sent) {
-            const publicKey = Array.isArray(queuedEvent.request.meterValue)
-              ? queuedEvent.request.meterValue
-                .flatMap(meterValue =>
-                  Array.isArray(meterValue.sampledValue) ? meterValue.sampledValue : []
-                )
-                .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
-                .find(key => key != null && key.length > 0)
-              : undefined
-            const nextSignedEvent = queue
-              .slice(1)
-              .find(
-                remainingEvent =>
-                  remainingEvent.request.transactionInfo.transactionId ===
-                    queuedEvent.request.transactionInfo.transactionId &&
-                  remainingEvent.request.meterValue?.some(meterValue =>
-                    meterValue.sampledValue.some(
-                      sampledValue => sampledValue.signedMeterValue != null
-                    )
-                  ) === true
-              )
-            const nextSignedSample = nextSignedEvent?.request.meterValue
-              ?.flatMap(meterValue => meterValue.sampledValue)
-              .find(sampledValue => sampledValue.signedMeterValue != null)
-            if (
-              publicKey != null &&
-              nextSignedEvent != null &&
-              nextSignedSample?.signedMeterValue != null
-            ) {
-              nextSignedSample.signedMeterValue.publicKey = publicKey
-              invalidateTransactionEventQueueAccounting(connectorStatus)
-            } else if (
-              publicKey != null &&
-              connectorStatus.transactionId?.toString() ===
-                queuedEvent.request.transactionInfo.transactionId
-            ) {
-              connectorStatus.publicKeySentInTransaction = false
-            }
-          }
-          if (queue[0] === queuedEvent) {
-            const removedEvent = shiftBoundedTransactionEvent(
-              connectorStatus,
-              !responseState.received &&
-                (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated ||
-                  !responseState.callError)
-            )
-            if (removedEvent == null) {
-              if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
-                OCPP20ServiceUtils.scheduleRetainedEndedTransactionEventRetry(
-                  chargingStation,
-                  connectorId,
-                  connectorStatus,
-                  evseId
-                )
-              } else {
-                OCPP20ServiceUtils.retryableTransactionEventQueueFailures.set(connectorStatus, {})
-              }
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Preserving queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()} because discarding it would lose interval energy:`,
-                error
-              )
-              chargingStation.saveTransactionEventQueues()
-              queueChanged = false
-              break
-            }
-            logger.error(
-              `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Discarding queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()} ${responseState.received ? 'after its response handler failed' : 'after configured delivery attempts'}:`,
-              error
-            )
-            queueChanged = true
-            if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
-              const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
-                chargingStation,
-                connectorId,
-                connectorStatus,
-                evseId,
-                queuedEvent.request.transactionInfo.transactionId
-              )
-              if (!transactionFinalized) chargingStation.saveTransactionEventQueues()
-              queueChanged = false
-            }
-          }
-          continue
         }
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Connection lost while sending queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()}, preserving it and the remaining queue:`,
-          error
-        )
-        break
+        continue
       }
     }
     if (queueChanged) chargingStation.saveTransactionEventQueues()
@@ -3800,15 +4202,49 @@ export class OCPP20ServiceUtils {
       return
     }
     if (
-      result.removedEvents.length > 0 &&
+      (result.removedEvents.length > 0 || result.overLimit) &&
       !OCPP20ServiceUtils.saturatedTransactionEventQueues.has(connectorStatus)
     ) {
       OCPP20ServiceUtils.saturatedTransactionEventQueues.add(connectorStatus)
       logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its bounded capacity; decimating intermediate updates or compacting queued payload`
+        `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its compaction target; ${result.overLimit ? 'retaining required lifecycle records above the target' : 'decimating intermediate updates or Ended meter data'}`
       )
+    } else if (!result.overLimit && result.removedEvents.length === 0) {
+      OCPP20ServiceUtils.saturatedTransactionEventQueues.delete(connectorStatus)
     }
     chargingStation.saveTransactionEventQueues(isUpdatedEvent)
+  }
+
+  private static getRepresentedEndedIntervalEnergyWh (
+    chargingStation: ChargingStation,
+    meterValues: readonly OCPP20MeterValue[] | undefined,
+    evseId?: number
+  ): number {
+    if (meterValues == null) return 0
+    const inletToOutputEfficiency =
+      chargingStation.stationInfo?.currentOutType === CurrentType.DC && evseId !== 0
+        ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
+        : 1
+    let representedEnergyWh = 0
+    for (const meterValue of meterValues) {
+      const hasTransactionBeginSample = meterValue.sampledValue.some(
+        sampledValue => sampledValue.context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+      )
+      const representedMeterValue = hasTransactionBeginSample
+        ? {
+            sampledValue: meterValue.sampledValue.filter(
+              sampledValue =>
+                sampledValue.context !== OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+            ),
+          }
+        : meterValue
+      representedEnergyWh += getRepresentedTransactionIntervalEnergyWh(
+        representedMeterValue,
+        chargingStation.getNumberOfPhases(),
+        inletToOutputEfficiency
+      )
+    }
+    return representedEnergyWh
   }
 
   private static incrementPendingTransactionEventDelivery (
@@ -3825,6 +4261,27 @@ export class OCPP20ServiceUtils {
 
   private static isChargingStationStopping (chargingStation: ChargingStation): boolean {
     return (chargingStation as unknown as { isStopping?: () => boolean }).isStopping?.() === true
+  }
+
+  private static preserveDiscardedUpdatedIntervalEnergy (
+    connectorStatus: ConnectorStatus,
+    request: OCPP20TransactionEventRequest
+  ): void {
+    if (
+      request.eventType !== OCPP20TransactionEventEnumType.Updated ||
+      connectorStatus.transactionId?.toString() !== request.transactionInfo.transactionId
+    ) {
+      return
+    }
+    const intervalConsumption = getTransactionIntervalConsumptions(request.meterValue)
+    transferDiscardedTransactionEventIntervalEnergy(connectorStatus, {
+      request,
+      seqNo: request.seqNo,
+      timestamp: new Date(),
+      ...(intervalConsumption != null && {
+        transactionEnergyActiveImportIntervalConsumption: intervalConsumption,
+      }),
+    })
   }
 
   /**
@@ -3873,25 +4330,81 @@ export class OCPP20ServiceUtils {
       : secondsToMilliseconds(defaultSeconds)
   }
 
+  private static async reconcileExhaustedStartedTransaction (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    connectorStatus: ConnectorStatus,
+    transactionId: string,
+    evseId?: number,
+    markExhausted = false
+  ): Promise<boolean> {
+    if (connectorStatus.transactionStartedExhaustedTransactionId !== transactionId) {
+      if (!markExhausted) return false
+      connectorStatus.transactionStartedExhaustedTransactionId = transactionId
+    }
+    const hasRemainingTransactionEvents = connectorStatus.transactionEventQueue?.some(
+      queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId
+    )
+    if (hasRemainingTransactionEvents === true) {
+      chargingStation.saveTransactionEventQueues()
+      return true
+    }
+
+    delete connectorStatus.transactionStartedExhaustedTransactionId
+    const currentConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+    const stillOwnsTransaction =
+      currentConnectorStatus === connectorStatus &&
+      connectorStatus.transactionId?.toString() === transactionId
+    if (stillOwnsTransaction) {
+      const replacementRestored = OCPP20ServiceUtils.restoreNextQueuedStartedTransaction(
+        chargingStation,
+        connectorId,
+        connectorStatus,
+        transactionId,
+        evseId
+      )
+      if (!replacementRestored) {
+        const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
+          chargingStation,
+          connectorId,
+          connectorStatus,
+          evseId,
+          transactionId
+        )
+        if (!transactionFinalized) {
+          chargingStation.destroyCoherentSession(transactionId)
+          chargingStation.saveTransactionEventQueues()
+        }
+      }
+    } else {
+      chargingStation.destroyCoherentSession(transactionId)
+      chargingStation.saveTransactionEventQueues()
+    }
+    return true
+  }
+
   private static resolveActiveTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
     evseId?: number
   ): { connectorStatus: ConnectorStatus; transactionId: string } {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+    const transactionId = connectorStatus?.transactionId?.toString()
+    const hasDurableStarted = connectorStatus?.transactionEventQueue?.some(
+      queuedEvent =>
+        queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Started &&
+        queuedEvent.request.transactionInfo.transactionId === transactionId
+    )
     if (
       connectorStatus != null &&
       !isTransactionEnding(connectorStatus) &&
       (connectorStatus.transactionStarted === true ||
         connectorStatus.transactionPending === true ||
-        connectorStatus.transactionStarting === true) &&
-      connectorStatus.transactionId != null
+        connectorStatus.transactionStarting === true ||
+        (connectorStatus.transactionRestored === true && hasDurableStarted === true)) &&
+      transactionId != null
     ) {
-      let transactionId: string
-      if (typeof connectorStatus.transactionId === 'string') {
-        transactionId = connectorStatus.transactionId
-      } else {
-        transactionId = connectorStatus.transactionId.toString()
+      if (typeof connectorStatus.transactionId !== 'string') {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.resolveActiveTransaction: Non-string transaction ID ${transactionId} converted to string for OCPP 2.0.1`
         )
@@ -3965,44 +4478,6 @@ export class OCPP20ServiceUtils {
     return true
   }
 
-  private static scheduleRetainedEndedTransactionEventRetry (
-    chargingStation: ChargingStation,
-    connectorId: number,
-    connectorStatus: ConnectorStatus,
-    evseId?: number
-  ): void {
-    const retryMarker = {}
-    OCPP20ServiceUtils.retryableTransactionEventQueueFailures.set(connectorStatus, retryMarker)
-    const retryDelayMs = Math.max(
-      1000,
-      secondsToMilliseconds(
-        OCPP20ServiceUtils.readBoundedVariableAsInteger(
-          chargingStation,
-          OCPP20ComponentName.OCPPCommCtrlr,
-          OCPP20RequiredVariableName.MessageAttemptInterval,
-          5,
-          OCPP20RequestCommand.TRANSACTION_EVENT
-        )
-      )
-    )
-    setTimeout(() => {
-      if (
-        OCPP20ServiceUtils.isChargingStationStopping(chargingStation) ||
-        OCPP20ServiceUtils.retryableTransactionEventQueueFailures.get(connectorStatus) !==
-          retryMarker
-      ) {
-        return
-      }
-      OCPP20ServiceUtils.retryableTransactionEventQueueFailures.delete(connectorStatus)
-      OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
-        chargingStation,
-        connectorId,
-        connectorStatus,
-        evseId
-      )
-    }, retryDelayMs).unref()
-  }
-
   private static scheduleTransactionEventQueueDrain (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -4011,16 +4486,17 @@ export class OCPP20ServiceUtils {
   ): void {
     if (
       OCPP20ServiceUtils.isChargingStationStopping(chargingStation) ||
-      OCPP20ServiceUtils.retryableTransactionEventQueueFailures.has(connectorStatus) ||
       OCPP20ServiceUtils.transactionEventQueueDrains.has(connectorStatus)
     ) {
       return
     }
     OCPP20ServiceUtils.transactionEventQueueDrains.add(connectorStatus)
+    const initialQueueHead = connectorStatus.transactionEventQueue?.[0]
     OCPP20ServiceUtils.sendQueuedTransactionEvents(chargingStation, connectorId, evseId)
       .finally(() => {
         OCPP20ServiceUtils.transactionEventQueueDrains.delete(connectorStatus)
         if (
+          connectorStatus.transactionEventQueue?.[0] !== initialQueueHead &&
           isNotEmptyArray(connectorStatus.transactionEventQueue) &&
           !OCPP20ServiceUtils.isChargingStationStopping(chargingStation) &&
           chargingStation.isWebSocketConnectionOpened() &&
@@ -4084,15 +4560,26 @@ export class OCPP20ServiceUtils {
           'Default'
         )
       )
+    let hadAmbiguousSentAttempt = false
+    let hadConfirmedRejectedAttempt = false
     for (let attempt = 1; attempt <= maximumAttempts; attempt++) {
       if (isAbortSignalAborted(lifecycleAbortSignal)) {
-        throw new OCPPError(
-          ErrorType.GENERIC_ERROR,
-          'TransactionEvent delivery aborted before send',
-          OCPP20RequestCommand.TRANSACTION_EVENT
+        throw new TransactionEventDeliveryError(
+          'aborted',
+          new OCPPError(
+            ErrorType.GENERIC_ERROR,
+            'TransactionEvent delivery aborted before send',
+            OCPP20RequestCommand.TRANSACTION_EVENT
+          )
         )
       }
-      const deliveryState = { callError: false, responseReceived: false, sent: false }
+      const deliveryState = {
+        confirmedRejected: false,
+        responseReceived: false,
+        sent: false,
+        transportErrorAmbiguous: false,
+        transportErrorReported: false,
+      }
       try {
         return await chargingStation.ocppRequestService.requestHandler<
           OCPP20TransactionEventRequest,
@@ -4100,7 +4587,7 @@ export class OCPP20ServiceUtils {
         >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, request, {
           ...requestParams,
           onError: (error, isCallError) => {
-            deliveryState.callError = isCallError
+            if (isCallError) deliveryState.confirmedRejected = true
             requestParams.onError?.(error, isCallError)
           },
           onMessageSent: () => {
@@ -4111,35 +4598,84 @@ export class OCPP20ServiceUtils {
             deliveryState.responseReceived = true
             requestParams.onResponseReceived?.()
           },
+          onTransportError: (error, deliveryAmbiguous) => {
+            deliveryState.transportErrorAmbiguous = deliveryAmbiguous
+            deliveryState.transportErrorReported = true
+            requestParams.onTransportError?.(error, deliveryAmbiguous)
+          },
           rawPayload: true,
           responseTimeoutMs,
           skipBufferingOnError: requestParams.skipBufferingOnError ?? false,
           throwError: true,
         })
       } catch (error) {
-        if (deliveryState.callError || deliveryState.responseReceived) throw error
-        const bufferedBeforeSend =
-          !deliveryState.sent && requestParams.skipBufferingOnError !== true
+        if (deliveryState.confirmedRejected) hadConfirmedRejectedAttempt = true
+        const webSocketOpen = chargingStation.isWebSocketConnectionOpened()
+        const stationAccepted = chargingStation.inAcceptedState()
+        if (deliveryState.responseReceived) {
+          throw new TransactionEventDeliveryError('response-handling-failed', error)
+        }
         if (
-          bufferedBeforeSend ||
-          !chargingStation.isWebSocketConnectionOpened() ||
-          attempt >= maximumAttempts
+          isAbortSignalAborted(lifecycleAbortSignal) ||
+          OCPP20ServiceUtils.isChargingStationStopping(chargingStation)
         ) {
-          throw error
+          throw new TransactionEventDeliveryError('aborted', error)
+        }
+        if (!webSocketOpen || !stationAccepted) {
+          throw new TransactionEventDeliveryError('offline', error)
+        }
+        if (
+          !deliveryState.sent &&
+          !deliveryState.transportErrorReported &&
+          !deliveryState.confirmedRejected &&
+          !hadAmbiguousSentAttempt &&
+          !hadConfirmedRejectedAttempt
+        ) {
+          throw new TransactionEventDeliveryError('pre-send-failed', error)
+        }
+        if (
+          (deliveryState.sent || deliveryState.transportErrorAmbiguous) &&
+          !deliveryState.confirmedRejected
+        ) {
+          hadAmbiguousSentAttempt = true
+        }
+        if (attempt >= maximumAttempts) {
+          const confirmedRejected = hadConfirmedRejectedAttempt && !hadAmbiguousSentAttempt
+          const definitelyUnsent =
+            deliveryState.transportErrorReported &&
+            !deliveryState.transportErrorAmbiguous &&
+            !hadAmbiguousSentAttempt &&
+            !hadConfirmedRejectedAttempt &&
+            !deliveryState.sent
+          throw new TransactionEventDeliveryError(
+            'exhausted',
+            error,
+            confirmedRejected,
+            definitelyUnsent
+          )
         }
         const retryDelayMs = clampToSafeTimerValue(retryIntervalMs * attempt)
-        if (lifecycleAbortSignal == null) {
-          await sleep(retryDelayMs)
-        } else {
-          await interruptibleSleep(retryDelayMs, lifecycleAbortSignal)
-          if (isAbortSignalAborted(lifecycleAbortSignal)) throw error
+        try {
+          if (lifecycleAbortSignal == null) {
+            await sleep(retryDelayMs)
+          } else {
+            await interruptibleSleep(retryDelayMs, lifecycleAbortSignal)
+          }
+        } catch {
+          throw new TransactionEventDeliveryError('aborted', error)
+        }
+        if (isAbortSignalAborted(lifecycleAbortSignal)) {
+          throw new TransactionEventDeliveryError('aborted', error)
         }
       }
     }
-    throw new OCPPError(
-      ErrorType.GENERIC_ERROR,
-      'TransactionEvent retry loop exhausted unexpectedly',
-      OCPP20RequestCommand.TRANSACTION_EVENT
+    throw new TransactionEventDeliveryError(
+      'exhausted',
+      new OCPPError(
+        ErrorType.GENERIC_ERROR,
+        'TransactionEvent retry loop exhausted unexpectedly',
+        OCPP20RequestCommand.TRANSACTION_EVENT
+      )
     )
   }
 
@@ -4151,7 +4687,7 @@ export class OCPP20ServiceUtils {
     const { promise, resolve } = Promise.withResolvers<undefined>()
     OCPP20ServiceUtils.transactionEventSendChains.set(connectorStatus, promise)
     try {
-      await previous?.catch(() => undefined)
+      if (previous != null) await previous.catch(() => undefined)
       return await operation()
     } finally {
       resolve(undefined)
@@ -4201,6 +4737,24 @@ export class OCPP20ServiceUtils {
         evseId,
         transactionId
       )
+      if (hasQueuedEndedTransactionEvent(connectorStatus, transactionId)) {
+        try {
+          await chargingStation.persistTransactionEventQueues()
+          if (chargingStation.isWebSocketConnectionOpened() && chargingStation.inAcceptedState()) {
+            OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
+              chargingStation,
+              connectorId,
+              connectorStatus,
+              evseId
+            )
+          }
+        } catch (persistenceError: unknown) {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.terminateTransaction: Failed to persist retained Ended TransactionEvent:`,
+            persistenceError
+          )
+        }
+      }
       throw error
     }
 
@@ -4213,6 +4767,57 @@ export class OCPP20ServiceUtils {
     )
 
     return response
+  }
+
+  /**
+   * Preserves a definitively rejected OncePerTransaction public key exactly once: an
+   * existing queued copy wins, otherwise the next valid signed event receives it. Malformed
+   * signing metadata is never copied; its active transaction reservation is reopened instead.
+   * @param connectorStatus - Connector owning the transaction queue and reservation
+   * @param rejectedRequest - Rejected event that carried the reserved public key
+   */
+  private static transferRejectedTransactionEventPublicKey (
+    connectorStatus: ConnectorStatus,
+    rejectedRequest: OCPP20TransactionEventRequest
+  ): void {
+    const rejectedSamples =
+      rejectedRequest.meterValue?.flatMap(meterValue => meterValue.sampledValue) ?? []
+    const rawPublicKey = rejectedSamples
+      .map(sampledValue => {
+        const signedMeterValue: unknown = sampledValue.signedMeterValue
+        return isJsonObject(signedMeterValue) && typeof signedMeterValue.publicKey === 'string'
+          ? signedMeterValue.publicKey
+          : undefined
+      })
+      .find(key => key != null && key.length > 0)
+    if (rawPublicKey == null) return
+
+    const publicKey = rejectedSamples
+      .map(sampledValue => getMutableSignedMeterValue(sampledValue)?.publicKey)
+      .find(key => typeof key === 'string' && key.length > 0)
+    const transactionId = rejectedRequest.transactionInfo.transactionId
+    const remainingTransactionSamples = (connectorStatus.transactionEventQueue ?? [])
+      .filter(queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId)
+      .flatMap(queuedEvent => queuedEvent.request.meterValue ?? [])
+      .flatMap(meterValue => meterValue.sampledValue)
+    if (
+      remainingTransactionSamples.some(sampledValue => {
+        const retainedPublicKey = getMutableSignedMeterValue(sampledValue)?.publicKey
+        return typeof retainedPublicKey === 'string' && retainedPublicKey.length > 0
+      })
+    ) {
+      return
+    }
+
+    const nextSignedMeterValue = remainingTransactionSamples
+      .map(sampledValue => getMutableSignedMeterValue(sampledValue))
+      .find(signedMeterValue => signedMeterValue != null)
+    if (publicKey != null && nextSignedMeterValue != null) {
+      nextSignedMeterValue.publicKey = publicKey
+      invalidateTransactionEventQueueAccounting(connectorStatus)
+    } else if (connectorStatus.transactionId?.toString() === transactionId) {
+      connectorStatus.publicKeySentInTransaction = false
+    }
   }
 }
 

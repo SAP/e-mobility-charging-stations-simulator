@@ -283,7 +283,18 @@ await describe('D14 - GetTransactionStatus', async () => {
       assert.deepEqual(testableService.handleRequestGetTransactionStatus(station, {}), {
         messagesInQueue: true,
       })
-      assert.strictEqual(connectorStatus.transactionEventQueue, undefined)
+      assert.deepStrictEqual(
+        connectorStatus.transactionEventQueue?.map(({ request }) => ({
+          eventType: request.eventType,
+          transactionId: request.transactionInfo.transactionId,
+        })),
+        [
+          {
+            eventType: OCPP20TransactionEventEnumType.Ended,
+            transactionId: TEST_TRANSACTION_UUID,
+          },
+        ]
+      )
 
       t.mock.timers.tick(1000)
       await assert.rejects(delivery, /final attempt failed/)

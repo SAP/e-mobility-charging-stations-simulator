@@ -174,6 +174,51 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(stationLike.stopping, false)
     })
 
+    await it('publishes the stop single-flight before cancellation invokes onError', async () => {
+      const stopGate = Promise.withResolvers<undefined>()
+      const requestSequence: string[] = []
+      let cancelCalls = 0
+      let performStopCalls = 0
+      let reentrantStop: Promise<void> | undefined
+      const stationLike = {
+        logPrefix: () => '',
+        ocppRequestService: {
+          cancelPendingRequests: () => {
+            cancelCalls++
+            reentrantStop ??= ChargingStation.prototype.stop.call(stationLike)
+          },
+        },
+        performStop: async (): Promise<void> => {
+          performStopCalls++
+          requestSequence.push('StatusNotification', 'StopTransaction')
+          await stopGate.promise
+        },
+        started: true,
+        stopping: false,
+      }
+
+      const owningStop = ChargingStation.prototype.stop.call(stationLike)
+      assert.ok(reentrantStop != null)
+      let reentrantStopSettled = false
+      reentrantStop
+        .then(() => {
+          reentrantStopSettled = true
+          return undefined
+        })
+        .catch(() => undefined)
+
+      assert.strictEqual(cancelCalls, 1)
+      assert.strictEqual(performStopCalls, 1)
+      assert.deepStrictEqual(requestSequence, ['StatusNotification', 'StopTransaction'])
+      assert.strictEqual(stationLike.stopping, true)
+      assert.strictEqual(reentrantStopSettled, false)
+
+      stopGate.resolve(undefined)
+      await Promise.all([owningStop, reentrantStop])
+      assert.strictEqual(stationLike.stopping, false)
+      assert.strictEqual(reentrantStopSettled, true)
+    })
+
     await it('retracts an in-flight OCPP 1.6 CALL when shutdown begins', async () => {
       const inFlight = {
         isRequest: true,
@@ -185,6 +230,7 @@ await describe('ChargingStation Lifecycle', async () => {
         bufferedMessageInFlight: inFlight,
         lifecycleAbortController: new AbortController(),
         logPrefix: () => '',
+        ocppRequestService: { cancelPendingRequests: () => undefined },
         performStop: () => Promise.resolve(),
         started: true,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
@@ -232,6 +278,165 @@ await describe('ChargingStation Lifecycle', async () => {
       stopGate.resolve(undefined)
       await stopPromise
       assert.strictEqual(stationLike.stopping, false)
+    })
+
+    await it('sends an OCPP 1.6 StopTransaction after cancelling an unrelated pending CALL', async () => {
+      const context = createOCPP16RequestTestContext({
+        stationInfo: { beginEndMeterValues: false },
+      })
+      const activeStation = context.station
+      station = activeStation
+      activeStation.ocppRequestService = context.requestService
+      activeStation.recordRequestStatistic = () => undefined
+      activeStation.emitChargingStationEvent = () => undefined
+      activeStation.started = true
+      activeStation.isStopping = () => ChargingStation.prototype.isStopping.call(activeStation)
+      setupConnectorWithTransaction(activeStation, 1, { transactionId: 101 })
+      const wsConnection = activeStation.wsConnection
+      assert.ok(wsConnection != null)
+      const sentCommands: OCPP16RequestCommand[] = []
+      const unrelatedCallSent = Promise.withResolvers<undefined>()
+      mock.method(wsConnection, 'send', (data: unknown, callback?: (error?: Error) => void) => {
+        const [, messageId, command] = JSON.parse(String(data)) as [
+          number,
+          string,
+          OCPP16RequestCommand
+        ]
+        sentCommands.push(command)
+        callback?.()
+        if (command === OCPP16RequestCommand.HEARTBEAT) {
+          unrelatedCallSent.resolve(undefined)
+        } else {
+          queueMicrotask(() => {
+            const cachedRequest = activeStation.requests.get(messageId)
+            if (cachedRequest != null) {
+              cachedRequest[0](
+                command === OCPP16RequestCommand.STOP_TRANSACTION
+                  ? { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+                  : {},
+                cachedRequest[3]
+              )
+            }
+          })
+        }
+      })
+      ;(
+        activeStation as unknown as {
+          performStop: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stopTransactions?: boolean
+          ) => Promise<void>
+        }
+      ).performStop = async (reason, stopTransactions) => {
+        stopTransactions === true && (await stopRunningTransactions(activeStation, reason))
+        activeStation.ocppRequestService.cancelPendingRequests(activeStation)
+        activeStation.started = false
+      }
+
+      const unrelatedCall = context.requestService.requestHandler(
+        activeStation,
+        OCPP16RequestCommand.HEARTBEAT,
+        {},
+        { responseTimeoutMs: 3_600_000, throwError: true }
+      )
+      await unrelatedCallSent.promise
+      const rejectedUnrelatedCall = assert.rejects(
+        unrelatedCall,
+        /Charging station stopped while awaiting an OCPP response/
+      )
+
+      await ChargingStation.prototype.stop.call(activeStation, undefined, true)
+      await rejectedUnrelatedCall
+
+      assert.strictEqual(sentCommands[0], OCPP16RequestCommand.HEARTBEAT)
+      assert.ok(sentCommands.includes(OCPP16RequestCommand.STOP_TRANSACTION))
+      assert.strictEqual(activeStation.requests.size, 0)
+      assert.strictEqual(activeStation.getConnectorStatus(1)?.transactionId, undefined)
+    })
+
+    await it('waits for an in-flight OCPP 1.6 StartTransaction before shutdown StopTransaction', async () => {
+      const context = createOCPP16RequestTestContext({
+        stationInfo: { beginEndMeterValues: false },
+      })
+      const activeStation = context.station
+      station = activeStation
+      activeStation.ocppRequestService = context.requestService
+      activeStation.recordRequestStatistic = () => undefined
+      activeStation.emitChargingStationEvent = () => undefined
+      activeStation.started = true
+      activeStation.isStopping = () => ChargingStation.prototype.isStopping.call(activeStation)
+      const wsConnection = activeStation.wsConnection
+      assert.ok(wsConnection != null)
+      const sentCommands: OCPP16RequestCommand[] = []
+      const startRequestSent = Promise.withResolvers<string>()
+      mock.method(wsConnection, 'send', (data: unknown, callback?: (error?: Error) => void) => {
+        const [, messageId, command] = JSON.parse(String(data)) as [
+          number,
+          string,
+          OCPP16RequestCommand
+        ]
+        sentCommands.push(command)
+        callback?.()
+        if (command === OCPP16RequestCommand.START_TRANSACTION) {
+          startRequestSent.resolve(messageId)
+          return
+        }
+        queueMicrotask(() => {
+          const cachedRequest = activeStation.requests.get(messageId)
+          if (cachedRequest == null) return
+          cachedRequest[0](
+            command === OCPP16RequestCommand.STOP_TRANSACTION
+              ? { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+              : {},
+            cachedRequest[3]
+          )
+        })
+      })
+      ;(
+        activeStation as unknown as {
+          performStop: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stopTransactions?: boolean
+          ) => Promise<void>
+        }
+      ).performStop = async (reason, stopTransactions) => {
+        stopTransactions === true && (await stopRunningTransactions(activeStation, reason))
+        activeStation.ocppRequestService.cancelPendingRequests(activeStation)
+        activeStation.started = false
+      }
+
+      const startTransaction = OCPP16ServiceUtils.startTransactionOnConnector(
+        activeStation,
+        1,
+        'RFID-1'
+      )
+      const startMessageId = await startRequestSent.promise
+      const connectorStatus = activeStation.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(connectorStatus.transactionStarting, true)
+
+      const shutdown = ChargingStation.prototype.stop.call(activeStation, undefined, true)
+      await Promise.resolve()
+      assert.strictEqual(sentCommands.includes(OCPP16RequestCommand.STOP_TRANSACTION), false)
+      const cachedStartRequest = activeStation.requests.get(startMessageId)
+      assert.ok(cachedStartRequest != null)
+      cachedStartRequest[0](
+        {
+          idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED },
+          transactionId: 2026,
+        },
+        cachedStartRequest[3]
+      )
+
+      await Promise.all([startTransaction, shutdown])
+
+      const startIndex = sentCommands.indexOf(OCPP16RequestCommand.START_TRANSACTION)
+      const stopIndex = sentCommands.indexOf(OCPP16RequestCommand.STOP_TRANSACTION)
+      assert.ok(startIndex >= 0)
+      assert.ok(stopIndex > startIndex)
+      assert.strictEqual(connectorStatus.transactionStarting, undefined)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(activeStation.requests.size, 0)
     })
 
     await it('should join an in-flight OCPP 1.6 StopTransaction during station stop', async () => {
@@ -306,7 +511,7 @@ await describe('ChargingStation Lifecycle', async () => {
       const stationStop = ChargingStation.prototype.stop.call(activeStation, undefined, true)
       await Promise.resolve()
 
-      assert.strictEqual(cancelCalls, 0)
+      assert.strictEqual(cancelCalls, 1)
       assert.strictEqual(stopRequestPending, true)
       assert.strictEqual(
         requestHandler.mock.calls.filter(
@@ -324,8 +529,8 @@ await describe('ChargingStation Lifecycle', async () => {
       }
       assert.strictEqual(connectorStatus.transactionStarted, false)
       assert.strictEqual(connectorStatus.transactionId, undefined)
-      assert.strictEqual(cancellationDuringStopTransaction, false)
-      assert.strictEqual(cancelCalls, 1)
+      assert.strictEqual(cancellationDuringStopTransaction, true)
+      assert.strictEqual(cancelCalls, 2)
     })
 
     await it('buffers StopTransaction behind cached terminal MeterValues when shutdown interrupts replay', async () => {
@@ -531,9 +736,18 @@ await describe('ChargingStation Lifecycle', async () => {
         activeStation as unknown as { sendMessageBuffer: typeof sendMessageBuffer }
       ).sendMessageBuffer = sendMessageBuffer
       sendMessageBuffer.call(activeStation, () => undefined)
+      await Promise.resolve()
       assert.deepStrictEqual(replayedCommands, [OCPP16RequestCommand.METER_VALUES])
+      const [, replayedMeterValuesId] = JSON.parse(stationInternals.messageQueue[0]) as [
+        number,
+        string
+      ]
+      const replayedMeterValues = activeStation.requests.get(replayedMeterValuesId)
+      assert.ok(replayedMeterValues != null)
       replayCallbacks.shift()?.()
+      replayedMeterValues[0]({}, replayedMeterValues[3])
       sendMessageBuffer.call(activeStation, () => undefined)
+      await Promise.resolve()
       assert.deepStrictEqual(replayedCommands, [
         OCPP16RequestCommand.METER_VALUES,
         OCPP16RequestCommand.STOP_TRANSACTION,
@@ -756,6 +970,7 @@ await describe('ChargingStation Lifecycle', async () => {
       activeStation.wsConnection = wsConnection
       activeStation.isWebSocketConnectionOpened = () => true
       sendMessageBuffer.call(activeStation, () => undefined)
+      await Promise.resolve()
 
       assert.strictEqual(stationInternals.messageQueue.length, 0)
       assert.strictEqual(wireMessages.length, 2)

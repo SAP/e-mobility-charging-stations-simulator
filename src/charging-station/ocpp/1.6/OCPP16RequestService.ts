@@ -15,7 +15,7 @@ import {
   type OCPP16StatusNotificationRequest,
   OCPPVersion,
 } from '../../../types/index.js'
-import { assertIsJsonObject, logger } from '../../../utils/index.js'
+import { assertIsJsonObject, Constants, logger } from '../../../utils/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
 import { createPayloadValidatorMap } from '../OCPPServiceUtils.js'
@@ -207,6 +207,10 @@ export class OCPP16RequestService extends OCPPRequestService {
         throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, params)
       }
     }
+  }
+
+  protected getDefaultResponseTimeoutMs (_chargingStation: ChargingStation): number {
+    return Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS * 1000
   }
 
   /**

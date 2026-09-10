@@ -204,6 +204,11 @@ export class OCPP16ServiceUtils {
     [OCPP16RequestCommand.STOP_TRANSACTION, 'StopTransaction'],
   ]
 
+  private static readonly startTransactionOperations = new WeakMap<
+    ConnectorStatus,
+    Promise<StartTransactionResponse>
+  >()
+
   private static readonly stopTransactionOperations = new WeakMap<
     ConnectorStatus,
     { promise: Promise<StopTransactionResponse>; transactionId: number | string }
@@ -781,6 +786,18 @@ export class OCPP16ServiceUtils {
   ][] => createPayloadConfigs(OCPP16ServiceUtils.outgoingRequestSchemaNames, 'Response.json')
 
   /**
+   * Gets the OCPP 1.6 StartTransaction currently in flight on a connector.
+   * Shutdown awaits it before deciding whether the accepted transaction needs a StopTransaction.
+   * @param connectorStatus - Connector whose pending start is queried
+   * @returns The pending start operation, or undefined when no start is in flight
+   */
+  public static getPendingStartTransaction (
+    connectorStatus: ConnectorStatus
+  ): Promise<StartTransactionResponse> | undefined {
+    return OCPP16ServiceUtils.startTransactionOperations.get(connectorStatus)
+  }
+
+  /**
    * Checks whether a connector or the charging station has a valid reservation for the given idTag.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier to check
@@ -934,23 +951,51 @@ export class OCPP16ServiceUtils {
 
   /**
    * Sends a StartTransaction request to the Central System for the given connector.
+   * A graceful station stop waits for this request to settle before deciding whether
+   * the newly accepted transaction needs an immediate StopTransaction.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier to start the transaction on
    * @param idTag - Optional RFID tag for the transaction
+   * @param requestParams - Optional request transport behavior
+   * @param requestOverrides - Optional protocol fields supplied by an external caller
    * @returns Start transaction response from the Central System
    */
   public static async startTransactionOnConnector (
     chargingStation: ChargingStation,
     connectorId: number,
-    idTag?: string
+    idTag?: string,
+    requestParams?: RequestParams,
+    requestOverrides: Omit<Partial<StartTransactionRequest>, 'connectorId' | 'idTag'> = {}
   ): Promise<StartTransactionResponse> {
-    return chargingStation.ocppRequestService.requestHandler<
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus != null) connectorStatus.transactionStarting = true
+    const operation = chargingStation.ocppRequestService.requestHandler<
       Partial<StartTransactionRequest>,
       StartTransactionResponse
-    >(chargingStation, RequestCommand.START_TRANSACTION, {
-      connectorId,
-      ...(idTag != null && { idTag }),
-    })
+    >(
+      chargingStation,
+      RequestCommand.START_TRANSACTION,
+      {
+        ...requestOverrides,
+        connectorId,
+        ...(idTag != null && { idTag }),
+      },
+      { ...requestParams, waitForResponseOnStationStop: true }
+    )
+    if (connectorStatus != null) {
+      OCPP16ServiceUtils.startTransactionOperations.set(connectorStatus, operation)
+    }
+    try {
+      return await operation
+    } finally {
+      if (
+        connectorStatus != null &&
+        OCPP16ServiceUtils.startTransactionOperations.get(connectorStatus) === operation
+      ) {
+        OCPP16ServiceUtils.startTransactionOperations.delete(connectorStatus)
+        delete connectorStatus.transactionStarting
+      }
+    }
   }
 
   /**

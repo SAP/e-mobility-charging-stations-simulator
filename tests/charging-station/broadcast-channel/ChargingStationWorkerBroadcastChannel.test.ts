@@ -11,6 +11,7 @@ import { afterEach, describe, it, mock } from 'node:test'
 
 import { ChargingStationWorkerBroadcastChannel } from '../../../src/charging-station/broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
 import { OCPP16ServiceUtils } from '../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
+import { stopRunningTransactions } from '../../../src/charging-station/ocpp/OCPPServiceOperations.js'
 import { AbstractUIService } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
 import { BaseError, OCPPError } from '../../../src/exception/index.js'
 import {
@@ -26,6 +27,7 @@ import {
   OCPP16MeterValueFormat,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
+  type OCPP16StartTransactionRequest,
   OCPP16StopTransactionReason,
   type OCPP16StopTransactionRequest,
   OCPP16VendorParametersKey,
@@ -45,7 +47,11 @@ import {
 } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_PUBLIC_KEY_HEX, TEST_TRANSACTION_ID_STRING } from '../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../helpers/StationHelpers.js'
-import { createMeterValuesTemplate, upsertConfigurationKey } from '../ocpp/1.6/OCPP16TestUtils.js'
+import {
+  createMeterValuesTemplate,
+  setMockRequestHandler,
+  upsertConfigurationKey,
+} from '../ocpp/1.6/OCPP16TestUtils.js'
 import { createMockStationWithRequestTracking } from '../ocpp/2.0/OCPP20TestUtils.js'
 
 // ============================================================================
@@ -563,6 +569,86 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         )
       })
     }
+  })
+
+  await describe('START_TRANSACTION handler', async () => {
+    await it('should let stop await a worker StartTransaction before sending StopTransaction', async () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      const startResponseGate = Promise.withResolvers<undefined>()
+      const startRequestStarted = Promise.withResolvers<undefined>()
+      const commands: RequestCommand[] = []
+      setMockRequestHandler(station, async (...args: unknown[]) => {
+        const command = args[1] as RequestCommand
+        commands.push(command)
+        if (command === RequestCommand.START_TRANSACTION) {
+          startRequestStarted.resolve(undefined)
+          await startResponseGate.promise
+          connectorStatus.transactionStarted = true
+          connectorStatus.transactionId = 91
+          return { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+        }
+        if (command === RequestCommand.STOP_TRANSACTION) {
+          return { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+        }
+        return {}
+      })
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.START_TRANSACTION
+      )
+      assert.ok(handler != null)
+
+      const startPromise = handler({ connectorId: 1, idTag: 'WORKER-ID-TAG' })
+      assert.ok(startPromise != null)
+      await startRequestStarted.promise
+      const stopPromise = stopRunningTransactions(station)
+      await flushMicrotasks()
+
+      assert.deepStrictEqual(commands, [RequestCommand.START_TRANSACTION])
+      startResponseGate.resolve(undefined)
+      await Promise.all([startPromise, stopPromise])
+      assert.deepStrictEqual(commands, [
+        RequestCommand.START_TRANSACTION,
+        RequestCommand.STATUS_NOTIFICATION,
+        RequestCommand.STOP_TRANSACTION,
+      ])
+    })
+
+    await it('should preserve optional StartTransaction payload fields through tracked routing', async () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      const timestamp = new Date('2026-01-02T03:04:05.000Z')
+      const payload: OCPP16StartTransactionRequest = {
+        connectorId: 1,
+        idTag: 'WORKER-ID-TAG',
+        meterStart: 123,
+        reservationId: 7,
+        timestamp,
+      }
+      let sentPayload: Partial<OCPP16StartTransactionRequest> | undefined
+      setMockRequestHandler(station, (...args: unknown[]) => {
+        sentPayload = args[2] as Partial<OCPP16StartTransactionRequest>
+        return Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+      })
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.START_TRANSACTION
+      )
+      assert.ok(handler != null)
+
+      await handler(payload)
+
+      assert.deepStrictEqual(sentPayload, payload)
+    })
   })
 
   // CHANGE_CONFIGURATION command handler: payload validation + delegation

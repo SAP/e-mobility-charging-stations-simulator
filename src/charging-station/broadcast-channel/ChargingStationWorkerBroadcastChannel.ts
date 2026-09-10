@@ -259,10 +259,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           this.chargingStation.start()
         },
       ],
-      [
-        BroadcastChannelProcedureName.START_TRANSACTION,
-        this.passthrough(RequestCommand.START_TRANSACTION),
-      ],
+      [BroadcastChannelProcedureName.START_TRANSACTION, this.handleStartTransaction.bind(this)],
       [BroadcastChannelProcedureName.STATUS_NOTIFICATION, this.handleStatusNotification.bind(this)],
       [
         BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
@@ -564,6 +561,34 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       }
       throw error
     }
+  }
+
+  private async handleStartTransaction (
+    requestPayload?: BroadcastChannelRequestPayload
+  ): Promise<StartTransactionResponse> {
+    if (this.chargingStation.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStartTransaction: StartTransaction is only supported with OCPP 1.6`
+      )
+    }
+    const { connectorId, idTag, ...requestOverrides } = requestPayload ?? {}
+    if (connectorId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStartTransaction: 'connectorId' field is required`
+      )
+    }
+    if (idTag != null && typeof idTag !== 'string') {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStartTransaction: 'idTag' field must be a string`
+      )
+    }
+    return await OCPP16ServiceUtils.startTransactionOnConnector(
+      this.chargingStation,
+      connectorId,
+      idTag ?? undefined,
+      this.requestParams,
+      requestOverrides
+    )
   }
 
   private async handleStatusNotification (

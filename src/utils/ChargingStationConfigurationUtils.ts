@@ -118,6 +118,8 @@ export const buildConnectorsStatus = (
           transactionEndedMeterValues,
           transactionEndedMeterValuesSetInterval,
           transactionEnding,
+          transactionEnergyActiveImportIntervalBaselines,
+          transactionEnergyActiveImportIntervalCarry,
           transactionEventQueue,
           transactionRestored,
           transactionStarting,
@@ -129,6 +131,14 @@ export const buildConnectorsStatus = (
           connectorId,
           {
             ...connectorStatus,
+            ...buildPersistentTransactionEnergyIntervalState(
+              transactionEnergyActiveImportIntervalBaselines
+            ),
+            ...buildPersistentTransactionEnergyIntervalCarry(
+              transactionEnergyActiveImportIntervalCarry
+            ),
+            ...(Array.isArray(transactionEventQueue) &&
+              transactionEventQueue.length > 0 && { transactionEventQueue }),
             locked: hasOnlyTransientPostTransactionDelay(
               connectorStatus,
               postTransactionDelayTransactionId,

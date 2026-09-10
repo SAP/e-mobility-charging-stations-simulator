@@ -1257,6 +1257,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       ;(station as unknown as { sendMessageBuffer: typeof sendMessageBuffer }).sendMessageBuffer =
         sendMessageBuffer
       sendMessageBuffer.call(station, () => undefined)
+      await Promise.resolve()
 
       assert.deepStrictEqual(
         wireMessages.map(message => (JSON.parse(message) as [number, string, string])[2]),
@@ -1383,6 +1384,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       ;(station as unknown as { sendMessageBuffer: typeof sendMessageBuffer }).sendMessageBuffer =
         sendMessageBuffer
       sendMessageBuffer.call(station, () => undefined)
+      await Promise.resolve()
       cachedMeterValues[1](
         new OCPPError(ErrorType.GENERIC_ERROR, 'MeterValues replay CALLERROR'),
         true

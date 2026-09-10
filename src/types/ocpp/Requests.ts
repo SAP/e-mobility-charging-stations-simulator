@@ -47,7 +47,8 @@ export type CachedRequest = [
   JsonType,
   PendingRequestCancellationCallback?,
   (() => void)?,
-  (() => void)?
+  (() => void)?,
+  number?
 ]
 
 export type DataTransferRequest = OCPP16DataTransferRequest | OCPP20DataTransferRequest
@@ -68,9 +69,14 @@ export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand,
 
 /**
  * Cancels a pending request while retaining its serialized CALL for replay when requested.
- * Returns whether the serialized CALL was retained for replay.
+ * @param ocppError - Cancellation reported to the pending caller
+ * @param handleInFlightSend - Whether to settle a WebSocket send that has not completed
+ * @returns Whether cancellation was handled without invoking the cached error callback
  */
-export type PendingRequestCancellationCallback = (ocppError: OCPPError) => boolean
+export type PendingRequestCancellationCallback = (
+  ocppError: OCPPError,
+  handleInFlightSend?: boolean
+) => boolean
 
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand,
@@ -102,11 +108,18 @@ export interface RequestParams {
   /** Called when the serialized CALL is retained for reconnect replay. */
   onRequestBuffered?: () => void
   onResponseReceived?: () => void
+  /**
+   * Called when the transport reports a CALL send failure or timeout.
+   * `deliveryAmbiguous` is true when the transport cannot prove that no bytes were sent.
+   */
+  onTransportError?: (error: OCPPError, deliveryAmbiguous: boolean) => void
   rawPayload?: boolean
   responseTimeoutMs?: number
   skipBufferingOnError?: boolean
   throwError?: boolean
   triggerMessage?: boolean
+  /** Keep a pending CALL alive during graceful stop until its response or timeout settles. */
+  waitForResponseOnStationStop?: boolean
 }
 
 export const MessageTrigger = {

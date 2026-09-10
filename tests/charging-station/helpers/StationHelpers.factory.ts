@@ -517,6 +517,7 @@ export function createMockChargingStation (
       ...ocppIncomingRequestService,
     },
     ocppRequestService: {
+      acquireOutgoingCall: () => Promise.resolve(),
       cancelPendingRequests: (
         targetStation: Pick<
           ChargingStation,
@@ -533,6 +534,7 @@ export function createMockChargingStation (
         }
         if (discardBufferedRequests) targetStation.clearMessageBuffer()
       },
+      releaseOutgoingCall: () => undefined,
       requestHandler: async () => {
         return await Promise.reject(
           new Error(
@@ -566,9 +568,13 @@ export function createMockChargingStation (
 
     performanceStatistics: undefined,
 
-    powerDivider: 1,
+    persistTransactionEventQueues (): Promise<void> {
+      return Promise.resolve()
+    },
 
+    powerDivider: 1,
     removeAllListeners: () => station,
+
     removeBufferedMessage (message: string): boolean {
       const messageIndex = this.messageQueue.indexOf(message)
       if (messageIndex === -1) return this.acknowledgedBufferedMessages.delete(message)
@@ -588,8 +594,8 @@ export function createMockChargingStation (
         delete connectorStatus.reservation
       }
     },
-
     requests,
+
     restartHeartbeat (): void {
       this.stopHeartbeat()
       this.startHeartbeat()
@@ -627,7 +633,6 @@ export function createMockChargingStation (
       }
       return false
     },
-
     saveOcppConfiguration (): void {
       /* empty */
     },

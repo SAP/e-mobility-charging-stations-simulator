@@ -188,6 +188,7 @@ export function createOCPP20RequestTestContext (
     },
     websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
+  station.ocppRequestService = requestService
 
   return { requestService, station, testableRequestService }
 }

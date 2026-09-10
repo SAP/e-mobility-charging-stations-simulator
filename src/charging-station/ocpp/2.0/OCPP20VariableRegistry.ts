@@ -1629,7 +1629,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
     defaultValue: '3',
-    description: 'Maximum number of TransactionEvent message attempts after initial send.',
+    description: 'Maximum number of TransactionEvent message attempts, including the initial send.',
     instance: OCPP20RequestCommand.TRANSACTION_EVENT,
     max: 10,
     min: 1,

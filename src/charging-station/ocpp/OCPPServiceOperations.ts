@@ -91,6 +91,7 @@ export const stopTransactionOnConnector = async (
 
 /**
  * Stops all running transactions on all connectors of a charging station.
+ * OCPP 1.6 starts already in flight settle before the active-transaction check.
  * @param chargingStation - Target charging station
  * @param reason - Optional reason for stopping the transactions
  */
@@ -102,10 +103,16 @@ export const stopRunningTransactions = async (
     case OCPPVersion.VERSION_16: {
       const stopTransactionPromises: Promise<void>[] = []
       for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
-        if (connectorStatus.transactionStarted === true) {
-          const transactionId = connectorStatus.transactionId
+        if (
+          connectorStatus.transactionStarted === true ||
+          connectorStatus.transactionStarting === true
+        ) {
           stopTransactionPromises.push(
             (async (): Promise<void> => {
+              const pendingStart = OCPP16ServiceUtils.getPendingStartTransaction(connectorStatus)
+              if (pendingStart != null) await pendingStart.catch(() => undefined)
+              if (connectorStatus.transactionStarted !== true) return
+              const transactionId = connectorStatus.transactionId
               try {
                 await OCPP16ServiceUtils.stopTransactionOnConnector(
                   chargingStation,

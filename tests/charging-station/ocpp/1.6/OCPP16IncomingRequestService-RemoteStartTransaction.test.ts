@@ -12,9 +12,11 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { RemoteStartTransactionRequest } from '../../../../src/types/index.js'
 
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
+import { stopRunningTransactions } from '../../../../src/charging-station/ocpp/index.js'
 import {
   AvailabilityType,
   GenericStatus,
+  OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
@@ -31,6 +33,7 @@ import {
   createOCPP16ListenerStation,
   createOCPP16NonContiguousConnectorsContext,
   type OCPP16IncomingRequestTestContext,
+  setMockRequestHandler,
 } from './OCPP16TestUtils.js'
 
 await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async () => {
@@ -362,6 +365,48 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, unknown]
       assert.strictEqual(args[1], OCPP16RequestCommand.START_TRANSACTION)
+    })
+
+    await it('should let stop await a RemoteStart StartTransaction before sending StopTransaction', async () => {
+      const connectorStatus = listenerStation.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      const startResponseGate = Promise.withResolvers<undefined>()
+      const startRequestStarted = Promise.withResolvers<undefined>()
+      const commands: OCPP16RequestCommand[] = []
+      setMockRequestHandler(listenerStation, async (...args: unknown[]) => {
+        const command = args[1] as OCPP16RequestCommand
+        commands.push(command)
+        if (command === OCPP16RequestCommand.START_TRANSACTION) {
+          startRequestStarted.resolve(undefined)
+          await startResponseGate.promise
+          connectorStatus.transactionStarted = true
+          connectorStatus.transactionId = 73
+          return { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+        }
+        if (command === OCPP16RequestCommand.STOP_TRANSACTION) {
+          return { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+        }
+        return {}
+      })
+
+      incomingRequestService.emit(
+        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+        listenerStation,
+        { connectorId: 1, idTag: TEST_ID_TAG },
+        { status: GenericStatus.Accepted }
+      )
+      await startRequestStarted.promise
+      const stopPromise = stopRunningTransactions(listenerStation)
+      await flushMicrotasks()
+
+      assert.deepStrictEqual(commands, [OCPP16RequestCommand.START_TRANSACTION])
+      startResponseGate.resolve(undefined)
+      await stopPromise
+      assert.deepStrictEqual(commands, [
+        OCPP16RequestCommand.START_TRANSACTION,
+        OCPP16RequestCommand.STATUS_NOTIFICATION,
+        OCPP16RequestCommand.STOP_TRANSACTION,
+      ])
     })
 
     await it('should NOT call StartTransaction when response is Rejected', () => {

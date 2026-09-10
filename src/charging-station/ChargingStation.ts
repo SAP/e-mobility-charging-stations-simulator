@@ -175,6 +175,10 @@ import { validateTemplate } from './TemplateValidation.js'
 const moduleName = 'ChargingStation'
 const TRANSACTION_EVENT_QUEUE_CHECKPOINT_INTERVAL_MS = 60_000
 
+interface TransactionEventQueueSaveOutcome {
+  readonly error?: Error
+}
+
 export class ChargingStation extends EventEmitter {
   public automaticTransactionGenerator?: AutomaticTransactionGenerator
   public bootNotificationRequest?: BootNotificationRequest
@@ -229,8 +233,10 @@ export class ChargingStation extends EventEmitter {
   private bufferedMessageInFlight?: {
     isRequest: boolean
     message: string
+    messageId?: string
     retracted: boolean
     stopDrain?: boolean
+    waitingForCallGate: boolean
   }
 
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
@@ -261,7 +267,7 @@ export class ChargingStation extends EventEmitter {
   private transactionEventQueueSaveDelayResolve?: () => void
   private transactionEventQueueSaveDirty = false
   private transactionEventQueueSaveImmediate = false
-  private transactionEventQueueSavePromise?: Promise<void>
+  private transactionEventQueueSavePromise?: Promise<TransactionEventQueueSaveOutcome>
   private transactionEventQueueSaveSetTimeout?: NodeJS.Timeout
   private wsConnectionRetryCount: number
   private readonly wsConnectionsClosedByRequest: WeakSet<WebSocket>
@@ -422,6 +428,31 @@ export class ChargingStation extends EventEmitter {
       this.messageQueue.unshift(message)
     } else {
       this.messageQueue.push(message)
+    }
+    const inFlight = this.bufferedMessageInFlight
+    if (inFlight?.isRequest === true && inFlight.waitingForCallGate && inFlight.messageId != null) {
+      try {
+        const [messageType] = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
+        if (messageType !== MessageType.CALL_MESSAGE) {
+          const cancelled = this.ocppRequestService.cancelOutgoingCallWaiter(
+            this,
+            inFlight.messageId,
+            new OCPPError(
+              ErrorType.GENERIC_ERROR,
+              `Buffered response preempted replay of CALL message id '${inFlight.messageId}'`
+            )
+          )
+          if (!cancelled) {
+            // The gate can hand ownership to this replay immediately before this
+            // callback runs. Retract that now-active CALL so the response is not
+            // stranded behind it.
+            inFlight.retracted = true
+            this.ocppRequestService.releaseOutgoingCall(this, inFlight.messageId)
+          }
+        }
+      } catch {
+        // Malformed frames are discarded by the normal buffered replay path.
+      }
     }
     this.setIntervalFlushMessageBuffer()
   }
@@ -1147,6 +1178,19 @@ export class ChargingStation extends EventEmitter {
     wsConnection.on('pong', this.onPong.bind(this))
   }
 
+  /** Forces and awaits durable persistence of the latest transaction event queue snapshot. */
+  public async persistTransactionEventQueues (): Promise<void> {
+    let currentSave = this.transactionEventQueueSavePromise
+    if (currentSave == null) {
+      this.saveTransactionEventQueues()
+      currentSave = this.transactionEventQueueSavePromise
+    } else {
+      ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
+    }
+    const outcome = await currentSave
+    if (outcome?.error != null) throw outcome.error
+  }
+
   /**
    * Records a request statistic for the given command, but only when statistics
    * collection is enabled on the station (`stationInfo.enableStatistics`).
@@ -1757,27 +1801,27 @@ export class ChargingStation extends EventEmitter {
       return
     }
 
-    this.stopping = true
-    if (this.bufferedMessageInFlight != null) {
-      this.bufferedMessageInFlight.stopDrain = true
-      if (this.bufferedMessageInFlight.isRequest) {
-        this.bufferedMessageInFlight.retracted = true
-      }
-    }
-    this.lifecycleAbortController?.abort()
-    if (isOCPP20x(this.stationInfo?.ocppVersion)) {
-      // Settle old-generation non-buffered requests before shutdown work joins
-      // the strict per-connector delivery chain. Buffered CALLs remain available
-      // for replay.
-      this.ocppRequestService.cancelPendingRequests(this)
-    }
-    // Shutdown work uses a fresh generation while operations that began before
-    // stop() observe the aborted generation and release their lifecycle waits.
-    this.lifecycleAbortController = new AbortController()
-    const stopPromise = this.performStop(reason, stopTransactions)
+    const { promise: stopPromise, reject, resolve } = Promise.withResolvers<undefined>()
     this.stopPromise = stopPromise
+    this.stopping = true
     try {
-      await stopPromise
+      if (this.bufferedMessageInFlight != null) {
+        this.bufferedMessageInFlight.stopDrain = true
+        if (this.bufferedMessageInFlight.isRequest) {
+          this.bufferedMessageInFlight.retracted = true
+        }
+      }
+      this.lifecycleAbortController?.abort()
+      // Settle old-generation non-buffered requests before shutdown work starts.
+      // Buffered CALLs remain available for replay.
+      this.ocppRequestService.cancelPendingRequests(this)
+      // Shutdown work uses a fresh generation while operations that began before
+      // stop() observe the aborted generation and release their lifecycle waits.
+      this.lifecycleAbortController = new AbortController()
+      await this.performStop(reason, stopTransactions)
+      resolve(undefined)
+    } catch (error: unknown) {
+      reject(error)
     } finally {
       // Drop any coherent sessions still tracked at shutdown so a
       // subsequent restart cannot resurrect stale state or leak
@@ -1786,6 +1830,7 @@ export class ChargingStation extends EventEmitter {
       if (this.stopPromise === stopPromise) delete this.stopPromise
       this.stopping = false
     }
+    await stopPromise
   }
 
   /** Stops the autonomous clock-aligned MeterValues timer. */
@@ -1853,17 +1898,23 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private async drainTransactionEventQueueSaves (): Promise<void> {
+  private async drainTransactionEventQueueSaves (): Promise<TransactionEventQueueSaveOutcome> {
+    let saveError: Error | undefined
     while (this.transactionEventQueueSaveDirty) {
       if (!this.transactionEventQueueSaveImmediate) {
         await ChargingStation.prototype.waitForTransactionEventQueueSaveDelay.call(this)
       }
       this.transactionEventQueueSaveDirty = false
       this.transactionEventQueueSaveImmediate = false
-      this.saveConfiguration()
+      let currentSaveError: Error | undefined
+      this.saveConfiguration(error => {
+        currentSaveError = error
+      })
       await this.pendingConfigurationSave
+      saveError = currentSaveError
     }
     delete this.transactionEventQueueSavePromise
+    return saveError == null ? {} : { error: saveError }
   }
 
   private flushMessageBuffer (): void {
@@ -2390,7 +2441,11 @@ export class ChargingStation extends EventEmitter {
       (stationConfiguration?.connectorsStatus != null || stationConfiguration?.evsesStatus != null)
     ) {
       checkConfiguration(stationConfiguration, this.logPrefix(), this.configurationFile)
-      this.initializeConnectorsOrEvsesFromFile(stationConfiguration, stationTemplate)
+      this.initializeConnectorsOrEvsesFromFile(
+        stationConfiguration,
+        stationTemplate,
+        options?.persistentConfiguration
+      )
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate)
     }
@@ -2538,8 +2593,25 @@ export class ChargingStation extends EventEmitter {
 
   private initializeConnectorsOrEvsesFromFile (
     configuration: ChargingStationConfiguration,
-    stationTemplate: ChargingStationTemplate
+    stationTemplate: ChargingStationTemplate,
+    persistentConfiguration?: boolean
   ): void {
+    const usePersistedStationInfo =
+      persistentConfiguration ??
+      stationTemplate.stationInfoPersistentConfiguration ??
+      Constants.DEFAULT_STATION_INFO.stationInfoPersistentConfiguration
+    const electricalStationInfo = usePersistedStationInfo
+      ? configuration.stationInfo
+      : stationTemplate
+    const currentOutType =
+      electricalStationInfo?.currentOutType ??
+      Constants.DEFAULT_STATION_INFO.currentOutType ??
+      CurrentType.AC
+    const physicalNumberOfPhases =
+      currentOutType === CurrentType.DC ? 0 : (electricalStationInfo?.numberOfPhases ?? 3)
+    const normalizationPhaseCount = Math.max(1, physicalNumberOfPhases)
+    const inletToOutputEfficiency =
+      currentOutType === CurrentType.DC ? (electricalStationInfo?.conversionEfficiency ?? 1) : 1
     if (configuration.connectorsStatus != null && configuration.evsesStatus == null) {
       const isTupleFormat =
         isNotEmptyArray(configuration.connectorsStatus) &&
@@ -2551,7 +2623,14 @@ export class ChargingStation extends EventEmitter {
             status,
           ])
       for (const [connectorId, connectorStatus] of entries) {
-        this.connectors.set(connectorId, prepareConnectorStatus(clone(connectorStatus)))
+        this.connectors.set(
+          connectorId,
+          prepareConnectorStatus(
+            clone(connectorStatus),
+            normalizationPhaseCount,
+            inletToOutputEfficiency
+          )
+        )
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus == null) {
       const isTupleFormat =
@@ -2601,7 +2680,11 @@ export class ChargingStation extends EventEmitter {
           connectors: new Map<number, ConnectorStatus>(
             connEntries.map(([connectorId, connectorStatus]) => [
               connectorId,
-              prepareConnectorStatus(connectorStatus),
+              prepareConnectorStatus(
+                connectorStatus,
+                normalizationPhaseCount,
+                inletToOutputEfficiency
+              ),
             ])
           ),
           MeterValues: clone(templateMeterValues ?? []),
@@ -2900,6 +2983,12 @@ export class ChargingStation extends EventEmitter {
     }
     this.wsConnection = null
     this.restoreAcknowledgedBufferedMessages()
+    this.ocppRequestService.cancelPendingRequests(
+      this,
+      'WebSocket closed while awaiting an OCPP response',
+      false,
+      { bufferInFlightSends: true, preserveRetainableWaiters: true }
+    )
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
     switch (code) {
@@ -3237,7 +3326,9 @@ export class ChargingStation extends EventEmitter {
     this.ocppIncomingRequestService.stop(this)
     this.closeWSConnection({ byRequest: true })
     this.lifecycleAbortController?.abort()
-    this.ocppRequestService.cancelPendingRequests(this)
+    this.ocppRequestService.cancelPendingRequests(this, undefined, false, {
+      bufferInFlightSends: true,
+    })
     // The timeout is the hard shutdown bound. A sequence that settled normally
     // was already joined above; never wait without a bound after cancellation.
     await Promise.all(
@@ -3326,7 +3417,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private saveConfiguration (): void {
+  private saveConfiguration (onError?: (error: Error) => void): void {
     if (isNotEmptyString(this.configurationFile)) {
       try {
         if (!existsSync(dirname(this.configurationFile))) {
@@ -3409,22 +3500,21 @@ export class ChargingStation extends EventEmitter {
             // write via handleFileException; absorb them here at debug level. Other
             // failures inside the lock body (JSON serialization, cache mutation, ...)
             // would otherwise go unobserved, so log them at error level.
+            const saveError = ensureError(error)
             const isErrnoException =
-              typeof error === 'object' &&
-              error !== null &&
-              'code' in error &&
-              typeof (error as NodeJS.ErrnoException).code === 'string'
+              'code' in saveError && typeof (saveError as NodeJS.ErrnoException).code === 'string'
             if (isErrnoException) {
               logger.debug(
                 `${this.logPrefix()} ${moduleName}.saveConfiguration: configuration save rejected:`,
-                error
+                saveError
               )
             } else {
               logger.error(
                 `${this.logPrefix()} ${moduleName}.saveConfiguration: unexpected error inside configuration save lock:`,
-                ensureError(error)
+                saveError
               )
             }
+            onError?.(saveError)
           })
         } else {
           logger.debug(
@@ -3434,12 +3524,14 @@ export class ChargingStation extends EventEmitter {
           )
         }
       } catch (error) {
+        const saveError = ensureError(error)
         handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
-          ensureError(error),
+          saveError,
           this.logPrefix()
         )
+        onError?.(saveError)
       }
     } else {
       logger.error(
@@ -3469,23 +3561,22 @@ export class ChargingStation extends EventEmitter {
     }
     const replayLifecycleSignal = this.lifecycleAbortController?.signal
     if (isNotEmptyArray<string>(this.messageQueue)) {
-      const messageIndex = this.inAcceptedState()
-        ? 0
-        : this.messageQueue.findIndex(bufferedMessage => {
-          try {
-            const [messageType] = JSON.parse(bufferedMessage) as
-                ErrorResponse | OutgoingRequest | Response
-            return messageType !== MessageType.CALL_MESSAGE
-          } catch {
-            return true
-          }
-        })
+      const responseMessageIndex = this.messageQueue.findIndex(bufferedMessage => {
+        try {
+          const [messageType] = JSON.parse(bufferedMessage) as
+            ErrorResponse | OutgoingRequest | Response
+          return messageType !== MessageType.CALL_MESSAGE
+        } catch {
+          return true
+        }
+      })
+      const messageIndex =
+        responseMessageIndex >= 0 ? responseMessageIndex : this.inAcceptedState() ? 0 : -1
       if (messageIndex < 0) {
         onCompleteCallback()
         return
       }
       const message = this.messageQueue[messageIndex]
-      let beginId: string | undefined
       let commandName: RequestCommand | undefined
       let messageId: string | undefined
       let parsedMessage: ErrorResponse | OutgoingRequest | Response
@@ -3513,14 +3604,21 @@ export class ChargingStation extends EventEmitter {
       }
       if (isRequest) {
         ;[, messageId, commandName] = parsedMessage as OutgoingRequest
-        beginId = PerformanceStatistics.beginMeasure(commandName)
       }
       const bufferedMessageInFlight: {
         isRequest: boolean
         message: string
+        messageId?: string
         retracted: boolean
         stopDrain?: boolean
-      } = { isRequest, message, retracted: false }
+        waitingForCallGate: boolean
+      } = {
+        isRequest,
+        message,
+        ...(messageId != null && { messageId }),
+        retracted: false,
+        waitingForCallGate: isRequest,
+      }
       this.bufferedMessageInFlight = bufferedMessageInFlight
       const replayConnection = this.wsConnection
       if (replayConnection == null) {
@@ -3528,66 +3626,152 @@ export class ChargingStation extends EventEmitter {
         onCompleteCallback()
         return
       }
-      replayConnection.send(message, (error?: Error) => {
-        if (isRequest && commandName != null && beginId != null) {
-          PerformanceStatistics.endMeasure(commandName, beginId)
-        }
-        if (this.bufferedMessageInFlight === bufferedMessageInFlight) {
-          delete this.bufferedMessageInFlight
-        }
-        if (error == null) {
-          if (!bufferedMessageInFlight.retracted && replayConnection === this.wsConnection) {
-            if (isRequest && messageId != null) {
-              try {
-                this.requests.get(messageId)?.[5]?.()
-              } catch (error: unknown) {
-                logger.error(
-                  `${this.logPrefix()} ${moduleName}.sendMessageBuffer: onMessageSent callback failed for buffered message id '${messageId}':`,
-                  error
-                )
-              }
-            }
-            logger.debug(
-              `${this.logPrefix()} ${moduleName}.sendMessageBuffer: >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
-            )
-            this.removeBufferedMessage(message)
-            if (isRequest) this.acknowledgedBufferedMessages.add(message)
+      const sendBufferedMessage = (): void => {
+        const beginId =
+          isRequest && commandName != null
+            ? PerformanceStatistics.beginMeasure(commandName)
+            : undefined
+        let settled = false
+        const settleBufferedSend = (error?: Error): void => {
+          if (settled) return
+          settled = true
+          clearTimeout(sendTimeout)
+          if (isRequest && commandName != null && beginId != null) {
+            PerformanceStatistics.endMeasure(commandName, beginId)
           }
-        } else {
-          logger.error(
-            `${this.logPrefix()} ${moduleName}.sendMessageBuffer: Error while sending buffered ${getMessageTypeString(messageType)} OCPP message '${message}':`,
-            error
+          if (
+            isRequest &&
+            messageId != null &&
+            (error != null ||
+              bufferedMessageInFlight.retracted ||
+              replayConnection !== this.wsConnection ||
+              !this.requests.has(messageId))
+          ) {
+            this.ocppRequestService.releaseOutgoingCall(this, messageId)
+          }
+          if (this.bufferedMessageInFlight === bufferedMessageInFlight) {
+            delete this.bufferedMessageInFlight
+          }
+          if (error == null) {
+            if (!bufferedMessageInFlight.retracted && replayConnection === this.wsConnection) {
+              if (isRequest && messageId != null) {
+                try {
+                  this.requests.get(messageId)?.[5]?.()
+                } catch (error: unknown) {
+                  logger.error(
+                    `${this.logPrefix()} ${moduleName}.sendMessageBuffer: onMessageSent callback failed for buffered message id '${messageId}':`,
+                    error
+                  )
+                }
+              }
+              logger.debug(
+                `${this.logPrefix()} ${moduleName}.sendMessageBuffer: >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
+              )
+              this.removeBufferedMessage(message)
+              if (isRequest) this.acknowledgedBufferedMessages.add(message)
+            }
+          } else {
+            logger.error(
+              `${this.logPrefix()} ${moduleName}.sendMessageBuffer: Error while sending buffered ${getMessageTypeString(messageType)} OCPP message '${message}':`,
+              error
+            )
+          }
+          if (bufferedMessageInFlight.stopDrain === true) {
+            onCompleteCallback()
+            this.flushMessageBuffer()
+            return
+          }
+          // eslint-disable-next-line promise/no-promise-in-callback -- exponential-backoff sleep inside a WebSocket callback; failures on the outer send are surfaced separately
+          sleep(
+            computeExponentialBackOffDelay({
+              baseDelayMs: Constants.DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS,
+              jitterPercent: Constants.DEFAULT_RECONNECT_JITTER_PERCENT,
+              retryNumber: messageIdx ?? 0,
+            })
           )
+            .then(() => {
+              if (replayLifecycleSignal?.aborted === true) {
+                onCompleteCallback()
+                this.flushMessageBuffer()
+                return undefined
+              }
+              if (messageIdx != null) {
+                ++messageIdx
+              }
+              this.sendMessageBuffer(onCompleteCallback, messageIdx)
+              return undefined
+            })
+            .catch((error: unknown) => {
+              throw error
+            })
         }
-        if (bufferedMessageInFlight.stopDrain === true) {
-          onCompleteCallback()
-          this.flushMessageBuffer()
-          return
+        const sendTimeout = setTimeout(() => {
+          settleBufferedSend(
+            new OCPPError(
+              ErrorType.GENERIC_ERROR,
+              `Timeout ${formatDurationMilliSeconds(OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS)} sending buffered ${getMessageTypeString(messageType)} OCPP message '${message}'`
+            )
+          )
+        }, OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS)
+        try {
+          replayConnection.send(message, settleBufferedSend)
+        } catch (error: unknown) {
+          settleBufferedSend(ensureError(error))
         }
-        // eslint-disable-next-line promise/no-promise-in-callback -- exponential-backoff sleep inside a WebSocket callback; failures on the outer send are surfaced separately
-        sleep(
-          computeExponentialBackOffDelay({
-            baseDelayMs: Constants.DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS,
-            jitterPercent: Constants.DEFAULT_RECONNECT_JITTER_PERCENT,
-            retryNumber: messageIdx ?? 0,
-          })
+      }
+      if (isRequest && messageId != null) {
+        const cachedResponseTimeoutMs = this.requests.get(messageId)?.[7] ?? 0
+        const replaySlotTimeoutMs = clampToSafeTimerValue(
+          clampToSafeTimerValue(OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS) +
+            clampToSafeTimerValue(cachedResponseTimeoutMs)
         )
+        this.ocppRequestService
+          .acquireOutgoingCall(this, messageId, replaySlotTimeoutMs, () => true)
           .then(() => {
-            if (replayLifecycleSignal?.aborted === true) {
+            bufferedMessageInFlight.waitingForCallGate = false
+            if (
+              this.isStopping() ||
+              !this.inAcceptedState() ||
+              bufferedMessageInFlight.retracted ||
+              replayConnection !== this.wsConnection
+            ) {
+              this.ocppRequestService.releaseOutgoingCall(this, messageId)
+              if (this.bufferedMessageInFlight === bufferedMessageInFlight) {
+                delete this.bufferedMessageInFlight
+              }
               onCompleteCallback()
               this.flushMessageBuffer()
               return undefined
             }
-            if (messageIdx != null) {
-              ++messageIdx
-            }
-            this.sendMessageBuffer(onCompleteCallback, messageIdx)
+            sendBufferedMessage()
             return undefined
           })
-          .catch((error: unknown) => {
-            throw error
+          .catch(() => {
+            if (this.bufferedMessageInFlight === bufferedMessageInFlight) {
+              delete this.bufferedMessageInFlight
+            }
+            onCompleteCallback()
+            if (
+              !this.isStopping() &&
+              this.isWebSocketConnectionOpened() &&
+              isNotEmptyArray(this.messageQueue)
+            ) {
+              const hasBufferedResponse = this.messageQueue.some(bufferedMessage => {
+                try {
+                  const [bufferedMessageType] = JSON.parse(bufferedMessage) as
+                    ErrorResponse | OutgoingRequest | Response
+                  return bufferedMessageType !== MessageType.CALL_MESSAGE
+                } catch {
+                  return true
+                }
+              })
+              if (hasBufferedResponse) this.flushMessageBuffer()
+              else this.setIntervalFlushMessageBuffer()
+            }
           })
-      })
+      } else {
+        sendBufferedMessage()
+      }
     } else {
       onCompleteCallback()
     }

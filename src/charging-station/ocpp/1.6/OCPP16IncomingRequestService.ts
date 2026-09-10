@@ -84,8 +84,6 @@ import {
   type OCPP16SendLocalListRequest,
   type OCPP16SendLocalListResponse,
   OCPP16StandardParametersKey,
-  type OCPP16StartTransactionRequest,
-  type OCPP16StartTransactionResponse,
   type OCPP16StatusNotificationResponse,
   OCPP16StopTransactionReason,
   OCPP16SupportedFeatureProfiles,
@@ -386,31 +384,22 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               connectorStatus.transactionRemoteStarted = true
             }
           }
-          chargingStation.ocppRequestService
-            .requestHandler<Partial<OCPP16StartTransactionRequest>, OCPP16StartTransactionResponse>(
-              chargingStation,
-              OCPP16RequestCommand.START_TRANSACTION,
-              {
-                connectorId,
-                idTag,
-              }
-            )
+          if (connectorId == null) return
+          OCPP16ServiceUtils.startTransactionOnConnector(chargingStation, connectorId, idTag)
             .then(response => {
               if (response.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
                 logger.debug(
                   `${chargingStation.logPrefix()} ${moduleName}.constructor: Remote start transaction ACCEPTED on ${
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     chargingStation.stationInfo?.chargingStationId
-                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  }#${connectorId?.toString()} for idTag '${truncateId(idTag)}'`
+                  }#${connectorId.toString()} for idTag '${truncateId(idTag)}'`
                 )
               } else {
                 logger.debug(
                   `${chargingStation.logPrefix()} ${moduleName}.constructor: Remote start transaction REJECTED on ${
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     chargingStation.stationInfo?.chargingStationId
-                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  }#${connectorId?.toString()} for idTag '${truncateId(idTag)}'`
+                  }#${connectorId.toString()} for idTag '${truncateId(idTag)}'`
                 )
               }
               return undefined

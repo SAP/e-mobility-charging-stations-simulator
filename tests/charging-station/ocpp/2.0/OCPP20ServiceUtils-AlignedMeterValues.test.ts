@@ -28,13 +28,17 @@ import type {
 import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
 import { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
-import { prepareConnectorStatus } from '../../../../src/charging-station/HelpersConnectorStatus.js'
+import {
+  prepareConnectorStatus,
+  resetConnectorStatus,
+} from '../../../../src/charging-station/HelpersConnectorStatus.js'
 import {
   buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
 } from '../../../../src/charging-station/index.js'
 import { computeCoherentSample } from '../../../../src/charging-station/meter-values/CoherentSampleComputer.js'
+import { recordTransactionIntervalConsumption } from '../../../../src/charging-station/meter-values/TransactionIntervalUtils.js'
 import {
   createTestableIncomingRequestService,
   type TestableOCPP20IncomingRequestService,
@@ -50,11 +54,13 @@ import {
   boundTransactionEventQueue,
   shiftBoundedTransactionEvent,
 } from '../../../../src/charging-station/TransactionEventQueueUtils.js'
+import { OCPPError } from '../../../../src/exception/index.js'
 import {
   AttributeEnumType,
   ChargingStationEvents,
   ConnectorStatusEnum,
   CurrentType,
+  ErrorType,
   MeterValuePhase,
   OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
@@ -94,7 +100,7 @@ import {
   writeStationTemplate,
 } from '../../helpers/StationHelpers.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
-import { upsertConfigurationKey } from './OCPP20TestUtils.js'
+import { createOCPP20RequestTestContext, upsertConfigurationKey } from './OCPP20TestUtils.js'
 
 const ALIGNED_DATA_INTERVAL_KEY = buildConfigKey(
   OCPP20ComponentName.AlignedDataCtrlr,
@@ -1301,8 +1307,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           baselineTimestamp
         )
         connectorStatus.transactionStart = new Date(baselineTimestamp)
-        connectorStatus.transactionEnergyActiveImportIntervalBaselines = {
+        connectorStatus.energyActiveImportIntervalBaselines = {
           [`station:${ALIGNED_MEASURANDS_KEY}`]: 0,
+        }
+        connectorStatus.transactionEnergyActiveImportIntervalBaselines = {
           [ALIGNED_MEASURANDS_KEY]: 0,
         }
         evseStatus.energyActiveImportIntervalBaseline = 0
@@ -1342,6 +1350,650 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         assert.strictEqual(stationInterval, transactionInterval)
       })
     }
+
+    await it('does not advance a shared physical baseline when the built meter value has no interval sample', async () => {
+      const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        `${OCPP20MeasurandEnumType.VOLTAGE},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL}`
+      )
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connectorStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.VOLTAGE,
+          unit: 'V',
+          value: '230',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      connectorStatus.energyActiveImportRegisterValue = 115
+      connectorStatus.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 100,
+      }
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
+
+      assert.strictEqual(
+        connectorStatus.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+        100
+      )
+    })
+
+    await it('does not recount shared EVSE energy across active and idle transitions', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.meteringPerTransaction = false
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connectorStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+          value: '0',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      const activeAt = new Date(60_000)
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-active-idle-baseline' })
+      connectorStatus.energyActiveImportRegisterValue = 40
+      connectorStatus.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 0,
+      }
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = activeAt
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, activeAt)
+      resetConnectorStatus(connectorStatus)
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(120_000))
+      setupConnectorWithTransaction(mockStation, 1, {
+        transactionId: 'tx-idle-active-baseline',
+      })
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date(180_000)
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(180_000))
+
+      const stationIntervals = sentPayloads(requestHandlerMock)
+        .filter(({ evseId }) => evseId === 0)
+        .map(
+          payload =>
+            payload.meterValue
+              .flatMap(meterValue => meterValue.sampledValue)
+              .find(
+                sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+              )?.value
+        )
+      assert.deepStrictEqual(stationIntervals, [40, 0, 0])
+    })
+
+    await it('migrates one legacy shared EVSE baseline across all physical connectors', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 2,
+        evsesCount: 1,
+      })
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connector1 = mockStation.getConnectorStatus(1, 1)
+      const connector2 = mockStation.getConnectorStatus(2, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connector1 != null)
+      assert.ok(connector2 != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+          value: '0',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      evseStatus.energyActiveImportIntervalBaseline = 80
+      connector1.energyActiveImportRegisterValue = 40
+      connector2.energyActiveImportRegisterValue = 60
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(120_000))
+
+      const stationIntervals = sentPayloads(requestHandlerMock)
+        .filter(({ evseId }) => evseId === 0)
+        .map(
+          payload =>
+            payload.meterValue
+              .flatMap(meterValue => meterValue.sampledValue)
+              .find(
+                sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+              )?.value
+        )
+      assert.deepStrictEqual(stationIntervals, [20, 0])
+      assert.strictEqual(
+        connector1.energyActiveImportIntervalBaselines?.[`station:${ALIGNED_MEASURANDS_KEY}`],
+        40
+      )
+      assert.strictEqual(
+        connector2.energyActiveImportIntervalBaselines?.[`station:${ALIGNED_MEASURANDS_KEY}`],
+        60
+      )
+      assert.strictEqual(evseStatus.energyActiveImportIntervalBaseline, 80)
+    })
+
+    await it('aggregates idle shared EVSE interval energy and advances every physical baseline', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 2,
+        evsesCount: 1,
+      })
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connector1 = mockStation.getConnectorStatus(1, 1)
+      const connector2 = mockStation.getConnectorStatus(2, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connector1 != null)
+      assert.ok(connector2 != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+          value: '0',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      connector1.energyActiveImportRegisterValue = 10
+      connector2.energyActiveImportRegisterValue = 30
+      connector1.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 0,
+      }
+      connector2.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 0,
+      }
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
+
+      const stationInterval = sentPayloads(requestHandlerMock)
+        .find(({ evseId }) => evseId === 0)
+        ?.meterValue.flatMap(meterValue => meterValue.sampledValue)
+        .find(
+          sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )?.value
+      assert.strictEqual(stationInterval, 40)
+      assert.strictEqual(
+        connector1.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+        10
+      )
+      assert.strictEqual(
+        connector2.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+        30
+      )
+    })
+
+    await it('restores shared connector baselines when only the station request fails', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 2,
+        evsesCount: 1,
+      })
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.meteringPerTransaction = false
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const evseStatus = mockStation.getEvseStatus(1)
+      assert.ok(evseStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+          value: '0',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-shared-evse-restore' })
+      const connector1 = mockStation.getConnectorStatus(1, 1)
+      const connector2 = mockStation.getConnectorStatus(2, 1)
+      assert.ok(connector1 != null)
+      assert.ok(connector2 != null)
+      connector1.energyActiveImportRegisterValue = 10
+      connector2.energyActiveImportRegisterValue = 30
+      connector1.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 5,
+      }
+      connector2.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 5,
+      }
+      connector1.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date(60_000)
+      requestHandlerMock.mock.mockImplementation((...args: unknown[]): Promise<unknown> => {
+        const request = args[2] as OCPP20MeterValuesRequest
+        if (args[1] === OCPP20RequestCommand.METER_VALUES && request.evseId === 0) {
+          return Promise.reject(
+            new OCPPError(
+              ErrorType.GENERIC_ERROR,
+              'Station MeterValues request rejected',
+              OCPP20RequestCommand.METER_VALUES
+            )
+          )
+        }
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        return Promise.resolve({})
+      })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
+
+      assert.ok(
+        sentTransactionEvents(requestHandlerMock).length > 0,
+        'Expected the EVSE transaction event to succeed independently'
+      )
+      assert.strictEqual(
+        connector1.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+        5
+      )
+      assert.strictEqual(
+        connector2.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+        5
+      )
+    })
+
+    for (const confirmedCallError of [false, true]) {
+      await it(`restores a station interval baseline after ${confirmedCallError ? 'CALLERROR' : 'pre-send failure'}`, async () => {
+        const { mockStation, requestHandlerMock } = createAlignedStation({
+          connectorsCount: 1,
+          evsesCount: 1,
+        })
+        assert.ok(mockStation.stationInfo != null)
+        mockStation.stationInfo.meteringPerTransaction = true
+        upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+        upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+        upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+        upsertConfigurationKey(
+          mockStation,
+          ALIGNED_MEASURANDS_KEY,
+          OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )
+        const connectorStatus = mockStation.getConnectorStatus(1, 1)
+        assert.ok(connectorStatus != null)
+        connectorStatus.energyActiveImportRegisterValue = 40
+        connectorStatus.energyActiveImportIntervalBaselines = {
+          [`station:${ALIGNED_MEASURANDS_KEY}`]: 5,
+        }
+        requestHandlerMock.mock.mockImplementation((...args: unknown[]): Promise<never> => {
+          const requestParams = args[3] as RequestParams | undefined
+          if (confirmedCallError) {
+            const callError = new OCPPError(
+              ErrorType.GENERIC_ERROR,
+              'CSMS rejected MeterValues',
+              OCPP20RequestCommand.METER_VALUES
+            )
+            requestParams?.onMessageSent?.()
+            requestParams?.onError?.(callError, true)
+            return Promise.reject(callError)
+          }
+          return Promise.reject(
+            new OCPPError(
+              ErrorType.GENERIC_ERROR,
+              'send failed before transport',
+              OCPP20RequestCommand.METER_VALUES
+            )
+          )
+        })
+
+        await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
+
+        assert.strictEqual(
+          connectorStatus.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+          5
+        )
+      })
+    }
+
+    await it('persists a restored baseline after an in-flight provisional snapshot', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.meteringPerTransaction = true
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      const baselineKey = `station:${ALIGNED_MEASURANDS_KEY}`
+      connectorStatus.energyActiveImportRegisterValue = 40
+      connectorStatus.energyActiveImportIntervalBaselines = { [baselineKey]: 5 }
+      const firstSave = Promise.withResolvers<undefined>()
+      const snapshots: number[] = []
+      let persistedBaseline = 5
+      const stationInternals = mockStation as unknown as {
+        pendingConfigurationSave: Promise<void>
+        saveConfiguration: (onError?: (error: Error) => void) => void
+        transactionEventQueueSaveDirty: boolean
+        transactionEventQueueSaveImmediate: boolean
+      }
+      stationInternals.pendingConfigurationSave = Promise.resolve()
+      stationInternals.transactionEventQueueSaveDirty = false
+      stationInternals.transactionEventQueueSaveImmediate = false
+      stationInternals.saveConfiguration = () => {
+        const snapshot = connectorStatus.energyActiveImportIntervalBaselines?.[baselineKey] ?? 0
+        snapshots.push(snapshot)
+        stationInternals.pendingConfigurationSave =
+          snapshots.length === 1
+            ? firstSave.promise.then(() => {
+              persistedBaseline = snapshot
+              return undefined
+            })
+            : Promise.resolve().then(() => {
+              persistedBaseline = snapshot
+              return undefined
+            })
+      }
+      mockStation.saveTransactionEventQueues =
+        ChargingStation.prototype.saveTransactionEventQueues.bind(mockStation)
+      mockStation.persistTransactionEventQueues =
+        ChargingStation.prototype.persistTransactionEventQueues.bind(mockStation)
+      requestHandlerMock.mock.mockImplementation((): Promise<never> => {
+        mockStation.saveTransactionEventQueues()
+        return Promise.reject(
+          new OCPPError(
+            ErrorType.GENERIC_ERROR,
+            'send failed before transport',
+            OCPP20RequestCommand.METER_VALUES
+          )
+        )
+      })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
+
+      assert.deepStrictEqual(snapshots, [40])
+      assert.strictEqual(connectorStatus.energyActiveImportIntervalBaselines[baselineKey], 5)
+      firstSave.resolve(undefined)
+      await mockStation.persistTransactionEventQueues()
+      assert.deepStrictEqual(snapshots, [40, 5])
+      assert.strictEqual(persistedBaseline, 5)
+    })
+
+    await it('does not restore a station interval baseline after an ambiguous sent failure', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.meteringPerTransaction = true
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.energyActiveImportRegisterValue = 40
+      connectorStatus.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 5,
+      }
+      requestHandlerMock.mock.mockImplementation((...args: unknown[]): Promise<never> => {
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        return Promise.reject(
+          new OCPPError(
+            ErrorType.GENERIC_ERROR,
+            'response timed out',
+            OCPP20RequestCommand.METER_VALUES
+          )
+        )
+      })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
+
+      assert.strictEqual(
+        connectorStatus.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+        40
+      )
+    })
+
+    await it('does not restore a station interval baseline after an ambiguous transport callback before send confirmation', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.meteringPerTransaction = true
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connectorStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+          value: '0',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      connectorStatus.energyActiveImportRegisterValue = 40
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      connectorStatus.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 5,
+      }
+      let attempts = 0
+      requestHandlerMock.mock.mockImplementation((...args: unknown[]): Promise<unknown> => {
+        const requestParams = args[3] as RequestParams | undefined
+        if (attempts++ === 0) {
+          const transportError = new OCPPError(
+            ErrorType.GENERIC_ERROR,
+            'ambiguous transport failure',
+            OCPP20RequestCommand.METER_VALUES
+          )
+          requestParams?.onTransportError?.(transportError, true)
+          return Promise.reject(transportError)
+        }
+        requestParams?.onMessageSent?.()
+        requestParams?.onResponseReceived?.()
+        return Promise.resolve({})
+      })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
+      assert.strictEqual(
+        connectorStatus.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+        40
+      )
+
+      connectorStatus.energyActiveImportRegisterValue = 50
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(120_000))
+
+      const stationIntervals = sentPayloads(requestHandlerMock)
+        .filter(({ evseId }) => evseId === 0)
+        .map(
+          payload =>
+            payload.meterValue
+              .flatMap(meterValue => meterValue.sampledValue)
+              .find(
+                sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+              )?.value
+        )
+      assert.deepStrictEqual(stationIntervals, [35, 10])
+    })
+
+    await it('does not restore an in-flight aligned baseline when graceful stop cancels its pending send', async () => {
+      const context = createOCPP20RequestTestContext()
+      const station = context.station
+      const wsConnection = station.wsConnection
+      assert.ok(wsConnection != null)
+      assert.ok(station.stationInfo != null)
+      station.stationInfo.meteringPerTransaction = true
+      station.recordRequestStatistic = () => undefined
+      station.emitChargingStationEvent = () => undefined
+      upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(station, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(station, SEND_DURING_IDLE_KEY, 'true')
+      upsertConfigurationKey(
+        station,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const evseStatus = station.getEvseStatus(1)
+      const connectorStatus = station.getConnectorStatus(1, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connectorStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+          value: '0',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      connectorStatus.energyActiveImportRegisterValue = 40
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      connectorStatus.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 5,
+      }
+      let online = true
+      station.isWebSocketConnectionOpened = () => online
+      let lateSendCallback: ((error?: Error) => void) | undefined
+      mock.method(wsConnection, 'send', (_data: unknown, callback?: (error?: Error) => void) => {
+        lateSendCallback = callback
+      })
+      let alignedDelivery: Promise<void> | undefined
+      const testableStation = station as unknown as {
+        closeWSConnection: (options?: unknown) => void
+        configurationFileHash: string
+        ocppIncomingRequestService: { stop: () => void }
+        performStop: () => Promise<void>
+        saveConfiguration: () => void
+        sharedLRUCache: { deleteChargingStationConfiguration: (configurationHash: string) => void }
+        stopMessageSequence: () => Promise<void>
+      }
+      const stationMethods = ChargingStation.prototype as unknown as {
+        performStop: (this: ChargingStation) => Promise<void>
+      }
+      testableStation.configurationFileHash = 'aligned-stop-test'
+      testableStation.performStop = stationMethods.performStop
+      testableStation.saveConfiguration = () => undefined
+      testableStation.sharedLRUCache = { deleteChargingStationConfiguration: () => undefined }
+      testableStation.stopMessageSequence = async () => {
+        alignedDelivery = OCPP20ServiceUtils.emitClockAlignedMeterValues(station, new Date(60_000))
+        await flushPendingPromises()
+        assert.ok(lateSendCallback != null)
+      }
+      testableStation.closeWSConnection = () => {
+        online = false
+      }
+      mock.method(testableStation.ocppIncomingRequestService, 'stop', () => undefined)
+
+      await testableStation.performStop()
+      assert.ok(alignedDelivery != null)
+      await alignedDelivery
+      assert.strictEqual(
+        connectorStatus.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+        40
+      )
+
+      lateSendCallback?.()
+      await flushPendingPromises()
+      assert.strictEqual(
+        connectorStatus.energyActiveImportIntervalBaselines[`station:${ALIGNED_MEASURANDS_KEY}`],
+        40
+      )
+      assert.strictEqual(station.requests.size, 0)
+    })
+
+    await it('preserves physical interval energy when a transaction ends between aligned slots', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.meteringPerTransaction = true
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const stationEvse = mockStation.getEvseStatus(0)
+      const evseStatus = mockStation.getEvseStatus(1)
+      assert.ok(stationEvse != null)
+      assert.ok(evseStatus != null)
+      stationEvse.MeterValues = [
+        {
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-between-slots' })
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.energyActiveImportRegisterValue = 15
+      connectorStatus.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 10,
+      }
+      evseStatus.energyActiveImportRegisterValue = 15
+      evseStatus.energyActiveImportRegisterLastUpdatedAt = new Date(120_000)
+
+      resetConnectorStatus(connectorStatus)
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(120_000))
+
+      const stationInterval = sentPayloads(requestHandlerMock)
+        .filter(({ evseId }) => evseId === 0)
+        .at(-1)
+        ?.meterValue.flatMap(meterValue => meterValue.sampledValue)
+        .find(
+          sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )?.value
+      assert.strictEqual(stationInterval, 5)
+      assert.deepStrictEqual(connectorStatus.energyActiveImportIntervalBaselines, {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 15,
+      })
+    })
 
     await it('retains only the latest aligned boundary while one request per EVSE is stalled', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
@@ -1497,6 +2149,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mockStation.stationInfo.meteringPerTransaction = false
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
       upsertConfigurationKey(
         mockStation,
         ALIGNED_MEASURANDS_KEY,
@@ -1521,6 +2174,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         },
       ] as unknown as EvseStatus['MeterValues']
       evseStatus.energyActiveImportRegisterLastUpdatedAt = new Date(0)
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-meter-values-retry' })
       let failed = false
       requestHandlerMock.mock.mockImplementation((...args: unknown[]): Promise<unknown> => {
         const request = args[2] as OCPP20MeterValuesRequest
@@ -1749,6 +2403,18 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const failedConnectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(failedConnectorStatus != null)
+      failedConnectorStatus.energyActiveImportRegisterValue = 115
+      failedConnectorStatus.energyActiveImportIntervalBaselines = {
+        [`station:${ALIGNED_MEASURANDS_KEY}`]: 100,
+      }
       const getConnectorStatus = mockStation.getConnectorStatus.bind(mockStation)
       mock.method(mockStation, 'getConnectorStatus', (connectorId: number, evseId?: number) => {
         if (evseId === 1) throw new Error('connector build failed')
@@ -1760,6 +2426,12 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.deepEqual(
         sentPayloads(requestHandlerMock).map(payload => payload.evseId),
         [0, 2]
+      )
+      assert.strictEqual(
+        failedConnectorStatus.energyActiveImportIntervalBaselines[
+          `station:${ALIGNED_MEASURANDS_KEY}`
+        ],
+        100
       )
     })
 
@@ -1978,11 +2650,17 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       requestHandlerMock.mock.mockImplementation((...args: unknown[]) => {
         if (args[1] !== OCPP20RequestCommand.TRANSACTION_EVENT) return Promise.resolve({})
         attempts++
-        if (attempts === 1) {
-          online = false
-          return Promise.reject(new Error('transport failed'))
-        }
         const requestParams = args[3] as RequestParams | undefined
+        if (attempts === 1) {
+          const transportError = new OCPPError(
+            ErrorType.GENERIC_ERROR,
+            'Transport failed',
+            OCPP20RequestCommand.TRANSACTION_EVENT
+          )
+          requestParams?.onTransportError?.(transportError, false)
+          online = false
+          return Promise.reject(transportError)
+        }
         requestParams?.onMessageSent?.()
         return Promise.resolve({})
       })
@@ -2004,48 +2682,77 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
     })
 
-    await it('queues a sent live interval update rejected by the CSMS', async () => {
+    await it('retries and disposes a rejected live interval update without losing its energy', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
       })
       const transactionId = 'tx-live-rejected-interval'
       setupConnectorWithTransaction(mockStation, 1, { transactionId })
+      upsertConfigurationKey(
+        mockStation,
+        `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+        '2'
+      )
+      upsertConfigurationKey(
+        mockStation,
+        `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttemptInterval}.TransactionEvent`,
+        '0'
+      )
+      let attempts = 0
       requestHandlerMock.mock.mockImplementation((...args: unknown[]) => {
         const requestParams = args[3] as RequestParams | undefined
         requestParams?.onMessageSent?.()
-        return Promise.reject(new Error('delivery failed'))
+        attempts++
+        const callError = new OCPPError(
+          ErrorType.GENERIC_ERROR,
+          'delivery failed',
+          OCPP20RequestCommand.TRANSACTION_EVENT
+        )
+        requestParams?.onError?.(callError, true)
+        return Promise.reject(callError)
       })
 
-      await OCPP20ServiceUtils.sendTransactionEvent(
-        mockStation,
-        OCPP20TransactionEventEnumType.Updated,
-        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
-        1,
-        transactionId,
-        {
-          evseId: 1,
-          meterValue: [
-            {
-              sampledValue: [
-                {
-                  context: OCPP20ReadingContextEnumType.SAMPLE_PERIODIC,
-                  measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
-                  unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
-                  value: 10,
-                },
-              ],
-              timestamp: new Date(60_000),
-            },
-          ],
-        }
+      const meterValue: OCPP20MeterValue = {
+        sampledValue: [
+          {
+            context: OCPP20ReadingContextEnumType.SAMPLE_PERIODIC,
+            measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+            unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
+            value: 10,
+          },
+        ],
+        timestamp: new Date(60_000),
+      }
+      recordTransactionIntervalConsumption(
+        meterValue,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          OCPP20RequiredVariableName.TxUpdatedMeasurands
+        ),
+        10
+      )
+      await assert.rejects(
+        OCPP20ServiceUtils.sendTransactionEvent(
+          mockStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          1,
+          transactionId,
+          { evseId: 1, meterValue: [meterValue] }
+        ),
+        /delivery failed/
       )
 
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
-      assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
+      assert.strictEqual(attempts, 2)
+      assert.deepStrictEqual(connectorStatus.transactionEventQueue ?? [], [])
       assert.strictEqual(
-        connectorStatus.transactionEventQueue[0].request.meterValue?.[0].sampledValue[0].value,
+        Object.values(connectorStatus.transactionEnergyActiveImportIntervalCarry ?? {}).reduce(
+          (total, energyWh) => total + energyWh,
+          0
+        ),
         10
       )
     })
@@ -2693,6 +3400,59 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
+    await it('serializes a multi-EVSE aligned sweep with one common timestamp', async () => {
+      const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 2 })
+      const { requestService } = createOCPP20RequestTestContext()
+      mockStation.ocppRequestService = requestService
+      mockStation.recordRequestStatistic = () => undefined
+      mockStation.emitChargingStationEvent = () => undefined
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+      const wsConnection = mockStation.wsConnection
+      assert.ok(wsConnection != null)
+      const wireMessages: string[] = []
+      mock.method(wsConnection, 'send', (data: unknown, callback?: (error?: Error) => void) => {
+        wireMessages.push(String(data))
+        callback?.()
+      })
+      const timestamp = new Date('2026-09-10T12:00:00.000Z')
+
+      const sweep = OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, timestamp)
+      await Promise.resolve()
+      await Promise.resolve()
+      assert.strictEqual(wireMessages.length, 1)
+
+      for (let messageIndex = 0; messageIndex < 3; messageIndex++) {
+        assert.strictEqual(wireMessages.length, messageIndex + 1)
+        const [, messageId] = JSON.parse(wireMessages[messageIndex]) as [number, string]
+        mockStation.requests.get(messageId)?.[0]({}, {})
+        await Promise.resolve()
+        await Promise.resolve()
+      }
+      await sweep
+
+      const requests = wireMessages.map(message => {
+        const [, , command, payload] = JSON.parse(message) as [
+          number,
+          string,
+          OCPP20RequestCommand,
+          { evseId: number; meterValue: { timestamp: string }[] }
+        ]
+        assert.strictEqual(command, OCPP20RequestCommand.METER_VALUES)
+        return payload
+      })
+      assert.deepStrictEqual(
+        requests.map(request => request.evseId),
+        [0, 1, 2]
+      )
+      const timestamps = requests.flatMap(request =>
+        request.meterValue.map(meterValue => meterValue.timestamp)
+      )
+      assert.ok(timestamps.length > 0)
+      assert.deepStrictEqual(new Set(timestamps), new Set([timestamp.toISOString()]))
+    })
+
     await it('queues active clock-aligned events while the WebSocket is closed', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
@@ -2736,7 +3496,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(queue[0].request.transactionInfo.transactionId, 'tx-handshake')
       assert.strictEqual(queue[0].request.offline, undefined)
     })
-    await it('keeps the newest oversized update and preserves Ended under byte pressure', () => {
+    await it('hard-bounds Updated samples while retaining the latest event', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const transactionId = '00000000-0000-4000-8000-000000000098'
       setupConnectorWithTransaction(mockStation, 1, { transactionId })
@@ -2799,8 +3559,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         )
       }
 
-      assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
-      assert.strictEqual(connectorStatus.transactionEventQueue[0].seqNo, 5)
+      assert.deepStrictEqual(
+        connectorStatus.transactionEventQueue?.map(({ seqNo }) => seqNo),
+        [5]
+      )
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
       assert.strictEqual(saveSpy.mock.callCount(), 6)
       assert.ok(
@@ -2815,19 +3577,19 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         true
       )
 
-      assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
+      assert.strictEqual(connectorStatus.transactionEventQueue.length, 2)
       assert.strictEqual(
-        connectorStatus.transactionEventQueue[0].request.eventType,
+        connectorStatus.transactionEventQueue.at(-1)?.request.eventType,
         OCPP20TransactionEventEnumType.Ended
       )
       assert.strictEqual(saveSpy.mock.callCount(), 7)
       assert.ok(
-        Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue), 'utf8') <=
+        Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue), 'utf8') >
           Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
       )
     })
 
-    await it('compacts an individually oversized lifecycle event without dropping its core', () => {
+    await it('retains a protected oversized Ended event intact', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const transactionId = '00000000-0000-4000-8000-000000000101'
       setupConnectorWithTransaction(mockStation, 1, { transactionId })
@@ -2883,11 +3645,11 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(retainedRequest.seqNo, 1)
       assert.strictEqual(retainedRequest.transactionInfo.transactionId, transactionId)
       assert.strictEqual(retainedRequest.triggerReason, OCPP20TriggerReasonEnumType.StopAuthorized)
-      assert.strictEqual(retainedRequest.customData, undefined)
+      assert.deepStrictEqual(retainedRequest.customData, request.customData)
       assert.strictEqual(retainedRequest.meterValue?.[0].sampledValue[0].value, 1)
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
       assert.ok(
-        Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue), 'utf8') <=
+        Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue), 'utf8') >
           Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
       )
     })
@@ -2972,7 +3734,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('evicts older completed history before degrading newer Ended billing data', () => {
+    await it('compacts older Ended meter data before touching a protected Ended event', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -3035,8 +3797,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       enqueueTransactionEvent.enqueueTransactionEvent(mockStation, connectorStatus, oldRequest)
       enqueueTransactionEvent.enqueueTransactionEvent(mockStation, connectorStatus, newRequest)
 
-      assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
-      const retainedEvent = connectorStatus.transactionEventQueue[0]
+      assert.strictEqual(connectorStatus.transactionEventQueue?.length, 2)
+      const [compactedEvent, retainedEvent] = connectorStatus.transactionEventQueue
+      assert.strictEqual(compactedEvent.request.transactionInfo.transactionId, oldTransactionId)
+      assert.strictEqual(compactedEvent.request.meterValue?.length, 4)
       assert.strictEqual(retainedEvent.request.transactionInfo.transactionId, newTransactionId)
       assert.strictEqual(retainedEvent.request.meterValue?.length, 240)
       const retainedSignedMeterValue =
@@ -3133,7 +3897,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('strips optional lifecycle custom data before evicting completed history', () => {
+    await it('retains lifecycle custom data above the byte cap', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -3178,7 +3942,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         })),
         [
           {
-            customData: undefined,
+            customData: { payload: 'x'.repeat(642_000), vendorId: 'test' },
             eventType: OCPP20TransactionEventEnumType.Ended,
             transactionId: oldTransactionId,
           },
@@ -3190,7 +3954,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         ]
       )
       assert.ok(
-        Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue), 'utf8') <=
+        Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue), 'utf8') >
           Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
       )
     })
@@ -5529,9 +6293,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok((connector2.energyActiveImportRegisterValue ?? 0) > 200)
     })
 
-    await it('commits a coherent peer when the shared EVSE owner uses the legacy builder', async () => {
+    await it('sums coherent intervals once while deduplicating legacy shared-meter copies', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
-        connectorsCount: 2,
+        connectorsCount: 3,
         evsesCount: 1,
       })
       assert.ok(mockStation.stationInfo != null)
@@ -5565,7 +6329,8 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL}`
       )
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-mixed-coherent' })
-      setupConnectorWithTransaction(mockStation, 2, { transactionId: 'tx-mixed-legacy' })
+      setupConnectorWithTransaction(mockStation, 2, { transactionId: 'tx-mixed-legacy-owner' })
+      setupConnectorWithTransaction(mockStation, 3, { transactionId: 'tx-mixed-legacy-peer' })
       const coherentSession: CoherentSession = {
         connectorId: 1,
         currentType: CurrentType.AC,
@@ -5588,11 +6353,15 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mockStation.__injectCoherentSession(coherentSession.transactionId, coherentSession)
       const connector1 = mockStation.getConnectorStatus(1, 1)
       const connector2 = mockStation.getConnectorStatus(2, 1)
+      const connector3 = mockStation.getConnectorStatus(3, 1)
       assert.ok(connector1 != null)
       assert.ok(connector2 != null)
+      assert.ok(connector3 != null)
       connector1.energyActiveImportRegisterValue = 100
       connector2.energyActiveImportRegisterValue = 200
+      connector3.energyActiveImportRegisterValue = 300
       connector2.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date(0)
+      connector3.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date(0)
       evseStatus.energyActiveImportRegisterLastUpdatedAt = new Date(0)
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -5601,6 +6370,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         ALIGNED_MEASURANDS_KEY,
         `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL}`
       )
+      const physicalRegisterBefore =
+        (connector1.energyActiveImportRegisterValue ?? 0) +
+        (connector2.energyActiveImportRegisterValue ?? 0) +
+        (connector3.energyActiveImportRegisterValue ?? 0)
 
       await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
 
@@ -5618,26 +6391,44 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           }) ?? []
         )
       })
-      const coherentInterval = sentTransactionEvents(requestHandlerMock)
-        .find(event => event.transactionInfo.transactionId === coherentSession.transactionId)
-        ?.meterValue?.flatMap(meterValue => meterValue.sampledValue)
-        .find(
-          sampledValue =>
-            sampledValue.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
-        )?.value
-      assert.ok(coherentInterval != null && coherentInterval > 0)
-      assert.ok(sharedRegisters.length >= 2)
+      const transactionInterval = (transactionId: string): number | undefined =>
+        sentTransactionEvents(requestHandlerMock)
+          .find(event => event.transactionInfo.transactionId === transactionId)
+          ?.meterValue?.flatMap(meterValue => meterValue.sampledValue)
+          .find(
+            sampledValue =>
+              sampledValue.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+          )?.value
+      assert.strictEqual(transactionInterval(coherentSession.transactionId.toString()), 100)
+      assert.strictEqual(transactionInterval('tx-mixed-legacy-owner'), 20)
+      assert.strictEqual(transactionInterval('tx-mixed-legacy-peer'), 20)
+      assert.ok(sharedRegisters.length >= 3)
       assert.ok(sharedRegisters.every(register => register === sharedRegisters[0]))
-      assert.ok(
+      const physicalRegisterAfterFirst =
         (connector1.energyActiveImportRegisterValue ?? 0) +
-          (connector2.energyActiveImportRegisterValue ?? 0) >
-          400
+        (connector2.energyActiveImportRegisterValue ?? 0) +
+        (connector3.energyActiveImportRegisterValue ?? 0)
+      assert.strictEqual(physicalRegisterAfterFirst - physicalRegisterBefore, 120)
+      const stationInterval = (): number | undefined =>
+        sentPayloads(requestHandlerMock)
+          .find(({ evseId }) => evseId === 0)
+          ?.meterValue.flatMap(meterValue => meterValue.sampledValue)
+          .find(
+            sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+          )?.value
+      assert.strictEqual(stationInterval(), 120)
+
+      requestHandlerMock.mock.resetCalls()
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(120_000))
+
+      assert.strictEqual(stationInterval(), 120)
+      assert.strictEqual(
+        (connector1.energyActiveImportRegisterValue ?? 0) +
+          (connector2.energyActiveImportRegisterValue ?? 0) +
+          (connector3.energyActiveImportRegisterValue ?? 0) -
+          physicalRegisterAfterFirst,
+        120
       )
-      const stationInterval = sentPayloads(requestHandlerMock)
-        .find(({ evseId }) => evseId === 0)
-        ?.meterValue.flatMap(meterValue => meterValue.sampledValue)
-        .find(sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL)
-      assert.strictEqual(stationInterval?.value, 20)
     })
 
     await it('defers a legacy peer interval precomputed by a coherent owner', () => {
@@ -6255,6 +7046,99 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         connector2.transactionEnergyActiveImportRegisterValue,
         firstSharedObservationWh
       )
+    })
+
+    await it('sums first aligned intervals for all coherent sessions on a shared EVSE', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 2,
+        evsesCount: 1,
+      })
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.meteringPerTransaction = false
+      mock.method(mockStation, 'getConnectorMaximumAvailablePower', () => 3600)
+      const stationEvse = mockStation.getEvseStatus(0)
+      const evseStatus = mockStation.getEvseStatus(1)
+      assert.ok(stationEvse != null)
+      assert.ok(evseStatus != null)
+      const sharedMeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+        },
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      stationEvse.MeterValues = structuredClone(sharedMeterValues)
+      evseStatus.MeterValues = sharedMeterValues
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL}`
+      )
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-coherent-first-1' })
+      setupConnectorWithTransaction(mockStation, 2, { transactionId: 'tx-coherent-first-2' })
+      const createSession = (connectorId: number, transactionId: string): CoherentSession => ({
+        connectorId,
+        currentType: CurrentType.AC,
+        numberOfPhases: 1,
+        profile: {
+          batteryCapacityWh: 40000,
+          chargingCurve: [{ powerFraction: 1, socPercent: 0 }],
+          id: transactionId,
+          initialSocPercentMax: 30,
+          initialSocPercentMin: 30,
+          maxPowerW: 3600,
+          weight: 1,
+        },
+        rampUpDurationMs: 0,
+        sessionStartMs: 0,
+        socPercent: 30,
+        transactionId,
+        voltageOutNominal: Voltage.VOLTAGE_230,
+      })
+      const session1 = createSession(1, 'tx-coherent-first-1')
+      const session2 = createSession(2, 'tx-coherent-first-2')
+      mockStation.__injectCoherentSession(session1.transactionId, session1)
+      mockStation.__injectCoherentSession(session2.transactionId, session2)
+      const connector1 = mockStation.getConnectorStatus(1, 1)
+      const connector2 = mockStation.getConnectorStatus(2, 1)
+      assert.ok(connector1 != null)
+      assert.ok(connector2 != null)
+      connector1.energyActiveImportRegisterValue = 0
+      connector1.transactionEnergyActiveImportRegisterValue = 0
+      connector2.energyActiveImportRegisterValue = 0
+      connector2.transactionEnergyActiveImportRegisterValue = 0
+      delete connector1.energyActiveImportIntervalBaselines
+      delete connector1.transactionEnergyActiveImportIntervalBaselines
+      delete connector2.energyActiveImportIntervalBaselines
+      delete connector2.transactionEnergyActiveImportIntervalBaselines
+      delete evseStatus.energyActiveImportIntervalBaseline
+      const physicalRegisterBefore =
+        (connector1.energyActiveImportRegisterValue ?? 0) +
+        (connector2.energyActiveImportRegisterValue ?? 0)
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(60_000))
+
+      const stationPayload = sentPayloads(requestHandlerMock).find(payload => payload.evseId === 0)
+      assert.ok(stationPayload != null)
+      const stationInterval = stationPayload.meterValue
+        .flatMap(meterValue => meterValue.sampledValue)
+        .find(
+          sampledValue =>
+            sampledValue.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )
+      assert.strictEqual(stationInterval?.value, 120)
+      const physicalRegisterAfter =
+        (connector1.energyActiveImportRegisterValue ?? 0) +
+        (connector2.energyActiveImportRegisterValue ?? 0)
+      assert.strictEqual(physicalRegisterAfter - physicalRegisterBefore, 120)
     })
 
     await it('preserves peer energy when the shared coherent owner is full', async () => {
