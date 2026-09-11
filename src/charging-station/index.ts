@@ -56,8 +56,13 @@ export {
 } from './meter-values/CoherentSampleComputer.js'
 export { isCoherentModeActive, resolveRootSeed } from './meter-values/CoherentSession.js'
 export {
+  areMeterValueUnitsCompatible,
   buildSampledValueFamilyKey,
   canonicalizeCustomData,
+  getMeterValueUnitFamily,
+  type MeterValueUnitFamily,
+  resolveLinePhaseIndex,
+  resolveMeterValueUnitDivider,
 } from './meter-values/MeterValueUtils.js'
 export {
   captureTransactionIntervalState,
@@ -65,6 +70,7 @@ export {
   getRepresentedTransactionIntervalEnergyWh,
   getTransactionIntervalConsumptions,
   recordTransactionIntervalConsumption,
+  recordTransactionIntervalEmission,
   restoreTransactionIntervalState,
   truncateTransactionIntervalValue,
 } from './meter-values/TransactionIntervalUtils.js'
@@ -77,6 +83,7 @@ export {
   boundTransactionEventQueue,
   enqueueBoundedTransactionEvent,
   getMutableSignedMeterValue,
+  getRawSignedMeterValuePublicKey,
   hasQueuedEndedTransactionEvent,
   invalidateTransactionEventQueueAccounting,
   isTransactionEventQueueStaged,

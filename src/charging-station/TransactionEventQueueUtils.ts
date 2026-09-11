@@ -10,7 +10,13 @@ import {
   OCPP20UnitEnumType,
   type QueuedTransactionEvent,
 } from '../types/index.js'
-import { Constants, isJsonObject } from '../utils/index.js'
+import {
+  Constants,
+  isEmpty,
+  isJsonObject,
+  isNotEmptyArray,
+  isNotEmptyString,
+} from '../utils/index.js'
 import { canonicalizeCustomData } from './meter-values/MeterValueUtils.js'
 
 export interface BoundedTransactionEventQueue {
@@ -160,6 +166,15 @@ export const getMutableSignedMeterValue = (
   return signedMeterValue as OCPP20SignedMeterValue
 }
 
+export const getRawSignedMeterValuePublicKey = (
+  sampledValue: OCPP20SampledValue
+): string | undefined => {
+  const signedMeterValue: unknown = sampledValue.signedMeterValue
+  return isJsonObject(signedMeterValue) && typeof signedMeterValue.publicKey === 'string'
+    ? signedMeterValue.publicKey
+    : undefined
+}
+
 export const queuedTransactionEventHasPublicKey = (
   queuedEvent: QueuedTransactionEvent,
   transactionId: string
@@ -168,7 +183,7 @@ export const queuedTransactionEventHasPublicKey = (
   queuedEvent.request.meterValue?.some(meterValue =>
     meterValue.sampledValue.some(sampledValue => {
       const publicKey = getMutableSignedMeterValue(sampledValue)?.publicKey
-      return typeof publicKey === 'string' && publicKey.length > 0
+      return isNotEmptyString(publicKey)
     })
   ) === true
 
@@ -176,18 +191,13 @@ const findPublicKey = (queuedEvent: QueuedTransactionEvent): string | undefined 
   queuedEvent.request.meterValue
     ?.flatMap(meterValue => meterValue.sampledValue)
     .map(sampledValue => getMutableSignedMeterValue(sampledValue)?.publicKey)
-    .find(publicKey => typeof publicKey === 'string' && publicKey.length > 0)
+    .find(publicKey => isNotEmptyString(publicKey))
 
 const findRawPublicKey = (queuedEvent: QueuedTransactionEvent): string | undefined =>
   queuedEvent.request.meterValue
     ?.flatMap(meterValue => meterValue.sampledValue)
-    .map(sampledValue => {
-      const signedMeterValue: unknown = sampledValue.signedMeterValue
-      return isJsonObject(signedMeterValue) && typeof signedMeterValue.publicKey === 'string'
-        ? signedMeterValue.publicKey
-        : undefined
-    })
-    .find(publicKey => publicKey != null && publicKey.length > 0)
+    .map(getRawSignedMeterValuePublicKey)
+    .find(publicKey => isNotEmptyString(publicKey))
 
 const getEffectiveUnit = (sampledValue: OCPP20SampledValue): string | undefined => {
   if (sampledValue.unitOfMeasure?.unit != null) return sampledValue.unitOfMeasure.unit
@@ -215,7 +225,7 @@ const getSampledValueIdentity = (
           signedMeterValue.encodingMethod,
           signedMeterValue.signingMethod,
           canonicalizeCustomData(signedMeterValue.customData),
-          typeof signedMeterValue.publicKey === 'string' && signedMeterValue.publicKey.length > 0,
+          isNotEmptyString(signedMeterValue.publicKey),
         ],
   ])
 }
@@ -227,8 +237,7 @@ const compactLifecycleMeterValueEndpoints = (
   const meterValues = queuedEvent.request.meterValue
   if (
     queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated ||
-    meterValues == null ||
-    meterValues.length === 0
+    !isNotEmptyArray(meterValues)
   ) {
     return false
   }
@@ -294,7 +303,7 @@ const compactLifecycleMeterValueEndpoints = (
       retainedSampleIndexes.add(endpoints.first)
       retainedSampleIndexes.add(endpoints.last)
     }
-    if (retainedSampleIndexes.size === 0 && meterValue.sampledValue.length > 0) {
+    if (isEmpty(retainedSampleIndexes) && isNotEmptyArray(meterValue.sampledValue)) {
       retainedSampleIndexes.add(0)
       retainedSampleIndexes.add(meterValue.sampledValue.length - 1)
     }
@@ -373,10 +382,7 @@ const transferPublicKeys = (
       for (const sampledValue of meterValue.sampledValue) {
         const signedMeterValue = getMutableSignedMeterValue(sampledValue)
         if (signedMeterValue == null) continue
-        if (
-          typeof signedMeterValue.publicKey === 'string' &&
-          signedMeterValue.publicKey.length > 0
-        ) {
+        if (isNotEmptyString(signedMeterValue.publicKey)) {
           transactionsWithPublicKeys.add(transactionId)
         } else if (!replacements.has(transactionId)) {
           replacements.set(transactionId, signedMeterValue)
@@ -660,7 +666,7 @@ export const boundTransactionEventQueue = (
   }
 
   const remove = (candidates: readonly QueuedTransactionEvent[]): void => {
-    if (candidates.length === 0) return
+    if (!isNotEmptyArray(candidates)) return
     const candidateSet = new Set(candidates)
     const publicKeys = new Map<string, string>()
     for (const candidate of candidates) {
@@ -920,7 +926,7 @@ export const shiftBoundedTransactionEvent = (
   }
   accounting.queue.shift()
   accounting.bytes -= accounting.eventBytes.get(queuedEvent) ?? 0
-  if (accounting.queue.length > 0) accounting.bytes--
+  if (isNotEmptyArray(accounting.queue)) accounting.bytes--
   accounting.eventBytes.delete(queuedEvent)
   const transactionId = queuedEvent.request.transactionInfo.transactionId
   accounting.eventKeys.delete(getQueuedTransactionEventKey(transactionId, queuedEvent.seqNo))

@@ -27,8 +27,10 @@ import {
   clone,
   convertToDate,
   convertToInt,
+  isEmpty,
   isJsonObject,
   isNotEmptyArray,
+  isNotEmptyString,
   logger,
 } from '../utils/index.js'
 import { buildConfigKey } from './ConfigurationKeyUtils.js'
@@ -243,7 +245,7 @@ const sanitizeEnergyIntervalBaselines = (value: unknown): Record<string, number>
     ? Object.fromEntries(
       Object.entries(value).filter(
         (entry): entry is [string, number] =>
-          entry[0].length > 0 &&
+          isNotEmptyString(entry[0]) &&
             typeof entry[1] === 'number' &&
             Number.isFinite(entry[1]) &&
             entry[1] >= 0
@@ -350,7 +352,7 @@ export const prepareConnectorStatus = (
   delete connectorStatus.transactionStarting
   if (
     typeof connectorStatus.transactionStartedExhaustedTransactionId !== 'string' ||
-    connectorStatus.transactionStartedExhaustedTransactionId.length === 0 ||
+    isEmpty(connectorStatus.transactionStartedExhaustedTransactionId) ||
     connectorStatus.transactionStartedExhaustedTransactionId.length > 36
   ) {
     delete connectorStatus.transactionStartedExhaustedTransactionId
@@ -391,7 +393,7 @@ export const prepareConnectorStatus = (
     ),
     ...sanitizeEnergyIntervalBaselines(connectorStatus.energyActiveImportIntervalBaselines),
   }
-  if (Object.keys(physicalIntervalBaselines).length > 0) {
+  if (!isEmpty(physicalIntervalBaselines)) {
     connectorStatus.energyActiveImportIntervalBaselines = physicalIntervalBaselines
   } else {
     delete connectorStatus.energyActiveImportIntervalBaselines
@@ -401,7 +403,7 @@ export const prepareConnectorStatus = (
       ([key]) => !key.startsWith(STATION_INTERVAL_BASELINE_PREFIX)
     )
   )
-  if (Object.keys(transactionIntervalBaselines).length > 0) {
+  if (!isEmpty(transactionIntervalBaselines)) {
     connectorStatus.transactionEnergyActiveImportIntervalBaselines = transactionIntervalBaselines
   } else {
     delete connectorStatus.transactionEnergyActiveImportIntervalBaselines
@@ -473,7 +475,7 @@ export const prepareConnectorStatus = (
                     sampleClock
                 ),
               }
-              if (cadenceMeterValue.sampledValue.length === 0) continue
+              if (isEmpty(cadenceMeterValue.sampledValue)) continue
               const representedEnergyWh = getRepresentedTransactionIntervalEnergyWh(
                 cadenceMeterValue,
                 numberOfPhases,
@@ -485,7 +487,7 @@ export const prepareConnectorStatus = (
               }
             }
           }
-          if (Object.keys(intervalConsumption).length > 0) {
+          if (!isEmpty(intervalConsumption)) {
             queuedEvent.transactionEnergyActiveImportIntervalConsumption = intervalConsumption
           }
         }

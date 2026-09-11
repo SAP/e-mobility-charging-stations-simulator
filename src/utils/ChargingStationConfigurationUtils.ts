@@ -12,6 +12,7 @@ import {
   OCPP20ConnectorStatusEnumType,
   OCPP20RequiredVariableName,
 } from '../types/index.js'
+import { isEmpty } from './Utils.js'
 
 const TRANSIENT_TX_ENDED_INTERVAL_BASELINE_KEY = `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxEndedMeasurands}`
 
@@ -22,7 +23,7 @@ export const buildPersistentTransactionEnergyIntervalState = (
   const persistentBaselines = Object.fromEntries(
     Object.entries(baselines).filter(([key]) => key !== TRANSIENT_TX_ENDED_INTERVAL_BASELINE_KEY)
   )
-  return Object.keys(persistentBaselines).length > 0
+  return !isEmpty(persistentBaselines)
     ? { transactionEnergyActiveImportIntervalBaselines: persistentBaselines }
     : {}
 }
@@ -34,7 +35,7 @@ const buildPersistentTransactionEnergyIntervalCarry = (
   const persistentCarry = Object.fromEntries(
     Object.entries(carry).filter(([key]) => key !== TRANSIENT_TX_ENDED_INTERVAL_BASELINE_KEY)
   )
-  return Object.keys(persistentCarry).length > 0
+  return !isEmpty(persistentCarry)
     ? { transactionEnergyActiveImportIntervalCarry: persistentCarry }
     : {}
 }
@@ -138,7 +139,7 @@ export const buildConnectorsStatus = (
               transactionEnergyActiveImportIntervalCarry
             ),
             ...(Array.isArray(transactionEventQueue) &&
-              transactionEventQueue.length > 0 && { transactionEventQueue }),
+              !isEmpty(transactionEventQueue) && { transactionEventQueue }),
             locked: hasOnlyTransientPostTransactionDelay(
               connectorStatus,
               postTransactionDelayTransactionId,

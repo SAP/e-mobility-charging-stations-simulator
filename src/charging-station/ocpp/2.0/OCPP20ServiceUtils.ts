@@ -11,15 +11,19 @@ import {
   consumePendingSharedEnergy,
   enqueueBoundedTransactionEvent,
   getConfigurationKey,
+  getMeterValueUnitFamily,
   getMutableSignedMeterValue,
+  getRawSignedMeterValuePublicKey,
   getRepresentedTransactionIntervalEnergyWh,
   getTransactionIntervalConsumptions,
   hasQueuedEndedTransactionEvent,
   invalidateTransactionEventQueueAccounting,
   isTransactionEventQueueStaged,
+  type MeterValueUnitFamily,
   queuedTransactionEventHasPublicKey,
   recordPendingSharedEnergy,
   resetConnectorStatus,
+  resolveLinePhaseIndex,
   resolveRootSeed,
   setTransactionEventQueueInFlight,
   setTransactionEventQueueStaged,
@@ -37,7 +41,6 @@ import {
   ErrorType,
   type MeterValue,
   MeterValueLocation,
-  MeterValueUnit,
   OCPP20AuthorizationStatusEnumType,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
@@ -91,8 +94,9 @@ import {
   generateUUID,
   getErrorMessage,
   interruptibleSleep,
-  isJsonObject,
+  isEmpty,
   isNotEmptyArray,
+  isNotEmptyString,
   logger,
   roundTo,
   sleep,
@@ -467,11 +471,6 @@ export interface IntervalBaselineRestore {
   restore: (consumed: number) => void
 }
 
-interface AdditiveUnitFamily {
-  baseUnit: string
-  kiloUnit?: string
-}
-
 interface ClockAlignedMeterValuesSendState {
   inFlight?: Promise<void>
   pending?: PendingClockAlignedMeterValuesRequest
@@ -507,48 +506,16 @@ const runIntervalBaselineRestores = (
   chargingStation: ChargingStation,
   restores: ReadonlyMap<object, IntervalBaselineRestore>
 ): void => {
-  if (restores.size === 0) return
+  if (isEmpty(restores)) return
   for (const { consumed = 0, restore } of [...restores.values()].toReversed()) {
     restore(consumed)
   }
   chargingStation.saveTransactionEventQueues()
 }
 
-const getClockAlignedAdditiveUnitFamily = (
-  measurand: OCPP20MeasurandEnumType | undefined,
-  configuredUnit: string | undefined
-): AdditiveUnitFamily | undefined => {
-  let family: AdditiveUnitFamily | undefined
-  if (measurand?.startsWith('Current.') === true) {
-    family = { baseUnit: MeterValueUnit.AMP }
-  } else if (measurand?.startsWith('Energy.Active.') === true) {
-    family = { baseUnit: MeterValueUnit.WATT_HOUR, kiloUnit: MeterValueUnit.KILO_WATT_HOUR }
-  } else if (measurand?.startsWith('Energy.Reactive.') === true) {
-    family = { baseUnit: MeterValueUnit.VAR_HOUR, kiloUnit: MeterValueUnit.KILO_VAR_HOUR }
-  } else if (measurand?.startsWith('Energy.Apparent.') === true) {
-    family = { baseUnit: MeterValueUnit.VOLT_AMP_HOUR, kiloUnit: MeterValueUnit.KILO_VOLT_AMP_HOUR }
-  } else if (
-    measurand?.startsWith('Power.') === true &&
-    measurand !== OCPP20MeasurandEnumType.POWER_FACTOR
-  ) {
-    family = measurand.startsWith('Power.Reactive.')
-      ? { baseUnit: MeterValueUnit.VAR, kiloUnit: MeterValueUnit.KILO_VAR }
-      : { baseUnit: MeterValueUnit.WATT, kiloUnit: MeterValueUnit.KILO_WATT }
-  }
-  if (
-    family != null &&
-    configuredUnit != null &&
-    configuredUnit !== family.baseUnit &&
-    configuredUnit !== family.kiloUnit
-  ) {
-    return undefined
-  }
-  return family
-}
-
 const normalizeClockAlignedAdditiveSample = (
   sampledValue: OCPP20SampledValue,
-  unitFamily: AdditiveUnitFamily
+  unitFamily: MeterValueUnitFamily
 ): OCPP20SampledValue => {
   const configuredUnit = sampledValue.unitOfMeasure?.unit
   const namedUnitMultiplier =
@@ -586,7 +553,7 @@ const normalizePhysicalMeterValueForStationAggregation = (
   >()
   const passthroughSamples: OCPP20SampledValue[] = []
   for (const sampledValue of meterValue.sampledValue) {
-    const additiveUnitFamily = getClockAlignedAdditiveUnitFamily(
+    const additiveUnitFamily = getMeterValueUnitFamily(
       sampledValue.measurand,
       sampledValue.unitOfMeasure?.unit
     )
@@ -658,7 +625,7 @@ const filterDuplicateSharedEvseSamples = (
   ...meterValue,
   sampledValue: meterValue.sampledValue.filter(sampledValue => {
     if (registersOnly && sampledValue.measurand?.endsWith('.Register') !== true) return true
-    const unitFamily = getClockAlignedAdditiveUnitFamily(
+    const unitFamily = getMeterValueUnitFamily(
       sampledValue.measurand,
       sampledValue.unitOfMeasure?.unit
     )
@@ -725,7 +692,7 @@ const coalesceClockAlignedMeterValuesRequests = (
         currentSample.value += previousSample.value
       }
     }
-    if (signedIntervalSamples.length > 0) {
+    if (isNotEmptyArray(signedIntervalSamples)) {
       preservedSignedMeterValues.push({ ...meterValue, sampledValue: signedIntervalSamples })
     }
   }
@@ -740,19 +707,8 @@ const coalesceClockAlignedMeterValuesRequests = (
 }
 
 const normalizeElectricalPhase = (phase: string | undefined): string | undefined => {
-  switch (phase) {
-    case 'L1':
-    case 'L1-N':
-      return 'L1'
-    case 'L2':
-    case 'L2-N':
-      return 'L2'
-    case 'L3':
-    case 'L3-N':
-      return 'L3'
-    default:
-      return phase
-  }
+  const lineIndex = resolveLinePhaseIndex(phase)
+  return lineIndex != null ? `L${lineIndex.toString()}` : phase
 }
 
 const filterUnconvertibleDcStationSamples = (
@@ -778,7 +734,7 @@ const filterUnconvertibleDcStationSamples = (
           canonicalizeCustomData(sampledValue.customData)
     )
     return (
-      matchingSources.length === 0 ||
+      isEmpty(matchingSources) ||
       matchingSources.some(source => source.location === sampledValue.location)
     )
   })
@@ -812,7 +768,7 @@ const aggregateClockAlignedSamples = (
   for (const meterValue of meterValues) {
     const meterSamples = new Map<string, { additive: boolean; sampledValue: OCPP20SampledValue }>()
     for (const sampledValue of meterValue.sampledValue) {
-      const additiveUnitFamily = getClockAlignedAdditiveUnitFamily(
+      const additiveUnitFamily = getMeterValueUnitFamily(
         sampledValue.measurand,
         sampledValue.unitOfMeasure?.unit
       )
@@ -2145,7 +2101,7 @@ export class OCPP20ServiceUtils {
                         sample.measurand !== OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
                     ),
                   }
-                : sharedIntervalSamples.length > 0
+                : isNotEmptyArray(sharedIntervalSamples)
                   ? {
                       ...meterValue,
                       sampledValue: [
@@ -2179,14 +2135,14 @@ export class OCPP20ServiceUtils {
                   physicalEvseRegisterSamples,
                   transactionId != null &&
                       (chargingStation.getCoherentSession(transactionId) != null ||
-                        (sharedIntervalSamples.length === 0 &&
+                        (!isNotEmptyArray(sharedIntervalSamples) &&
                           !sharedIntervalObservationRecorded &&
                           chargingStation.stationInfo?.meteringPerTransaction === true))
                 )
                 : physicalMeterValue
             if (isNotEmptyArray(stationMeterValue.sampledValue)) {
               physicalMeterValues.push(stationMeterValue)
-              if (sharedIntervalSamples.length > 0) sharedIntervalObservationRecorded = true
+              if (isNotEmptyArray(sharedIntervalSamples)) sharedIntervalObservationRecorded = true
             }
           }
           if (transactionId != null) {
@@ -2226,7 +2182,7 @@ export class OCPP20ServiceUtils {
           )
         }
       }
-      if (initialActiveIntervalSamples.size > 0) {
+      if (!isEmpty(initialActiveIntervalSamples)) {
         physicalMeterValues.push({
           sampledValue: [...initialActiveIntervalSamples.values()],
           timestamp,
@@ -2521,7 +2477,7 @@ export class OCPP20ServiceUtils {
     transactionId?: string
   ): boolean {
     const counts = OCPP20ServiceUtils.pendingTransactionEventDeliveryCounts.get(connectorStatus)
-    if (transactionId == null) return counts != null && counts.size > 0
+    if (transactionId == null) return counts != null && !isEmpty(counts)
     return (counts?.get(transactionId) ?? 0) > 0
   }
 
@@ -3157,7 +3113,7 @@ export class OCPP20ServiceUtils {
           request.meterValue?.some(meterValue =>
             meterValue.sampledValue.some(sampledValue => {
               const publicKey = sampledValue.signedMeterValue?.publicKey
-              return typeof publicKey === 'string' && publicKey.length > 0
+              return isNotEmptyString(publicKey)
             })
           ) === true
         if (reservesPublicKey) connectorStatus.publicKeySentInTransaction = true
@@ -3235,7 +3191,7 @@ export class OCPP20ServiceUtils {
           }
         }
         if (removed) {
-          if (queue?.length === 0 && deleteEmptyStagedQueue) {
+          if (queue != null && isEmpty(queue) && deleteEmptyStagedQueue) {
             delete connectorStatus.transactionEventQueue
             invalidateTransactionEventQueueAccounting(connectorStatus)
           }
@@ -3283,7 +3239,7 @@ export class OCPP20ServiceUtils {
               )
             )
             try {
-              if (queuedEventsBeforeRequest.size > 0) {
+              if (!isEmpty(queuedEventsBeforeRequest)) {
                 await OCPP20ServiceUtils.drainQueuedTransactionEvents(
                   chargingStation,
                   connectorId,
@@ -3989,7 +3945,7 @@ export class OCPP20ServiceUtils {
         Reflect.deleteProperty(carry, key)
       }
     }
-    if (Object.keys(carry).length === 0) {
+    if (isEmpty(carry)) {
       delete connectorStatus.transactionEnergyActiveImportIntervalCarry
     }
   }
@@ -4005,7 +3961,7 @@ export class OCPP20ServiceUtils {
       counts.set(transactionId, remaining)
     } else {
       counts.delete(transactionId)
-      if (counts.size === 0) {
+      if (isEmpty(counts)) {
         OCPP20ServiceUtils.pendingTransactionEventDeliveryCounts.delete(connectorStatus)
       }
     }
@@ -4020,7 +3976,7 @@ export class OCPP20ServiceUtils {
     eligibleEvents?: ReadonlySet<QueuedTransactionEvent>
   ): Promise<void> {
     const queue: QueuedTransactionEvent[] = connectorStatus.transactionEventQueue ?? []
-    if (queue.length === 0) return
+    if (!isNotEmptyArray<QueuedTransactionEvent>(queue)) return
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending ${queue.length.toString()} queued TransactionEvents for connector ${connectorId.toString()}`
     )
@@ -4033,7 +3989,7 @@ export class OCPP20ServiceUtils {
       'Default'
     )
     let queueChanged = false
-    while (queue.length > 0) {
+    while (isNotEmptyArray<QueuedTransactionEvent>(queue)) {
       const queuedEvent = queue[0]
       if (isTransactionEventQueueStaged(queuedEvent)) break
       if (eligibleEvents != null && !eligibleEvents.has(queuedEvent)) break
@@ -4200,14 +4156,14 @@ export class OCPP20ServiceUtils {
       return
     }
     if (
-      (result.removedEvents.length > 0 || result.overLimit) &&
+      (isNotEmptyArray(result.removedEvents) || result.overLimit) &&
       !OCPP20ServiceUtils.saturatedTransactionEventQueues.has(connectorStatus)
     ) {
       OCPP20ServiceUtils.saturatedTransactionEventQueues.add(connectorStatus)
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its compaction target; ${result.overLimit ? 'retaining required lifecycle records above the target' : 'decimating intermediate updates or Ended meter data'}`
       )
-    } else if (!result.overLimit && result.removedEvents.length === 0) {
+    } else if (!result.overLimit && !isNotEmptyArray(result.removedEvents)) {
       OCPP20ServiceUtils.saturatedTransactionEventQueues.delete(connectorStatus)
     }
     chargingStation.saveTransactionEventQueues(isUpdatedEvent)
@@ -4781,18 +4737,13 @@ export class OCPP20ServiceUtils {
     const rejectedSamples =
       rejectedRequest.meterValue?.flatMap(meterValue => meterValue.sampledValue) ?? []
     const rawPublicKey = rejectedSamples
-      .map(sampledValue => {
-        const signedMeterValue: unknown = sampledValue.signedMeterValue
-        return isJsonObject(signedMeterValue) && typeof signedMeterValue.publicKey === 'string'
-          ? signedMeterValue.publicKey
-          : undefined
-      })
-      .find(key => key != null && key.length > 0)
+      .map(getRawSignedMeterValuePublicKey)
+      .find(key => isNotEmptyString(key))
     if (rawPublicKey == null) return
 
     const publicKey = rejectedSamples
       .map(sampledValue => getMutableSignedMeterValue(sampledValue)?.publicKey)
-      .find(key => typeof key === 'string' && key.length > 0)
+      .find(key => isNotEmptyString(key))
     const transactionId = rejectedRequest.transactionInfo.transactionId
     const remainingTransactionSamples = (connectorStatus.transactionEventQueue ?? [])
       .filter(queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId)
@@ -4801,7 +4752,7 @@ export class OCPP20ServiceUtils {
     if (
       remainingTransactionSamples.some(sampledValue => {
         const retainedPublicKey = getMutableSignedMeterValue(sampledValue)?.publicKey
-        return typeof retainedPublicKey === 'string' && retainedPublicKey.length > 0
+        return isNotEmptyString(retainedPublicKey)
       })
     ) {
       return

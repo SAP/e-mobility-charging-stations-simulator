@@ -69,6 +69,7 @@ import {
   convertToInt,
   ensureError,
   isNotEmptyArray,
+  isNotEmptyString,
   logger,
   roundTo,
   truncateId,
@@ -1702,8 +1703,7 @@ export class OCPP16ServiceUtils {
           typeof signedMeterValue === 'object' &&
           signedMeterValue != null &&
           'publicKey' in signedMeterValue &&
-          typeof signedMeterValue.publicKey === 'string' &&
-          signedMeterValue.publicKey.length > 0
+          isNotEmptyString(signedMeterValue.publicKey)
         )
       } catch {
         return false
@@ -1773,7 +1773,7 @@ export class OCPP16ServiceUtils {
         if (sampledValue.format !== OCPP16MeterValueFormat.SIGNED_DATA) return sampledValue
         try {
           const signedMeterValue = JSON.parse(sampledValue.value) as OCPP16SignedMeterValue
-          if (signedMeterValue.publicKey.length === 0) return sampledValue
+          if (!isNotEmptyString(signedMeterValue.publicKey)) return sampledValue
           return {
             ...sampledValue,
             value: JSON.stringify({ ...signedMeterValue, publicKey: '' }),

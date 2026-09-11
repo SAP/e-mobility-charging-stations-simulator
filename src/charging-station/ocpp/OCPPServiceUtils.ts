@@ -15,6 +15,7 @@ import type {
 
 import {
   advanceStationEnergyRegister,
+  areMeterValueUnitsCompatible,
   buildCoherentMeterValue,
   buildConfigKey,
   buildSampledValueFamilyKey,
@@ -22,9 +23,10 @@ import {
   canonicalizeCustomData,
   type ChargingStation,
   getConfigurationKey,
-  getRepresentedTransactionIntervalEnergyWh,
   isCoherentModeActive,
-  recordTransactionIntervalConsumption,
+  recordTransactionIntervalEmission,
+  resolveLinePhaseIndex,
+  resolveMeterValueUnitDivider,
   resolveRootSeed,
   truncateTransactionIntervalValue,
 } from '../../charging-station/index.js'
@@ -73,6 +75,7 @@ import {
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   handleFileException,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   isOCPP20x,
@@ -1286,10 +1289,7 @@ const resolveEnabledMeasurands = (
   const enabled = new Set<MeterValueMeasurand>()
   for (const entry of rawValue.split(',')) {
     const trimmed = entry.trim()
-    // Kept as `.length === 0`: entry is already trimmed above; `isEmpty()` here would be
-    // semantically identical (its string branch is `value.trim().length === 0`) — direct
-    // check avoids a redundant re-trim.
-    if (trimmed.length === 0) {
+    if (isEmpty(trimmed)) {
       continue
     }
     if (KNOWN_MEASURANDS.has(trimmed)) {
@@ -1376,20 +1376,6 @@ const resolveEnergyIntervalTemplates = (
     context
   ).filter(template => template.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL)
 
-const resolveSnapshotUnitDivider = (
-  measurand: MeterValueMeasurand,
-  unit: string | undefined
-): number => {
-  const usesKiloUnit =
-    (measurand.startsWith('Power.Active.') && unit === MeterValueUnit.KILO_WATT) ||
-    (measurand.startsWith('Power.Reactive.') && unit === MeterValueUnit.KILO_VAR) ||
-    (measurand.startsWith('Power.Apparent.') && unit === MeterValueUnit.KILO_VOLT_AMP) ||
-    (measurand.startsWith('Energy.Active.') && unit === MeterValueUnit.KILO_WATT_HOUR) ||
-    (measurand.startsWith('Energy.Reactive.') && unit === MeterValueUnit.KILO_VAR_HOUR) ||
-    (measurand.startsWith('Energy.Apparent.') && unit === MeterValueUnit.KILO_VOLT_AMP_HOUR)
-  return usesKiloUnit ? Constants.UNIT_DIVIDER_KILO : 1
-}
-
 const projectSnapshotDcOutputValue = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -1429,51 +1415,8 @@ const projectSnapshotDcOutputValue = (
     : outputValue * conversionEfficiency
 }
 
-const areSnapshotUnitsCompatible = (
-  measurand: MeterValueMeasurand,
-  sourceUnit: string | undefined,
-  targetUnit: string | undefined
-): boolean => {
-  if (sourceUnit === targetUnit) return true
-  const family: readonly string[] | undefined = measurand.startsWith('Power.Reactive.')
-    ? [MeterValueUnit.VAR, MeterValueUnit.KILO_VAR]
-    : measurand.startsWith('Power.Apparent.')
-      ? [MeterValueUnit.VOLT_AMP, MeterValueUnit.KILO_VOLT_AMP]
-      : measurand.startsWith('Power.Active.')
-        ? [MeterValueUnit.WATT, MeterValueUnit.KILO_WATT]
-        : measurand.startsWith('Energy.Reactive.')
-          ? [MeterValueUnit.VAR_HOUR, MeterValueUnit.KILO_VAR_HOUR]
-          : measurand.startsWith('Energy.Apparent.')
-            ? [MeterValueUnit.VOLT_AMP_HOUR, MeterValueUnit.KILO_VOLT_AMP_HOUR]
-            : measurand.startsWith('Energy.Active.')
-              ? [MeterValueUnit.WATT_HOUR, MeterValueUnit.KILO_WATT_HOUR]
-              : undefined
-  return (
-    sourceUnit != null &&
-    targetUnit != null &&
-    family?.includes(sourceUnit) === true &&
-    family.includes(targetUnit)
-  )
-}
-
 const isLinePhase = (phase: MeterValuePhase | undefined): boolean =>
-  phase != null && /^(L[123]|L[123]-N)$/.test(phase)
-
-const resolveLinePhaseIndex = (phase: MeterValuePhase | undefined): number | undefined => {
-  switch (phase) {
-    case MeterValuePhase.L1:
-    case MeterValuePhase.L1_N:
-      return 1
-    case MeterValuePhase.L2:
-    case MeterValuePhase.L2_N:
-      return 2
-    case MeterValuePhase.L3:
-    case MeterValuePhase.L3_N:
-      return 3
-    default:
-      return undefined
-  }
-}
+  resolveLinePhaseIndex(phase) != null
 
 const resolveSnapshotPhaseFamily = (
   phase: MeterValuePhase | undefined
@@ -1533,7 +1476,7 @@ const buildEnergyIntervalSampledValues = (
         template,
         truncateTransactionIntervalValue(
           physicalValue /
-            resolveSnapshotUnitDivider(
+            resolveMeterValueUnitDivider(
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
               template.unit as string | undefined
             )
@@ -1577,7 +1520,7 @@ const applySnapshotRegisterValuesWithoutPhases = (
   }
   for (const family of families.values()) {
     const lineTemplates = family.filter(template => isLinePhase(template.phase))
-    if (lineTemplates.length === 0) {
+    if (isEmpty(lineTemplates)) {
       result.push(...family)
       continue
     }
@@ -1671,7 +1614,11 @@ const expandClockAlignedSnapshotSamples = (
         canonicalizeCustomData(sample.customData) === canonicalizeCustomData(template.customData) &&
         (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
         (!preferBaseline ||
-          areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit))
+          areMeterValueUnitsCompatible(
+            measurand,
+            sample.unitOfMeasure?.unit,
+            resolvedIdentity.unit
+          ))
     )
     if (phaseFamily === 'Line') {
       const linePhaseIndex = resolveLinePhaseIndex(template.phase)
@@ -1696,7 +1643,11 @@ const expandClockAlignedSnapshotSamples = (
         canonicalizeCustomData(sample.customData) === canonicalizeCustomData(template.customData) &&
         (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
         (!preferBaseline ||
-          areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit))
+          areMeterValueUnitsCompatible(
+            measurand,
+            sample.unitOfMeasure?.unit,
+            resolvedIdentity.unit
+          ))
     )
     const source =
       exactSource ??
@@ -1717,7 +1668,7 @@ const expandClockAlignedSnapshotSamples = (
             canonicalizeCustomData(template.customData) &&
           sample.measurand === measurand &&
           (sample.location === resolvedIdentity.location || evseId === 0) &&
-          areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit)
+          areMeterValueUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit)
         ) {
           phasedPowerByLine.set(line, sample)
         }
@@ -1728,14 +1679,15 @@ const expandClockAlignedSnapshotSamples = (
         ? [...phasedPowerByLine.values()].reduce(
             (total, sample) =>
               total +
-              sample.value * resolveSnapshotUnitDivider(measurand, sample.unitOfMeasure?.unit),
+              sample.value * resolveMeterValueUnitDivider(measurand, sample.unitOfMeasure?.unit),
             0
           )
         : undefined
     let rawValue: number | undefined
     if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
       if (evseId !== 0 && source != null && preferBaseline) {
-        rawValue = source.value * resolveSnapshotUnitDivider(measurand, source.unitOfMeasure?.unit)
+        rawValue =
+          source.value * resolveMeterValueUnitDivider(measurand, source.unitOfMeasure?.unit)
       } else if (phaseFamily === 'Aggregate') {
         rawValue = energyRegister
       } else if (phaseFamily === 'Line') {
@@ -1763,7 +1715,7 @@ const expandClockAlignedSnapshotSamples = (
     ) {
       continue
     } else if (source != null && preferBaseline) {
-      rawValue = source.value * resolveSnapshotUnitDivider(measurand, source.unitOfMeasure?.unit)
+      rawValue = source.value * resolveMeterValueUnitDivider(measurand, source.unitOfMeasure?.unit)
       if (
         (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT ||
           measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) &&
@@ -1796,7 +1748,7 @@ const expandClockAlignedSnapshotSamples = (
       if (idle) {
         rawValue = 0
       } else {
-        const divider = resolveSnapshotUnitDivider(measurand, template.unit as string | undefined)
+        const divider = resolveMeterValueUnitDivider(measurand, template.unit as string | undefined)
         const maximumValue =
           measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
             ? chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId) /
@@ -1836,7 +1788,7 @@ const expandClockAlignedSnapshotSamples = (
     ) {
       rawValue = randomInt(template.minimumValue ?? 0, Constants.SOC_MAXIMUM_PERCENT + 1)
     } else if (source != null) {
-      rawValue = source.value * resolveSnapshotUnitDivider(measurand, source.unitOfMeasure?.unit)
+      rawValue = source.value * resolveMeterValueUnitDivider(measurand, source.unitOfMeasure?.unit)
       if (
         (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT ||
           measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) &&
@@ -1850,7 +1802,7 @@ const expandClockAlignedSnapshotSamples = (
         getRandomFloatFluctuatedRounded(
           convertToFloat(template.value),
           template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
-        ) * resolveSnapshotUnitDivider(measurand, template.unit as string | undefined)
+        ) * resolveMeterValueUnitDivider(measurand, template.unit as string | undefined)
     } else if (measurand === MeterValueMeasurand.VOLTAGE) {
       const nominal =
         phaseFamily === 'LineToLine'
@@ -1872,7 +1824,7 @@ const expandClockAlignedSnapshotSamples = (
       preferBaseline
     )
     const value = roundTo(
-      physicalValue / resolveSnapshotUnitDivider(measurand, template.unit as string | undefined),
+      physicalValue / resolveMeterValueUnitDivider(measurand, template.unit as string | undefined),
       2
     )
     expanded.push(buildVersionedSampledValue(template, value, context))
@@ -1900,7 +1852,7 @@ const applyClockAlignedVoltageControls = (
   const aggregateVoltages = sampledValues.filter(
     sample => sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase == null
   )
-  if (aggregateVoltages.length === 0) return sampledValues
+  if (isEmpty(aggregateVoltages)) return sampledValues
   const configuredPhaseSamples = sampledValues.filter(
     sample => sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase != null
   )
@@ -2527,7 +2479,7 @@ const buildIdentifiedMeterValue = (
         chargingStation,
         connectorId,
         evseId,
-        intervalTemplates.length > 0 ? intervalTemplates : [energyMeasurand.template],
+        isNotEmptyArray(intervalTemplates) ? intervalTemplates : [energyMeasurand.template],
         intervalEnergyValue,
         buildVersionedSampledValue,
         context,
@@ -2593,25 +2545,15 @@ const buildIdentifiedMeterValue = (
         sampledValue => sampledValue.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
       )
       if (emitsIntervalEnergy && !deferEnergyInterval) {
-        connectorStatus.transactionEnergyActiveImportIntervalBaselines ??= {}
-        connectorStatus.transactionEnergyActiveImportIntervalBaselines[intervalBaselineKey] =
-          connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
-        const representedIntervalEnergy = getRepresentedTransactionIntervalEnergyWh(
+        recordTransactionIntervalEmission(
+          connectorStatus,
           meterValue,
+          intervalBaselineKey,
+          intervalEnergyValue,
           chargingStation.getNumberOfPhases(),
           chargingStation.stationInfo?.currentOutType === CurrentType.DC && evseId !== 0
             ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
             : 1
-        )
-        recordTransactionIntervalConsumption(
-          meterValue,
-          intervalBaselineKey,
-          representedIntervalEnergy
-        )
-        connectorStatus.transactionEnergyActiveImportIntervalCarry ??= {}
-        connectorStatus.transactionEnergyActiveImportIntervalCarry[intervalBaselineKey] = Math.max(
-          0,
-          intervalEnergyValue - representedIntervalEnergy
         )
       }
     }

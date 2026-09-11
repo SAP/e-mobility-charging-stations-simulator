@@ -3397,7 +3397,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private restoreAcknowledgedBufferedMessages (): void {
-    if (this.acknowledgedBufferedMessages.size === 0) return
+    if (isEmpty(this.acknowledgedBufferedMessages)) return
     for (const message of this.acknowledgedBufferedMessages) {
       try {
         const [, messageId] = JSON.parse(message) as OutgoingRequest

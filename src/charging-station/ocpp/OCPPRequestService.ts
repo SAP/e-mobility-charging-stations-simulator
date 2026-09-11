@@ -31,6 +31,7 @@ import {
   getErrorMessage,
   getMessageTypeString,
   handleSendMessageError,
+  isEmpty,
   logger,
 } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
@@ -597,7 +598,7 @@ export abstract class OCPPRequestService {
         gate.waiters.push(waiter)
       }
     }
-    if (gate.activeMessageId == null && gate.waiters.length === 0) {
+    if (gate.activeMessageId == null && isEmpty(gate.waiters)) {
       this.outgoingCallGates.delete(chargingStation)
     }
   }

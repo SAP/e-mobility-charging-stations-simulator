@@ -55,10 +55,14 @@ import {
   recordPendingSharedEnergy,
   ROUNDING_SCALE,
 } from './CoherentSampleComputer.js'
-import { buildSampledValueFamilyKey, canonicalizeCustomData } from './MeterValueUtils.js'
 import {
-  getRepresentedTransactionIntervalEnergyWh,
-  recordTransactionIntervalConsumption,
+  buildSampledValueFamilyKey,
+  canonicalizeCustomData,
+  resolveLinePhaseIndex,
+  resolveMeterValueUnitDivider,
+} from './MeterValueUtils.js'
+import {
+  recordTransactionIntervalEmission,
   truncateTransactionIntervalValue,
 } from './TransactionIntervalUtils.js'
 
@@ -109,22 +113,6 @@ const phaseFamily = (
     PHASE_FAMILY as Partial<Record<string, 'LineToLine' | 'LineToNeutral' | 'Neutral'>>
   )[phase]
   return configuredFamily ?? 'Unsupported'
-}
-
-const resolveLinePhaseIndex = (phase: MeterValuePhase | undefined): number | undefined => {
-  switch (phase) {
-    case MeterValuePhase.L1:
-    case MeterValuePhase.L1_N:
-      return 1
-    case MeterValuePhase.L2:
-    case MeterValuePhase.L2_N:
-      return 2
-    case MeterValuePhase.L3:
-    case MeterValuePhase.L3_N:
-      return 3
-    default:
-      return undefined
-  }
 }
 
 /**
@@ -382,35 +370,6 @@ const resolvePhasedValue = (
 }
 
 /**
- * Measurand → matching kilo-prefixed unit lookup. Populated only for the
- * measurands whose `SampledValueTemplate.unit` may legitimately carry a
- * kilo-scaled value (kW / kWh). Any other `(measurand, unit)` pair
- * emits at unit scale (divider = 1).
- */
-const KILO_UNIT_BY_MEASURAND: ReadonlyMap<MeterValueMeasurand, MeterValueUnit> = new Map<
-  MeterValueMeasurand,
-  MeterValueUnit
->([
-  [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL, MeterValueUnit.KILO_WATT_HOUR],
-  [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, MeterValueUnit.KILO_WATT_HOUR],
-  [MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueUnit.KILO_WATT],
-])
-
-/**
- * Returns the unit divider for a `(measurand, unit)` pair: the kilo divider
- * when the template's unit is the kilo-prefixed variant of the measurand's
- * base unit (kW for Power, kWh for Energy register), otherwise 1.
- * @param measurand - Target measurand.
- * @param unit - Template unit (may be `undefined`).
- * @returns `Constants.UNIT_DIVIDER_KILO` or `1`.
- */
-const resolveUnitDivider = (
-  measurand: MeterValueMeasurand,
-  unit: MeterValueUnit | undefined
-): number =>
-  unit != null && KILO_UNIT_BY_MEASURAND.get(measurand) === unit ? Constants.UNIT_DIVIDER_KILO : 1
-
-/**
  * Resolves `MeterValues` templates for a connector. EVSE-level
  * `MeterValues` (when defined and non-empty) override connector-level
  * definitions for every connector under that EVSE; connector-level
@@ -559,7 +518,7 @@ const serializeCoherentMeterValue = (
             measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
           }) as SampledValueTemplate
       )
-    if (intervalFallbacks.length > 0) {
+    if (isNotEmptyArray(intervalFallbacks)) {
       groups.set(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL, [
         ...intervalTemplates,
         ...intervalFallbacks,
@@ -620,7 +579,10 @@ const serializeCoherentMeterValue = (
         measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
           ? projectDcOutputValue(context, currentType, effectiveEvseId, template, raw)
           : raw
-      const unitDivider = resolveUnitDivider(measurand, template.unit as MeterValueUnit | undefined)
+      const unitDivider = resolveMeterValueUnitDivider(
+        measurand,
+        template.unit as MeterValueUnit | undefined
+      )
       const scaled =
         measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
           ? truncateTransactionIntervalValue(physicalValue / unitDivider)
@@ -743,26 +705,16 @@ export const buildCoherentMeterValue = (
       sampledValue => sampledValue.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
     )
     if (emitsIntervalEnergy) {
-      connectorStatus.transactionEnergyActiveImportIntervalBaselines ??= {}
-      connectorStatus.transactionEnergyActiveImportIntervalBaselines[intervalBaselineKey] =
-        connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
-      const representedIntervalEnergy = getRepresentedTransactionIntervalEnergyWh(
+      recordTransactionIntervalEmission(
+        connectorStatus,
         meterValue,
+        intervalBaselineKey,
+        intervalEnergyValue,
         session.numberOfPhases,
         session.currentType === CurrentType.DC &&
           (evseIdOverride ?? context.getEvseIdByConnectorId(session.connectorId)) !== 0
           ? (context.stationInfo?.conversionEfficiency ?? 1)
           : 1
-      )
-      recordTransactionIntervalConsumption(
-        meterValue,
-        intervalBaselineKey,
-        representedIntervalEnergy
-      )
-      connectorStatus.transactionEnergyActiveImportIntervalCarry ??= {}
-      connectorStatus.transactionEnergyActiveImportIntervalCarry[intervalBaselineKey] = Math.max(
-        0,
-        intervalEnergyValue - representedIntervalEnergy
       )
     }
   }
