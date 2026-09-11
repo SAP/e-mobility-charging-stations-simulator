@@ -12,17 +12,15 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { CoherentSession } from '../../../../src/charging-station/meter-values/types.js'
 import type {
-  ConnectorStatus,
-  QueuedTransactionEvent,
-} from '../../../../src/types/ConnectorStatus.js'
-import type {
   ChargingStationInfo,
+  ConnectorStatus,
   EvseStatus,
   OCPP20MeterValue,
   OCPP20MeterValuesRequest,
   OCPP20SampledValue,
   OCPP20TransactionEventOptions,
   OCPP20TransactionEventRequest,
+  QueuedTransactionEvent,
   RequestParams,
 } from '../../../../src/types/index.js'
 import type { MockChargingStation } from '../../helpers/StationHelpers.js'

@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import type { ConnectorStatus, QueuedTransactionEvent } from '../../src/types/ConnectorStatus.js'
 import type {
+  ConnectorStatus,
   OCPP20MeterValue,
   OCPP20SampledValue,
   OCPP20TransactionEventRequest,
+  QueuedTransactionEvent,
 } from '../../src/types/index.js'
 
 import transactionEventRequestSchema from '../../src/assets/json-schemas/ocpp/2.0/TransactionEventRequest.json' with { type: 'json' }

@@ -10,11 +10,9 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   ConnectorStatus,
-  QueuedTransactionEvent,
-} from '../../../../src/types/ConnectorStatus.js'
-import type {
   OCPP20TransactionEventRequest,
   OCPP20TransactionEventResponse,
+  QueuedTransactionEvent,
   RequestParams,
   UUIDv4,
 } from '../../../../src/types/index.js'
