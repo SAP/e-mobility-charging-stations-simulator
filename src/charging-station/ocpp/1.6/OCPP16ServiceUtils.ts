@@ -11,10 +11,14 @@ import {
 import type { SigningMethodEnumType } from '../../../types/index.js'
 
 import {
+  captureTransactionIntervalState,
   type ChargingStation,
+  completeTransactionIntervalState,
   getConfigurationKey,
   hasFeatureProfile,
   hasReservationExpired,
+  isCoherentModeActive,
+  restoreTransactionIntervalState,
 } from '../../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../../exception/index.js'
 import {
@@ -69,12 +73,6 @@ import {
   roundTo,
   truncateId,
 } from '../../../utils/index.js'
-import { isCoherentModeActive } from '../../meter-values/index.js'
-import {
-  captureTransactionIntervalState,
-  completeTransactionIntervalState,
-  restoreTransactionIntervalState,
-} from '../../meter-values/TransactionIntervalUtils.js'
 import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {

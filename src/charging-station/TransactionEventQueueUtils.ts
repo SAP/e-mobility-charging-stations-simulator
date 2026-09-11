@@ -1,6 +1,5 @@
-import type { ConnectorStatus, QueuedTransactionEvent } from '../types/ConnectorStatus.js'
-
 import {
+  type ConnectorStatus,
   OCPP20LocationEnumType,
   OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
@@ -9,6 +8,7 @@ import {
   type OCPP20SignedMeterValue,
   OCPP20TransactionEventEnumType,
   OCPP20UnitEnumType,
+  type QueuedTransactionEvent,
 } from '../types/index.js'
 import { Constants, isJsonObject } from '../utils/index.js'
 import { canonicalizeCustomData } from './meter-values/MeterValueUtils.js'

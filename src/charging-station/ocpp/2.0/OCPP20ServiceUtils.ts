@@ -1,12 +1,37 @@
 import { secondsToMilliseconds } from 'date-fns'
 
-import type { ConnectorStatus, QueuedTransactionEvent } from '../../../types/ConnectorStatus.js'
-import type { ConfigurationKeyType } from '../../../types/ocpp/Configuration.js'
-
-import { type ChargingStation, resetConnectorStatus } from '../../../charging-station/index.js'
+import {
+  advanceConnectorEnergyRegister,
+  advanceStationEnergyRegister,
+  advanceTransactionEnergyRegister,
+  buildConfigKey,
+  canonicalizeCustomData,
+  type ChargingStation,
+  computeCoherentSampleAtTime,
+  consumePendingSharedEnergy,
+  enqueueBoundedTransactionEvent,
+  getConfigurationKey,
+  getMutableSignedMeterValue,
+  getRepresentedTransactionIntervalEnergyWh,
+  getTransactionIntervalConsumptions,
+  hasQueuedEndedTransactionEvent,
+  invalidateTransactionEventQueueAccounting,
+  isTransactionEventQueueStaged,
+  queuedTransactionEventHasPublicKey,
+  recordPendingSharedEnergy,
+  resetConnectorStatus,
+  resolveRootSeed,
+  setTransactionEventQueueInFlight,
+  setTransactionEventQueueStaged,
+  shiftBoundedTransactionEvent,
+  transferDiscardedTransactionEventIntervalEnergy,
+  truncateTransactionIntervalValue,
+} from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   AvailabilityType,
+  type ConfigurationKeyType,
+  type ConnectorStatus,
   type ConnectorStatusEnum,
   CurrentType,
   ErrorType,
@@ -43,6 +68,7 @@ import {
   OCPP20TriggerReasonEnumType,
   OCPP20UnitEnumType,
   OCPPVersion,
+  type QueuedTransactionEvent,
   ReasonCodeEnumType,
   RequestCommand,
   type RequestParams,
@@ -72,34 +98,6 @@ import {
   sleep,
   validateIdentifierString,
 } from '../../../utils/index.js'
-import { buildConfigKey, getConfigurationKey } from '../../index.js'
-import {
-  advanceConnectorEnergyRegister,
-  advanceStationEnergyRegister,
-  advanceTransactionEnergyRegister,
-  computeCoherentSampleAtTime,
-  consumePendingSharedEnergy,
-  recordPendingSharedEnergy,
-} from '../../meter-values/CoherentSampleComputer.js'
-import { resolveRootSeed } from '../../meter-values/CoherentSession.js'
-import { canonicalizeCustomData } from '../../meter-values/MeterValueUtils.js'
-import {
-  getRepresentedTransactionIntervalEnergyWh,
-  getTransactionIntervalConsumptions,
-  truncateTransactionIntervalValue,
-} from '../../meter-values/TransactionIntervalUtils.js'
-import {
-  enqueueBoundedTransactionEvent,
-  getMutableSignedMeterValue,
-  hasQueuedEndedTransactionEvent,
-  invalidateTransactionEventQueueAccounting,
-  isTransactionEventQueueStaged,
-  queuedTransactionEventHasPublicKey,
-  setTransactionEventQueueInFlight,
-  setTransactionEventQueueStaged,
-  shiftBoundedTransactionEvent,
-  transferDiscardedTransactionEventIntervalEnergy,
-} from '../../TransactionEventQueueUtils.js'
 import {
   mapOCPP20AuthorizationStatus,
   mapOCPP20TokenType,

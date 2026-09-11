@@ -10,7 +10,6 @@
  *   (`import { buildConnectorsMap, ... } from './Helpers.js'`).
  */
 
-import type { QueuedTransactionEvent } from '../types/ConnectorStatus.js'
 import type { ChargingStation } from './ChargingStation.js'
 
 import {
@@ -22,6 +21,7 @@ import {
   OCPP20ReadingContextEnumType,
   OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
+  type QueuedTransactionEvent,
 } from '../types/index.js'
 import {
   clone,

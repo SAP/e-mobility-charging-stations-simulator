@@ -4,6 +4,8 @@ import {
   addConfigurationKey,
   buildConfigKey,
   type ChargingStation,
+  hasQueuedEndedTransactionEvent,
+  shiftBoundedTransactionEvent,
 } from '../../../charging-station/index.js'
 import {
   ChargingStationEvents,
@@ -40,10 +42,6 @@ import {
   type ResponseHandler,
 } from '../../../types/index.js'
 import { convertToDate, logger } from '../../../utils/index.js'
-import {
-  hasQueuedEndedTransactionEvent,
-  shiftBoundedTransactionEvent,
-} from '../../TransactionEventQueueUtils.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'

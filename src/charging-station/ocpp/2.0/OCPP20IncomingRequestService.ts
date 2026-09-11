@@ -4,7 +4,6 @@ import type { ValidateFunction } from 'ajv'
 
 import { secondsToMilliseconds } from 'date-fns'
 
-import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPP20IdTokenEnumType } from '../../../types/index.js'
 
 import { OCPPError } from '../../../exception/index.js'
@@ -154,12 +153,13 @@ import {
 import {
   addConfigurationKey,
   buildConfigKey,
+  type ChargingStation,
   getConfigurationKey,
+  getTransactionIntervalConsumptions,
   hasPendingReservation,
   hasPendingReservations,
   resetConnectorStatus,
 } from '../../index.js'
-import { getTransactionIntervalConsumptions } from '../../meter-values/TransactionIntervalUtils.js'
 import {
   AuthContext,
   AuthResultStatus,

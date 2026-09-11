@@ -42,8 +42,47 @@ export {
 } from './Helpers.js'
 export type { IBootstrap } from './IBootstrap.js'
 export { IdTagsCache } from './IdTagsCache.js'
-export type { CoherentSession } from './meter-values/index.js'
+export {
+  buildCoherentMeterValue,
+  type BuildVersionedSampledValue,
+} from './meter-values/CoherentMeterValueBuilder.js'
+export {
+  advanceConnectorEnergyRegister,
+  advanceStationEnergyRegister,
+  advanceTransactionEnergyRegister,
+  computeCoherentSampleAtTime,
+  consumePendingSharedEnergy,
+  recordPendingSharedEnergy,
+} from './meter-values/CoherentSampleComputer.js'
+export { isCoherentModeActive, resolveRootSeed } from './meter-values/CoherentSession.js'
+export {
+  buildSampledValueFamilyKey,
+  canonicalizeCustomData,
+} from './meter-values/MeterValueUtils.js'
+export {
+  captureTransactionIntervalState,
+  completeTransactionIntervalState,
+  getRepresentedTransactionIntervalEnergyWh,
+  getTransactionIntervalConsumptions,
+  recordTransactionIntervalConsumption,
+  restoreTransactionIntervalState,
+  truncateTransactionIntervalValue,
+} from './meter-values/TransactionIntervalUtils.js'
+export type { CoherentSession } from './meter-values/types.js'
 export { SharedLRUCache } from './SharedLRUCache.js'
 export { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 export { TemplateSchema } from './TemplateSchema.js'
 export { TemplateValidationError, validateTemplate } from './TemplateValidation.js'
+export {
+  boundTransactionEventQueue,
+  enqueueBoundedTransactionEvent,
+  getMutableSignedMeterValue,
+  hasQueuedEndedTransactionEvent,
+  invalidateTransactionEventQueueAccounting,
+  isTransactionEventQueueStaged,
+  queuedTransactionEventHasPublicKey,
+  setTransactionEventQueueInFlight,
+  setTransactionEventQueueStaged,
+  shiftBoundedTransactionEvent,
+  transferDiscardedTransactionEventIntervalEnergy,
+} from './TransactionEventQueueUtils.js'

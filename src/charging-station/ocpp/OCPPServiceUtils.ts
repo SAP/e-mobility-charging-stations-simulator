@@ -14,9 +14,19 @@ import type {
 } from '../../types/index.js'
 
 import {
+  advanceStationEnergyRegister,
+  buildCoherentMeterValue,
   buildConfigKey,
+  buildSampledValueFamilyKey,
+  type BuildVersionedSampledValue,
+  canonicalizeCustomData,
   type ChargingStation,
   getConfigurationKey,
+  getRepresentedTransactionIntervalEnergyWh,
+  isCoherentModeActive,
+  recordTransactionIntervalConsumption,
+  resolveRootSeed,
+  truncateTransactionIntervalValue,
 } from '../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
 import {
@@ -74,22 +84,6 @@ import {
   min,
   roundTo,
 } from '../../utils/index.js'
-import { advanceStationEnergyRegister } from '../meter-values/CoherentSampleComputer.js'
-import {
-  buildCoherentMeterValue,
-  type BuildVersionedSampledValue,
-  isCoherentModeActive,
-  resolveRootSeed,
-} from '../meter-values/index.js'
-import {
-  buildSampledValueFamilyKey,
-  canonicalizeCustomData,
-} from '../meter-values/MeterValueUtils.js'
-import {
-  getRepresentedTransactionIntervalEnergyWh,
-  recordTransactionIntervalConsumption,
-  truncateTransactionIntervalValue,
-} from '../meter-values/TransactionIntervalUtils.js'
 import {
   buildOCPP16BootNotificationRequest,
   buildOCPP16SampledValue,
