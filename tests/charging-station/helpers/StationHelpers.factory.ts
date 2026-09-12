@@ -4,6 +4,7 @@
 
 import type { ChargingStation, CoherentSession } from '../../../src/charging-station/index.js'
 import type {
+  CachedRequest,
   ConnectorEntry,
   ConnectorStatus,
   EvseEntry,
@@ -20,9 +21,12 @@ import type {
 } from './StationHelpers.types.js'
 
 import { getConfigurationKey } from '../../../src/charging-station/index.js'
+import { OCPPError } from '../../../src/exception/index.js'
 import {
   AvailabilityType,
   CurrentType,
+  ErrorType,
+  MessageType,
   OCPPVersion,
   RegistrationStatusEnumType,
   StandardParametersKey,
@@ -36,6 +40,22 @@ import {
 import { MockIdTagsCache, MockSharedLRUCache } from '../mocks/MockCaches.js'
 import { MockWebSocket, WebSocketReadyState } from '../mocks/MockWebSocket.js'
 import { createConnectorStatus, determineEvseUsage } from './StationHelpers.connector.js'
+
+interface BufferedMessageCallbackReservation {
+  readonly bytes: number
+  readonly onCancelled?: () => void
+}
+
+interface BufferedMessageCallbacks {
+  readonly onDiscarded?: () => void
+  readonly onSent?: () => void
+  readonly retainedBytes?: number
+}
+
+interface BufferedMessageEntry {
+  callbacks?: BufferedMessageCallbacks
+  reservation?: BufferedMessageCallbackReservation
+}
 
 /**
  * Creates a minimal mock ChargingStation-like object for testing
@@ -147,7 +167,7 @@ export function createMockChargingStation (
   }
 
   // Create requests map
-  const requests = new Map<string, unknown>()
+  const requests = new Map<string, CachedRequest>()
 
   // Create the station object that mimics ChargingStation
   const station = {
@@ -156,6 +176,7 @@ export function createMockChargingStation (
     __injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
       this.coherentSessions.set(transactionId, session)
     },
+    acknowledgedBufferedMessages: new Set<string>(),
     addReservation (reservation: Record<string, unknown>): void {
       // Check if reservation with same ID exists and remove it
       const existingReservation = this.getReservationBy(
@@ -170,8 +191,8 @@ export function createMockChargingStation (
         connectorStatus.reservation = reservation as unknown as Reservation
       }
     },
-    automaticTransactionGenerator: undefined,
 
+    automaticTransactionGenerator: undefined,
     bootNotificationRequest: undefined,
 
     bootNotificationResponse: {
@@ -185,8 +206,54 @@ export function createMockChargingStation (
         interval: number
         status: RegistrationStatusEnumType
       },
-    bufferMessage (message: string): void {
-      this.messageQueue.push(message)
+    bufferedMessageCallbackBytes: 0,
+    bufferedMessageCallbackCount: 0,
+    bufferedMessageCallbackReservations: new Set<BufferedMessageCallbackReservation>(),
+    bufferedMessageEntries: [] as BufferedMessageEntry[],
+    bufferedMessageInFlight: undefined as
+      undefined | { isRequest: boolean; message: string; retracted: boolean; stopDrain?: boolean },
+    bufferMessage (
+      message: string,
+      prepend = false,
+      callbacks?: BufferedMessageCallbacks,
+      callbackReservation?: BufferedMessageCallbackReservation
+    ): boolean {
+      const callbackBytes =
+        callbacks == null
+          ? 0
+          : Math.max(
+            Buffer.byteLength(message, 'utf8'),
+            Number.isFinite(callbacks.retainedBytes) ? (callbacks.retainedBytes ?? 0) : 0
+          )
+      const reservation =
+        callbacks == null
+          ? undefined
+          : (callbackReservation ?? this.reserveBufferedMessageCallbacks(callbackBytes))
+      if (
+        callbacks != null &&
+        (reservation == null || !this.bufferedMessageCallbackReservations.has(reservation))
+      ) {
+        callbacks.onDiscarded?.()
+        return false
+      }
+      const entry: BufferedMessageEntry = { callbacks, reservation }
+      if (prepend) {
+        this.messageQueue.unshift(message)
+        this.bufferedMessageEntries.unshift(entry)
+      } else {
+        this.messageQueue.push(message)
+        this.bufferedMessageEntries.push(entry)
+      }
+      return true
+    },
+    clearMessageBuffer (): void {
+      this.acknowledgedBufferedMessages.clear()
+      this.messageQueue.length = 0
+      for (const { callbacks, reservation } of this.bufferedMessageEntries) {
+        callbacks?.onDiscarded?.()
+        this.releaseBufferedMessageCallbacks(reservation)
+      }
+      this.bufferedMessageEntries.length = 0
     },
     closeWSConnection (): void {
       if (this.wsConnection != null) {
@@ -196,8 +263,8 @@ export function createMockChargingStation (
     },
     // Coherent MeterValues session store (real class uses a private Map).
     coherentSessions: new Map<number | string, CoherentSession>(),
-
     connectors,
+
     createCoherentSession (
       _transactionId: number | string,
       _connectorId: number
@@ -209,27 +276,55 @@ export function createMockChargingStation (
       if (this.started) {
         await this.stop()
       }
-      this.requests.clear()
+      this.ocppRequestService.cancelPendingRequests(
+        this,
+        'Charging station deleted while awaiting an OCPP response',
+        true
+      )
       this.connectors.clear()
       this.evses.clear()
       // Note: deleteConfiguration controls file deletion in real implementation
       // Mock doesn't have file system access, so parameter is unused
     },
-
     destroyCoherentSession (transactionId: number | string | undefined): boolean {
       if (transactionId == null) {
         return false
       }
       return this.coherentSessions.delete(transactionId)
     },
+
     // Event emitter methods (minimal implementation)
     emit: () => true,
     // Empty implementations for interface compatibility
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     emitChargingStationEvent: () => {},
     evses,
+    flushMessageBuffer (): void {
+      /* empty */
+    },
     getAuthorizeRemoteTxRequests (): boolean {
       return false // Default to false in mock
+    },
+    getBufferedRequestIds (): Set<string> {
+      if (this.acknowledgedBufferedMessages.size > 0) {
+        this.messageQueue.unshift(...this.acknowledgedBufferedMessages.values())
+        this.acknowledgedBufferedMessages.clear()
+      }
+      const messageIds = new Set<string>()
+      for (const message of [...this.messageQueue, ...this.acknowledgedBufferedMessages.values()]) {
+        try {
+          const parsedMessage = JSON.parse(message) as unknown[]
+          if (
+            parsedMessage[0] === MessageType.CALL_MESSAGE &&
+            typeof parsedMessage[1] === 'string'
+          ) {
+            messageIds.add(parsedMessage[1])
+          }
+        } catch {
+          // Ignore malformed frames: they cannot identify a pending CALL.
+        }
+      }
+      return messageIds
     },
     getCoherentSession (transactionId: number | string): CoherentSession | undefined {
       return this.coherentSessions.get(transactionId)
@@ -248,19 +343,30 @@ export function createMockChargingStation (
         ({ connectorStatus }) => connectorStatus.transactionId === transactionId
       )?.connectorId
     },
-    getConnectorMaximumAvailablePower (_connectorId: number): number {
+    getConnectorMaximumAvailablePower (_connectorId: number, _evseId?: number): number {
       return stationInfoOverrides?.maximumPower ?? 22000
     },
-    getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
+    getConnectorStatus (connectorId: number, evseId?: number): ConnectorStatus | undefined {
+      if (evseId != null) return this.getEvseStatus(evseId)?.connectors.get(connectorId)
       return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)
         ?.connectorStatus
     },
-    getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
-      const connectorStatus = this.getConnectorStatus(connectorId)
+    getEnergyActiveImportRegisterByConnectorId (
+      connectorId: number,
+      rounded = false,
+      evseId?: number
+    ): number {
+      const connectorStatus = this.getConnectorStatus(connectorId, evseId)
       if (connectorStatus == null) {
         return 0
       }
-      const value = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+      // `!== false` mirrors production's effective default: DEFAULT_STATION_INFO
+      // seeds meteringPerTransaction to true (Constants.ts), so an unset field
+      // reads transaction-scoped like ChargingStation.getEnergyActiveImportRegister.
+      const value =
+        this.stationInfo.meteringPerTransaction !== false
+          ? (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
+          : (connectorStatus.energyActiveImportRegisterValue ?? 0)
       return rounded ? Math.round(value) : value
     },
     getEnergyActiveImportRegisterByTransactionId (
@@ -304,7 +410,7 @@ export function createMockChargingStation (
       return evses.has(0) ? evses.size - 1 : evses.size
     },
     getNumberOfPhases (): number {
-      return stationInfoOverrides?.numberOfPhases ?? 3
+      return this.stationInfo.numberOfPhases
     },
     getNumberOfRunningTransactions (): number {
       return this.iterateConnectors(true).reduce(
@@ -324,10 +430,13 @@ export function createMockChargingStation (
       )?.connectorStatus.transactionIdTag
     },
     getVoltageOut (): number {
-      return stationInfoOverrides?.voltageOut ?? 230
+      return this.stationInfo.voltageOut
     },
     getWebSocketPingInterval (): number {
       return websocketPingInterval
+    },
+    hasBufferedRequest (messageId: string): boolean {
+      return this.getBufferedRequestIds().has(messageId)
     },
 
     hasConnector (connectorId: number): boolean {
@@ -384,6 +493,10 @@ export function createMockChargingStation (
       return reservation == null
     },
 
+    isStopping (): boolean {
+      return this.stopping
+    },
+
     isWebSocketConnectionOpened (): boolean {
       return this.wsConnection?.readyState === WebSocketReadyState.OPEN
     },
@@ -411,6 +524,8 @@ export function createMockChargingStation (
         yield { evseId, evseStatus }
       }
     },
+
+    lifecycleAbortSignal: new AbortController().signal,
 
     listenerCount: () => 0,
 
@@ -453,8 +568,25 @@ export function createMockChargingStation (
       },
       ...ocppIncomingRequestService,
     },
-
     ocppRequestService: {
+      acquireOutgoingCall: () => Promise.resolve(),
+      cancelPendingRequests: (
+        targetStation: Pick<
+          ChargingStation,
+          'clearMessageBuffer' | 'hasBufferedRequest' | 'requests'
+        >,
+        message = 'Charging station stopped while awaiting an OCPP response',
+        discardBufferedRequests = false
+      ): void => {
+        const cancellationError = new OCPPError(ErrorType.GENERIC_ERROR, message)
+        for (const [messageId, [, errorCallback]] of [...targetStation.requests.entries()]) {
+          if (!discardBufferedRequests && targetStation.hasBufferedRequest(messageId)) continue
+          targetStation.requests.delete(messageId)
+          errorCallback(cancellationError, false)
+        }
+        if (discardBufferedRequests) targetStation.clearMessageBuffer()
+      },
+      releaseOutgoingCall: () => undefined,
       requestHandler: async () => {
         return await Promise.reject(
           new Error(
@@ -476,6 +608,7 @@ export function createMockChargingStation (
           )
         )
       },
+      validateRequestPayload: () => true,
       ...ocppRequestService,
     },
 
@@ -487,9 +620,61 @@ export function createMockChargingStation (
 
     performanceStatistics: undefined,
 
+    persistTransactionEventQueues (): Promise<void> {
+      return Promise.resolve()
+    },
+
     powerDivider: 1,
+    releaseAllBufferedMessageCallbacks (): void {
+      const discardedCallbacks: BufferedMessageCallbacks[] = []
+      for (
+        let messageIndex = this.bufferedMessageEntries.length - 1;
+        messageIndex >= 0;
+        messageIndex--
+      ) {
+        const entry = this.bufferedMessageEntries[messageIndex]
+        if (entry.callbacks == null) continue
+        const [message] = this.messageQueue.splice(messageIndex, 1)
+        this.bufferedMessageEntries.splice(messageIndex, 1)
+        this.releaseBufferedMessageCallbacks(entry.reservation)
+        if (this.bufferedMessageInFlight?.message === message) {
+          this.bufferedMessageInFlight.retracted = true
+        }
+        discardedCallbacks.unshift(entry.callbacks)
+      }
+      const reservations = [...this.bufferedMessageCallbackReservations]
+      this.bufferedMessageCallbackReservations.clear()
+      this.bufferedMessageCallbackCount = 0
+      this.bufferedMessageCallbackBytes = 0
+      for (const callbacks of discardedCallbacks) callbacks.onDiscarded?.()
+      for (const reservation of reservations) reservation.onCancelled?.()
+    },
+
+    releaseBufferedMessageCallbacks (
+      reservation: BufferedMessageCallbackReservation | undefined
+    ): void {
+      if (reservation == null || !this.bufferedMessageCallbackReservations.delete(reservation)) {
+        return
+      }
+      --this.bufferedMessageCallbackCount
+      this.bufferedMessageCallbackBytes -= reservation.bytes
+    },
 
     removeAllListeners: () => station,
+
+    removeBufferedMessage (message: string): boolean {
+      const messageIndex = this.messageQueue.indexOf(message)
+      if (messageIndex === -1) return this.acknowledgedBufferedMessages.delete(message)
+      this.messageQueue.splice(messageIndex, 1)
+      const [entry] = this.bufferedMessageEntries.splice(messageIndex, 1)
+      entry.callbacks?.onDiscarded?.()
+      this.releaseBufferedMessageCallbacks(entry.reservation)
+      this.acknowledgedBufferedMessages.delete(message)
+      if (messageIndex === 0 && this.bufferedMessageInFlight?.message === message) {
+        this.bufferedMessageInFlight.retracted = true
+      }
+      return true
+    },
 
     removeListener: () => station,
 
@@ -499,7 +684,26 @@ export function createMockChargingStation (
         delete connectorStatus.reservation
       }
     },
+
     requests,
+
+    reserveBufferedMessageCallbacks (
+      retainedBytes: number,
+      onCancelled?: () => void
+    ): BufferedMessageCallbackReservation | undefined {
+      const bytes = Math.max(0, Number.isFinite(retainedBytes) ? retainedBytes : 0)
+      if (
+        this.bufferedMessageCallbackCount >= 1024 ||
+        this.bufferedMessageCallbackBytes + bytes > 1024 * 1024
+      ) {
+        return undefined
+      }
+      const reservation = { bytes, onCancelled }
+      this.bufferedMessageCallbackReservations.add(reservation)
+      ++this.bufferedMessageCallbackCount
+      this.bufferedMessageCallbackBytes += bytes
+      return reservation
+    },
 
     restartHeartbeat (): void {
       this.stopHeartbeat()
@@ -510,7 +714,41 @@ export function createMockChargingStation (
       /* empty */
     },
 
+    retainBufferedMessage (message: string): boolean {
+      const messageIndex = this.messageQueue.indexOf(message)
+      if (messageIndex !== -1) {
+        if (messageIndex === 0 && this.bufferedMessageInFlight?.message === message) {
+          this.bufferedMessageInFlight.retracted = true
+          this.bufferedMessageInFlight.stopDrain = true
+        }
+        return true
+      }
+      if (!this.acknowledgedBufferedMessages.has(message)) return false
+      this.messageQueue.unshift(...this.acknowledgedBufferedMessages.values())
+      this.acknowledgedBufferedMessages.clear()
+      return true
+    },
+
+    retainBufferedRequest (messageId: string): boolean {
+      for (const message of [...this.messageQueue, ...this.acknowledgedBufferedMessages.values()]) {
+        try {
+          const parsedMessage = JSON.parse(message) as unknown[]
+          if (parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId) {
+            return this.retainBufferedMessage(message)
+          }
+        } catch {
+          // Malformed frames cannot match a request id.
+        }
+      }
+      return false
+    },
     saveOcppConfiguration (): void {
+      /* empty */
+    },
+    saveTransactionEventQueues (): void {
+      /* empty */
+    },
+    settleTransactionEnergyMeterValues (): void {
       /* empty */
     },
     start (): void {

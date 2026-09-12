@@ -154,7 +154,7 @@ export interface CoherentSession {
  * the physics chain needs to query about the station itself.
  */
 export interface ICoherentContext {
-  getConnectorMaximumAvailablePower: (connectorId: number) => number
+  getConnectorMaximumAvailablePower: (connectorId: number, evseId?: number) => number
   getConnectorStatus: (connectorId: number) => ConnectorStatus | undefined
   getEvseIdByConnectorId: (connectorId: number) => number | undefined
   getEvseStatus: (evseId: number) => EvseStatus | undefined

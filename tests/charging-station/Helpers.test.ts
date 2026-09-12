@@ -915,6 +915,7 @@ await describe('Helpers', async () => {
         transactionSeqNo: 5,
         transactionStart: new Date(),
         transactionStarted: true,
+        transactionStartedExhaustedTransactionId: 'tx-123',
       }
 
       resetConnectorStatus(connectorStatus)
@@ -929,6 +930,7 @@ await describe('Helpers', async () => {
       assert.strictEqual(connectorStatus.transactionStart, undefined)
       assert.strictEqual(connectorStatus.transactionBeginMeterValue, undefined)
       assert.strictEqual(connectorStatus.transactionSeqNo, undefined)
+      assert.strictEqual(connectorStatus.transactionStartedExhaustedTransactionId, undefined)
       assert.strictEqual(connectorStatus.transactionEvseSent, undefined)
       assert.strictEqual(connectorStatus.transactionIdTokenSent, undefined)
       assert.strictEqual(connectorStatus.transactionDeauthorized, undefined)
@@ -974,16 +976,22 @@ await describe('Helpers', async () => {
     await it('should preserve non-transaction fields', () => {
       const connectorStatus: ConnectorStatus = {
         availability: AvailabilityType.Operative,
+        energyActiveImportIntervalBaselines: { 'station:aligned': 42 },
         MeterValues: [{} as unknown as SampledValueTemplate],
         status: ConnectorStatusEnum.Available,
+        transactionEnergyActiveImportIntervalBaselines: { transaction: 21 },
         transactionStarted: true,
       }
 
       resetConnectorStatus(connectorStatus)
 
       assert.strictEqual(connectorStatus.availability, AvailabilityType.Operative)
+      assert.deepStrictEqual(connectorStatus.energyActiveImportIntervalBaselines, {
+        'station:aligned': 42,
+      })
       assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
       assert.strictEqual(connectorStatus.MeterValues.length, 1)
+      assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalBaselines, undefined)
     })
   })
 

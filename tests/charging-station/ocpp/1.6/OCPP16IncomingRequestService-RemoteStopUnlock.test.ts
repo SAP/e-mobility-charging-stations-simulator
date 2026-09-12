@@ -161,6 +161,19 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       assert.strictEqual(response.status, OCPP16UnlockStatus.UNLOCK_FAILED)
     })
 
+    await it('should return UnlockFailed when active transaction delivery fails', async () => {
+      setupConnectorWithTransaction(station, 1, { transactionId: 201 })
+      mock.method(OCPP16ServiceUtils, 'stopTransactionOnConnector', async () =>
+        Promise.reject(new Error('StopTransaction delivery failed'))
+      )
+
+      const response = await testableService.handleRequestUnlockConnector(station, {
+        connectorId: 1,
+      })
+
+      assert.strictEqual(response.status, OCPP16UnlockStatus.UNLOCK_FAILED)
+    })
+
     await it('should return a response with exactly one status property', async () => {
       // Act
       const response = await testableService.handleRequestUnlockConnector(station, {

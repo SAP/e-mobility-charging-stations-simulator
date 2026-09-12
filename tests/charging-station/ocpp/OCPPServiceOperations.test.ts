@@ -8,6 +8,8 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
+import { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
+import { OCPP20ServiceUtils } from '../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -21,13 +23,20 @@ import {
   stopRunningTransactions,
   stopTransactionOnConnector,
 } from '../../../src/charging-station/ocpp/OCPPServiceOperations.js'
-import { type OCPP20TransactionEventRequest, OCPPVersion } from '../../../src/types/index.js'
+import {
+  OCPP16ChargePointStatus,
+  OCPP16MeterValueMeasurand,
+  OCPP16MeterValueUnit,
+  type OCPP20TransactionEventRequest,
+  OCPPVersion,
+} from '../../../src/types/index.js'
 import {
   createStationWithRequestHandler,
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../helpers/StationHelpers.js'
+import { createMeterValuesTemplate } from './1.6/OCPP16TestUtils.js'
 import {
   createMockAuthorizationResult,
   createMockAuthService,
@@ -116,7 +125,7 @@ await describe('OCPPServiceOperations', async () => {
   })
 
   await describe('stopRunningTransactions', async () => {
-    await it('should call stopTransactionOnConnector sequentially for each OCPP 1.6 connector with active transaction', async () => {
+    await it('should call stopTransactionOnConnector for each OCPP 1.6 connector with an active transaction', async () => {
       const sentCommands: string[] = []
       const { requestHandler, station } = createStationWithRequestHandler({
         connectorsCount: 2,
@@ -134,6 +143,91 @@ await describe('OCPPServiceOperations', async () => {
       assert.strictEqual(stopCalls.length, 2)
     })
 
+    await it('should isolate a malformed strict connector and continue the healthy stop and shutdown status phase', async () => {
+      const attemptedTransactionIds: number[] = []
+      const unavailableConnectorIds: number[] = []
+      const { requestHandler, station } = createStationWithRequestHandler({
+        connectorsCount: 2,
+        stationInfo: {
+          beginEndMeterValues: true,
+          ocppStrictCompliance: true,
+          ocppVersion: OCPPVersion.VERSION_16,
+          outOfOrderEndMeterValues: false,
+        },
+      })
+      requestHandler.mock.mockImplementation((...args: unknown[]) => {
+        if (args[1] === 'StatusNotification') {
+          const request = args[2] as { connectorId: number; status: OCPP16ChargePointStatus }
+          if (request.status === OCPP16ChargePointStatus.Unavailable) {
+            unavailableConnectorIds.push(request.connectorId)
+          }
+          return {}
+        }
+        if (args[1] !== 'StopTransaction') {
+          return {}
+        }
+        const transactionId = (args[2] as { transactionId: number }).transactionId
+        attemptedTransactionIds.push(transactionId)
+        return { idTagInfo: { status: 'Accepted' } }
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 101 })
+      setupConnectorWithTransaction(station, 2, { transactionId: 102 })
+      const healthyConnectorStatus = station.getConnectorStatus(2)
+      assert.ok(healthyConnectorStatus != null)
+      healthyConnectorStatus.MeterValues = createMeterValuesTemplate([
+        {
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '0',
+        },
+      ])
+      const stationInternals = station as unknown as {
+        internalStopMessageSequence: () => void
+        lifecycleAbortSignal: AbortSignal
+        stopAlignedMeterValues: () => void
+      }
+      stationInternals.internalStopMessageSequence = () => undefined
+      stationInternals.lifecycleAbortSignal = new AbortController().signal
+      stationInternals.stopAlignedMeterValues = () => undefined
+      const stopMessageSequence = (
+        ChargingStation.prototype as unknown as {
+          stopMessageSequence: (reason?: undefined, stopTransactions?: boolean) => Promise<void>
+        }
+      ).stopMessageSequence
+
+      await assert.doesNotReject(stopMessageSequence.call(station, undefined, true))
+
+      assert.deepStrictEqual(attemptedTransactionIds, [102])
+      assert.deepStrictEqual(
+        unavailableConnectorIds.sort((a, b) => a - b),
+        [1, 2]
+      )
+    })
+
+    await it('should reissue StopTransaction for a stale Finishing OCPP 1.6 connector', async () => {
+      const { requestHandler, station } = createStationWithRequestHandler()
+      requestHandler.mock.mockImplementation(async (..._args: unknown[]) =>
+        Promise.resolve({ idTagInfo: { status: 'Accepted' } })
+      )
+      setupConnectorWithTransaction(station, 1, { transactionId: 101 })
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus == null) {
+        assert.fail('Expected connector to be defined')
+      }
+      connectorStatus.status = OCPP16ChargePointStatus.Finishing
+
+      await stopRunningTransactions(station)
+
+      assert.strictEqual(
+        requestHandler.mock.calls.filter(call => call.arguments[1] === 'StopTransaction').length,
+        1
+      )
+      assert.strictEqual(
+        requestHandler.mock.calls.filter(call => call.arguments[1] === 'StatusNotification').length,
+        0
+      )
+    })
+
     await it('should call requestStopTransaction in parallel for OCPP 2.0 connectors', async () => {
       const sentPayloads: { command: string; transactionId?: string }[] = []
       const { requestHandler, station } = createStationWithRequestHandler({
@@ -142,10 +236,10 @@ await describe('OCPPServiceOperations', async () => {
         ocppVersion: OCPPVersion.VERSION_20,
       })
       requestHandler.mock.mockImplementation(async (...args: unknown[]) => {
-        const payload = args[2] as Record<string, unknown>
+        const payload = args[2] as OCPP20TransactionEventRequest
         sentPayloads.push({
           command: args[1] as string,
-          transactionId: payload.transactionId as string | undefined,
+          transactionId: payload.transactionInfo.transactionId,
         })
         return Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
       })
@@ -169,10 +263,10 @@ await describe('OCPPServiceOperations', async () => {
         ocppVersion: OCPPVersion.VERSION_20,
       })
       requestHandler.mock.mockImplementation(async (...args: unknown[]) => {
-        const payload = args[2] as Record<string, unknown>
+        const payload = args[2] as OCPP20TransactionEventRequest
         sentPayloads.push({
           command: args[1] as string,
-          transactionId: payload.transactionId as string | undefined,
+          transactionId: payload.transactionInfo.transactionId,
         })
         return Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
       })
@@ -268,6 +362,8 @@ await describe('OCPPServiceOperations', async () => {
         evseConfiguration: { evsesCount: 1 },
         ocppVersion: OCPPVersion.VERSION_20,
       })
+      station.started = true
+      station.isStopping = () => false
       requestHandler.mock.mockImplementation(async (..._args: unknown[]) => Promise.resolve({}))
       const connectorStatus = station.getConnectorStatus(1)
       assert.notStrictEqual(connectorStatus, undefined)
@@ -290,6 +386,58 @@ await describe('OCPPServiceOperations', async () => {
       await flushQueuedTransactionMessages(station)
 
       assert.strictEqual(connectorStatus.transactionEventQueue.length, 0)
+      setupConnectorWithTransaction(station, 1, {
+        transactionId: '550e8400-e29b-41d4-a716-446655440000',
+      })
+      connectorStatus.transactionRestored = true
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date(0)
+      const resumedAfter = Date.now()
+
+      await flushQueuedTransactionMessages(station)
+
+      assert.strictEqual(connectorStatus.transactionRestored, undefined)
+      assert.ok(
+        connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt.getTime() >= resumedAfter
+      )
+      assert.ok(connectorStatus.transactionUpdatedMeterValuesSetInterval != null)
+      assert.ok(connectorStatus.transactionEndedMeterValuesSetInterval != null)
+      OCPP20ServiceUtils.pauseTransactionMeterValues(station)
+      assert.strictEqual(connectorStatus.transactionRestored, true)
+      assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+      assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
+
+      await flushQueuedTransactionMessages(station)
+
+      const resumedConnectorStatus = station.getConnectorStatus(1)
+      assert.ok(resumedConnectorStatus != null)
+      assert.strictEqual(resumedConnectorStatus.transactionRestored, undefined)
+      assert.ok(resumedConnectorStatus.transactionUpdatedMeterValuesSetInterval != null)
+      assert.ok(resumedConnectorStatus.transactionEndedMeterValuesSetInterval != null)
+      OCPP20ServiceUtils.stopUpdatedMeterValues(station, 1)
+      OCPP20ServiceUtils.stopEndedMeterValues(station, 1)
+    })
+
+    await it('should not resume restored transaction timers while station is stopped or stopping', async () => {
+      for (const lifecycleState of ['stopped', 'stopping'] as const) {
+        const { station } = createStationWithRequestHandler({
+          evseConfiguration: { evsesCount: 1 },
+          ocppVersion: OCPPVersion.VERSION_20,
+        })
+        station.started = lifecycleState === 'stopping'
+        station.isStopping = () => lifecycleState === 'stopping'
+        setupConnectorWithTransaction(station, 1, {
+          transactionId: `tx-${lifecycleState}`,
+        })
+        const connectorStatus = station.getConnectorStatus(1)
+        assert.ok(connectorStatus != null)
+        connectorStatus.transactionRestored = true
+
+        await flushQueuedTransactionMessages(station)
+
+        assert.strictEqual(connectorStatus.transactionRestored, true)
+        assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+        assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
+      }
     })
   })
 

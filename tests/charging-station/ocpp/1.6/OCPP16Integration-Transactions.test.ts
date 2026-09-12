@@ -64,6 +64,7 @@ function createIntegrationContext (): {
     },
     websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
+  station.isStopping = () => false
 
   // IncomingRequest service (handles RemoteStart/Stop from CSMS)
   const incomingRequestService = new OCPP16IncomingRequestService()

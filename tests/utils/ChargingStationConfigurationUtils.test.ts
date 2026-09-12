@@ -9,9 +9,33 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
-import type { ConnectorStatus, EvseStatus } from '../../src/types/index.js'
+import type {
+  ConnectorStatus,
+  EvseStatus,
+  OCPP20TransactionEventRequest,
+} from '../../src/types/index.js'
 
-import { AvailabilityType } from '../../src/types/index.js'
+import transactionEventRequestSchema from '../../src/assets/json-schemas/ocpp/2.0/TransactionEventRequest.json' with { type: 'json' }
+import {
+  prepareConnectorStatus,
+  preparePersistedTransactionEventQueue,
+} from '../../src/charging-station/HelpersConnectorStatus.js'
+import { createAjv } from '../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import {
+  boundTransactionEventQueue,
+  getTransactionEventQueueBytes,
+} from '../../src/charging-station/TransactionEventQueueUtils.js'
+import {
+  AvailabilityType,
+  OCPP20ConnectorStatusEnumType,
+  OCPP20LocationEnumType,
+  OCPP20MeasurandEnumType,
+  OCPP20PhaseEnumType,
+  OCPP20ReadingContextEnumType,
+  OCPP20TransactionEventEnumType,
+  OCPP20TriggerReasonEnumType,
+  OCPP20UnitEnumType,
+} from '../../src/types/index.js'
 import {
   buildATGEntries,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
@@ -35,6 +59,23 @@ interface MockStationInternals {
   connectors: Map<number, ConnectorStatus>
   evses: Map<number, EvseStatus>
 }
+
+const validateTransactionEvent = createAjv().compile(transactionEventRequestSchema)
+
+const prepareTestConnectorStatus = (
+  connectorStatus: ConnectorStatus,
+  numberOfPhases = 3,
+  inletToOutputEfficiency = 1
+): ConnectorStatus =>
+  preparePersistedTransactionEventQueue(
+    prepareConnectorStatus(connectorStatus, numberOfPhases, inletToOutputEfficiency),
+    request =>
+      validateTransactionEvent(
+        JSON.parse(JSON.stringify(request)) as OCPP20TransactionEventRequest
+      ),
+    numberOfPhases,
+    inletToOutputEfficiency
+  )
 
 await describe('ChargingStationConfigurationUtils', async () => {
   let testStation: ChargingStation | undefined
@@ -71,6 +112,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
           MeterValues: [],
           transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
           transactionEndedMeterValuesSetInterval: interval2,
+          transactionEnding: true,
           transactionEventQueue: [],
           transactionUpdatedMeterValuesSetInterval: interval1,
         } as unknown as ConnectorStatus)
@@ -80,6 +122,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         assert.strictEqual(result.length, 2)
         for (const [, connector] of result) {
           assert.ok(!('transactionEndedMeterValues' in connector))
+          assert.ok(!('transactionEnding' in connector))
           assert.ok(!('transactionEndedMeterValuesSetInterval' in connector))
           assert.ok(!('transactionUpdatedMeterValuesSetInterval' in connector))
           assert.ok(!('transactionEventQueue' in connector))
@@ -109,6 +152,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       internals.connectors.set(1, {
         availability: AvailabilityType.Operative,
         bootStatus: 'Available',
+        energyActiveImportIntervalBaselines: { 'station:AlignedDataCtrlr.Measurands': 12 },
         MeterValues: [],
         transactionEventQueue: undefined,
         transactionId: 42,
@@ -121,8 +165,61 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(result.length, 1)
       assert.strictEqual(result[0][0], 1)
       assert.strictEqual(result[0][1].availability, AvailabilityType.Operative)
+      assert.deepStrictEqual(result[0][1].energyActiveImportIntervalBaselines, {
+        'station:AlignedDataCtrlr.Measurands': 12,
+      })
       assert.strictEqual(result[0][1].transactionId, 42)
       assert.strictEqual(result[0][1].transactionStarted, true)
+    })
+
+    await it('should persist a non-EVSE transaction queue and only durable interval state', () => {
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.connectors.clear()
+      const eventTimestamp = new Date('2026-08-31T12:00:00.000Z')
+      const queuedTimestamp = new Date('2026-08-31T12:00:01.000Z')
+      internals.connectors.set(1, {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+        transactionEnergyActiveImportIntervalBaselines: {
+          'SampledDataCtrlr.TxEndedMeasurands': 10,
+          'SampledDataCtrlr.TxUpdatedMeasurands': 20,
+        },
+        transactionEnergyActiveImportIntervalCarry: {
+          'SampledDataCtrlr.TxEndedMeasurands': 9,
+          'SampledDataCtrlr.TxUpdatedMeasurands': 2,
+        },
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 1,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000001' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 1,
+            timestamp: queuedTimestamp,
+          },
+        ],
+        transactionId: '00000000-0000-4000-8000-000000000001',
+      })
+
+      const connectorStatus = buildConnectorsStatus(station)[0][1]
+
+      assert.deepStrictEqual(connectorStatus.transactionEnergyActiveImportIntervalBaselines, {
+        'SampledDataCtrlr.TxUpdatedMeasurands': 20,
+      })
+      assert.deepStrictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry, {
+        'SampledDataCtrlr.TxUpdatedMeasurands': 2,
+      })
+      assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
+      const restoredConnectorStatus = prepareTestConnectorStatus(
+        JSON.parse(JSON.stringify(connectorStatus)) as ConnectorStatus
+      )
+      assert.ok(restoredConnectorStatus.transactionEventQueue?.[0].timestamp instanceof Date)
+      assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
     })
 
     await it('should preserve non-sequential connector IDs', () => {
@@ -161,7 +258,19 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const evseConnectors = new Map<number, ConnectorStatus>()
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
+        energyActiveImportIntervalBaselines: { 'station:AlignedDataCtrlr.Measurands': 15 },
+        locked: true,
         MeterValues: [],
+        postTransactionDelayTransactionId: 'ended-transaction',
+        status: OCPP20ConnectorStatusEnumType.Occupied,
+        transactionEnergyActiveImportIntervalBaselines: {
+          'SampledDataCtrlr.TxEndedMeasurands': 10,
+          'SampledDataCtrlr.TxUpdatedMeasurands': 20,
+        },
+        transactionEnergyActiveImportIntervalCarry: {
+          'SampledDataCtrlr.TxEndedMeasurands': 9,
+          'SampledDataCtrlr.TxUpdatedMeasurands': 2,
+        },
         transactionEventQueue: [],
         transactionUpdatedMeterValuesSetInterval: undefined,
       })
@@ -173,6 +282,9 @@ await describe('ChargingStationConfigurationUtils', async () => {
       internals.evses.set(1, {
         availability: AvailabilityType.Operative,
         connectors: evseConnectors,
+        energyActiveImportIntervalBaseline: 20,
+        energyActiveImportRegisterLastUpdatedAt: new Date(),
+        energyActiveImportRegisterValue: 25,
       })
 
       const result = buildEvsesStatus(station)
@@ -182,12 +294,37 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const evse1 = result[1][1]
       assert.ok('connectorsStatus' in evse1)
       assert.ok(!('connectors' in evse1))
+      assert.ok(!('energyActiveImportRegisterLastUpdatedAt' in evse1))
+      assert.strictEqual(evse1.energyActiveImportIntervalBaseline, 20)
+      assert.strictEqual(evse1.energyActiveImportRegisterValue, 25)
       const connectorsStatus = evse1.connectorsStatus as [number, ConnectorStatus][]
       assert.strictEqual(connectorsStatus.length, 1)
       assert.strictEqual(connectorsStatus[0][0], 1)
+      assert.strictEqual(connectorsStatus[0][1].locked, false)
+      assert.strictEqual(connectorsStatus[0][1].status, OCPP20ConnectorStatusEnumType.Unavailable)
+      assert.deepEqual(connectorsStatus[0][1].energyActiveImportIntervalBaselines, {
+        'station:AlignedDataCtrlr.Measurands': 15,
+      })
+      assert.deepEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalBaselines, {
+        'SampledDataCtrlr.TxUpdatedMeasurands': 20,
+      })
+      assert.deepEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalCarry, {
+        'SampledDataCtrlr.TxUpdatedMeasurands': 2,
+      })
+      assert.strictEqual('postTransactionDelayTransactionId' in connectorsStatus[0][1], false)
+      const runtimeConnector = evseConnectors.get(1)
+      assert.ok(runtimeConnector)
+      runtimeConnector.transactionId = 'replacement-transaction'
+      runtimeConnector.transactionStarted = true
+      const replacementConnector = (
+        buildEvsesStatus(station)[1][1].connectorsStatus as [number, ConnectorStatus][]
+      )[0][1]
+      assert.strictEqual(replacementConnector.locked, true)
+      assert.strictEqual(replacementConnector.status, OCPP20ConnectorStatusEnumType.Occupied)
+      assert.strictEqual('postTransactionDelayTransactionId' in replacementConnector, false)
     })
 
-    await it('should strip internal fields from evse connectors', () => {
+    await it('should strip ephemeral fields and preserve queued transaction events', () => {
       const { station } = createMockChargingStation({
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
@@ -196,13 +333,33 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const internals = station as unknown as MockStationInternals
       internals.evses.clear()
 
+      const eventTimestamp = new Date('2026-08-31T12:00:00.000Z')
+      const queuedTimestamp = new Date('2026-08-31T12:00:01.000Z')
       const evseConnectors = new Map<number, ConnectorStatus>()
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
         transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
         transactionEndedMeterValuesSetInterval: undefined,
-        transactionEventQueue: [],
+        transactionEnding: true,
+        transactionEnergyActiveImportRegisterLastUpdatedAt: eventTimestamp,
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 1,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000001' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 1,
+            timestamp: queuedTimestamp,
+          },
+        ],
+        transactionId: '00000000-0000-4000-8000-000000000001',
+        transactionStart: eventTimestamp,
+        transactionStartedExhaustedTransactionId: '00000000-0000-4000-8000-000000000001',
+        transactionStarting: true,
         transactionUpdatedMeterValuesSetInterval: undefined,
       })
 
@@ -224,9 +381,1042 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(connectorsStatus[0][0], 1)
       const connectorStatus = connectorsStatus[0][1]
       assert.ok(!('transactionEndedMeterValues' in connectorStatus))
+      assert.ok(!('transactionEnding' in connectorStatus))
+      assert.ok(!('transactionStarting' in connectorStatus))
       assert.ok(!('transactionEndedMeterValuesSetInterval' in connectorStatus))
       assert.ok(!('transactionUpdatedMeterValuesSetInterval' in connectorStatus))
-      assert.ok(!('transactionEventQueue' in connectorStatus))
+      assert.strictEqual(
+        connectorStatus.transactionStartedExhaustedTransactionId,
+        '00000000-0000-4000-8000-000000000001'
+      )
+      assert.deepEqual(connectorStatus.transactionEventQueue, [
+        {
+          request: {
+            eventType: OCPP20TransactionEventEnumType.Updated,
+            seqNo: 1,
+            timestamp: eventTimestamp,
+            transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000001' },
+            triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+          },
+          seqNo: 1,
+          timestamp: queuedTimestamp,
+        },
+      ])
+      const persistedConnectorStatus = JSON.parse(
+        JSON.stringify(connectorStatus)
+      ) as ConnectorStatus
+      const restoredConnectorStatus = prepareTestConnectorStatus(persistedConnectorStatus)
+      assert.ok(restoredConnectorStatus.transactionEventQueue?.[0].timestamp instanceof Date)
+      assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue[0].deliveryAttempted, false)
+      assert.ok(
+        restoredConnectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt instanceof Date
+      )
+      assert.ok(restoredConnectorStatus.transactionStart instanceof Date)
+      assert.strictEqual(restoredConnectorStatus.transactionStarted, false)
+      assert.strictEqual(restoredConnectorStatus.transactionStarting, true)
+      assert.strictEqual(restoredConnectorStatus.transactionRestored, true)
+      assert.strictEqual(
+        restoredConnectorStatus.transactionStartedExhaustedTransactionId,
+        '00000000-0000-4000-8000-000000000001'
+      )
+    })
+
+    await it('should preserve OCPP 1.6 public-key ownership without a queue validator', () => {
+      const connectorStatus: ConnectorStatus = {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+        publicKeySentInTransaction: true,
+        transactionEventQueue: [],
+        transactionId: 42,
+        transactionStarted: true,
+      }
+
+      const restoredConnectorStatus = preparePersistedTransactionEventQueue(
+        prepareConnectorStatus(connectorStatus)
+      )
+
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue, undefined)
+      assert.strictEqual(restoredConnectorStatus.publicKeySentInTransaction, true)
+      assert.strictEqual(restoredConnectorStatus.transactionRestored, true)
+    })
+
+    await it('should discard malformed persisted transaction queue entries', () => {
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z')
+      const connectorStatus = {
+        publicKeySentInTransaction: true,
+        transactionEventQueue: [
+          null,
+          {},
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              meterValue: [
+                {
+                  sampledValue: [
+                    {
+                      signedMeterValue: {
+                        encodingMethod: 'OCMF',
+                        publicKey: null,
+                        signedMeterData: 'signed-data',
+                        signingMethod: 'ECDSA-secp256r1-SHA256',
+                      },
+                      value: 1,
+                    },
+                  ],
+                  timestamp: eventTimestamp.toISOString(),
+                },
+              ],
+              seqNo: 4,
+              timestamp: eventTimestamp.toISOString(),
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000004' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 4,
+            timestamp: eventTimestamp.toISOString(),
+          },
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              meterValue: { malformed: true },
+              seqNo: 5,
+              timestamp: eventTimestamp.toISOString(),
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000004' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 5,
+            timestamp: eventTimestamp.toISOString(),
+          },
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 6,
+              timestamp: 'bogus',
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000006' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 6,
+            timestamp: eventTimestamp.toISOString(),
+          },
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 0,
+              timestamp: eventTimestamp.toISOString(),
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000007' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 7,
+            timestamp: eventTimestamp.toISOString(),
+          },
+        ],
+        transactionId: '00000000-0000-4000-8000-000000000004',
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.deepStrictEqual(restoredConnectorStatus.transactionEventQueue, [])
+      assert.strictEqual(restoredConnectorStatus.publicKeySentInTransaction, true)
+    })
+
+    await it('should discard persisted Ended payloads with invalid schema fields', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000044'
+      const timestamp = '2026-09-01T12:00:00.000Z'
+      const validSample = {
+        context: OCPP20ReadingContextEnumType.TRANSACTION_END,
+        location: OCPP20LocationEnumType.Inlet,
+        measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+        phase: OCPP20PhaseEnumType.L1_N,
+        unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
+        value: 1,
+      }
+      const validRequest = (): OCPP20TransactionEventRequest => ({
+        eventType: OCPP20TransactionEventEnumType.Ended,
+        meterValue: [
+          {
+            sampledValue: [validSample],
+            timestamp: new Date(timestamp),
+          },
+        ],
+        seqNo: 1,
+        timestamp: new Date(timestamp),
+        transactionInfo: { transactionId },
+        triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+      })
+      const requestWithSample = (sample: object): object => ({
+        ...validRequest(),
+        meterValue: [
+          {
+            sampledValue: [{ ...validSample, ...sample }],
+            timestamp: new Date(timestamp),
+          },
+        ],
+      })
+      const invalidRequests = [
+        {
+          name: 'stopped reason',
+          request: {
+            ...validRequest(),
+            transactionInfo: { stoppedReason: 'Invalid', transactionId },
+          },
+        },
+        {
+          name: 'charging state',
+          request: {
+            ...validRequest(),
+            transactionInfo: { chargingState: 'Invalid', transactionId },
+          },
+        },
+        { name: 'sample context', request: requestWithSample({ context: 'Invalid' }) },
+        { name: 'sample measurand', request: requestWithSample({ measurand: 'Invalid' }) },
+        { name: 'sample phase', request: requestWithSample({ phase: 'Invalid' }) },
+        {
+          name: 'sample unit',
+          request: requestWithSample({ unitOfMeasure: { unit: 42 } }),
+        },
+      ]
+
+      for (const { name, request } of invalidRequests) {
+        const restoredConnectorStatus = prepareTestConnectorStatus({
+          transactionEventQueue: [
+            {
+              request,
+              seqNo: 1,
+              timestamp,
+            },
+          ],
+          transactionId,
+        } as unknown as ConnectorStatus)
+        assert.deepStrictEqual(restoredConnectorStatus.transactionEventQueue, [], name)
+      }
+    })
+
+    await it('should reopen key ownership only when an invalid active carrier is removed', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000043'
+      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const connectorStatus = {
+        publicKeySentInTransaction: true,
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              meterValue: [
+                {
+                  sampledValue: [
+                    { signedMeterValue: { publicKey: 'active-public-key' }, value: 1 },
+                  ],
+                  timestamp,
+                },
+              ],
+              seqNo: 1,
+              timestamp: 'invalid',
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 1,
+            timestamp,
+          },
+        ],
+        transactionId,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.deepStrictEqual(restoredConnectorStatus.transactionEventQueue, [])
+      assert.strictEqual(restoredConnectorStatus.publicKeySentInTransaction, false)
+    })
+
+    await it('should reject unsafe queue sequence numbers and rebuild the active counter', () => {
+      const activeTransactionId = '00000000-0000-4000-8000-000000000040'
+      const historicalTransactionId = '00000000-0000-4000-8000-000000000041'
+      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const event = (transactionId: string, seqNo: number, requestSeqNo = seqNo) => ({
+        request: {
+          eventType: OCPP20TransactionEventEnumType.Updated,
+          seqNo: requestSeqNo,
+          timestamp,
+          transactionInfo: { transactionId },
+          triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+        },
+        seqNo,
+        timestamp,
+      })
+      const connectorStatus = {
+        transactionEventQueue: [
+          event(activeTransactionId, -1),
+          event(activeTransactionId, Number.MAX_SAFE_INTEGER + 1),
+          event(activeTransactionId, 7, Number.MAX_SAFE_INTEGER + 1),
+          event(activeTransactionId, 6),
+          event(historicalTransactionId, 99),
+        ],
+        transactionId: activeTransactionId,
+        transactionSeqNo: Number.POSITIVE_INFINITY,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.deepStrictEqual(
+        restoredConnectorStatus.transactionEventQueue?.map(queuedEvent => [
+          queuedEvent.request.transactionInfo.transactionId,
+          queuedEvent.seqNo,
+        ]),
+        [
+          [activeTransactionId, 6],
+          [historicalTransactionId, 99],
+        ]
+      )
+      assert.strictEqual(restoredConnectorStatus.transactionSeqNo, 6)
+
+      for (const invalidSeqNo of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+        const withoutActiveHistory = prepareTestConnectorStatus({
+          transactionEventQueue: [event(historicalTransactionId, 3)],
+          transactionId: activeTransactionId,
+          transactionSeqNo: invalidSeqNo,
+        } as unknown as ConnectorStatus)
+        assert.strictEqual(withoutActiveHistory.transactionSeqNo, undefined)
+      }
+    })
+
+    await it('should keep the first valid persisted event for each structured identity', () => {
+      const activeTransactionId = '00000000-0000-4000-8000-000000000030'
+      const otherTransactionId = '00000000-0000-4000-8000-000000000031'
+      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const event = (
+        transactionId: string,
+        seqNo: number,
+        marker: string,
+        consumption: number
+      ) => ({
+        request: {
+          customData: { marker, vendorId: 'test' },
+          eventType: OCPP20TransactionEventEnumType.Updated,
+          seqNo,
+          timestamp,
+          transactionInfo: { transactionId },
+          triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+        },
+        seqNo,
+        timestamp,
+        transactionEnergyActiveImportIntervalConsumption: { periodic: consumption },
+      })
+      const connectorStatus = {
+        transactionEventQueue: [
+          event(activeTransactionId, 4, 'first', 10),
+          event(otherTransactionId, 4, 'other-transaction', 20),
+          event(activeTransactionId, 4, 'duplicate', 999),
+          event(activeTransactionId, 5, 'next-sequence', 30),
+        ],
+        transactionId: activeTransactionId,
+        transactionSeqNo: 1,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+      const queue = restoredConnectorStatus.transactionEventQueue
+      assert.ok(queue != null)
+
+      assert.deepStrictEqual(
+        queue.map(queuedEvent => queuedEvent.request.customData?.marker),
+        ['first', 'other-transaction', 'next-sequence']
+      )
+      assert.deepStrictEqual(queue[0].transactionEnergyActiveImportIntervalConsumption, {
+        periodic: 10,
+      })
+      assert.strictEqual(queue[0].timestamp instanceof Date, true)
+      assert.strictEqual(queue[0].request.timestamp instanceof Date, true)
+      assert.strictEqual(restoredConnectorStatus.transactionSeqNo, 5)
+      assert.strictEqual(
+        boundTransactionEventQueue(restoredConnectorStatus).bytes,
+        getTransactionEventQueueBytes(queue)
+      )
+    })
+
+    await it('should retain the attempted duplicate for an identical persisted event', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000042'
+      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const event = (marker: string, deliveryAttempted: boolean) => ({
+        deliveryAttempted,
+        request: {
+          customData: { marker, vendorId: 'test' },
+          eventType: OCPP20TransactionEventEnumType.Updated,
+          seqNo: 4,
+          timestamp,
+          transactionInfo: { transactionId },
+          triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+        },
+        seqNo: 4,
+        timestamp,
+      })
+      const connectorStatus = {
+        transactionEventQueue: [event('unattempted', false), event('attempted', true)],
+        transactionId,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)
+      assert.strictEqual(
+        restoredConnectorStatus.transactionEventQueue[0].request.customData?.marker,
+        'attempted'
+      )
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue[0].deliveryAttempted, true)
+    })
+
+    await it('should reject an over-limit persisted queue made only of attempted events', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000044'
+      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const transactionEventQueue = [0, 1].map(seqNo => ({
+        deliveryAttempted: true,
+        request: {
+          customData: { payload: 'x'.repeat(600_000), vendorId: 'test' },
+          eventType: OCPP20TransactionEventEnumType.Updated,
+          seqNo,
+          timestamp,
+          transactionInfo: { transactionId },
+          triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+        },
+        seqNo,
+        timestamp,
+      }))
+
+      assert.throws(
+        () =>
+          prepareTestConnectorStatus({
+            transactionEventQueue,
+            transactionId,
+          } as unknown as ConnectorStatus),
+        /exceeds hard limits with only protected entries/
+      )
+    })
+
+    await it('should allow a valid persisted identity after a malformed occurrence', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000032'
+      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const connectorStatus = {
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 6,
+              timestamp: 'invalid',
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 6,
+            timestamp,
+          },
+          {
+            request: {
+              customData: { marker: 'valid', vendorId: 'test' },
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 6,
+              timestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 6,
+            timestamp,
+          },
+        ],
+        transactionId,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)
+      assert.strictEqual(
+        restoredConnectorStatus.transactionEventQueue[0].request.customData?.marker,
+        'valid'
+      )
+      assert.strictEqual(restoredConnectorStatus.transactionSeqNo, 6)
+    })
+
+    await it('should preserve a duplicate public key only on a compatible retained target', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000033'
+      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const signedMeterValue = (publicKey: string) => [
+        {
+          sampledValue: [
+            {
+              signedMeterValue: {
+                encodingMethod: 'OCMF',
+                publicKey,
+                signedMeterData: 'signed-data',
+                signingMethod: 'ECDSA-secp256r1-SHA256',
+              },
+              value: 1,
+            },
+          ],
+          timestamp,
+        },
+      ]
+      const queuedEvent = (
+        eventType: OCPP20TransactionEventEnumType,
+        meterValue?: ReturnType<typeof signedMeterValue>
+      ) => ({
+        request: {
+          eventType,
+          ...(meterValue != null && { meterValue }),
+          seqNo: 1,
+          timestamp,
+          transactionInfo: { transactionId },
+          triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+        },
+        seqNo: 1,
+        timestamp,
+      })
+      const transferable = prepareTestConnectorStatus({
+        publicKeySentInTransaction: true,
+        transactionEventQueue: [
+          queuedEvent(OCPP20TransactionEventEnumType.Updated, signedMeterValue('')),
+          queuedEvent(OCPP20TransactionEventEnumType.Updated, signedMeterValue('public-key')),
+        ],
+        transactionId,
+      } as unknown as ConnectorStatus)
+
+      assert.strictEqual(transferable.transactionEventQueue?.length, 1)
+      assert.strictEqual(
+        transferable.transactionEventQueue[0].request.meterValue?.[0].sampledValue[0]
+          .signedMeterValue?.publicKey,
+        'public-key'
+      )
+      assert.strictEqual(transferable.publicKeySentInTransaction, true)
+
+      const withoutTarget = prepareTestConnectorStatus({
+        publicKeySentInTransaction: true,
+        transactionEventQueue: [
+          queuedEvent(OCPP20TransactionEventEnumType.Started),
+          queuedEvent(OCPP20TransactionEventEnumType.Ended, signedMeterValue('public-key')),
+        ],
+        transactionId,
+      } as unknown as ConnectorStatus)
+
+      assert.strictEqual(withoutTarget.transactionEventQueue?.length, 1)
+      assert.strictEqual(
+        withoutTarget.transactionEventQueue[0].request.eventType,
+        OCPP20TransactionEventEnumType.Started
+      )
+      assert.strictEqual(withoutTarget.publicKeySentInTransaction, false)
+    })
+
+    await it('should advance the active transaction sequence past restored queued events', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000004'
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const connectorStatus = {
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 4,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 4,
+            timestamp: eventTimestamp,
+          },
+        ],
+        transactionId,
+        transactionSeqNo: 3,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.strictEqual(restoredConnectorStatus.transactionSeqNo, 4)
+    })
+
+    await it('should bound an oversized persisted transaction queue', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000004'
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const connectorStatus = {
+        transactionEventQueue: Array.from(
+          { length: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1 },
+          (_, seqNo) => ({
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo,
+            timestamp: eventTimestamp,
+          })
+        ),
+        transactionId,
+        transactionSeqNo: 3,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      const queue = restoredConnectorStatus.transactionEventQueue
+      assert.ok(queue != null)
+      assert.ok(queue.length <= Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
+      assert.ok(
+        Buffer.byteLength(JSON.stringify(queue), 'utf8') <=
+          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+      )
+      assert.strictEqual(
+        restoredConnectorStatus.transactionSeqNo,
+        Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
+      )
+      assert.strictEqual(queue[0].seqNo, 0)
+      assert.strictEqual(queue.at(-1)?.seqNo, Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
+    })
+    await it('should evict oldest lifecycle cohorts while hydrating a byte-oversized queue', () => {
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const queuedEvent = (
+        eventType: OCPP20TransactionEventEnumType,
+        transactionId: string,
+        seqNo: number,
+        payloadBytes: number
+      ) => ({
+        request: {
+          customData: { payload: 'x'.repeat(payloadBytes), vendorId: 'test' },
+          eventType,
+          seqNo,
+          timestamp: eventTimestamp,
+          transactionInfo: { transactionId },
+          triggerReason:
+            eventType === OCPP20TransactionEventEnumType.Ended
+              ? OCPP20TriggerReasonEnumType.StopAuthorized
+              : OCPP20TriggerReasonEnumType.Authorized,
+        },
+        seqNo,
+        timestamp: eventTimestamp,
+      })
+      const oversizedStartedTransactionId = '00000000-0000-4000-8000-000000000020'
+      const oldestCompletedTransactionId = '00000000-0000-4000-8000-000000000021'
+      const newestCompletedTransactionId = '00000000-0000-4000-8000-000000000022'
+      const connectorStatus = {
+        transactionEventQueue: [
+          queuedEvent(
+            OCPP20TransactionEventEnumType.Started,
+            oversizedStartedTransactionId,
+            0,
+            Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+          ),
+          queuedEvent(
+            OCPP20TransactionEventEnumType.Ended,
+            oldestCompletedTransactionId,
+            1,
+            642_000
+          ),
+          queuedEvent(
+            OCPP20TransactionEventEnumType.Ended,
+            newestCompletedTransactionId,
+            2,
+            642_000
+          ),
+        ],
+      } as unknown as ConnectorStatus
+      assert.ok(
+        Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue?.[0]), 'utf8') >
+          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+      )
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+      const queue = restoredConnectorStatus.transactionEventQueue
+
+      assert.ok(queue != null)
+      assert.strictEqual(queue.length, 1)
+      assert.ok(
+        Buffer.byteLength(JSON.stringify(queue), 'utf8') <=
+          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+      )
+      assert.strictEqual(
+        queue[0].request.transactionInfo.transactionId,
+        newestCompletedTransactionId
+      )
+      assert.strictEqual(
+        (queue[0].request.customData?.payload as string | undefined)?.length,
+        642_000
+      )
+      assert.strictEqual(queue[0].request.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.strictEqual(queue[0].request.seqNo, 2)
+      assert.strictEqual(queue[0].request.triggerReason, OCPP20TriggerReasonEnumType.StopAuthorized)
+    })
+
+    await it('should preserve a historical signing key when mandatory update endpoints exceed the cap', () => {
+      const activeTransactionId = '00000000-0000-4000-8000-000000000008'
+      const historicalTransactionId = '00000000-0000-4000-8000-000000000007'
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const signedMeterValue = (publicKey: string) => [
+        {
+          sampledValue: [
+            {
+              signedMeterValue: {
+                encodingMethod: 'OCMF',
+                publicKey,
+                signedMeterData: 'signed-data',
+                signingMethod: 'ECDSA-secp256r1-SHA256',
+              },
+              value: 1,
+            },
+          ],
+          timestamp: eventTimestamp,
+        },
+      ]
+      const connectorStatus = {
+        transactionEventQueue: Array.from({ length: 4 }, (_, seqNo) => ({
+          request: {
+            customData: { payload: 'x'.repeat(300_000), vendorId: 'test' },
+            eventType: OCPP20TransactionEventEnumType.Updated,
+            ...(seqNo < 2 && {
+              meterValue: signedMeterValue(seqNo === 0 ? 'historical-public-key' : ''),
+            }),
+            seqNo,
+            timestamp: eventTimestamp,
+            transactionInfo: {
+              transactionId: seqNo < 2 ? historicalTransactionId : activeTransactionId,
+            },
+            triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+          },
+          seqNo,
+          timestamp: eventTimestamp,
+        })),
+        transactionId: activeTransactionId,
+        transactionStarted: true,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+      const historicalReplacement = restoredConnectorStatus.transactionEventQueue?.find(
+        queuedEvent => queuedEvent.request.transactionInfo.transactionId === historicalTransactionId
+      )
+
+      assert.strictEqual(
+        historicalReplacement?.request.meterValue?.[0].sampledValue[0].signedMeterValue?.publicKey,
+        'historical-public-key'
+      )
+    })
+
+    await it('should release a reserved signing key when its persisted event is discarded', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000007'
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const connectorStatus = {
+        publicKeySentInTransaction: true,
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              meterValue: [
+                {
+                  sampledValue: [
+                    {
+                      signedMeterValue: {
+                        encodingMethod: 'OCMF',
+                        publicKey: 'public-key',
+                        signedMeterData: 'signed-data',
+                        signingMethod: 'ECDSA-secp256r1-SHA256',
+                      },
+                      value: 1,
+                    },
+                  ],
+                  timestamp: 'bogus',
+                },
+              ],
+              seqNo: 7,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 7,
+            timestamp: eventTimestamp,
+          },
+        ],
+        transactionId,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.deepEqual(restoredConnectorStatus.transactionEventQueue, [])
+      assert.strictEqual(restoredConnectorStatus.publicKeySentInTransaction, false)
+    })
+
+    await it('should migrate persisted station interval baselines to physical state', () => {
+      const connectorStatus = {
+        energyActiveImportIntervalBaselines: {
+          invalid: -1,
+          'station:AlignedDataCtrlr.Measurands': 30,
+        },
+        transactionEnergyActiveImportIntervalBaselines: {
+          'AlignedDataCtrlr.Measurands': 20,
+          'SampledDataCtrlr.TxUpdatedMeasurands': 10,
+          'station:AlignedDataCtrlr.Measurands': 40,
+          'station:invalid': Number.NaN,
+        },
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.deepStrictEqual(restoredConnectorStatus.energyActiveImportIntervalBaselines, {
+        'station:AlignedDataCtrlr.Measurands': 30,
+      })
+      assert.deepStrictEqual(
+        restoredConnectorStatus.transactionEnergyActiveImportIntervalBaselines,
+        {
+          'AlignedDataCtrlr.Measurands': 20,
+          'SampledDataCtrlr.TxUpdatedMeasurands': 10,
+        }
+      )
+      assert.strictEqual(
+        prepareTestConnectorStatus(restoredConnectorStatus),
+        restoredConnectorStatus
+      )
+      assert.deepStrictEqual(restoredConnectorStatus.energyActiveImportIntervalBaselines, {
+        'station:AlignedDataCtrlr.Measurands': 30,
+      })
+    })
+
+    await it('should not downgrade an active transaction restored with an exhausted Started marker', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000033'
+      const eventTimestamp = '2026-09-01T12:00:00.000Z'
+      const connectorStatus = {
+        availability: AvailabilityType.Operative,
+        locked: true,
+        MeterValues: [],
+        status: OCPP20ConnectorStatusEnumType.Occupied,
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 1,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 1,
+            timestamp: eventTimestamp,
+          },
+        ],
+        transactionId,
+        transactionStart: eventTimestamp,
+        transactionStarted: true,
+        transactionStartedExhaustedTransactionId: transactionId,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.strictEqual(restoredConnectorStatus.transactionStarted, true)
+      assert.strictEqual(restoredConnectorStatus.transactionStarting, undefined)
+      assert.strictEqual(restoredConnectorStatus.transactionRestored, true)
+      assert.strictEqual(restoredConnectorStatus.status, OCPP20ConnectorStatusEnumType.Occupied)
+      assert.strictEqual(restoredConnectorStatus.locked, true)
+      assert.ok(restoredConnectorStatus.transactionStart instanceof Date)
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)
+    })
+
+    await it('should clear exhausted Started ownership when its only queued event is malformed', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000034'
+      const connectorStatus = {
+        availability: AvailabilityType.Inoperative,
+        idTagAuthorized: true,
+        locked: true,
+        MeterValues: [],
+        status: OCPP20ConnectorStatusEnumType.Occupied,
+        transactionEventQueue: [
+          {
+            request: { transactionInfo: { transactionId } },
+            seqNo: 1,
+            timestamp: '2026-09-01T12:00:00.000Z',
+          },
+        ],
+        transactionId,
+        transactionIdTag: 'orphan-id-tag',
+        transactionStart: '2026-09-01T12:00:00.000Z',
+        transactionStarted: false,
+        transactionStartedExhaustedTransactionId: transactionId,
+        transactionStarting: true,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.deepStrictEqual(restoredConnectorStatus.transactionEventQueue, [])
+      assert.strictEqual(restoredConnectorStatus.transactionId, undefined)
+      assert.strictEqual(restoredConnectorStatus.transactionIdTag, undefined)
+      assert.strictEqual(restoredConnectorStatus.transactionStart, undefined)
+      assert.strictEqual(restoredConnectorStatus.transactionStarted, false)
+      assert.strictEqual(restoredConnectorStatus.transactionStarting, undefined)
+      assert.strictEqual(restoredConnectorStatus.transactionRestored, false)
+      assert.strictEqual(
+        restoredConnectorStatus.transactionStartedExhaustedTransactionId,
+        undefined
+      )
+      assert.strictEqual(restoredConnectorStatus.availability, AvailabilityType.Inoperative)
+    })
+
+    await it('should restore Ended ownership when it remains after exhausted Started', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000035'
+      const eventTimestamp = '2026-09-01T12:00:00.000Z'
+      const connectorStatus = {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Ended,
+              seqNo: 2,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+            },
+            seqNo: 2,
+            timestamp: eventTimestamp,
+          },
+        ],
+        transactionId,
+        transactionStart: eventTimestamp,
+        transactionStarted: false,
+        transactionStartedExhaustedTransactionId: transactionId,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.strictEqual(restoredConnectorStatus.transactionId, transactionId)
+      assert.strictEqual(restoredConnectorStatus.transactionStarted, false)
+      assert.strictEqual(restoredConnectorStatus.transactionStarting, undefined)
+      assert.strictEqual(restoredConnectorStatus.transactionEnding, true)
+      assert.strictEqual(restoredConnectorStatus.transactionRestored, true)
+      assert.strictEqual(
+        restoredConnectorStatus.transactionStartedExhaustedTransactionId,
+        transactionId
+      )
+      assert.deepStrictEqual(
+        restoredConnectorStatus.transactionEventQueue?.map(event => event.request.eventType),
+        [OCPP20TransactionEventEnumType.Ended]
+      )
+    })
+
+    await it('should not restore Ended ownership from malformed or unrelated queued events', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000036'
+      const eventTimestamp = '2026-09-01T12:00:00.000Z'
+      const candidates = [
+        {
+          request: { transactionInfo: { transactionId } },
+          seqNo: 2,
+          timestamp: eventTimestamp,
+        },
+        {
+          request: {
+            eventType: OCPP20TransactionEventEnumType.Ended,
+            seqNo: 2,
+            timestamp: eventTimestamp,
+            transactionInfo: {
+              transactionId: '00000000-0000-4000-8000-000000000037',
+            },
+            triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+          },
+          seqNo: 2,
+          timestamp: eventTimestamp,
+        },
+      ]
+
+      for (const candidate of candidates) {
+        const restoredConnectorStatus = prepareTestConnectorStatus({
+          availability: AvailabilityType.Operative,
+          MeterValues: [],
+          transactionEventQueue: [candidate],
+          transactionId,
+          transactionStart: eventTimestamp,
+          transactionStarted: false,
+        } as unknown as ConnectorStatus)
+
+        assert.strictEqual(restoredConnectorStatus.transactionEnding, undefined)
+        assert.strictEqual(restoredConnectorStatus.transactionRestored, false)
+      }
+    })
+
+    await it('should discard invalid or stale exhausted Started ownership markers', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000031'
+      const malformed = {
+        transactionId,
+        transactionStartedExhaustedTransactionId: 31,
+      } as unknown as ConnectorStatus
+      const stale = {
+        transactionId,
+        transactionStartedExhaustedTransactionId: '00000000-0000-4000-8000-000000000032',
+      } as unknown as ConnectorStatus
+      const oversized = {
+        transactionId: 'x'.repeat(37),
+        transactionStartedExhaustedTransactionId: 'x'.repeat(37),
+      } as unknown as ConnectorStatus
+
+      assert.strictEqual(
+        prepareTestConnectorStatus(malformed).transactionStartedExhaustedTransactionId,
+        undefined
+      )
+      assert.strictEqual(
+        prepareTestConnectorStatus(stale).transactionStartedExhaustedTransactionId,
+        undefined
+      )
+      assert.strictEqual(
+        prepareTestConnectorStatus(oversized).transactionStartedExhaustedTransactionId,
+        undefined
+      )
+    })
+
+    await it('should reconstruct mixed-cadence legacy Updated interval energy from its payload', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000030'
+      const eventTimestamp = '2026-09-01T12:00:00.000Z'
+      const connectorStatus = {
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              meterValue: [
+                {
+                  sampledValue: [
+                    {
+                      context: OCPP20ReadingContextEnumType.SAMPLE_CLOCK,
+                      location: OCPP20LocationEnumType.Inlet,
+                      measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+                      phase: 'L1-N',
+                      unitOfMeasure: { unit: OCPP20UnitEnumType.KILO_WATT_HOUR },
+                      value: 2,
+                    },
+                    {
+                      context: OCPP20ReadingContextEnumType.SAMPLE_PERIODIC,
+                      location: OCPP20LocationEnumType.Inlet,
+                      measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+                      phase: 'L1-N',
+                      unitOfMeasure: { unit: OCPP20UnitEnumType.KILO_WATT_HOUR },
+                      value: 2,
+                    },
+                  ],
+                  timestamp: eventTimestamp,
+                },
+              ],
+              seqNo: 1,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 1,
+            timestamp: eventTimestamp,
+          },
+        ],
+        transactionId,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus, 3, 0.8)
+
+      assert.deepStrictEqual(
+        restoredConnectorStatus.transactionEventQueue?.[0]
+          .transactionEnergyActiveImportIntervalConsumption,
+        {
+          'AlignedDataCtrlr.Measurands': 4800,
+          'SampledDataCtrlr.TxUpdatedMeasurands': 4800,
+        }
+      )
+    })
+
+    await it('should discard a non-array persisted transaction queue', () => {
+      const connectorStatus = {
+        transactionEventQueue: { unexpected: true },
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue, undefined)
     })
 
     await it('should preserve connector IDs across serialization', () => {

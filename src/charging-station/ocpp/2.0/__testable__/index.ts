@@ -16,6 +16,8 @@
  */
 
 import type {
+  IncomingRequestCommand,
+  JsonType,
   OCPP20CertificateSignedRequest,
   OCPP20CertificateSignedResponse,
   OCPP20ChangeAvailabilityRequest,
@@ -71,7 +73,7 @@ import type { OCPP20IncomingRequestService } from '../OCPP20IncomingRequestServi
  * Interface exposing private handler methods of OCPP20IncomingRequestService for testing.
  * Each method signature matches the corresponding private method in the service class.
  */
-interface TestableOCPP20IncomingRequestService {
+export interface TestableOCPP20IncomingRequestService {
   /**
    * Builds report data for the device model report.
    * Used internally by handleRequestGetBaseReport.
@@ -262,6 +264,12 @@ interface TestableOCPP20IncomingRequestService {
     presentedGroupIdToken?: OCPP20IdTokenType
   ) => boolean
 
+  onResponseSendError: (
+    chargingStation: ChargingStation,
+    commandName: IncomingRequestCommand,
+    commandPayload: JsonType
+  ) => void
+
   sendFirmwareStatusNotification: (
     chargingStation: ChargingStation,
     status: OCPP20FirmwareStatusEnumType,
@@ -316,6 +324,7 @@ export function createTestableIncomingRequestService (
     handleRequestUnlockConnector: serviceImpl.handleRequestUnlockConnector.bind(service),
     handleRequestUpdateFirmware: serviceImpl.handleRequestUpdateFirmware.bind(service),
     isAuthorizedToStopTransaction: serviceImpl.isAuthorizedToStopTransaction.bind(service),
+    onResponseSendError: serviceImpl.onResponseSendError.bind(service),
     sendFirmwareStatusNotification: serviceImpl.sendFirmwareStatusNotification.bind(service),
   }
 }

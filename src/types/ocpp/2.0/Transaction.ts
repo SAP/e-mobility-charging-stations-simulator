@@ -286,6 +286,7 @@ export interface OCPP20TransactionEventOptions extends JsonObject {
   remoteStartId?: number
   reservationId?: number
   stoppedReason?: OCPP20ReasonEnumType
+  timestamp?: Date
   transactionId?: string
   triggerReason?: OCPP20TriggerReasonEnumType
 }
