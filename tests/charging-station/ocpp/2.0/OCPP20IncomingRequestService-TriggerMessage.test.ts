@@ -39,12 +39,13 @@ import {
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
+  PublicKeyWithSignedMeterValueEnumType,
   ReasonCodeEnumType,
   RegistrationStatusEnumType,
   SigningMethodEnumType,
   TriggerMessageStatusEnumType,
 } from '../../../../src/types/index.js'
-import { Constants } from '../../../../src/utils/index.js'
+import { Constants, isJsonObject } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
   setupConnectorWithTransaction,
@@ -1261,6 +1262,135 @@ await describe('F06 - TriggerMessage', async () => {
       await periodicStarted.promise
       assert.deepStrictEqual(deliveryOrder, ['triggered', 'periodic'])
       OCPP20ServiceUtils.stopUpdatedMeterValues(mockStation, 1, 1)
+    })
+
+    await it('should serialize TxEnded sampling behind an admitted triggered snapshot', async t => {
+      t.mock.timers.enable({ apis: ['setInterval'] })
+      configureSigningPolicies(mockStation, true, false)
+      addConfigurationKey(
+        mockStation,
+        buildConfigKey(
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20OptionalVariableName.PublicKeyWithSignedMeterValue
+        ),
+        PublicKeyWithSignedMeterValueEnumType.OncePerTransaction,
+        undefined,
+        { overwrite: true, save: false }
+      )
+      const transactionId = 'txn-trigger-ended-sampler-order'
+      setupConnectorWithTransaction(mockStation, 1, { energyImport: 150, transactionId })
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      const alignedMeasurandsKey = buildConfigKey(
+        OCPP20ComponentName.AlignedDataCtrlr,
+        OCPP20RequiredVariableName.Measurands
+      )
+      const endedMeasurandsKey = buildConfigKey(
+        OCPP20ComponentName.SampledDataCtrlr,
+        OCPP20RequiredVariableName.TxEndedMeasurands
+      )
+      for (const [key, measurands] of [
+        [
+          alignedMeasurandsKey,
+          `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER}`,
+        ],
+        [endedMeasurandsKey, OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL],
+      ] as const) {
+        addConfigurationKey(mockStation, key, measurands, undefined, {
+          overwrite: true,
+          save: false,
+        })
+      }
+      connectorStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+        },
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 150
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date()
+      connectorStatus.transactionEnergyActiveImportIntervalBaselines = {
+        [alignedMeasurandsKey]: 120,
+        [endedMeasurandsKey]: 120,
+      }
+      const triggerStarted = Promise.withResolvers<OCPP20MeterValuesRequest>()
+      const releaseTrigger = Promise.withResolvers<undefined>()
+      requestHandlerMock.mock.mockImplementation(async (...args: unknown[]) => {
+        if (args[1] === OCPP20RequestCommand.METER_VALUES) {
+          const triggeredRequest = args[2] as OCPP20MeterValuesRequest
+          const requestParams = args[3] as RequestParams
+          requestParams.onMessageSent?.()
+          triggerStarted.resolve(triggeredRequest)
+          await releaseTrigger.promise
+          requestParams.onResponseReceived?.()
+        }
+        return {}
+      })
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { id: 1 },
+        requestedMessage: MessageTriggerEnumType.MeterValues,
+      }
+      const listenerTestable = createTestableIncomingRequestService(
+        incomingRequestServiceForListener
+      )
+      const response = listenerTestable.handleRequestTriggerMessage(mockStation, request)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+
+      OCPP20ServiceUtils.startEndedMeterValues(mockStation, 1, 1000, 1)
+      t.mock.timers.tick(1000)
+      await flushMicrotasks()
+      assert.deepStrictEqual(connectorStatus.transactionEndedMeterValues, [])
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+      const triggeredRequest = await triggerStarted.promise
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 180
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date()
+      assert.deepStrictEqual(connectorStatus.transactionEndedMeterValues, [])
+
+      releaseTrigger.resolve(undefined)
+      for (let index = 0; index < 10; index++) await flushMicrotasks()
+      OCPP20ServiceUtils.stopEndedMeterValues(mockStation, 1, 1)
+
+      const triggeredInterval = triggeredRequest.meterValue[0].sampledValue.find(
+        sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      const completedConnectorStatus = mockStation.getConnectorStatus(1, 1)
+      const endedMeterValue = completedConnectorStatus?.transactionEndedMeterValues?.[0]
+      assert.ok(endedMeterValue != null)
+      const endedInterval = endedMeterValue.sampledValue.find(
+        sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )
+      assert.ok(triggeredInterval != null)
+      assert.ok(endedInterval != null)
+      assert.strictEqual(triggeredInterval.value, 30)
+      assert.strictEqual(endedInterval.value, 60)
+      assert.strictEqual(triggeredInterval.context, OCPP20ReadingContextEnumType.TRIGGER)
+      assert.strictEqual(endedInterval.context, OCPP20ReadingContextEnumType.SAMPLE_PERIODIC)
+      const publicKeyCarrierCount = [
+        ...triggeredRequest.meterValue.flatMap(meterValue => meterValue.sampledValue),
+        endedInterval,
+      ].filter(sample => {
+        const signedMeterValue: unknown = sample.signedMeterValue
+        return (
+          isJsonObject(signedMeterValue) &&
+          typeof signedMeterValue.publicKey === 'string' &&
+          signedMeterValue.publicKey.length > 0
+        )
+      }).length
+      assert.strictEqual(publicKeyCarrierCount, 1)
+      assert.ok(completedConnectorStatus != null)
+      assert.strictEqual(completedConnectorStatus.publicKeySentInTransaction, true)
     })
 
     await it('should release a triggered MeterValues delivery barrier when the response cannot be sent', async () => {

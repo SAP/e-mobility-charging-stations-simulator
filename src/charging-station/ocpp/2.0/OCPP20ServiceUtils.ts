@@ -3637,28 +3637,60 @@ export class OCPP20ServiceUtils {
       OCPP20ServiceUtils.stopEndedMeterValues(chargingStation, connectorId, evseId)
     }
     connectorStatus.transactionEndedMeterValuesSetInterval = setInterval(() => {
-      const cs = chargingStation.getConnectorStatus(connectorId, evseId)
-      if (
-        cs?.transactionStarted === true &&
-        cs.transactionEnding !== true &&
-        cs.transactionId != null
-      ) {
-        const measurandsKey = buildConfigKey(
-          OCPP20ComponentName.SampledDataCtrlr,
-          OCPP20RequiredVariableName.TxEndedMeasurands
-        )
-        const meterValue = OCPP20ServiceUtils.buildTransactionMeterValue(
-          chargingStation,
-          connectorId,
-          evseId,
-          cs.transactionId,
-          interval,
-          measurandsKey
-        )
-        if (isNotEmptyArray(meterValue.sampledValue)) {
-          cs.transactionEndedMeterValues?.push(meterValue)
+      ;(async () => {
+        const activeConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+        if (
+          activeConnectorStatus?.transactionStarted !== true ||
+          activeConnectorStatus.transactionEnding === true ||
+          activeConnectorStatus.transactionId == null
+        ) {
+          return
         }
-      }
+        const transactionId = activeConnectorStatus.transactionId.toString()
+        const delivery = TransactionMeterValueDeliveryBarrier.begin(
+          activeConnectorStatus,
+          transactionId
+        )
+        if (delivery == null) return
+        const deliveryTurn = delivery.waitForTurn()
+        if (deliveryTurn != null) await deliveryTurn
+        const currentConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+        if (
+          currentConnectorStatus !== activeConnectorStatus ||
+          currentConnectorStatus.transactionStarted !== true ||
+          currentConnectorStatus.transactionEnding === true ||
+          currentConnectorStatus.transactionId?.toString() !== transactionId
+        ) {
+          delivery.settle(true)
+          return
+        }
+        try {
+          const measurandsKey = buildConfigKey(
+            OCPP20ComponentName.SampledDataCtrlr,
+            OCPP20RequiredVariableName.TxEndedMeasurands
+          )
+          const meterValue = OCPP20ServiceUtils.buildTransactionMeterValue(
+            chargingStation,
+            connectorId,
+            evseId,
+            transactionId,
+            interval,
+            measurandsKey
+          )
+          if (isNotEmptyArray(meterValue.sampledValue)) {
+            currentConnectorStatus.transactionEndedMeterValues?.push(meterValue)
+          }
+          delivery.settle()
+        } catch (error) {
+          delivery.settle(true)
+          throw error
+        }
+      })().catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.startEndedMeterValues: Error collecting terminal MeterValues:`,
+          error
+        )
+      })
     }, clampToSafeTimerValue(interval))
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.startEndedMeterValues: TxEndedInterval started every ${formatDurationMilliSeconds(interval)}`
@@ -5361,11 +5393,13 @@ export class OCPP20ServiceUtils {
             )
           ) === true
         )
+      let predecessorReconciliationReady = true
       let predecessorSettlement: Promise<void> | undefined
       const blockUntilPredecessorsSettle = (
         queuedEvent: QueuedTransactionEvent
       ): Promise<void> | undefined => {
         if (endedPredecessors == null || endedPredecessors.dependencies.length === 0) return
+        predecessorReconciliationReady = false
         setTransactionEventQueueBlocked(queuedEvent, true)
         queuedEvent.meterValuePredecessorsPending = true
         invalidateTransactionEventQueueAccounting(connectorStatus)
@@ -5387,7 +5421,22 @@ export class OCPP20ServiceUtils {
             delete queuedEvent.meterValuePredecessorsPending
             invalidateTransactionEventQueueAccounting(connectorStatus)
             await chargingStation.persistTransactionEventQueues()
+            predecessorReconciliationReady = true
+            return undefined
+          })
+          .catch((error: unknown) => {
+            queuedEvent.meterValuePredecessorsPending = true
+            invalidateTransactionEventQueueAccounting(connectorStatus)
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Failed to reconcile an Ended event after predecessor settlement:`,
+              error
+            )
+          })
+          .finally(() => {
             setTransactionEventQueueBlocked(queuedEvent, false)
+            if (!predecessorReconciliationReady) {
+              setTransactionEventQueueStaged(connectorStatus, queuedEvent, false)
+            }
             if (
               chargingStation.started &&
               !chargingStation.isStopping() &&
@@ -5401,13 +5450,6 @@ export class OCPP20ServiceUtils {
                 evseId
               )
             }
-            return undefined
-          })
-          .catch((error: unknown) => {
-            logger.error(
-              `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Failed to reconcile an Ended event after predecessor settlement:`,
-              error
-            )
           })
         return predecessorSettlement
       }
@@ -5546,7 +5588,7 @@ export class OCPP20ServiceUtils {
               await Promise.race([predecessorSettlement, aborted.promise])
               lifecycleAbortSignal.removeEventListener('abort', onAbort)
             }
-            if (isTransactionEventQueueBlocked(stagedEvent)) {
+            if (!predecessorReconciliationReady || isTransactionEventQueueBlocked(stagedEvent)) {
               setTransactionEventQueueStaged(connectorStatus, stagedEvent, false)
               return { idTokenInfo: undefined }
             }

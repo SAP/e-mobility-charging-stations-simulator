@@ -37,7 +37,11 @@ import {
   startUpdatedMeterValues,
 } from '../../../../src/charging-station/ocpp/OCPPServiceOperations.js'
 import { buildMeterValue } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
-import { enqueueBoundedTransactionEvent } from '../../../../src/charging-station/TransactionEventQueueUtils.js'
+import {
+  enqueueBoundedTransactionEvent,
+  isTransactionEventQueueBlocked,
+  resetTransactionEventQueueRuntimeState,
+} from '../../../../src/charging-station/TransactionEventQueueUtils.js'
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
   AttributeEnumType,
@@ -8945,6 +8949,53 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         intervalSamples?.map(({ value }) => value),
         [7]
       )
+    })
+
+    await it('should recover a blocked Ended after predecessor reconciliation persistence fails', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      assert.ok(connectorStatus != null)
+      const predecessor = TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
+      assert.ok(predecessor != null)
+      predecessor.markBuffered()
+      let persistenceCalls = 0
+      mockTracking.station.persistTransactionEventQueues = () => {
+        persistenceCalls++
+        return persistenceCalls === 2
+          ? Promise.reject(new Error('predecessor reconciliation persistence failed'))
+          : Promise.resolve()
+      }
+
+      const stopped = OCPP20ServiceUtils.requestStopTransaction(
+        mockTracking.station,
+        connectorId,
+        1
+      )
+      await flushMicrotasks()
+      const retainedEnded = connectorStatus.transactionEventQueue?.[0]
+      assert.ok(retainedEnded != null)
+      mockTracking.station.started = false
+      predecessor.settle(true)
+      await stopped
+
+      assert.strictEqual(mockTracking.sentRequests.length, 0)
+      assert.strictEqual(connectorStatus.transactionEventQueue?.[0], retainedEnded)
+      assert.strictEqual(retainedEnded.meterValuePredecessorsPending, true)
+      assert.strictEqual(isTransactionEventQueueBlocked(retainedEnded), false)
+
+      resetTransactionEventQueueRuntimeState(connectorStatus)
+      mockTracking.station.started = true
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockTracking.station, connectorId, 1)
+
+      const sentEnded = mockTracking.sentRequests.filter(
+        ({ command, payload }) =>
+          command === OCPP20RequestCommand.TRANSACTION_EVENT &&
+          payload.eventType === OCPP20TransactionEventEnumType.Ended
+      )
+      assert.strictEqual(sentEnded.length, 1)
+      assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
     })
 
     await it('should rebuild a persisted pending Ended before queue replay', async () => {

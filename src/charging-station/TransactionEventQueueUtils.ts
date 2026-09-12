@@ -74,6 +74,7 @@ export const clearTransactionEventQueueInFlight = (
 export const resetTransactionEventQueueRuntimeState = (connectorStatus: ConnectorStatus): void => {
   inFlightTransactionEvents.delete(connectorStatus)
   for (const queuedEvent of connectorStatus.transactionEventQueue ?? []) {
+    blockedTransactionEventQueueEntries.delete(queuedEvent)
     stagedTransactionEventQueueEntries.delete(queuedEvent)
   }
   invalidateTransactionEventQueueAccounting(connectorStatus)
