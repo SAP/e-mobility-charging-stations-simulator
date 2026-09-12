@@ -6,6 +6,7 @@ export {
   buildConnectorsStatus,
   buildEvseEntries,
   buildEvsesStatus,
+  buildPersistentTransactionEnergyIntervalState,
 } from './ChargingStationConfigurationUtils.js'
 export { Configuration } from './Configuration.js'
 export {

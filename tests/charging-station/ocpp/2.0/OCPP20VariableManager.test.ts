@@ -1576,8 +1576,12 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // First (FileTransferProtocols) should be rejected (ReadOnly); others accepted
       assert.strictEqual(results[0].attributeStatus, SetVariableStatusEnumType.Rejected)
       assert.strictEqual(results[0].attributeStatusInfo?.reasonCode, ReasonCodeEnumType.ReadOnly)
-      for (const r of results.slice(1)) {
-        assert.strictEqual(r.attributeStatus, SetVariableStatusEnumType.Accepted)
+      for (const [index, result] of results.slice(1).entries()) {
+        assert.strictEqual(
+          result.attributeStatus,
+          SetVariableStatusEnumType.Accepted,
+          `update ${String(index + 1)}: ${JSON.stringify(result)}`
+        )
       }
     })
 

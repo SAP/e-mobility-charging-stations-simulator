@@ -146,6 +146,62 @@ await describe('B07 - Get Base Report', async () => {
     }
   })
 
+  await it('should report station and physical EVSE scopes for SendDuringIdle', () => {
+    const manager = OCPP20VariableManager.getInstance()
+    const [setResult] = manager.setVariables(station, [
+      {
+        attributeValue: 'true',
+        component: { evse: { id: 2 }, name: OCPP20ComponentName.AlignedDataCtrlr },
+        variable: { name: OCPP20OptionalVariableName.SendDuringIdle },
+      },
+    ])
+    assert.strictEqual(setResult.attributeStatus, SetVariableStatusEnumType.Accepted)
+
+    const reportData = testableService.buildReportData(station, ReportBaseEnumType.FullInventory)
+    const entries = reportData.filter(
+      (item: ReportDataType) =>
+        item.component.name === (OCPP20ComponentName.AlignedDataCtrlr as string) &&
+        item.variable.name === (OCPP20OptionalVariableName.SendDuringIdle as string)
+    )
+
+    assert.deepEqual(
+      entries.map(entry => [entry.component.evse?.id, entry.variableAttribute[0]?.value]),
+      [
+        [undefined, 'false'],
+        [1, 'false'],
+        [2, 'true'],
+        [3, 'false'],
+      ]
+    )
+    assert.strictEqual(
+      reportData.some(
+        entry =>
+          entry.component.name === (OCPP20ComponentName.OCPPCommCtrlr as string) &&
+          entry.variable.name.endsWith('.EVSE.2')
+      ),
+      false
+    )
+    const configurationReport = testableService.buildReportData(
+      station,
+      ReportBaseEnumType.ConfigurationInventory
+    )
+    const scopedEntry = configurationReport.find(
+      entry =>
+        entry.component.name === (OCPP20ComponentName.AlignedDataCtrlr as string) &&
+        entry.component.evse?.id === 2 &&
+        entry.variable.name === (OCPP20OptionalVariableName.SendDuringIdle as string)
+    )
+    assert.strictEqual(scopedEntry?.variableAttribute[0]?.value, 'true')
+    assert.strictEqual(
+      configurationReport.some(
+        entry =>
+          entry.component.name === (OCPP20ComponentName.OCPPCommCtrlr as string) &&
+          entry.variable.name.endsWith('.EVSE.2')
+      ),
+      false
+    )
+  })
+
   // FR: B08.FR.03
   await it('should handle GetBaseReport request with SummaryInventory', () => {
     const request: OCPP20GetBaseReportRequest = {

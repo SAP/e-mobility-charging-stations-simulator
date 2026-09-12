@@ -1,5 +1,7 @@
 import { createPublicKey } from 'node:crypto'
 
+import type { ConnectorStatus } from '../../types/ConnectorStatus.js'
+
 import { BaseError } from '../../exception/index.js'
 import {
   PublicKeyWithSignedMeterValueEnumType,
@@ -7,6 +9,64 @@ import {
   SigningMethodEnumType,
 } from '../../types/index.js'
 import { getErrorMessage, isNotEmptyString, logger } from '../../utils/index.js'
+
+export interface PublicKeyDeliveryToken {
+  readonly carrier: object
+  readonly connectorStatus: ConnectorStatus
+  readonly transactionId: string
+}
+
+const publicKeyDeliveryOwners = new WeakMap<ConnectorStatus, PublicKeyDeliveryToken>()
+
+export const claimPublicKeyDelivery = (
+  connectorStatus: ConnectorStatus,
+  transactionId: number | string,
+  carrier: object,
+  carriesPublicKey: boolean
+): PublicKeyDeliveryToken | undefined => {
+  const normalizedTransactionId = transactionId.toString()
+  if (!carriesPublicKey || connectorStatus.transactionId?.toString() !== normalizedTransactionId) {
+    return undefined
+  }
+  const token = {
+    carrier,
+    connectorStatus,
+    transactionId: normalizedTransactionId,
+  }
+  publicKeyDeliveryOwners.set(connectorStatus, token)
+  connectorStatus.publicKeySentInTransaction = true
+  return token
+}
+
+export const retainPublicKeyDelivery = (token: PublicKeyDeliveryToken | undefined): void => {
+  if (token == null || publicKeyDeliveryOwners.get(token.connectorStatus) !== token) return
+  publicKeyDeliveryOwners.delete(token.connectorStatus)
+}
+
+export const releasePublicKeyDelivery = (token: PublicKeyDeliveryToken | undefined): boolean => {
+  if (token == null || publicKeyDeliveryOwners.get(token.connectorStatus) !== token) return false
+  publicKeyDeliveryOwners.delete(token.connectorStatus)
+  if (token.connectorStatus.transactionId?.toString() !== token.transactionId) return false
+  token.connectorStatus.publicKeySentInTransaction = false
+  return true
+}
+
+export const transferPublicKeyDelivery = (
+  token: PublicKeyDeliveryToken | undefined,
+  carrier: object
+): PublicKeyDeliveryToken | undefined => {
+  if (
+    token == null ||
+    publicKeyDeliveryOwners.get(token.connectorStatus) !== token ||
+    token.connectorStatus.transactionId?.toString() !== token.transactionId
+  ) {
+    return undefined
+  }
+  const replacement = { ...token, carrier }
+  publicKeyDeliveryOwners.set(token.connectorStatus, replacement)
+  token.connectorStatus.publicKeySentInTransaction = true
+  return replacement
+}
 
 export interface SampledValueSigningConfig extends SigningConfig {
   enabled: boolean

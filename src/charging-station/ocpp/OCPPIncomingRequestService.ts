@@ -194,16 +194,43 @@ export abstract class OCPPIncomingRequestService<
         commandPayload
       )
     }
-    await chargingStation.ocppRequestService.sendResponse(
-      chargingStation,
-      messageId,
-      response,
-      commandName
-    )
-    // Emit command name event to allow delayed handling only if there are listeners
-    if (this.listenerCount(commandName) > 0) {
-      this.emit(commandName, chargingStation, commandPayload, response)
+    const bufferedResponseRetainedBytes =
+      Buffer.byteLength(JSON.stringify([commandPayload, response]), 'utf8') +
+      this.getResponseDeliveryRetainedBytes(commandName, commandPayload)
+    const deliveryState = { buffered: false }
+    let responseDispatched = false
+    const dispatchResponse = (): void => {
+      if (responseDispatched) return
+      responseDispatched = true
+      if (this.listenerCount(commandName) > 0) {
+        this.emit(commandName, chargingStation, commandPayload, response)
+      }
     }
+    try {
+      await chargingStation.ocppRequestService.sendResponse(
+        chargingStation,
+        messageId,
+        response,
+        commandName,
+        {
+          bufferedResponseRetainedBytes,
+          onError: () => {
+            this.onResponseSendError(chargingStation, commandName, commandPayload)
+          },
+          onMessageSent: dispatchResponse,
+          onRequestBuffered: () => {
+            deliveryState.buffered = true
+          },
+        }
+      )
+    } catch (error) {
+      if (!deliveryState.buffered) {
+        this.onResponseSendError(chargingStation, commandName, commandPayload)
+        throw error
+      }
+      return
+    }
+    dispatchResponse()
   }
 
   /**
@@ -282,6 +309,20 @@ export abstract class OCPPIncomingRequestService<
   }
 
   /**
+   * Returns serialized bytes retained by subclass-owned delivery reservations
+   * that remain reachable through a buffered response callback.
+   * @param _commandName - Incoming request command owning the reservation.
+   * @param _commandPayload - Incoming request payload used as the reservation key.
+   * @returns Additional per-response retained bytes.
+   */
+  protected getResponseDeliveryRetainedBytes (
+    _commandName: IncomingRequestCommand,
+    _commandPayload: JsonType
+  ): number {
+    return 0
+  }
+
+  /**
    * Whether the given incoming-request command is supported for this station.
    * @param chargingStation - Target charging station.
    * @param commandName - OCPP incoming-request command name.
@@ -291,6 +332,20 @@ export abstract class OCPPIncomingRequestService<
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand
   ): boolean
+
+  /**
+   * Called when an incoming request response could not be sent.
+   * @param _chargingStation - Target charging station.
+   * @param _commandName - Incoming request command whose response failed.
+   * @param _commandPayload - Incoming request payload associated with the failed response.
+   */
+  protected onResponseSendError (
+    _chargingStation: ChargingStation,
+    _commandName: IncomingRequestCommand,
+    _commandPayload: JsonType
+  ): void {
+    // Optional lifecycle cleanup hook for subclass-owned response reservations.
+  }
 
   /**
    * Hook method paired with the {@link stop} template: releases

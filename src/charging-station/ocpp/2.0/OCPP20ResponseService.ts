@@ -4,6 +4,8 @@ import {
   addConfigurationKey,
   buildConfigKey,
   type ChargingStation,
+  hasQueuedEndedTransactionEvent,
+  shiftBoundedTransactionEvent,
 } from '../../../charging-station/index.js'
 import {
   ChargingStationEvents,
@@ -44,7 +46,7 @@ import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
 import { OCPP20IncomingRequestService } from './OCPP20IncomingRequestService.js'
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
+import { isTransactionEnding, OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 const moduleName = 'OCPP20ResponseService'
 
 /**
@@ -395,21 +397,41 @@ export class OCPP20ResponseService extends OCPPResponseService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: TransactionEvent(${requestPayload.eventType}) response received`
     )
+    const evseId =
+      requestPayload.evse?.id ??
+      chargingStation.getEvseIdByTransactionId(requestPayload.transactionInfo.transactionId)
     const connectorId =
       requestPayload.evse?.connectorId ??
-      requestPayload.evse?.id ??
       chargingStation.getConnectorIdByTransactionId(requestPayload.transactionInfo.transactionId)
     const connectorStatus =
-      connectorId != null ? chargingStation.getConnectorStatus(connectorId) : undefined
+      connectorId != null ? chargingStation.getConnectorStatus(connectorId, evseId) : undefined
+    const endedTransactionQueued =
+      connectorStatus != null &&
+      hasQueuedEndedTransactionEvent(connectorStatus, requestPayload.transactionInfo.transactionId)
+    const transactionEnding =
+      connectorStatus != null && (isTransactionEnding(connectorStatus) || endedTransactionQueued)
+    const replayedTransactionEvent =
+      OCPP20ServiceUtils.isReplayedTransactionEventRequest(requestPayload)
 
     switch (requestPayload.eventType) {
-      case OCPP20TransactionEventEnumType.Ended:
+      case OCPP20TransactionEventEnumType.Ended: {
+        let replayedHeadDequeued = false
+        if (replayedTransactionEvent) {
+          if (connectorStatus?.transactionEventQueue?.[0]?.request !== requestPayload) break
+          shiftBoundedTransactionEvent(connectorStatus)
+          replayedHeadDequeued = true
+        }
         if (connectorId != null && connectorStatus != null) {
-          await OCPP20ServiceUtils.cleanupEndedTransaction(
+          const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
             chargingStation,
             connectorId,
-            connectorStatus
+            connectorStatus,
+            evseId,
+            requestPayload.transactionInfo.transactionId
           )
+          if (replayedHeadDequeued && !transactionFinalized) {
+            chargingStation.saveTransactionEventQueues()
+          }
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`
           )
@@ -424,11 +446,22 @@ export class OCPP20ResponseService extends OCPPResponseService {
           chargingStation.destroyCoherentSession(requestPayload.transactionInfo.transactionId)
         }
         break
-      case OCPP20TransactionEventEnumType.Started:
-        if (connectorStatus != null) {
+      }
+      case OCPP20TransactionEventEnumType.Started: {
+        const ownsRestoredQueuedStart =
+          connectorStatus?.transactionRestored === true &&
+          connectorStatus.transactionStarted !== true &&
+          connectorStatus.transactionEventQueue?.[0]?.request === requestPayload
+        const ownsActiveStart =
+          connectorStatus?.transactionId?.toString() ===
+            requestPayload.transactionInfo.transactionId &&
+          (connectorStatus.transactionStarting === true ||
+            connectorStatus.transactionPending === true ||
+            ownsRestoredQueuedStart)
+        if (ownsActiveStart && !transactionEnding) {
           connectorStatus.transactionStarted = true
           connectorStatus.transactionPending = false
-          connectorStatus.transactionId ??= requestPayload.transactionInfo.transactionId
+          connectorStatus.transactionStarting = false
           connectorStatus.transactionIdTag ??= requestPayload.idToken?.idToken
           connectorStatus.transactionStart ??= new Date()
           connectorStatus.transactionEnergyActiveImportRegisterValue ??= 0
@@ -440,36 +473,52 @@ export class OCPP20ResponseService extends OCPPResponseService {
             connectorStatus.locked = true
           }
           if (connectorId != null && isIdTokenAccepted) {
-            sendAndSetConnectorStatus(chargingStation, {
-              connectorId,
-              connectorStatus: ConnectorStatusEnum.Occupied,
-            }).catch((error: unknown) => {
+            sendAndSetConnectorStatus(
+              chargingStation,
+              {
+                connectorId,
+                connectorStatus: ConnectorStatusEnum.Occupied,
+                ...(evseId != null && { evseId }),
+              },
+              {
+                expectedTransactionId: requestPayload.transactionInfo.transactionId,
+                send: true,
+              }
+            ).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error sending StatusNotification(Occupied):`,
                 error
               )
             })
-            const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
-            OCPP20ServiceUtils.startUpdatedMeterValues(
-              chargingStation,
-              connectorId,
-              txUpdatedInterval
-            )
-            const txEndedInterval = OCPP20ServiceUtils.getTxEndedInterval(chargingStation)
-            OCPP20ServiceUtils.startEndedMeterValues(chargingStation, connectorId, txEndedInterval)
-            // Create coherent MeterValues session after transactionId is known.
-            // No-op when the feature flag or the EV profile file is not
-            // configured (see ChargingStation.createCoherentSession).
-            chargingStation.createCoherentSession(
-              requestPayload.transactionInfo.transactionId,
-              connectorId
-            )
+            if (connectorStatus.transactionRestored !== true) {
+              const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
+              OCPP20ServiceUtils.startUpdatedMeterValues(
+                chargingStation,
+                connectorId,
+                txUpdatedInterval,
+                evseId
+              )
+              const txEndedInterval = OCPP20ServiceUtils.getTxEndedInterval(chargingStation)
+              OCPP20ServiceUtils.startEndedMeterValues(
+                chargingStation,
+                connectorId,
+                txEndedInterval,
+                evseId
+              )
+              // Create coherent MeterValues session after transactionId is known.
+              // Restored transactions are reconciled once after replay finishes.
+              chargingStation.createCoherentSession(
+                requestPayload.transactionInfo.transactionId,
+                connectorId
+              )
+            }
           }
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} STARTED on connector ${String(connectorId)}`
           )
         }
         break
+      }
     }
     if (payload.totalCost != null) {
       logger.info(
@@ -494,7 +543,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
         requestPayload.eventType === OCPP20TransactionEventEnumType.Started
       if (
         payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted &&
-        !overrideRejection
+        !overrideRejection &&
+        !transactionEnding
       ) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken authorization rejected with status '${payload.idTokenInfo.status}', de-authorizing transaction per E05.FR.09/E05.FR.10/E06.FR.04`
@@ -521,6 +571,13 @@ export class OCPP20ResponseService extends OCPPResponseService {
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Could not find connector for transaction ${requestPayload.transactionInfo.transactionId}, cannot de-authorize`
           )
         }
+      } else if (
+        payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted &&
+        transactionEnding
+      ) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} is already ending; skipping redundant de-authorization events`
+        )
       } else if (overrideRejection) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Forcing transaction ${requestPayload.transactionInfo.transactionId} on eventType=Started despite idTokenInfo status '${payload.idTokenInfo.status}' per forceTransactionOnInvalidIdToken=true`

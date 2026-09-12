@@ -19,6 +19,7 @@ export interface ConnectorStatus {
   availability: AvailabilityType
   bootStatus?: ConnectorStatusEnum
   chargingProfiles?: ChargingProfile[]
+  energyActiveImportIntervalBaselines?: Record<string, number> // In Wh
   energyActiveImportRegisterValue?: number // In Wh
   errorCode?: OCPP16ChargePointErrorCode
   idTagAuthorized?: boolean
@@ -27,6 +28,7 @@ export interface ConnectorStatus {
   locked?: boolean
   maximumPower?: number // In W
   MeterValues: SampledValueTemplate[]
+  postTransactionDelayTransactionId?: number | string
   publicKeySentInTransaction?: boolean
   remoteStartId?: number
   reservation?: Reservation
@@ -36,6 +38,10 @@ export interface ConnectorStatus {
   transactionDeauthorizedEnergyWh?: number
   transactionEndedMeterValues?: MeterValue[]
   transactionEndedMeterValuesSetInterval?: NodeJS.Timeout
+  transactionEnding?: boolean
+  transactionEnergyActiveImportIntervalBaselines?: Record<string, number> // In Wh
+  transactionEnergyActiveImportIntervalCarry?: Record<string, number> // In Wh
+  transactionEnergyActiveImportRegisterLastUpdatedAt?: Date
   transactionEnergyActiveImportRegisterValue?: number // In Wh
   transactionEventQueue?: QueuedTransactionEvent[]
   transactionEvseSent?: boolean
@@ -45,15 +51,25 @@ export interface ConnectorStatus {
   transactionIdTokenSent?: boolean
   transactionPending?: boolean
   transactionRemoteStarted?: boolean
+  transactionRestored?: boolean
   transactionSeqNo?: number
   transactionStart?: Date
   transactionStarted?: boolean
+  transactionStartedExhaustedTransactionId?: string
+  transactionStarting?: boolean
   transactionUpdatedMeterValuesSetInterval?: NodeJS.Timeout
   type?: ConnectorEnumType
 }
 
 export interface QueuedTransactionEvent {
+  /** Durable write-ahead marker: the exact request bytes may have reached the transport. */
+  deliveryAttempted?: boolean
+  /** The terminal payload must be rebuilt after earlier MeterValues outcomes settle. */
+  meterValuePredecessorsPending?: boolean
   request: OCPP20TransactionEventRequest
   seqNo: number
   timestamp: Date
+  transactionEnergyActiveImportIntervalBaselines?: Record<string, number>
+  transactionEnergyActiveImportIntervalConsumption?: Record<string, number>
+  transactionEnergyActiveImportRegisterValue?: number
 }

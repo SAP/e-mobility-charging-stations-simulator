@@ -36,7 +36,8 @@ export type SendMessageFn = (
   messageId: string,
   messagePayload: JsonType,
   commandName: string,
-  params?: RequestParams
+  params?: RequestParams,
+  cancellationGenerationAtRequestStart?: number
 ) => Promise<JsonType>
 
 /**
@@ -46,7 +47,7 @@ export interface SendMessageMock {
   fn: SendMessageFn
   mock: {
     calls: {
-      arguments: [ChargingStation, string, JsonType, string, RequestParams?]
+      arguments: [ChargingStation, string, JsonType, string, RequestParams?, number?]
     }[]
   }
 }

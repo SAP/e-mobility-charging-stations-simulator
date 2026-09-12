@@ -267,6 +267,15 @@ await describe('StrategyDispatch', async () => {
         'true'
       )
 
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      const templates = connectorStatus.MeterValues
+      connectorStatus.MeterValues = ['sensor-a', 'sensor-b'].flatMap(vendorId =>
+        templates.map(template => ({
+          ...template,
+          customData: { vendorId },
+        }))
+      )
       const meterValue = buildMeterValue(
         station,
         TEST_TRANSACTION_ID,
@@ -279,13 +288,18 @@ await describe('StrategyDispatch', async () => {
       )
       assert.strictEqual(
         energySamples.length,
-        1,
-        'the OCPP 2.0.1 strategy gate must resolve RegisterValuesWithoutPhases and thread it into the coherent builder so only one aggregate sample emits (synthesized when only per-phase L-N templates are configured)'
+        2,
+        'phase suppression must preserve distinct customData register families'
       )
-      assert.strictEqual(
-        (energySamples[0] as { phase?: string }).phase,
-        undefined,
-        'the surviving sample must be the aggregate (no phase qualifier)'
+      assert.deepEqual(
+        energySamples.map(sample => [
+          (sample as { customData?: { vendorId?: string } }).customData?.vendorId,
+          sample.phase,
+        ]),
+        [
+          ['sensor-a', undefined],
+          ['sensor-b', undefined],
+        ]
       )
     })
 

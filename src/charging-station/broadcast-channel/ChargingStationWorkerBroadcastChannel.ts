@@ -27,8 +27,12 @@ import {
   type OCPP16MeterValue,
   OCPP20AuthorizationStatusEnumType,
   type OCPP20AuthorizeResponse,
+  OCPP20ComponentName,
   type OCPP20Get15118EVCertificateResponse,
   type OCPP20GetCertificateStatusResponse,
+  type OCPP20MeterValue,
+  OCPP20ReadingContextEnumType,
+  OCPP20RequiredVariableName,
   type OCPP20SignCertificateResponse,
   type OCPP20TransactionEventResponse,
   OCPPVersion,
@@ -52,13 +56,25 @@ import {
   isOCPP20x,
   logger,
 } from '../../utils/index.js'
-import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
+import { buildConfigKey, getConfigurationKey } from '../ConfigurationKeyUtils.js'
+import {
+  captureTransactionIntervalState,
+  completeTransactionIntervalState,
+  restoreTransactionIntervalState,
+} from '../meter-values/TransactionIntervalUtils.js'
+import { TransactionMeterValueDeliveryBarrier } from '../meter-values/TransactionMeterValueDeliveryBarrier.js'
 import {
   buildMeterValue,
   OCPP16ServiceUtils,
   OCPP20ServiceUtils,
   sendAndSetConnectorStatus,
 } from '../ocpp/index.js'
+import {
+  claimPublicKeyDelivery,
+  releasePublicKeyDelivery,
+  retainPublicKeyDelivery,
+} from '../ocpp/OCPPSignedMeterValueUtils.js'
+import { getRawSignedMeterValuePublicKey } from '../TransactionEventQueueUtils.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel'
@@ -251,10 +267,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           this.chargingStation.start()
         },
       ],
-      [
-        BroadcastChannelProcedureName.START_TRANSACTION,
-        this.passthrough(RequestCommand.START_TRANSACTION),
-      ],
+      [BroadcastChannelProcedureName.START_TRANSACTION, this.handleStartTransaction.bind(this)],
       [BroadcastChannelProcedureName.STATUS_NOTIFICATION, this.handleStatusNotification.bind(this)],
       [
         BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
@@ -432,20 +445,30 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<MeterValuesResponse> {
     const payloadEvseId = (requestPayload as undefined | { evseId?: number })?.evseId
-    const connectorId =
-      requestPayload?.connectorId ??
-      (payloadEvseId != null
-        ? this.chargingStation.getConnectorIdByEvseId(payloadEvseId)
-        : undefined)
+    let connectorId = requestPayload?.connectorId
+    if (connectorId == null && payloadEvseId != null) {
+      const evseStatus = this.chargingStation.getEvseStatus(payloadEvseId)
+      for (const [candidateConnectorId, connectorStatus] of evseStatus?.connectors ?? []) {
+        if (connectorStatus.transactionStarted === true && connectorStatus.transactionId != null) {
+          connectorId = candidateConnectorId
+          break
+        }
+      }
+      connectorId ??= this.chargingStation.getConnectorIdByEvseId(payloadEvseId)
+    }
     if (connectorId == null) {
       throw new BaseError(
         `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Missing connectorId or evseId in request payload`
       )
     }
-    const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
     const isOcpp2 = isOCPP20x(this.chargingStation.stationInfo?.ocppVersion)
+    const evseId =
+      payloadEvseId ??
+      (isOcpp2 ? this.chargingStation.getEvseIdByConnectorId(connectorId) : undefined)
+    const connectorStatus = this.chargingStation.getConnectorStatus(connectorId, evseId)
+    const transactionId = connectorStatus?.transactionId
     const interval = isOcpp2
-      ? OCPP20ServiceUtils.getAlignedDataInterval(this.chargingStation)
+      ? OCPP20ServiceUtils.getTxUpdatedInterval(this.chargingStation)
       : (() => {
           const key = getConfigurationKey(
             this.chargingStation,
@@ -455,39 +478,208 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             ? secondsToMilliseconds(convertToInt(key.value))
             : Constants.DEFAULT_METER_VALUES_INTERVAL_MS
         })()
-    const meterValue = buildMeterValue(this.chargingStation, transactionId, interval)
-    // OCPP 1.6 Signed Meter Values whitepaper §3.3.6: mirror the periodic
-    // loop (`OCPP16ServiceUtils.startUpdatedMeterValues`) and append a paired
-    // SignedData SampledValue when signing is enabled for the connector.
-    // Guarded on `!isOcpp2` because OCPP 2.0.x signing is applied inline
-    // inside `buildMeterValue` (via the versioned dispatcher's signing hook);
-    // post-hoc wrapping is the 1.6 pattern only. Guarded on `transactionId
-    // != null` because signing a MeterValue outside an active transaction
-    // has no defined semantics in the whitepaper.
-    if (!isOcpp2 && transactionId != null) {
-      OCPP16ServiceUtils.appendSignedUpdatedReadings(
-        this.chargingStation,
-        connectorId,
-        convertToInt(transactionId),
-        meterValue as OCPP16MeterValue
+    const requestedMeterValuesPayload: unknown = (
+      requestPayload as undefined | { meterValue?: unknown }
+    )?.meterValue
+    if (requestedMeterValuesPayload != null && !Array.isArray(requestedMeterValuesPayload)) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: meterValue must be an array`
       )
     }
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      MeterValuesRequest,
-      MeterValuesResponse
-    >(
+    const requestedMeterValues = requestedMeterValuesPayload as
+      OCPP16MeterValue[] | OCPP20MeterValue[] | undefined
+    if (requestedMeterValues == null && connectorStatus?.transactionEnding === true) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Transaction is ending`
+      )
+    }
+    const intervalBaselineKey = isOcpp2
+      ? buildConfigKey(
+        OCPP20ComponentName.SampledDataCtrlr,
+        OCPP20RequiredVariableName.TxUpdatedMeasurands
+      )
+      : 'default'
+    const intervalState =
+      requestedMeterValues == null && connectorStatus != null && transactionId != null
+        ? captureTransactionIntervalState(connectorStatus)
+        : undefined
+    let generatedPublicKeyIncluded = false
+    const meterValues = (() => {
+      if (requestedMeterValues != null) return requestedMeterValues
+      const meterValue =
+        isOcpp2 && transactionId != null
+          ? OCPP20ServiceUtils.buildTransactionMeterValue(
+            this.chargingStation,
+            connectorId,
+            evseId,
+            transactionId,
+            interval,
+            buildConfigKey(
+              OCPP20ComponentName.SampledDataCtrlr,
+              OCPP20RequiredVariableName.TxUpdatedMeasurands
+            ),
+            OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
+          )
+          : buildMeterValue(this.chargingStation, transactionId, interval)
+      // OCPP 1.6 Signed Meter Values whitepaper §3.3.6: mirror the periodic
+      // loop (`OCPP16ServiceUtils.startUpdatedMeterValues`) and append a paired
+      // SignedData SampledValue when signing is enabled for the connector.
+      // OCPP 2.0.x signing is applied inline by the versioned dispatcher.
+      if (!isOcpp2 && transactionId != null) {
+        generatedPublicKeyIncluded = OCPP16ServiceUtils.appendSignedUpdatedReadings(
+          this.chargingStation,
+          connectorId,
+          convertToInt(transactionId),
+          meterValue as OCPP16MeterValue
+        )
+      } else if (isOcpp2) {
+        generatedPublicKeyIncluded = (meterValue as OCPP20MeterValue).sampledValue.some(
+          sampledValue => isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
+        )
+      }
+      return [meterValue]
+    })()
+    if (intervalState != null && connectorStatus != null) {
+      completeTransactionIntervalState(intervalState, intervalBaselineKey, meterValues)
+    }
+    const request = (
+      isOcpp2
+        ? {
+            ...(requestPayload?.customData != null && { customData: requestPayload.customData }),
+            evseId,
+            meterValue: meterValues,
+          }
+        : {
+            ...requestPayload,
+            connectorId,
+            meterValue: meterValues,
+          }
+    ) as MeterValuesRequest
+    const publicKeyDeliveryToken =
+      connectorStatus != null && transactionId != null
+        ? claimPublicKeyDelivery(
+          connectorStatus,
+          transactionId,
+          request,
+          generatedPublicKeyIncluded
+        )
+        : undefined
+    const transactionDelivery =
+      requestedMeterValues == null && connectorStatus != null && transactionId != null
+        ? TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
+        : undefined
+    const deliveryState = {
+      buffered: false,
+      callError: false,
+      responseReceived: false,
+      sent: false,
+      transportErrorAmbiguous: false,
+    }
+    let deliverySettled = false
+    const markDeliverySettled = (definitivelyRejected = false): void => {
+      if (deliverySettled) return
+      deliverySettled = true
+      transactionDelivery?.settle(definitivelyRejected)
+    }
+    let restored = false
+    const restoreRejectedDelivery = (): void => {
+      if (restored) return
+      restored = true
+      if (intervalState != null && connectorStatus != null) {
+        restoreTransactionIntervalState(intervalState, connectorStatus, intervalBaselineKey)
+      }
+      releasePublicKeyDelivery(publicKeyDeliveryToken)
+    }
+    const requestParams: RequestParams = {
+      ...this.requestParams,
+      ...(requestedMeterValues == null && {
+        bufferOnErrorDuringStationStop: true,
+        skipBufferingOnError: true,
+      }),
+      onError: (error, isCallError) => {
+        deliveryState.callError ||= isCallError
+        if (isCallError || deliveryState.buffered) {
+          const definitivelyRejected = isCallError || !deliveryState.transportErrorAmbiguous
+          if (definitivelyRejected) restoreRejectedDelivery()
+          markDeliverySettled(definitivelyRejected)
+        }
+        this.requestParams.onError?.(error, isCallError)
+      },
+      onMessageSent: () => {
+        deliveryState.sent = true
+        this.requestParams.onMessageSent?.()
+      },
+      onRequestBuffered: () => {
+        deliveryState.buffered = true
+        transactionDelivery?.markBuffered()
+        this.requestParams.onRequestBuffered?.()
+      },
+      onResponseReceived: () => {
+        deliveryState.responseReceived = true
+        retainPublicKeyDelivery(publicKeyDeliveryToken)
+        markDeliverySettled()
+        this.requestParams.onResponseReceived?.()
+      },
+      onTransportError: (error, deliveryAmbiguous) => {
+        deliveryState.transportErrorAmbiguous ||= deliveryAmbiguous
+        this.requestParams.onTransportError?.(error, deliveryAmbiguous)
+      },
+    }
+    try {
+      const response = await this.chargingStation.ocppRequestService.requestHandler<
+        MeterValuesRequest,
+        MeterValuesResponse
+      >(this.chargingStation, RequestCommand.METER_VALUES, request, requestParams)
+      retainPublicKeyDelivery(publicKeyDeliveryToken)
+      markDeliverySettled()
+      return response
+    } catch (error) {
+      const definitelyUnsent =
+        !deliveryState.buffered &&
+        !deliveryState.callError &&
+        !deliveryState.responseReceived &&
+        !deliveryState.sent &&
+        !deliveryState.transportErrorAmbiguous
+      if (definitelyUnsent) {
+        restoreRejectedDelivery()
+      } else if (
+        !deliveryState.buffered &&
+        (deliveryState.sent ||
+          deliveryState.responseReceived ||
+          deliveryState.transportErrorAmbiguous)
+      ) {
+        retainPublicKeyDelivery(publicKeyDeliveryToken)
+      }
+      if (!deliveryState.buffered) markDeliverySettled(definitelyUnsent)
+      throw error
+    }
+  }
+
+  private async handleStartTransaction (
+    requestPayload?: BroadcastChannelRequestPayload
+  ): Promise<StartTransactionResponse> {
+    if (this.chargingStation.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStartTransaction: StartTransaction is only supported with OCPP 1.6`
+      )
+    }
+    const { connectorId, idTag, ...requestOverrides } = requestPayload ?? {}
+    if (connectorId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStartTransaction: 'connectorId' field is required`
+      )
+    }
+    if (idTag != null && typeof idTag !== 'string') {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStartTransaction: 'idTag' field must be a string`
+      )
+    }
+    return await OCPP16ServiceUtils.startTransactionOnConnector(
       this.chargingStation,
-      RequestCommand.METER_VALUES,
-      {
-        ...(isOcpp2
-          ? {
-              evseId: payloadEvseId ?? this.chargingStation.getEvseIdByConnectorId(connectorId),
-            }
-          : { connectorId }),
-        meterValue: [meterValue],
-        ...requestPayload,
-      } as MeterValuesRequest,
-      this.requestParams
+      connectorId,
+      idTag ?? undefined,
+      this.requestParams,
+      requestOverrides
     )
   }
 
@@ -511,19 +703,35 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private async handleStopTransaction (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<StopTransactionResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      StopTransactionRequest,
-      StopTransactionResponse
-    >(
+    if (this.chargingStation.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStopTransaction: StopTransaction is only supported by OCPP 1.6 charging stations`
+      )
+    }
+    const transactionId = requestPayload?.transactionId
+    if (transactionId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStopTransaction: 'transactionId' field is required`
+      )
+    }
+    const connectorId = this.chargingStation.getConnectorIdByTransactionId(transactionId)
+    if (connectorId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStopTransaction: No active transaction found for transactionId '${transactionId.toString()}'`
+      )
+    }
+    const hasTimestamp = requestPayload != null && Object.hasOwn(requestPayload, 'timestamp')
+    const { idTag, reason, timestamp, transactionData } =
+      requestPayload as Partial<StopTransactionRequest>
+    return await OCPP16ServiceUtils.stopTransactionOnConnector(
       this.chargingStation,
-      RequestCommand.STOP_TRANSACTION,
+      connectorId,
+      reason,
       {
-        meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          requestPayload?.transactionId,
-          true
-        ),
-        ...requestPayload,
-      } as StopTransactionRequest,
+        ...(idTag != null && { idTag }),
+        ...(hasTimestamp && { timestamp }),
+        ...(transactionData != null && { transactionData }),
+      },
       this.requestParams
     )
   }

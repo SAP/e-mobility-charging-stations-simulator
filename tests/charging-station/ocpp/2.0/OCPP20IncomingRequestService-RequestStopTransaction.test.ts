@@ -98,6 +98,36 @@ await describe('F03 - Remote Stop Transaction', async () => {
     return startResponse.transactionId as string
   }
 
+  /**
+   * Hydrates a persisted final event for the selected connector.
+   * @param station - Station containing the transaction.
+   * @param connectorId - Connector that owns the transaction.
+   * @param queuedTransactionId - Transaction referenced by the queued Ended event.
+   */
+  function queueEndedTransaction (
+    station: ChargingStation,
+    connectorId: number,
+    queuedTransactionId: UUIDv4
+  ): void {
+    const connectorStatus = station.getConnectorStatus(connectorId)
+    assert.ok(connectorStatus != null)
+    const queuedAt = new Date('2026-09-07T12:00:00.000Z')
+    connectorStatus.transactionRestored = true
+    connectorStatus.transactionEventQueue = [
+      {
+        request: {
+          eventType: OCPP20TransactionEventEnumType.Ended,
+          seqNo: 1,
+          timestamp: queuedAt,
+          transactionInfo: { transactionId: queuedTransactionId },
+          triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+        },
+        seqNo: 1,
+        timestamp: queuedAt,
+      },
+    ]
+  }
+
   await describe('Handler validation', async () => {
     // FR: F03.FR.02, F03.FR.03, F03.FR.07, F03.FR.09
     await it('should return Accepted for valid active transaction', async () => {
@@ -108,6 +138,29 @@ await describe('F03 - Remote Stop Transaction', async () => {
       })
 
       assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+    })
+
+    await it('should reject a restored transaction with a matching queued Ended event', async () => {
+      const transactionId = await startTransaction(mockStation, 1, 101)
+      queueEndedTransaction(mockStation, 1, transactionId as UUIDv4)
+
+      const response = testableService.handleRequestStopTransaction(mockStation, {
+        transactionId: transactionId as UUIDv4,
+      })
+
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxNotFound)
+    })
+
+    await it('should accept an active transaction when queued Ended belongs to another transaction', async () => {
+      const transactionId = await startTransaction(mockStation, 1, 102)
+      queueEndedTransaction(mockStation, 1, '00000000-0000-4000-8000-000000000099')
+
+      const response = testableService.handleRequestStopTransaction(mockStation, {
+        transactionId: transactionId as UUIDv4,
+      })
+
       assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
     })
 
@@ -284,7 +337,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
         await flushMicrotasks()
 
-        assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
+        assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
         const args = requestHandlerMock.mock.calls[0].arguments as [
           unknown,
           string,
@@ -293,6 +346,48 @@ await describe('F03 - Remote Stop Transaction', async () => {
         assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
       }
     )
+
+    await it('should not emit a second Ended event for a restored queued final transaction', async () => {
+      const transactionId = await startTransaction(listenerStation, 1, 101)
+      queueEndedTransaction(listenerStation, 1, transactionId as UUIDv4)
+      requestHandlerMock.mock.resetCalls()
+      const request = {
+        transactionId: transactionId as UUIDv4,
+      } satisfies OCPP20RequestStopTransactionRequest
+      const response = testableService.handleRequestStopTransaction(listenerStation, request)
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+        listenerStation,
+        request,
+        response
+      )
+      await flushMicrotasks()
+
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxNotFound)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+      assert.strictEqual(listenerStation.getConnectorStatus(1)?.transactionEventQueue?.length, 1)
+    })
+
+    await it('should refuse a stale accepted dispatch when the transaction is already ending', async () => {
+      const transactionId = await startTransaction(listenerStation, 1, 102)
+      queueEndedTransaction(listenerStation, 1, transactionId as UUIDv4)
+      requestHandlerMock.mock.resetCalls()
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+        listenerStation,
+        { transactionId: transactionId as UUIDv4 } satisfies OCPP20RequestStopTransactionRequest,
+        {
+          status: RequestStartStopStatusEnumType.Accepted,
+        } satisfies OCPP20RequestStopTransactionResponse
+      )
+      await flushMicrotasks()
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+      assert.strictEqual(listenerStation.getConnectorStatus(1)?.transactionEventQueue?.length, 1)
+    })
 
     await it('should NOT call requestStopTransaction when response is Rejected', () => {
       const request: OCPP20RequestStopTransactionRequest = {
@@ -377,20 +472,25 @@ await describe('F03 - Remote Stop Transaction', async () => {
         } satisfies OCPP20RequestStopTransactionResponse
       )
 
+      await flushMicrotasks()
+
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        Partial<OCPP20TransactionEventRequest>
+        OCPP20TransactionEventRequest
       ]
-      const minimalParams = args[2]
+      const transactionEvent = args[2]
 
-      assert.strictEqual(minimalParams.eventType, OCPP20TransactionEventEnumType.Ended)
-      assert.strictEqual(minimalParams.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
-      assert.strictEqual(minimalParams.transactionId, transactionId)
-      assert.strictEqual(minimalParams.stoppedReason, OCPP20ReasonEnumType.Remote)
-      assert.notStrictEqual(minimalParams.connectorId, undefined)
-      assert.strictEqual(typeof minimalParams.connectorId, 'number')
+      assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.strictEqual(transactionEvent.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
+      assert.strictEqual(transactionEvent.transactionInfo.transactionId, transactionId)
+      assert.strictEqual(
+        transactionEvent.transactionInfo.stoppedReason,
+        OCPP20ReasonEnumType.Remote
+      )
+      assert.strictEqual(transactionEvent.evse?.id, 2)
+      assert.strictEqual(transactionEvent.evse.connectorId, undefined)
     })
 
     // FR: F03.FR.09
@@ -414,6 +514,8 @@ await describe('F03 - Remote Stop Transaction', async () => {
           status: RequestStartStopStatusEnumType.Accepted,
         } satisfies OCPP20RequestStopTransactionResponse
       )
+
+      await flushMicrotasks()
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       const args = requestHandlerMock.mock.calls[0].arguments as [
