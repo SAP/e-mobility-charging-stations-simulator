@@ -242,7 +242,6 @@ describe('UIClient', () => {
 
     beforeEach(() => {
       client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private method for testing
       sendRequestSpy = vi.spyOn(client, 'sendRequest').mockResolvedValue({
         status: ResponseStatus.SUCCESS,
       })
@@ -270,7 +269,6 @@ describe('UIClient', () => {
 
     beforeEach(() => {
       client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private method for testing
       sendRequestSpy = vi.spyOn(client, 'sendRequest').mockResolvedValue({
         status: ResponseStatus.SUCCESS,
       })
@@ -356,7 +354,6 @@ describe('UIClient', () => {
 
     beforeEach(() => {
       client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private method for testing
       sendRequestSpy = vi.spyOn(client, 'sendRequest').mockResolvedValue({
         status: ResponseStatus.SUCCESS,
       })
@@ -382,7 +379,6 @@ describe('UIClient', () => {
   describe('addChargingStations', () => {
     it('should send ADD_CHARGING_STATIONS with template, count, and options', async () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private method for testing
       const spy = vi.spyOn(client, 'sendRequest').mockResolvedValue({
         status: ResponseStatus.SUCCESS,
       })
@@ -470,7 +466,6 @@ describe('UIClient', () => {
 
     beforeEach(() => {
       client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private method for testing
       sendRequestSpy = vi.spyOn(client, 'sendRequest').mockResolvedValue({
         status: ResponseStatus.SUCCESS,
       })
@@ -579,7 +574,6 @@ describe('UIClient', () => {
 
     beforeEach(() => {
       client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private method for testing
       sendRequestSpy = vi.spyOn(client, 'sendRequest').mockResolvedValue({
         status: ResponseStatus.SUCCESS,
       })
