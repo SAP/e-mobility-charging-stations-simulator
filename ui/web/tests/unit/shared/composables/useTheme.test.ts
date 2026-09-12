@@ -2,7 +2,7 @@
  * @file Tests for useTheme composable
  * @description Tests for the useTheme shared composable.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useTheme } from '@/shared/composables/useTheme.js'
 
@@ -82,22 +82,18 @@ describe('useTheme', () => {
   })
 
   describe('SSR environment', () => {
-    const originalDocument = globalThis.document
-
     afterEach(() => {
-      globalThis.document = originalDocument
+      vi.unstubAllGlobals()
     })
 
-    it('should not throw when document is undefined', () => {
-      // @ts-expect-error simulating SSR environment
-      globalThis.document = undefined
-      const { switchTheme } = useTheme()
-      expect(() => {
-        switchTheme('catppuccin-latte')
-      }).not.toThrow()
-      globalThis.document = originalDocument
-      const { activeThemeId } = useTheme()
+    it('should update and persist the theme when document is undefined', () => {
+      vi.stubGlobal('document', undefined)
+      const { activeThemeId, switchTheme } = useTheme()
+
+      switchTheme('catppuccin-latte')
+
       expect(activeThemeId.value).toBe('catppuccin-latte')
+      expect(localStorage.getItem('ecs-ui-theme')).toBe('"catppuccin-latte"')
     })
   })
 })
