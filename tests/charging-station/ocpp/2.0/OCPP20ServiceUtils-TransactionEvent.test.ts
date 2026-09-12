@@ -4538,13 +4538,19 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
         await firstAttemptStarted.promise
         online = false
-        await OCPP20ServiceUtils.sendTransactionEvent(
+        const laterOfflineEvent = OCPP20ServiceUtils.sendTransactionEvent(
           station,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
           transactionId
         )
+        await flushMicrotasks()
+        assert.deepStrictEqual(
+          station.getConnectorStatus(connectorId)?.transactionEventQueue?.map(event => event.seqNo),
+          [0, 1]
+        )
+        await laterOfflineEvent
         firstAttempt.reject(new Error('connection lost'))
         await inFlight
 
@@ -5959,7 +5965,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           { meterValue: [signedIntervalMeterValue('public-key')] }
         )
         await firstDeliveryStarted.promise
-        await OCPP20ServiceUtils.sendTransactionEvent(
+        const laterClockEvent = OCPP20ServiceUtils.sendTransactionEvent(
           station,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValueClock,
@@ -5967,6 +5973,12 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId,
           { meterValue: [signedIntervalMeterValue('')] }
         )
+        await flushMicrotasks()
+        assert.deepStrictEqual(
+          station.getConnectorStatus(connectorId)?.transactionEventQueue?.map(event => event.seqNo),
+          [0, 1]
+        )
+        await laterClockEvent
         releaseFirstDelivery.resolve(undefined)
         await firstDelivery
         const connectorStatus = station.getConnectorStatus(connectorId)

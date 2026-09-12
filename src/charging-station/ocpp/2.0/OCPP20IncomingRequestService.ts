@@ -345,6 +345,12 @@ interface OCPP20StationState {
   stopped?: boolean
 }
 
+interface PendingRemoteStartResponse {
+  readonly connectorId: number
+  readonly evseId: number
+  readonly transactionId: string
+}
+
 interface QueuedSecurityEvent {
   retryCount?: number
   techInfo?: string
@@ -354,6 +360,7 @@ interface QueuedSecurityEvent {
 
 interface TriggeredMeterValueSample {
   readonly connectorId?: number
+  readonly delivery?: TransactionMeterValueDelivery
   readonly intervalBaselineKey?: string
   readonly intervalEnergyWh?: number
   readonly intervalState?: ReturnType<typeof captureTransactionIntervalState>
@@ -421,6 +428,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
     OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
   ]
+
+  private readonly pendingRemoteStartResponses = new WeakMap<
+    OCPP20RequestStartTransactionRequest,
+    PendingRemoteStartResponse
+  >()
 
   private readonly triggerMeterValuesReservations = new WeakMap<
     OCPP20TriggerMessageRequest,
@@ -624,6 +636,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         request: OCPP20RequestStartTransactionRequest,
         response: OCPP20RequestStartTransactionResponse
       ) => {
+        this.pendingRemoteStartResponses.delete(request)
         if (response.status === RequestStartStopStatusEnumType.Accepted) {
           const connectorId = chargingStation.getConnectorIdByTransactionId(response.transactionId)
           if (connectorId != null && response.transactionId != null) {
@@ -1278,6 +1291,34 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     commandName: IncomingRequestCommand,
     commandPayload: JsonType
   ): void {
+    if (commandName === OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION) {
+      const request = commandPayload as OCPP20RequestStartTransactionRequest
+      const pending = this.pendingRemoteStartResponses.get(request)
+      this.pendingRemoteStartResponses.delete(request)
+      if (pending == null) return
+      const connectorStatus = chargingStation.getConnectorStatus(
+        pending.connectorId,
+        pending.evseId
+      )
+      if (
+        connectorStatus?.transactionPending !== true ||
+        connectorStatus.transactionId?.toString() !== pending.transactionId
+      ) {
+        return
+      }
+      this.resetConnectorOnStartTransactionError(
+        chargingStation,
+        pending.connectorId,
+        pending.evseId,
+        pending.transactionId
+      ).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.onResponseSendError: Failed to roll back RequestStartTransaction state:`,
+          error
+        )
+      })
+      return
+    }
     if (commandName !== OCPP20IncomingRequestCommand.TRIGGER_MESSAGE) return
     const request = commandPayload as OCPP20TriggerMessageRequest
     const meterValuesReservation = this.triggerMeterValuesReservations.get(request)
@@ -1698,6 +1739,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     for (const [connectorId, connectorStatus] of activeConnectors) {
       const transactionId = connectorStatus.transactionId?.toString()
       if (transactionId == null) continue
+      const delivery = TransactionMeterValueDeliveryBarrier.beginIfIdle(
+        connectorStatus,
+        transactionId
+      )
+      if (delivery == null) {
+        for (const sample of samples) sample.delivery?.settle(true)
+        return
+      }
       const intervalState = captureTransactionIntervalState(connectorStatus)
       try {
         const meterValue = buildClockAlignedConnectorMeterValue(
@@ -1727,17 +1776,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
               0)
           samples.push({
             connectorId,
+            delivery,
             intervalBaselineKey: alignedMeasurandsKey,
             intervalEnergyWh,
             intervalState,
             meterValue,
             transactionId,
           })
+        } else {
+          delivery.settle(true)
         }
       } catch (error) {
+        delivery.settle(true)
+        for (const sample of samples) sample.delivery?.settle(true)
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.buildTriggeredMeterValuesTarget: ${getErrorMessage(error)}`
         )
+        return
       }
     }
     return isNotEmptyArray(samples) ? { evseId, samples } : undefined
@@ -3334,6 +3389,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction ACCEPTED on #${connectorId.toString()} for idToken '${truncateId(idToken.idToken)}'`
       )
+      this.pendingRemoteStartResponses.set(commandPayload, {
+        connectorId,
+        evseId: resolvedEvseId,
+        transactionId,
+      })
 
       return {
         status: RequestStartStopStatusEnumType.Accepted,
@@ -3456,6 +3516,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           const evseValidation = this.validateTriggerMessageEvse(chargingStation, evse)
           if (evseValidation != null) return evseValidation
           const targetEvseIds = this.resolveMeterValuesTriggerEvseIds(chargingStation, evse)
+          if (
+            !OCPP20ServiceUtils.reserveTriggeredMeterValuesRequests(chargingStation, targetEvseIds)
+          ) {
+            return {
+              status: TriggerMessageStatusEnumType.Rejected,
+              statusInfo: {
+                additionalInfo: 'A MeterValues trigger is already pending for a target EVSE',
+                reasonCode: ReasonCodeEnumType.OutOfMemory,
+              },
+            }
+          }
           const alignedMeasurandsKey = buildConfigKey(
             OCPP20ComponentName.AlignedDataCtrlr,
             OCPP20RequiredVariableName.Measurands
@@ -3475,6 +3546,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
                   timestamp
                 )
             if (target == null) {
+              OCPP20ServiceUtils.releaseTriggeredMeterValuesRequests(chargingStation, targetEvseIds)
+              for (const reservedTarget of targets) {
+                for (const sample of reservedTarget.samples) sample.delivery?.settle(true)
+              }
               return {
                 status: TriggerMessageStatusEnumType.Rejected,
                 statusInfo: {
@@ -3485,33 +3560,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
             }
             targets.push(target)
           }
-          if (
-            !OCPP20ServiceUtils.reserveTriggeredMeterValuesRequests(chargingStation, targetEvseIds)
-          ) {
-            return {
-              status: TriggerMessageStatusEnumType.Rejected,
-              statusInfo: {
-                additionalInfo: 'A MeterValues trigger is already pending for a target EVSE',
-                reasonCode: ReasonCodeEnumType.OutOfMemory,
-              },
-            }
-          }
-          const deliveryTargets: TriggeredMeterValuesDeliveryTarget[] = []
-          for (const target of targets) {
-            for (const sample of target.samples) {
-              if (sample.connectorId == null || sample.transactionId == null) continue
-              const connectorStatus = chargingStation.getConnectorStatus(
-                sample.connectorId,
-                target.evseId
-              )
-              if (connectorStatus == null) continue
-              const delivery = TransactionMeterValueDeliveryBarrier.begin(
-                connectorStatus,
-                sample.transactionId
-              )
-              if (delivery != null) deliveryTargets.push({ delivery, evseId: target.evseId })
-            }
-          }
+          const deliveryTargets: TriggeredMeterValuesDeliveryTarget[] = targets.flatMap(target =>
+            target.samples.flatMap(sample =>
+              sample.delivery == null ? [] : [{ delivery: sample.delivery, evseId: target.evseId }]
+            )
+          )
           this.triggerMeterValuesReservations.set(commandPayload, { deliveryTargets, targets })
           return { status: TriggerMessageStatusEnumType.Accepted }
         }
@@ -3945,14 +3998,22 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
    * @param chargingStation - The charging station instance
    * @param connectorId - The connector ID that needs rollback
    * @param evseId - The EVSE ID
+   * @param expectedTransactionId - Transaction identity that still owns the provisional state
    */
   private async resetConnectorOnStartTransactionError (
     chargingStation: ChargingStation,
     connectorId: number,
-    evseId?: number
+    evseId?: number,
+    expectedTransactionId?: string
   ): Promise<void> {
-    OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+    if (
+      expectedTransactionId != null &&
+      connectorStatus?.transactionId?.toString() !== expectedTransactionId
+    ) {
+      return
+    }
+    OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
     // Snapshot transactionId BEFORE resetConnectorStatus deletes it.
     const txId = connectorStatus?.transactionId
     resetConnectorStatus(connectorStatus)

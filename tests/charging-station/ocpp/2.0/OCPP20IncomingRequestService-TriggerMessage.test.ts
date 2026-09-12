@@ -1209,6 +1209,60 @@ await describe('F06 - TriggerMessage', async () => {
       ])
     })
 
+    await it('should serialize periodic updates behind an accepted triggered MeterValues snapshot', async t => {
+      t.mock.timers.enable({ apis: ['setInterval'] })
+      setupConnectorWithTransaction(mockStation, 1, {
+        transactionId: 'txn-meter-trigger-periodic-order',
+      })
+      const triggeredStarted = Promise.withResolvers<undefined>()
+      const releaseTriggered = Promise.withResolvers<undefined>()
+      const periodicStarted = Promise.withResolvers<undefined>()
+      const deliveryOrder: string[] = []
+      requestHandlerMock.mock.mockImplementation(async (...args: unknown[]) => {
+        const command = args[1] as OCPP20RequestCommand
+        const requestParams = args[3] as RequestParams
+        if (command === OCPP20RequestCommand.METER_VALUES) {
+          deliveryOrder.push('triggered')
+          requestParams.onMessageSent?.()
+          triggeredStarted.resolve(undefined)
+          await releaseTriggered.promise
+          requestParams.onResponseReceived?.()
+        } else if (command === OCPP20RequestCommand.TRANSACTION_EVENT) {
+          deliveryOrder.push('periodic')
+          requestParams.onMessageSent?.()
+          requestParams.onResponseReceived?.()
+          periodicStarted.resolve(undefined)
+        }
+        return {}
+      })
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { id: 1 },
+        requestedMessage: MessageTriggerEnumType.MeterValues,
+      }
+      const listenerTestable = createTestableIncomingRequestService(
+        incomingRequestServiceForListener
+      )
+      const response = listenerTestable.handleRequestTriggerMessage(mockStation, request)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+      await triggeredStarted.promise
+
+      OCPP20ServiceUtils.startUpdatedMeterValues(mockStation, 1, 1000, 1)
+      t.mock.timers.tick(1000)
+      await flushMicrotasks()
+      assert.deepStrictEqual(deliveryOrder, ['triggered'])
+
+      releaseTriggered.resolve(undefined)
+      await periodicStarted.promise
+      assert.deepStrictEqual(deliveryOrder, ['triggered', 'periodic'])
+      OCPP20ServiceUtils.stopUpdatedMeterValues(mockStation, 1, 1)
+    })
+
     await it('should release a triggered MeterValues delivery barrier when the response cannot be sent', async () => {
       setupConnectorWithTransaction(mockStation, 1, {
         transactionId: 'txn-meter-trigger-response-failure',

@@ -1024,6 +1024,7 @@ interface ResolvedMeterValueIdentity {
   connectorId?: number
   deferEnergyInterval?: boolean
   energyElapsedInterval?: number
+  energyIntervalWhOverride?: number
   energyNominalInterval?: number
   energyRegisterWhOverride?: number
   evseId?: number
@@ -1979,6 +1980,7 @@ export const buildMeterValue = (
  * @param identity.connectorId - Connector identifier.
  * @param identity.deferEnergyInterval - Whether to retain interval energy for later delivery.
  * @param identity.energyElapsedInterval - Physical energy interval for this observation.
+ * @param identity.energyIntervalWhOverride - Authoritative interval energy for this sample.
  * @param identity.energyNominalInterval - Physical energy integration interval in milliseconds.
  * @param identity.energyRegisterWhOverride - Optional station-level aggregate energy in Wh.
  * @param identity.idle - Whether the aggregate meter point is idle.
@@ -2001,6 +2003,7 @@ export const buildClockAlignedConnectorMeterValue = (
     connectorId: number
     deferEnergyInterval?: boolean
     energyElapsedInterval?: number
+    energyIntervalWhOverride?: number
     energyNominalInterval?: number
     energyRegisterWhOverride?: number
     evseId: number
@@ -2504,12 +2507,13 @@ const buildIdentifiedMeterValue = (
       snapshotEnergyRegisterWhOverride += energyMeasurand.value
     }
     const intervalEnergyValue =
-      connectorStatus != null && identity.transactionId != null
+      identity.energyIntervalWhOverride ??
+      (connectorStatus != null && identity.transactionId != null
         ? Math.max(
           0,
           (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) - intervalBaseline
         ) + carriedIntervalEnergy
-        : transactionEnergyValue
+        : transactionEnergyValue)
     const unitDivider =
       energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR
         ? Constants.UNIT_DIVIDER_KILO

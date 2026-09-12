@@ -3,6 +3,7 @@ import type { ConnectorStatus } from '../../types/ConnectorStatus.js'
 export interface TransactionMeterValueDelivery {
   readonly markBuffered: () => void
   readonly settle: (definitivelyRejected?: boolean) => void
+  readonly waitForTurn: () => Promise<void> | undefined
 }
 
 export interface TransactionMeterValueDependency {
@@ -19,6 +20,7 @@ interface PendingTransactionMeterValueDelivery {
   readonly rejectionCallbacks: Set<() => void>
   readonly resolveReady: () => void
   settled: boolean
+  readonly turnPromise?: Promise<void>
 }
 
 /**
@@ -40,15 +42,14 @@ export class TransactionMeterValueDeliveryBarrier {
     connectorStatus: ConnectorStatus,
     transactionId: number | string
   ): TransactionMeterValueDelivery | undefined {
-    const normalizedTransactionId = transactionId.toString()
-    if (connectorStatus.transactionId?.toString() !== normalizedTransactionId) return
+    return TransactionMeterValueDeliveryBarrier.beginInternal(connectorStatus, transactionId, false)
+  }
 
-    let barrier = TransactionMeterValueDeliveryBarrier.barriers.get(connectorStatus)
-    if (barrier == null) {
-      barrier = new TransactionMeterValueDeliveryBarrier()
-      TransactionMeterValueDeliveryBarrier.barriers.set(connectorStatus, barrier)
-    }
-    return barrier.begin(normalizedTransactionId)
+  public static beginIfIdle (
+    connectorStatus: ConnectorStatus,
+    transactionId: number | string
+  ): TransactionMeterValueDelivery | undefined {
+    return TransactionMeterValueDeliveryBarrier.beginInternal(connectorStatus, transactionId, true)
   }
 
   public static async wait (
@@ -64,10 +65,34 @@ export class TransactionMeterValueDeliveryBarrier {
     return dependencies
   }
 
+  private static beginInternal (
+    connectorStatus: ConnectorStatus,
+    transactionId: number | string,
+    requireIdle: boolean
+  ): TransactionMeterValueDelivery | undefined {
+    const normalizedTransactionId = transactionId.toString()
+    if (connectorStatus.transactionId?.toString() !== normalizedTransactionId) return
+
+    let barrier = TransactionMeterValueDeliveryBarrier.barriers.get(connectorStatus)
+    if (barrier == null) {
+      barrier = new TransactionMeterValueDeliveryBarrier()
+      TransactionMeterValueDeliveryBarrier.barriers.set(connectorStatus, barrier)
+    } else if (
+      requireIdle &&
+      (barrier.pendingByTransaction.get(normalizedTransactionId)?.size ?? 0) > 0
+    ) {
+      return
+    }
+    return barrier.begin(normalizedTransactionId)
+  }
+
   private begin (transactionId: string): TransactionMeterValueDelivery {
     const ready = Promise.withResolvers<undefined>()
     const settlement = Promise.withResolvers<boolean>()
     const rejectionCallbacks = new Set<() => void>()
+    let pending = this.pendingByTransaction.get(transactionId)
+    pending ??= new Set<PendingTransactionMeterValueDelivery>()
+    const predecessor = [...pending].at(-1)
     const pendingDelivery: PendingTransactionMeterValueDelivery = {
       dependency: {
         onDefinitiveRejection: callback => {
@@ -90,9 +115,8 @@ export class TransactionMeterValueDeliveryBarrier {
         ready.resolve(undefined)
       },
       settled: false,
+      turnPromise: predecessor?.readyPromise,
     }
-    let pending = this.pendingByTransaction.get(transactionId)
-    pending ??= new Set<PendingTransactionMeterValueDelivery>()
     pending.add(pendingDelivery)
     this.pendingByTransaction.set(transactionId, pending)
 
@@ -116,6 +140,7 @@ export class TransactionMeterValueDeliveryBarrier {
         if (pending.size === 0) this.pendingByTransaction.delete(transactionId)
         markReady()
       },
+      waitForTurn: () => pendingDelivery.turnPromise,
     }
   }
 

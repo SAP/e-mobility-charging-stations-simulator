@@ -223,6 +223,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   delete connectorStatus.transactionId
   delete connectorStatus.transactionIdTag
   delete connectorStatus.transactionGroupIdToken
+  delete connectorStatus.remoteStartId
   delete connectorStatus.transactionEnergyActiveImportIntervalBaselines
   delete connectorStatus.transactionEnergyActiveImportIntervalCarry
   delete connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt

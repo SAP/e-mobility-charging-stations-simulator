@@ -1997,14 +1997,26 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         const targets: TriggeredMeterValueTarget[] = []
         for (const target of candidates) {
           if (target.connectorStatus == null || target.connectorStatus.transactionEnding === true) {
+            for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
+            return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+          }
+          const transactionId =
+            target.connectorStatus.transactionStarted === true &&
+            target.connectorStatus.transactionId != null
+              ? convertToInt(target.connectorStatus.transactionId)
+              : undefined
+          const delivery =
+            transactionId != null
+              ? TransactionMeterValueDeliveryBarrier.beginIfIdle(
+                target.connectorStatus,
+                transactionId
+              )
+              : undefined
+          if (transactionId != null && delivery == null) {
+            for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
             return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
           }
           try {
-            const transactionId =
-              target.connectorStatus.transactionStarted === true &&
-              target.connectorStatus.transactionId != null
-                ? convertToInt(target.connectorStatus.transactionId)
-                : undefined
             const intervalState =
               transactionId != null
                 ? captureTransactionIntervalState(target.connectorStatus)
@@ -2029,6 +2041,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               { advanceEnergy: true, connectorId: target.connectorId, snapshot: true }
             ) as OCPP16MeterValue
             if (!isNotEmptyArray(meterValue.sampledValue)) {
+              delivery?.settle(true)
+              for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
               return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
             }
             const publicKeyIncluded =
@@ -2048,25 +2062,19 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             }
             targets.push({
               connectorStatus: target.connectorStatus,
+              delivery,
               intervalEnergyWh,
               intervalState,
               publicKeyIncluded,
               request,
             })
           } catch {
+            delivery?.settle(true)
+            for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
             return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
           }
         }
-        const reservedTargets = targets.map(target => ({
-          ...target,
-          ...(target.request.transactionId != null && {
-            delivery: TransactionMeterValueDeliveryBarrier.begin(
-              target.connectorStatus,
-              target.request.transactionId
-            ),
-          }),
-        }))
-        this.triggerMeterValuesReservations.set(commandPayload, reservedTargets)
+        this.triggerMeterValuesReservations.set(commandPayload, targets)
         return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
       }
       default:

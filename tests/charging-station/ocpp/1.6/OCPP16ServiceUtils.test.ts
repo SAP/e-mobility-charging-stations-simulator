@@ -1807,6 +1807,22 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         ]
       )
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+      const stopPayload = (
+        JSON.parse(wireMessages[2]) as [
+          number,
+          string,
+          OCPP16RequestCommand,
+          OCPP16StopTransactionRequest
+        ]
+      )[3]
+      const stopSignedSample = stopPayload.transactionData
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .find(sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA)
+      assert.ok(stopSignedSample != null)
+      assert.notStrictEqual(
+        (JSON.parse(stopSignedSample.value) as { publicKey: string }).publicKey,
+        ''
+      )
       const cachedStop = [...station.requests.values()].find(
         ([, , command]) => command === OCPP16RequestCommand.STOP_TRANSACTION
       )

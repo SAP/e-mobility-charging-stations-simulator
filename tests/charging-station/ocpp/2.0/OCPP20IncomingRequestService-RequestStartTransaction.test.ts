@@ -892,6 +892,36 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       assert.strictEqual(transactionEventCallCount, 1)
     })
 
+    await it('should roll back provisional state when an accepted response cannot be sent', async () => {
+      const request: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'UNSENT_RESPONSE_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 1000,
+      }
+      const response = await testableService.handleRequestStartTransaction(listenerStation, request)
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+      const connectorStatus = listenerStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(connectorStatus.transactionPending, true)
+      assert.strictEqual(connectorStatus.transactionId, response.transactionId)
+      assert.strictEqual(connectorStatus.remoteStartId, request.remoteStartId)
+
+      testableService.onResponseSendError(
+        listenerStation,
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        request
+      )
+      await flushMicrotasks()
+
+      assert.strictEqual(connectorStatus.transactionPending, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(connectorStatus.remoteStartId, undefined)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
     // E01.FR.07 + E01.FR.16 + E03.FR.01: Verify transaction sequence number reset
     await it('should reset transaction sequence number before setting up new transaction state', async () => {
       const connectorStatus = mockStation.getConnectorStatus(1)

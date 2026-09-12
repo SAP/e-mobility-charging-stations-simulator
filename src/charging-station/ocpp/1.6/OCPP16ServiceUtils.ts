@@ -74,7 +74,10 @@ import {
   roundTo,
   truncateId,
 } from '../../../utils/index.js'
-import { TransactionMeterValueDeliveryBarrier } from '../../meter-values/TransactionMeterValueDeliveryBarrier.js'
+import {
+  type TransactionMeterValueDelivery,
+  TransactionMeterValueDeliveryBarrier,
+} from '../../meter-values/TransactionMeterValueDeliveryBarrier.js'
 import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
@@ -1043,128 +1046,151 @@ export class OCPP16ServiceUtils {
     const rawTransactionId = connectorStatus.transactionId
     OCPP16ServiceUtils.periodicMeterValuesIntervals.set(connectorStatus, interval)
     connectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
-      if (
-        connectorStatus.transactionStarted !== true ||
-        connectorStatus.transactionEnding === true ||
-        connectorStatus.transactionId !== rawTransactionId ||
-        OCPP16ServiceUtils.stopTransactionOperations.get(connectorStatus)?.transactionId ===
-          rawTransactionId
-      ) {
-        return
-      }
-      const transactionId = convertToInt(rawTransactionId)
-      const intervalState = captureTransactionIntervalState(connectorStatus)
-      const meterValue = buildMeterValue(
-        chargingStation,
-        transactionId,
-        interval
-      ) as OCPP16MeterValue
-      completeTransactionIntervalState(intervalState, 'default', [meterValue])
-      const publicKeyIncluded = OCPP16ServiceUtils.appendSignedUpdatedReadings(
-        chargingStation,
-        connectorId,
-        transactionId,
-        meterValue
-      )
-      const request: MeterValuesRequest = {
-        connectorId,
-        meterValue: [meterValue],
-        transactionId,
-      }
-      const publicKeyDeliveryToken = claimPublicKeyDelivery(
-        connectorStatus,
-        transactionId,
-        request,
-        publicKeyIncluded
-      )
-      const delivery = TransactionMeterValueDeliveryBarrier.begin(connectorStatus, rawTransactionId)
-      let deliverySettled = false
-      const markDeliverySettled = (definitivelyRejected = false): void => {
-        if (deliverySettled) return
-        deliverySettled = true
-        delivery?.settle(definitivelyRejected)
-      }
-
-      const deliveryState = {
-        buffered: false,
-        callError: false,
-        responseReceived: false,
-        sent: false,
-        transportErrorAmbiguous: false,
-      }
-      const handleDeliveryFailure = (error: unknown): void => {
+      let delivery: TransactionMeterValueDelivery | undefined
+      ;(async () => {
         if (
-          !deliveryState.buffered &&
-          !deliveryState.callError &&
-          !deliveryState.responseReceived &&
-          !deliveryState.sent &&
-          !deliveryState.transportErrorAmbiguous
+          connectorStatus.transactionStarted !== true ||
+          connectorStatus.transactionEnding === true ||
+          connectorStatus.transactionId !== rawTransactionId ||
+          OCPP16ServiceUtils.stopTransactionOperations.get(connectorStatus)?.transactionId ===
+            rawTransactionId
         ) {
-          restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
-          releasePublicKeyDelivery(publicKeyDeliveryToken)
-        } else if (
-          !deliveryState.buffered &&
-          !deliveryState.callError &&
-          (deliveryState.sent || deliveryState.transportErrorAmbiguous)
-        ) {
-          retainPublicKeyDelivery(publicKeyDeliveryToken)
+          return
         }
-        if (!deliveryState.buffered) {
-          markDeliverySettled(
-            deliveryState.callError ||
-              (!deliveryState.sent && !deliveryState.transportErrorAmbiguous)
+        delivery = TransactionMeterValueDeliveryBarrier.begin(connectorStatus, rawTransactionId)
+        if (delivery == null) return
+        const deliveryTurn = delivery.waitForTurn()
+        if (deliveryTurn != null) await deliveryTurn
+        if (
+          chargingStation.getConnectorStatus(connectorId)?.transactionStarted !== true ||
+          Boolean(connectorStatus.transactionEnding) ||
+          connectorStatus.transactionId !== rawTransactionId ||
+          OCPP16ServiceUtils.stopTransactionOperations.get(connectorStatus)?.transactionId ===
+            rawTransactionId
+        ) {
+          delivery.settle(true)
+          return
+        }
+        const transactionId = convertToInt(rawTransactionId)
+        const intervalState = captureTransactionIntervalState(connectorStatus)
+        const meterValue = buildMeterValue(
+          chargingStation,
+          transactionId,
+          interval
+        ) as OCPP16MeterValue
+        completeTransactionIntervalState(intervalState, 'default', [meterValue])
+        const publicKeyIncluded = OCPP16ServiceUtils.appendSignedUpdatedReadings(
+          chargingStation,
+          connectorId,
+          transactionId,
+          meterValue
+        )
+        const request: MeterValuesRequest = {
+          connectorId,
+          meterValue: [meterValue],
+          transactionId,
+        }
+        const publicKeyDeliveryToken = claimPublicKeyDelivery(
+          connectorStatus,
+          transactionId,
+          request,
+          publicKeyIncluded
+        )
+        let deliverySettled = false
+        const markDeliverySettled = (definitivelyRejected = false): void => {
+          if (deliverySettled) return
+          deliverySettled = true
+          delivery?.settle(definitivelyRejected)
+        }
+
+        const deliveryState = {
+          buffered: false,
+          callError: false,
+          responseReceived: false,
+          sent: false,
+          transportErrorAmbiguous: false,
+        }
+        const handleDeliveryFailure = (error: unknown): void => {
+          if (
+            !deliveryState.buffered &&
+            !deliveryState.callError &&
+            !deliveryState.responseReceived &&
+            !deliveryState.sent &&
+            !deliveryState.transportErrorAmbiguous
+          ) {
+            restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
+            releasePublicKeyDelivery(publicKeyDeliveryToken)
+          } else if (
+            !deliveryState.buffered &&
+            !deliveryState.callError &&
+            (deliveryState.sent || deliveryState.transportErrorAmbiguous)
+          ) {
+            retainPublicKeyDelivery(publicKeyDeliveryToken)
+          }
+          if (!deliveryState.buffered) {
+            markDeliverySettled(
+              deliveryState.callError ||
+                (!deliveryState.sent && !deliveryState.transportErrorAmbiguous)
+            )
+          }
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error while sending '${RequestCommand.METER_VALUES}':`,
+            error
           )
         }
+        try {
+          chargingStation.ocppRequestService
+            .requestHandler<MeterValuesRequest, MeterValuesResponse>(
+              chargingStation,
+              RequestCommand.METER_VALUES,
+              request,
+              {
+                onError: (_error, isCallError) => {
+                  deliveryState.callError ||= isCallError
+                  if (isCallError || deliveryState.buffered) {
+                    const definitivelyRejected =
+                      isCallError || !deliveryState.transportErrorAmbiguous
+                    if (definitivelyRejected) {
+                      restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
+                      releasePublicKeyDelivery(publicKeyDeliveryToken)
+                    }
+                    markDeliverySettled(definitivelyRejected)
+                  }
+                },
+                onMessageSent: () => {
+                  deliveryState.sent = true
+                },
+                onRequestBuffered: () => {
+                  deliveryState.buffered = true
+                  delivery?.markBuffered()
+                },
+                onResponseReceived: () => {
+                  deliveryState.responseReceived = true
+                  retainPublicKeyDelivery(publicKeyDeliveryToken)
+                  markDeliverySettled()
+                },
+                onTransportError: (_error, deliveryAmbiguous) => {
+                  deliveryState.transportErrorAmbiguous ||= deliveryAmbiguous
+                },
+                throwError: true,
+              }
+            )
+            .then(() => {
+              retainPublicKeyDelivery(publicKeyDeliveryToken)
+              markDeliverySettled()
+              return undefined
+            })
+            .catch(handleDeliveryFailure)
+        } catch (error: unknown) {
+          handleDeliveryFailure(error)
+        }
+      })().catch((error: unknown) => {
+        delivery?.settle(true)
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error while sending '${RequestCommand.METER_VALUES}':`,
+          `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error while preparing '${RequestCommand.METER_VALUES}':`,
           error
         )
-      }
-      try {
-        chargingStation.ocppRequestService
-          .requestHandler<MeterValuesRequest, MeterValuesResponse>(
-            chargingStation,
-            RequestCommand.METER_VALUES,
-            request,
-            {
-              onError: (_error, isCallError) => {
-                deliveryState.callError ||= isCallError
-                if (isCallError || deliveryState.buffered) {
-                  const definitivelyRejected = isCallError || !deliveryState.transportErrorAmbiguous
-                  if (definitivelyRejected) {
-                    restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
-                    releasePublicKeyDelivery(publicKeyDeliveryToken)
-                  }
-                  markDeliverySettled(definitivelyRejected)
-                }
-              },
-              onMessageSent: () => {
-                deliveryState.sent = true
-              },
-              onRequestBuffered: () => {
-                deliveryState.buffered = true
-                delivery?.markBuffered()
-              },
-              onResponseReceived: () => {
-                deliveryState.responseReceived = true
-                retainPublicKeyDelivery(publicKeyDeliveryToken)
-                markDeliverySettled()
-              },
-              onTransportError: (_error, deliveryAmbiguous) => {
-                deliveryState.transportErrorAmbiguous ||= deliveryAmbiguous
-              },
-              throwError: true,
-            }
-          )
-          .then(() => {
-            retainPublicKeyDelivery(publicKeyDeliveryToken)
-            markDeliverySettled()
-            return undefined
-          })
-          .catch(handleDeliveryFailure)
-      } catch (error: unknown) {
-        handleDeliveryFailure(error)
-      }
+      })
     }, clampToSafeTimerValue(interval))
   }
 
@@ -1285,6 +1311,7 @@ export class OCPP16ServiceUtils {
       transactionEndingOwned = false
     }
 
+    const stopTransactionCarriesPublicKey = (): boolean => stopTransactionHasPublicKey
     const stopTransactionPromise = (async (): Promise<StopTransactionResponse> => {
       try {
         const meterValueDependencies = await TransactionMeterValueDeliveryBarrier.wait(
@@ -1481,6 +1508,49 @@ export class OCPP16ServiceUtils {
           deferredPredecessorRejection = false
           return true
         }
+        let terminalRejectionTransferred = false
+        const transferRejectedTerminalMeterValues = (): boolean => {
+          if (terminalRejectionTransferred) return true
+          if (
+            stopTransactionFallbackSnapshot == null ||
+            terminalMeterValuesRequest == null ||
+            connectorStatus.transactionId !== rawTransactionId
+          ) {
+            return false
+          }
+          const previousStopTransactionSnapshot = stopTransactionSnapshot
+          const previousToken = publicKeyDeliveryToken
+          const replacementToken =
+            transferPublicKeyDelivery(publicKeyDeliveryToken, stopTransactionFallbackSnapshot) ??
+            claimPublicKeyDelivery(
+              connectorStatus,
+              rawTransactionId,
+              stopTransactionFallbackSnapshot,
+              true
+            )
+          if (replacementToken == null) return false
+          publicKeyDeliveryToken = replacementToken
+          stopTransactionSnapshot = stopTransactionFallbackSnapshot
+          stopTransactionHasPublicKey = true
+          if (
+            stopDeliveryState.buffered &&
+            previousStopTransactionSnapshot != null &&
+            !chargingStation.replaceBufferedRequestPayload(
+              RequestCommand.STOP_TRANSACTION,
+              previousStopTransactionSnapshot,
+              stopTransactionSnapshot
+            )
+          ) {
+            publicKeyDeliveryToken =
+              transferPublicKeyDelivery(replacementToken, terminalMeterValuesRequest) ??
+              previousToken
+            stopTransactionSnapshot = previousStopTransactionSnapshot
+            stopTransactionHasPublicKey = false
+            return false
+          }
+          terminalRejectionTransferred = true
+          return true
+        }
         for (const dependency of meterValueDependencies) {
           dependency.onDefinitiveRejection(() => {
             if (!stopRequestStarted || stopDeliveryState.buffered) {
@@ -1538,6 +1608,7 @@ export class OCPP16ServiceUtils {
                 onError: (error, isCallError) => {
                   meterValuesDeliveryState.callError ||= isCallError
                   if (isCallError) {
+                    transferRejectedTerminalMeterValues()
                     markMeterValuesSettled()
                   } else if (!meterValuesReplaySettled) {
                     meterValuesReplayError = error
@@ -1617,20 +1688,8 @@ export class OCPP16ServiceUtils {
                   (!meterValuesDeliveryState.responseReceived &&
                     !meterValuesDeliveryState.sent &&
                     !meterValuesDeliveryState.transportErrorAmbiguous)
-                if (
-                  definitelyRejected &&
-                  stopTransactionFallbackSnapshot != null &&
-                  connectorStatus.transactionId === rawTransactionId
-                ) {
-                  const replacementToken = transferPublicKeyDelivery(
-                    publicKeyDeliveryToken,
-                    stopTransactionFallbackSnapshot
-                  )
-                  if (replacementToken != null) {
-                    publicKeyDeliveryToken = replacementToken
-                    stopTransactionSnapshot = stopTransactionFallbackSnapshot
-                    stopTransactionHasPublicKey = true
-                  }
+                if (definitelyRejected && transferRejectedTerminalMeterValues()) {
+                  // The StopTransaction fallback now owns the rejected terminal public key.
                 } else if (definitelyRejected) {
                   releasePublicKeyDelivery(publicKeyDeliveryToken)
                   throw error
@@ -1689,7 +1748,9 @@ export class OCPP16ServiceUtils {
           throwError: true,
         })
         stopTransactionRequestSettled = true
-        if (stopTransactionHasPublicKey) retainPublicKeyDelivery(publicKeyDeliveryToken)
+        if (stopTransactionCarriesPublicKey()) {
+          retainPublicKeyDelivery(publicKeyDeliveryToken)
+        }
         clearTransactionEnding()
         return stopTransactionResponse
       } catch (error) {
@@ -1697,7 +1758,7 @@ export class OCPP16ServiceUtils {
         if (
           terminalMeterValuesRequest != null &&
           !terminalMeterValuesDeliveryStarted &&
-          !stopTransactionHasPublicKey
+          !stopTransactionCarriesPublicKey()
         ) {
           releasePublicKeyDelivery(publicKeyDeliveryToken)
         }
@@ -1715,7 +1776,7 @@ export class OCPP16ServiceUtils {
             RequestCommand.STOP_TRANSACTION,
             stopTransactionSnapshot
           )
-        if (stopTransactionHasPublicKey) {
+        if (stopTransactionCarriesPublicKey()) {
           const definitelyRejected =
             stopDeliveryState.callError ||
             (!stopDeliveryState.buffered &&
