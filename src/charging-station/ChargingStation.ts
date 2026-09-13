@@ -3734,12 +3734,23 @@ export class ChargingStation extends EventEmitter {
         )
       }
     }
+    let incomingRequestsStopped = false
+    let bufferedMessageCallbacksReleased = false
+    const releaseIncomingRequests = (): void => {
+      if (!incomingRequestsStopped) {
+        this.ocppIncomingRequestService.stop(this)
+        incomingRequestsStopped = true
+      }
+      if (!bufferedMessageCallbacksReleased) {
+        this.releaseAllBufferedMessageCallbacks()
+        bufferedMessageCallbacksReleased = true
+      }
+    }
     let transportFinalized = false
     const finalizeTransport = (): void => {
       if (transportFinalized) return
       transportFinalized = true
-      this.ocppIncomingRequestService.stop(this)
-      this.releaseAllBufferedMessageCallbacks()
+      releaseIncomingRequests()
       this.closeWSConnection({ byRequest: true })
       this.lifecycleAbortController?.abort()
       this.ocppRequestService.cancelPendingRequests(this, undefined, false, {
@@ -3768,6 +3779,8 @@ export class ChargingStation extends EventEmitter {
       }
     }
     const finalizeShutdown = async (): Promise<void> => {
+      // Settle accepted responses before the stop sequence snapshots transactions.
+      releaseIncomingRequests()
       await flushTransactionEventQueues()
       if (!shutdownGenerationIsCurrent()) return
       await runStopMessageSequence()

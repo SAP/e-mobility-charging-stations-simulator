@@ -14,6 +14,7 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import { buildSignedOCPP16SampledValue } from '../../../../src/charging-station/ocpp/1.6/OCPP16RequestBuilders.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
+  CurrentType,
   EncodingMethodEnumType,
   OCPP16AuthorizationStatus,
   type OCPP16MeterValue,
@@ -195,6 +196,54 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       )
       assert.strictEqual(signedSamples[0].context, OCPP16MeterValueContext.TRANSACTION_BEGIN)
+    })
+
+    await it('should project only the ordinary DC Inlet begin sample while signing the raw Outlet reading', () => {
+      assert.ok(station.stationInfo != null)
+      station.stationInfo.conversionEfficiency = 0.8
+      station.stationInfo.currentOutType = CurrentType.DC
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionId = 42
+      connectorStatus.MeterValues = createMeterValuesTemplate([
+        {
+          location: OCPP16MeterValueLocation.INLET,
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '0',
+        },
+      ])
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+      upsertConfigurationKey(
+        station,
+        OCPP16VendorParametersKey.SampledDataSignStartedReadings,
+        'true'
+      )
+      upsertConfigurationKey(
+        station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 800)
+
+      const ordinarySample = meterValue.sampledValue.find(
+        sampledValue => sampledValue.format !== OCPP16MeterValueFormat.SIGNED_DATA
+      )
+      const signedSample = meterValue.sampledValue.find(
+        sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA
+      )
+      assert.ok(ordinarySample != null)
+      assert.ok(signedSample != null)
+      assert.strictEqual(ordinarySample.location, OCPP16MeterValueLocation.INLET)
+      assert.strictEqual(ordinarySample.value, '1000')
+      assert.strictEqual(signedSample.location, OCPP16MeterValueLocation.OUTLET)
+      const signedMeterValue = JSON.parse(signedSample.value) as OCPP16SignedMeterValue
+      const signedPayload = Buffer.from(signedMeterValue.signedMeterData, 'base64').toString('utf8')
+      const ocmfPayloadJson = signedPayload.split('|').at(1)
+      assert.ok(ocmfPayloadJson != null)
+      const ocmfPayload = JSON.parse(ocmfPayloadJson) as { RD: { RV: number }[] }
+      assert.strictEqual(ocmfPayload.RD[0]?.RV, 0.8)
     })
 
     await it('should not include signed SampledValue when SampledDataSignReadings=true but SampledDataSignStartedReadings=false', () => {

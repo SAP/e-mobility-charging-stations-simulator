@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ConnectorStatus, RequestParams } from '../../src/types/index.js'
 
 import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import { OCPP16IncomingRequestService } from '../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
 import { OCPP16RequestService } from '../../src/charging-station/ocpp/1.6/OCPP16RequestService.js'
 import { OCPP16ResponseService } from '../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import { OCPP16ServiceUtils } from '../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
@@ -20,6 +21,9 @@ import {
   AvailabilityType,
   OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
+  OCPP16ChargingProfileKindType,
+  OCPP16ChargingProfilePurposeType,
+  OCPP16ChargingRateUnitType,
   OCPP16IncomingRequestCommand,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
@@ -487,6 +491,160 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(connectorStatus.transactionStarting, undefined)
       assert.strictEqual(connectorStatus.transactionId, undefined)
       assert.strictEqual(activeStation.requests.size, 0)
+    })
+
+    await it('drains an ambiguous accepted RemoteStart before stopping transactions', async () => {
+      const context = createOCPP16RequestTestContext({
+        baseName: 'remote-start-shutdown-drain',
+        stationInfo: { beginEndMeterValues: false },
+      })
+      const activeStation = context.station
+      station = activeStation
+      const incomingRequestService = new OCPP16IncomingRequestService()
+      let incomingRequestsStopped = false
+      const stopIncomingRequests = incomingRequestService.stop.bind(incomingRequestService)
+      mock.method(incomingRequestService, 'stop', (chargingStation: ChargingStation) => {
+        incomingRequestsStopped = true
+        stopIncomingRequests(chargingStation)
+      })
+      installBufferedMessageCallbackState(activeStation)
+      Object.assign(activeStation, {
+        ocppIncomingRequestService: incomingRequestService,
+        ocppRequestService: context.requestService,
+      })
+      activeStation.recordRequestStatistic = () => undefined
+      activeStation.emitChargingStationEvent = () => undefined
+      activeStation.started = true
+      activeStation.isStopping = () => ChargingStation.prototype.isStopping.call(activeStation)
+      const connectorStatus = activeStation.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      const chargingProfile = {
+        chargingProfileId: 2096,
+        chargingProfileKind: OCPP16ChargingProfileKindType.RELATIVE,
+        chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_PROFILE,
+        chargingSchedule: {
+          chargingRateUnit: OCPP16ChargingRateUnitType.WATT,
+          chargingSchedulePeriod: [{ limit: 7000, startPeriod: 0 }],
+        },
+        stackLevel: 0,
+      }
+      const responseTransportStarted = Promise.withResolvers<undefined>()
+      const startRequestSent = Promise.withResolvers<string>()
+      let remoteStartSendCallback: ((error?: Error) => void) | undefined
+      const sentCommands: OCPP16RequestCommand[] = []
+      const wsConnection = activeStation.wsConnection
+      assert.ok(wsConnection != null)
+      mock.method(wsConnection, 'send', (data: unknown, callback?: (error?: Error) => void) => {
+        const [messageType, messageId, command] = JSON.parse(String(data)) as [
+          number,
+          string,
+          OCPP16RequestCommand | undefined
+        ]
+        if (messageType === 3) {
+          remoteStartSendCallback = callback
+          responseTransportStarted.resolve(undefined)
+          return
+        }
+        assert.ok(command != null)
+        sentCommands.push(command)
+        callback?.()
+        if (command === OCPP16RequestCommand.START_TRANSACTION) {
+          startRequestSent.resolve(messageId)
+          return
+        }
+        queueMicrotask(() => {
+          const cachedRequest = activeStation.requests.get(messageId)
+          if (cachedRequest == null) return
+          cachedRequest[0](
+            command === OCPP16RequestCommand.STOP_TRANSACTION
+              ? { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+              : {},
+            cachedRequest[3]
+          )
+        })
+      })
+      const stationInternals = activeStation as unknown as {
+        configurationFileHash: string
+        lifecycleAbortController: AbortController
+        pendingConfigurationSave: Promise<void>
+        performStop: (
+          reason?: Parameters<ChargingStation['stop']>[0],
+          stopTransactions?: boolean
+        ) => Promise<void>
+        saveConfiguration: () => void
+        sharedLRUCache: { deleteChargingStationConfiguration: (hash: string) => void }
+        stopMessageSequence: (
+          reason?: Parameters<ChargingStation['stop']>[0],
+          stopTransactions?: boolean
+        ) => Promise<void>
+      }
+      stationInternals.configurationFileHash = 'remote-start-shutdown-drain'
+      stationInternals.lifecycleAbortController = new AbortController()
+      stationInternals.pendingConfigurationSave = Promise.resolve()
+      stationInternals.performStop = (
+        ChargingStation.prototype as unknown as {
+          performStop: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stopTransactions?: boolean
+          ) => Promise<void>
+        }
+      ).performStop
+      stationInternals.sharedLRUCache = { deleteChargingStationConfiguration: () => undefined }
+      stationInternals.saveConfiguration = () => undefined
+      stationInternals.stopMessageSequence = async (reason, stopTransactions) => {
+        assert.strictEqual(incomingRequestsStopped, true)
+        assert.strictEqual(
+          (activeStation as unknown as { bufferedMessageCallbackCount: number })
+            .bufferedMessageCallbackCount,
+          0
+        )
+        assert.strictEqual(connectorStatus.transactionRemoteStarted, true)
+        assert.deepStrictEqual(connectorStatus.chargingProfiles, [chargingProfile])
+        if (stopTransactions === true) await stopRunningTransactions(activeStation, reason)
+      }
+
+      const incomingResponse = incomingRequestService.incomingRequestHandler(
+        activeStation,
+        'ambiguous-remote-start-response',
+        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+        { chargingProfile, connectorId: 1, idTag: 'SHUTDOWN-REMOTE' }
+      )
+      await responseTransportStarted.promise
+      assert.strictEqual(connectorStatus.transactionRemoteStarted, false)
+      assert.deepStrictEqual(connectorStatus.chargingProfiles, [])
+
+      const shutdown = ChargingStation.prototype.stop.call(activeStation, undefined, true)
+      const startMessageId = await startRequestSent.promise
+      let shutdownSettled = false
+      void shutdown.then(() => {
+        shutdownSettled = true
+        return undefined
+      })
+      await Promise.resolve()
+      assert.strictEqual(shutdownSettled, false)
+      assert.strictEqual(connectorStatus.transactionStarting, true)
+      assert.strictEqual(sentCommands.includes(OCPP16RequestCommand.STOP_TRANSACTION), false)
+
+      const cachedStartRequest = activeStation.requests.get(startMessageId)
+      assert.ok(cachedStartRequest != null)
+      cachedStartRequest[0](
+        {
+          idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED },
+          transactionId: 2096,
+        },
+        cachedStartRequest[3]
+      )
+      await Promise.all([incomingResponse, shutdown])
+
+      assert.ok(sentCommands.includes(OCPP16RequestCommand.STOP_TRANSACTION))
+      assert.strictEqual(connectorStatus.transactionStarting, undefined)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(connectorStatus.transactionRemoteStarted, false)
+      assert.deepStrictEqual(connectorStatus.chargingProfiles, [])
+      remoteStartSendCallback?.()
+      await flushMicrotasks()
+      assert.strictEqual(connectorStatus.transactionRemoteStarted, false)
+      assert.deepStrictEqual(connectorStatus.chargingProfiles, [])
     })
 
     await it('should join an in-flight OCPP 1.6 StopTransaction during station stop', async () => {

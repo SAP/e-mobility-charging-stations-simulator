@@ -326,9 +326,19 @@ export class OCPP16ServiceUtils {
       )
     }
     const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
+    const meterStartOutputWh = meterStart ?? 0
     // Energy.Active.Import.Register measurand (default)
     const sampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
     if (sampledValueTemplate != null) {
+      const projectedMeterStartWh = projectSnapshotDcOutputValue(
+        chargingStation,
+        connectorId,
+        undefined,
+        sampledValueTemplate.location,
+        OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+        meterStartOutputWh,
+        false
+      )
       const unitDivider =
         sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR
           ? Constants.UNIT_DIVIDER_KILO
@@ -336,7 +346,7 @@ export class OCPP16ServiceUtils {
       meterValue.sampledValue.push(
         buildOCPP16SampledValue(
           sampledValueTemplate,
-          roundTo((meterStart ?? 0) / unitDivider, 4),
+          roundTo(projectedMeterStartWh / unitDivider, 4),
           OCPP16MeterValueContext.TRANSACTION_BEGIN
         )
       )
@@ -355,7 +365,7 @@ export class OCPP16ServiceUtils {
       if (signingCfg != null) {
         const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
           signingCfg,
-          meterStart ?? 0,
+          meterStartOutputWh,
           OCPP16MeterValueContext.TRANSACTION_BEGIN,
           transactionId,
           publicKeySentInTransaction,
