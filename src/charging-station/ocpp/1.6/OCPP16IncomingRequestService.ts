@@ -245,15 +245,20 @@ interface OCPP16StationState {
    * set from OCPP 1.6 code directly.
    */
   stopped?: boolean
+  triggeredMeterValueTargets?: Set<TriggeredMeterValueTarget>
 }
 
 interface TriggeredMeterValueTarget {
+  cancelled?: boolean
   readonly connectorStatus: ConnectorStatus
   readonly delivery?: TransactionMeterValueDelivery
   readonly intervalEnergyWh?: number
   readonly intervalState?: ReturnType<typeof captureTransactionIntervalState>
   readonly publicKeyIncluded: boolean
   readonly request: OCPP16MeterValuesRequest
+  reservationReleased?: boolean
+  readonly transactionId?: number
+  readonly triggerRequest: OCPP16TriggerMessageRequest
 }
 
 /**
@@ -302,6 +307,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
     OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
   ]
+
+  private readonly pendingTriggeredMeterValues = new WeakMap<
+    ConnectorStatus,
+    Set<number | undefined>
+  >()
 
   private readonly triggerMeterValuesReservations = new WeakMap<
     OCPP16TriggerMessageRequest,
@@ -594,6 +604,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               ;(async () => {
                 const deliveryTurn = delivery?.waitForTurn()
                 if (deliveryTurn != null) await deliveryTurn
+                if (target.cancelled === true) return
                 if (
                   intervalState != null &&
                   connectorStatus.transactionId?.toString() === intervalState.transactionId
@@ -635,7 +646,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                 const markDeliverySettled = (definitivelyRejected = false): void => {
                   if (deliverySettled) return
                   deliverySettled = true
-                  delivery?.settle(definitivelyRejected)
+                  this.releaseTriggeredMeterValueTarget(
+                    chargingStation,
+                    target,
+                    definitivelyRejected
+                  )
                 }
                 let restored = false
                 const restoreRejectedDelivery = (): void => {
@@ -703,7 +718,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                     errorHandler(error)
                   })
               })().catch((error: unknown) => {
-                delivery?.settle(true)
+                this.releaseTriggeredMeterValueTarget(chargingStation, target, true)
                 errorHandler(error)
               })
             }
@@ -853,7 +868,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   }
 
   protected override onResponseSendError (
-    _chargingStation: ChargingStation,
+    chargingStation: ChargingStation,
     commandName: IncomingRequestCommand,
     commandPayload: JsonType
   ): void {
@@ -862,7 +877,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     const targets = this.triggerMeterValuesReservations.get(request)
     if (targets == null) return
     this.triggerMeterValuesReservations.delete(request)
-    for (const target of targets) target.delivery?.settle()
+    for (const target of targets) {
+      this.releaseTriggeredMeterValueTarget(chargingStation, target, true)
+    }
   }
 
   /**
@@ -884,6 +901,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   protected override resetStationState (stationState: OCPP16StationState): void {
     stationState.activeDiagnosticsAbortController?.abort()
     this.cancelDeferredFirmwareUpdate(stationState)
+    for (const target of stationState.triggeredMeterValueTargets ?? []) {
+      this.triggerMeterValuesReservations.delete(target.triggerRequest)
+      target.cancelled = true
+      this.releaseTriggeredMeterValueTarget(undefined, target, true, stationState)
+    }
   }
 
   /**
@@ -2010,32 +2032,66 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             ? [{ connectorId, connectorStatus: chargingStation.getConnectorStatus(connectorId) }]
             : [...chargingStation.iterateConnectors(true)]
         if (candidates.length === 0) return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
-        const targets: TriggeredMeterValueTarget[] = []
-        for (const target of candidates) {
-          if (target.connectorStatus == null || target.connectorStatus.transactionEnding === true) {
-            for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
-            return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+
+        const plannedTransactions = new Map<ConnectorStatus, Set<number | undefined>>()
+        const resolvedCandidates: {
+          readonly connectorId: number
+          readonly connectorStatus: ConnectorStatus
+          readonly transactionId?: number
+        }[] = []
+        try {
+          for (const target of candidates) {
+            if (
+              target.connectorStatus == null ||
+              target.connectorStatus.transactionEnding === true
+            ) {
+              return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+            }
+            const transactionId =
+              target.connectorStatus.transactionStarted === true &&
+              target.connectorStatus.transactionId != null
+                ? convertToInt(target.connectorStatus.transactionId)
+                : undefined
+            const plannedForConnector = plannedTransactions.get(target.connectorStatus) ?? new Set()
+            if (
+              this.pendingTriggeredMeterValues.get(target.connectorStatus)?.has(transactionId) ===
+                true ||
+              plannedForConnector.has(transactionId)
+            ) {
+              return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+            }
+            plannedForConnector.add(transactionId)
+            plannedTransactions.set(target.connectorStatus, plannedForConnector)
+            resolvedCandidates.push({
+              connectorId: target.connectorId,
+              connectorStatus: target.connectorStatus,
+              transactionId,
+            })
           }
-          const transactionId =
-            target.connectorStatus.transactionStarted === true &&
-            target.connectorStatus.transactionId != null
-              ? convertToInt(target.connectorStatus.transactionId)
-              : undefined
+        } catch {
+          return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+        }
+
+        const targets: TriggeredMeterValueTarget[] = []
+        for (const target of resolvedCandidates) {
           const delivery =
-            transactionId != null
-              ? TransactionMeterValueDeliveryBarrier.begin(target.connectorStatus, transactionId)
+            target.transactionId != null
+              ? TransactionMeterValueDeliveryBarrier.begin(
+                target.connectorStatus,
+                target.transactionId
+              )
               : undefined
-          if (transactionId != null && delivery == null) {
+          if (target.transactionId != null && delivery == null) {
             for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
             return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
           }
           try {
             const intervalState =
-              transactionId != null
+              target.transactionId != null
                 ? captureTransactionIntervalState(target.connectorStatus)
                 : undefined
             const intervalEnergyWh =
-              transactionId != null
+              target.transactionId != null
                 ? Math.max(
                   0,
                   (target.connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) -
@@ -2046,7 +2102,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                 : undefined
             const meterValue = buildMeterValue(
               chargingStation,
-              transactionId,
+              target.transactionId,
               0,
               OCPP16StandardParametersKey.MeterValuesSampledData,
               OCPP16MeterValueContext.TRIGGER,
@@ -2059,11 +2115,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
             }
             const publicKeyIncluded =
-              transactionId != null &&
+              target.transactionId != null &&
               OCPP16ServiceUtils.appendSignedUpdatedReadings(
                 chargingStation,
                 target.connectorId,
-                transactionId,
+                target.transactionId,
                 meterValue,
                 OCPP16MeterValueContext.TRIGGER,
                 false
@@ -2071,7 +2127,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             const request: OCPP16MeterValuesRequest = {
               connectorId: target.connectorId,
               meterValue: [meterValue],
-              ...(transactionId != null && { transactionId }),
+              ...(target.transactionId != null && { transactionId: target.transactionId }),
             }
             targets.push({
               connectorStatus: target.connectorStatus,
@@ -2080,12 +2136,28 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               intervalState,
               publicKeyIncluded,
               request,
+              transactionId: target.transactionId,
+              triggerRequest: commandPayload,
             })
           } catch {
             delivery?.settle(true)
             for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
             return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
           }
+        }
+
+        const stationState = this.getOrCreateStationState(chargingStation)
+        if (stationState.stopped === true) {
+          for (const target of targets) target.delivery?.settle(true)
+          return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+        }
+        stationState.triggeredMeterValueTargets ??= new Set()
+        for (const target of targets) {
+          const pendingTransactionIds =
+            this.pendingTriggeredMeterValues.get(target.connectorStatus) ?? new Set()
+          pendingTransactionIds.add(target.transactionId)
+          this.pendingTriggeredMeterValues.set(target.connectorStatus, pendingTransactionIds)
+          stationState.triggeredMeterValueTargets.add(target)
         }
         this.triggerMeterValuesReservations.set(commandPayload, targets)
         return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
@@ -2197,6 +2269,26 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       }', status '${connectorStatus?.status}'`
     )
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
+  }
+
+  private releaseTriggeredMeterValueTarget (
+    chargingStation: ChargingStation | undefined,
+    target: TriggeredMeterValueTarget,
+    definitivelyRejected: boolean,
+    stationState = chargingStation == null ? undefined : this.stationsState.get(chargingStation)
+  ): void {
+    if (target.reservationReleased === true) return
+    target.reservationReleased = true
+    target.delivery?.settle(definitivelyRejected)
+    const pendingTransactionIds = this.pendingTriggeredMeterValues.get(target.connectorStatus)
+    pendingTransactionIds?.delete(target.transactionId)
+    if (pendingTransactionIds?.size === 0) {
+      this.pendingTriggeredMeterValues.delete(target.connectorStatus)
+    }
+    stationState?.triggeredMeterValueTargets?.delete(target)
+    if (stationState?.triggeredMeterValueTargets?.size === 0) {
+      delete stationState.triggeredMeterValueTargets
+    }
   }
 
   private async updateFirmwareSimulation (

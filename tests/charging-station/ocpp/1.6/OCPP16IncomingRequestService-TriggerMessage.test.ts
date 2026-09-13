@@ -20,6 +20,7 @@ import type {
   RequestParams,
 } from '../../../../src/types/index.js'
 
+import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/TransactionMeterValueDeliveryBarrier.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
@@ -234,6 +235,199 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
     assert.deepStrictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry, {
       default: 7,
     })
+  })
+
+  await it('should bound pending triggered MeterValues per connector transaction', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    const firstStarted = Promise.withResolvers<undefined>()
+    const releaseFirst = Promise.withResolvers<undefined>()
+    let meterValuesCount = 0
+    ;(
+      station.ocppRequestService as unknown as {
+        requestHandler: (...args: unknown[]) => Promise<unknown>
+      }
+    ).requestHandler = mock.fn(async (...args: unknown[]) => {
+      if (args[1] !== OCPP16RequestCommand.METER_VALUES) return {}
+      meterValuesCount++
+      const params = args[3] as RequestParams
+      params.onMessageSent?.()
+      if (meterValuesCount === 1) {
+        firstStarted.resolve(undefined)
+        await releaseFirst.promise
+      }
+      params.onResponseReceived?.()
+      return {}
+    })
+    const firstRequest: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const firstResponse = testableService.handleRequestTriggerMessage(station, firstRequest)
+    assert.strictEqual(firstResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      firstRequest,
+      firstResponse
+    )
+    await firstStarted.promise
+
+    const secondResponse = testableService.handleRequestTriggerMessage(station, {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    })
+    assert.strictEqual(secondResponse.status, OCPP16TriggerMessageStatus.REJECTED)
+    assert.strictEqual(meterValuesCount, 1)
+
+    releaseFirst.resolve(undefined)
+    await flushMicrotasks()
+    const thirdRequest: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const thirdResponse = testableService.handleRequestTriggerMessage(station, thirdRequest)
+    assert.strictEqual(thirdResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      thirdRequest,
+      thirdResponse
+    )
+    await flushMicrotasks()
+    assert.strictEqual(meterValuesCount, 2)
+  })
+
+  await it('should release a pending trigger when its response cannot be sent', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    ;(
+      station.ocppRequestService as unknown as {
+        sendResponse: (...args: unknown[]) => Promise<unknown>
+      }
+    ).sendResponse = mock.fn(async () => Promise.reject(new Error('response send failed')))
+
+    await assert.rejects(
+      incomingRequestService.incomingRequestHandler<
+        OCPP16TriggerMessageRequest,
+        OCPP16TriggerMessageResponse
+      >(station, 'trigger-response-failure', OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, {
+        connectorId: 1,
+        requestedMessage: OCPP16MessageTrigger.MeterValues,
+      }),
+      /response send failed/u
+    )
+
+    const nextResponse = testableService.handleRequestTriggerMessage(station, {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    })
+    assert.strictEqual(nextResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.stop(station)
+  })
+
+  await it('should cancel a reserved trigger when the station lifecycle stops', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    const requestHandler = setRecordingRequestHandler(station)
+    const request: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const response = testableService.handleRequestTriggerMessage(station, request)
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+
+    incomingRequestService.stop(station)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      request,
+      response
+    )
+    await flushMicrotasks()
+
+    assert.strictEqual(requestHandler.mock.calls.length, 0)
+    assert.deepStrictEqual(
+      await TransactionMeterValueDeliveryBarrier.wait(connectorStatus, 100),
+      []
+    )
+  })
+
+  await it('should roll back a station-wide reservation when one connector is unavailable', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    setupConnectorWithTransaction(station, 2, { transactionId: 200 })
+    enableConnectorMeterValues(station, 1)
+    enableConnectorMeterValues(station, 2)
+
+    const secondConnectorRequest: OCPP16TriggerMessageRequest = {
+      connectorId: 2,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const secondConnectorResponse = testableService.handleRequestTriggerMessage(
+      station,
+      secondConnectorRequest
+    )
+    assert.strictEqual(secondConnectorResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+
+    const stationWideResponse = testableService.handleRequestTriggerMessage(station, {
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    })
+    assert.strictEqual(stationWideResponse.status, OCPP16TriggerMessageStatus.REJECTED)
+
+    const firstConnectorRequest: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const firstConnectorResponse = testableService.handleRequestTriggerMessage(
+      station,
+      firstConnectorRequest
+    )
+    assert.strictEqual(firstConnectorResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+
+    setRecordingRequestHandler(station)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      firstConnectorRequest,
+      firstConnectorResponse
+    )
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      secondConnectorRequest,
+      secondConnectorResponse
+    )
+    await flushMicrotasks()
   })
 
   await it('should not commit a trigger public key when a later connector rejects admission', () => {

@@ -6365,23 +6365,75 @@ export function buildTransactionEvent (
       : OCPP20TriggerReasonEnumType.Authorized
   const triggerReason = commandParams.triggerReason ?? defaultTriggerReason
   const inputEvse = commandParams.evse
-  const connectorId = commandParams.connectorId ?? inputEvse?.connectorId ?? inputEvse?.id ?? 1
-  const evseId =
-    commandParams.evseId ?? inputEvse?.id ?? chargingStation.getEvseIdByConnectorId(connectorId)
-  if (evseId == null) {
-    const errorMsg = `Cannot find EVSE ID for connector ${connectorId.toString()}`
+  if (
+    commandParams.evseId != null &&
+    inputEvse?.id != null &&
+    commandParams.evseId !== inputEvse.id
+  ) {
+    const errorMsg = `Conflicting EVSE IDs ${commandParams.evseId.toString()} and ${inputEvse.id.toString()}`
+    logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
+    throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
+  }
+  if (
+    commandParams.connectorId != null &&
+    inputEvse?.connectorId != null &&
+    commandParams.connectorId !== inputEvse.connectorId
+  ) {
+    const errorMsg = `Conflicting connector IDs ${commandParams.connectorId.toString()} and ${inputEvse.connectorId.toString()}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
     throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
   }
 
-  const exactConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
-  const connectorStatus =
-    exactConnectorStatus ??
-    (inputEvse != null && commandParams.evseId == null
-      ? chargingStation.getConnectorStatus(connectorId)
-      : undefined)
+  const suppliedEvseId = commandParams.evseId ?? inputEvse?.id
+  const suppliedConnectorId = commandParams.connectorId ?? inputEvse?.connectorId
+  let connectorId: number
+  let evseId: number
+  let connectorStatus: ConnectorStatus | undefined
+  if (chargingStation.hasEvses) {
+    if (suppliedEvseId != null) {
+      evseId = suppliedEvseId
+    } else if (suppliedConnectorId != null) {
+      const matchingEvseIds = [
+        ...new Set(
+          chargingStation
+            .iterateConnectors()
+            .filter(candidate => candidate.connectorId === suppliedConnectorId)
+            .map(candidate => candidate.evseId)
+            .filter((candidateEvseId): candidateEvseId is number => candidateEvseId != null)
+        ),
+      ]
+      if (matchingEvseIds.length !== 1) {
+        const errorMsg =
+          matchingEvseIds.length === 0
+            ? `Cannot find EVSE ID for connector ${suppliedConnectorId.toString()}`
+            : `Connector ${suppliedConnectorId.toString()} is ambiguous without an EVSE ID`
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`
+        )
+        throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
+      }
+      evseId = matchingEvseIds[0]
+    } else {
+      evseId = 1
+    }
+    const resolvedConnectorId =
+      suppliedConnectorId ?? chargingStation.getConnectorIdByEvseId(evseId)
+    if (resolvedConnectorId == null) {
+      const errorMsg = `Cannot find a connector for EVSE ${evseId.toString()}`
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`
+      )
+      throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
+    }
+    connectorId = resolvedConnectorId
+    connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+  } else {
+    connectorId = suppliedConnectorId ?? suppliedEvseId ?? 1
+    evseId = suppliedEvseId ?? connectorId
+    connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  }
   if (connectorStatus == null) {
-    const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
+    const errorMsg = `Cannot find connector status for connector ${connectorId.toString()} on EVSE ${evseId.toString()}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
     throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
   }
@@ -6389,7 +6441,7 @@ export function buildTransactionEvent (
   const transactionId =
     commandParams.transactionId ??
     (eventType === OCPP20TransactionEventEnumType.Ended
-      ? (exactConnectorStatus?.transactionId?.toString() ?? generateUUID())
+      ? (connectorStatus.transactionId?.toString() ?? generateUUID())
       : generateUUID())
 
   if (!validateIdentifierString(transactionId, 36)) {

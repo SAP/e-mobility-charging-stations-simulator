@@ -235,6 +235,69 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
       })
 
+      await it('should resolve an EVSE-only identity against that exact EVSE', () => {
+        const firstConnector = mockStation.getConnectorStatus(1, 1)
+        const secondConnector = mockStation.getConnectorStatus(2, 2)
+        const secondEvse = mockStation.getEvseStatus(2)
+        assert.ok(firstConnector != null)
+        assert.ok(secondConnector != null)
+        assert.ok(secondEvse != null)
+        firstConnector.transactionId = '00000000-0000-4000-8000-000000000101'
+        secondConnector.transactionId = '00000000-0000-4000-8000-000000000202'
+        secondEvse.connectors.delete(2)
+        secondEvse.connectors.set(1, secondConnector)
+
+        const endedEvent = buildTransactionEvent(mockStation, {
+          eventType: OCPP20TransactionEventEnumType.Ended,
+          evse: { id: 2 },
+        })
+
+        assert.strictEqual(endedEvent.transactionInfo.transactionId, secondConnector.transactionId)
+        assert.deepStrictEqual(endedEvent.evse, { connectorId: 1, id: 2 })
+        assert.strictEqual(firstConnector.transactionSeqNo, undefined)
+        assert.strictEqual(firstConnector.transactionEvseSent, undefined)
+        assert.strictEqual(secondConnector.transactionSeqNo, 0)
+        assert.strictEqual(secondConnector.transactionEvseSent, true)
+      })
+
+      await it('should reject conflicting connector identities before mutating state', () => {
+        const firstConnector = mockStation.getConnectorStatus(1, 1)
+        const secondConnector = mockStation.getConnectorStatus(2, 2)
+        assert.ok(firstConnector != null)
+        assert.ok(secondConnector != null)
+
+        assert.throws(
+          () =>
+            buildTransactionEvent(mockStation, {
+              connectorId: 1,
+              eventType: OCPP20TransactionEventEnumType.Started,
+              evse: { connectorId: 2, id: 1 },
+            }),
+          /Conflicting connector IDs/u
+        )
+        assert.strictEqual(firstConnector.transactionSeqNo, undefined)
+        assert.strictEqual(firstConnector.transactionEvseSent, undefined)
+        assert.strictEqual(secondConnector.transactionSeqNo, undefined)
+        assert.strictEqual(secondConnector.transactionEvseSent, undefined)
+      })
+
+      await it('should preserve EVSE-as-connector resolution for a flat legacy topology', () => {
+        const { station: flatStation } = createMockChargingStation({
+          connectorsCount: 2,
+          ocppVersion: OCPPVersion.VERSION_16,
+        })
+        assert.strictEqual(flatStation.hasEvses, false)
+
+        const transactionEvent = buildTransactionEvent(flatStation, {
+          eventType: OCPP20TransactionEventEnumType.Started,
+          evse: { id: 2 },
+        })
+
+        assert.deepStrictEqual(transactionEvent.evse, { id: 2 })
+        assert.strictEqual(flatStation.getConnectorStatus(1)?.transactionSeqNo, undefined)
+        assert.strictEqual(flatStation.getConnectorStatus(2)?.transactionSeqNo, 0)
+      })
+
       await it('should increment sequence number for subsequent events', () => {
         const connectorId = 2
         const transactionId = generateUUID()
