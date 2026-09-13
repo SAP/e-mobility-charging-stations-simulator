@@ -2096,6 +2096,80 @@ await describe('ChargingStation Lifecycle', async () => {
       })
     }
 
+    await it('rejects RequestStopTransaction after the shutdown termination fixed point', async () => {
+      const transactionId = '00000000-0000-4000-8000-000000000026'
+      const persistenceStarted = Promise.withResolvers<undefined>()
+      const releasePersistence = Promise.withResolvers<undefined>()
+      const requestHandler = mock.fn((): Promise<Record<string, never>> => Promise.resolve({}))
+      const sendResponse = mock.fn((): Promise<void> => Promise.resolve())
+      const result = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler, sendResponse },
+        ocppVersion: OCPPVersion.VERSION_20,
+        started: true,
+        stationInfo: { enableStatistics: false },
+      })
+      const activeStation = result.station
+      station = activeStation
+      const incomingRequestService = new OCPP20IncomingRequestService()
+      const stationLifecycle = activeStation as unknown as {
+        lifecycleAbortController: AbortController
+        ocppIncomingRequestService: OCPP20IncomingRequestService
+        performStop: (
+          reason?: Parameters<ChargingStation['stop']>[0],
+          stop?: boolean
+        ) => Promise<void>
+        sharedLRUCache: { deleteChargingStationConfiguration: (hash?: string) => void }
+        stopMessageSequence: () => Promise<void>
+        transactionEventQueueSaveDirty: boolean
+      }
+      stationLifecycle.lifecycleAbortController = new AbortController()
+      stationLifecycle.ocppIncomingRequestService = incomingRequestService
+      stationLifecycle.performStop = (
+        ChargingStation.prototype as unknown as {
+          performStop: typeof stationLifecycle.performStop
+        }
+      ).performStop
+      stationLifecycle.sharedLRUCache = { deleteChargingStationConfiguration: () => undefined }
+      stationLifecycle.stopMessageSequence = () => Promise.resolve()
+      stationLifecycle.transactionEventQueueSaveDirty = true
+      activeStation.persistTransactionEventQueues = async () => {
+        persistenceStarted.resolve(undefined)
+        await releasePersistence.promise
+        stationLifecycle.transactionEventQueueSaveDirty = false
+      }
+      setupConnectorWithTransaction(activeStation, 1, { transactionId })
+      const closeConnection = mock.method(activeStation, 'closeWSConnection', () => undefined)
+
+      const stopped = ChargingStation.prototype.stop.call(activeStation, undefined, false)
+      await persistenceStarted.promise
+      assert.strictEqual(closeConnection.mock.callCount(), 0)
+      assert.strictEqual(activeStation.started, true)
+
+      try {
+        await assert.rejects(
+          incomingRequestService.incomingRequestHandler(
+            activeStation,
+            'late-request-stop',
+            OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+            { transactionId }
+          ),
+          /charging station is stopping/
+        )
+        assert.strictEqual(sendResponse.mock.callCount(), 0)
+        assert.strictEqual(requestHandler.mock.callCount(), 0)
+        const connectorStatus = activeStation.getConnectorStatus(1, 1)
+        assert.ok(connectorStatus != null)
+        assert.notStrictEqual(connectorStatus.transactionEnding, true)
+      } finally {
+        releasePersistence.resolve(undefined)
+        await stopped
+      }
+
+      assert.strictEqual(closeConnection.mock.callCount(), 1)
+    })
+
     await it('persists events queued while transaction delivery settles during stop', async () => {
       const transactionEventQueue: unknown[] = []
       const connectorStatus = { transactionEventQueue } as unknown as ConnectorStatus

@@ -131,6 +131,14 @@ export abstract class OCPPIncomingRequestService<
     commandName: IncomingRequestCommand,
     commandPayload: ReqType
   ): Promise<void> {
+    if (chargingStation.isStopping()) {
+      throw new OCPPError(
+        ErrorType.SECURITY_ERROR,
+        `${commandName} cannot be issued while the charging station is stopping`,
+        commandName,
+        commandPayload
+      )
+    }
     let response: ResType
     if (
       chargingStation.stationInfo?.ocppStrictCompliance === true &&
