@@ -493,6 +493,31 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Transaction is ending`
       )
     }
+    const transactionDelivery =
+      requestedMeterValues == null && connectorStatus != null && transactionId != null
+        ? TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
+        : undefined
+    if (requestedMeterValues == null && connectorStatus != null && transactionId != null) {
+      if (transactionDelivery == null) {
+        throw new BaseError(
+          `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Transaction is no longer active`
+        )
+      }
+      const deliveryTurn = transactionDelivery.waitForTurn()
+      if (deliveryTurn != null) await deliveryTurn
+      const currentConnectorStatus = this.chargingStation.getConnectorStatus(connectorId, evseId)
+      if (
+        currentConnectorStatus !== connectorStatus ||
+        currentConnectorStatus.transactionStarted !== true ||
+        currentConnectorStatus.transactionEnding === true ||
+        currentConnectorStatus.transactionId?.toString() !== transactionId.toString()
+      ) {
+        transactionDelivery.settle(true)
+        throw new BaseError(
+          `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Transaction is no longer active`
+        )
+      }
+    }
     const intervalBaselineKey = isOcpp2
       ? buildConfigKey(
         OCPP20ComponentName.SampledDataCtrlr,
@@ -504,43 +529,49 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         ? captureTransactionIntervalState(connectorStatus)
         : undefined
     let generatedPublicKeyIncluded = false
-    const meterValues = (() => {
-      if (requestedMeterValues != null) return requestedMeterValues
-      const meterValue =
-        isOcpp2 && transactionId != null
-          ? OCPP20ServiceUtils.buildTransactionMeterValue(
+    let meterValues: (OCPP16MeterValue | OCPP20MeterValue)[]
+    try {
+      meterValues = (() => {
+        if (requestedMeterValues != null) return requestedMeterValues
+        const meterValue =
+          isOcpp2 && transactionId != null
+            ? OCPP20ServiceUtils.buildTransactionMeterValue(
+              this.chargingStation,
+              connectorId,
+              evseId,
+              transactionId,
+              interval,
+              buildConfigKey(
+                OCPP20ComponentName.SampledDataCtrlr,
+                OCPP20RequiredVariableName.TxUpdatedMeasurands
+              ),
+              OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
+            )
+            : buildMeterValue(this.chargingStation, transactionId, interval)
+        // OCPP 1.6 Signed Meter Values whitepaper §3.3.6: mirror the periodic
+        // loop (`OCPP16ServiceUtils.startUpdatedMeterValues`) and append a paired
+        // SignedData SampledValue when signing is enabled for the connector.
+        // OCPP 2.0.x signing is applied inline by the versioned dispatcher.
+        if (!isOcpp2 && transactionId != null) {
+          generatedPublicKeyIncluded = OCPP16ServiceUtils.appendSignedUpdatedReadings(
             this.chargingStation,
             connectorId,
-            evseId,
-            transactionId,
-            interval,
-            buildConfigKey(
-              OCPP20ComponentName.SampledDataCtrlr,
-              OCPP20RequiredVariableName.TxUpdatedMeasurands
-            ),
-            OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
+            convertToInt(transactionId),
+            meterValue as OCPP16MeterValue
           )
-          : buildMeterValue(this.chargingStation, transactionId, interval)
-      // OCPP 1.6 Signed Meter Values whitepaper §3.3.6: mirror the periodic
-      // loop (`OCPP16ServiceUtils.startUpdatedMeterValues`) and append a paired
-      // SignedData SampledValue when signing is enabled for the connector.
-      // OCPP 2.0.x signing is applied inline by the versioned dispatcher.
-      if (!isOcpp2 && transactionId != null) {
-        generatedPublicKeyIncluded = OCPP16ServiceUtils.appendSignedUpdatedReadings(
-          this.chargingStation,
-          connectorId,
-          convertToInt(transactionId),
-          meterValue as OCPP16MeterValue
-        )
-      } else if (isOcpp2) {
-        generatedPublicKeyIncluded = (meterValue as OCPP20MeterValue).sampledValue.some(
-          sampledValue => isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
-        )
+        } else if (isOcpp2) {
+          generatedPublicKeyIncluded = (meterValue as OCPP20MeterValue).sampledValue.some(
+            sampledValue => isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
+          )
+        }
+        return [meterValue]
+      })()
+      if (intervalState != null && connectorStatus != null) {
+        completeTransactionIntervalState(intervalState, intervalBaselineKey, meterValues)
       }
-      return [meterValue]
-    })()
-    if (intervalState != null && connectorStatus != null) {
-      completeTransactionIntervalState(intervalState, intervalBaselineKey, meterValues)
+    } catch (error) {
+      transactionDelivery?.settle(true)
+      throw error
     }
     const request = (
       isOcpp2
@@ -563,10 +594,6 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           request,
           generatedPublicKeyIncluded
         )
-        : undefined
-    const transactionDelivery =
-      requestedMeterValues == null && connectorStatus != null && transactionId != null
-        ? TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
         : undefined
     const deliveryState = {
       buffered: false,

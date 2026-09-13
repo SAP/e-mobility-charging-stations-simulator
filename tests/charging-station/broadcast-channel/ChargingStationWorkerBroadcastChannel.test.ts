@@ -28,6 +28,7 @@ import {
   OCPP16AuthorizationStatus,
   OCPP16MeterValueFormat,
   OCPP16MeterValueMeasurand,
+  type OCPP16MeterValuesRequest,
   OCPP16MeterValueUnit,
   type OCPP16StartTransactionRequest,
   OCPP16StopTransactionReason,
@@ -1346,23 +1347,11 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   await describe('METER_VALUES handler delivery accounting', async () => {
-    const runGeneratedMeterValuesFailure = async (
-      configureDelivery: (params: RequestParams, failure: OCPPError) => void,
-      configureCallerCallbacks?: (params: RequestParams) => void,
-      afterSettled?: (params: RequestParams, failure: OCPPError) => void
-    ): Promise<{ carry: number; keyReserved: boolean; relayedCalls: number }> => {
-      const failure = new OCPPError(ErrorType.GENERIC_ERROR, 'MeterValues failed')
-      const relayed = mock.fn()
-      let deliveredParams: RequestParams | undefined
-      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
-        deliveredParams = args[3] as RequestParams
-        configureDelivery(deliveredParams, failure)
-        return Promise.reject(failure)
-      })
-      const { station } = createMockChargingStation({
-        ocppRequestService: { requestHandler },
-        ocppVersion: OCPPVersion.VERSION_16,
-      })
+    const createGeneratedMeterValuesStation = (
+      requestHandler: (...args: unknown[]) => Promise<unknown>
+    ) => {
+      const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
+      setMockRequestHandler(station, requestHandler)
       setupConnectorWithTransaction(station, 1, { transactionId: 606 })
       const connectorStatus = station.getConnectorStatus(1)
       assert.ok(connectorStatus != null)
@@ -1401,6 +1390,23 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       )
       connectorStatus.transactionStart = new Date(Date.now() + 60_000)
       connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 10 }
+      return { connectorStatus, station }
+    }
+
+    const runGeneratedMeterValuesFailure = async (
+      configureDelivery: (params: RequestParams, failure: OCPPError) => void,
+      configureCallerCallbacks?: (params: RequestParams) => void,
+      afterSettled?: (params: RequestParams, failure: OCPPError) => void
+    ): Promise<{ carry: number; keyReserved: boolean; relayedCalls: number }> => {
+      const failure = new OCPPError(ErrorType.GENERIC_ERROR, 'MeterValues failed')
+      const relayed = mock.fn()
+      let deliveredParams: RequestParams | undefined
+      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
+        deliveredParams = args[3] as RequestParams
+        configureDelivery(deliveredParams, failure)
+        return Promise.reject(failure)
+      })
+      const { connectorStatus, station } = createGeneratedMeterValuesStation(requestHandler)
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
       configureCallerCallbacks?.(testable.requestParams)
@@ -1427,7 +1433,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       afterSettled?.(deliveredParams, failure)
 
       return {
-        carry: connectorStatus.transactionEnergyActiveImportIntervalCarry.default,
+        carry: connectorStatus.transactionEnergyActiveImportIntervalCarry?.default ?? 0,
         keyReserved: connectorStatus.publicKeySentInTransaction === true,
         relayedCalls: relayed.mock.callCount(),
       }
@@ -1493,6 +1499,67 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       )
 
       assert.deepStrictEqual(result, { carry: 10, keyReserved: false, relayedCalls: 0 })
+    })
+
+    await it('should build a generated request after its rejected predecessor settles', async () => {
+      const firstResponse = Promise.withResolvers<unknown>()
+      const requests: OCPP16MeterValuesRequest[] = []
+      let firstRequestParams: RequestParams | undefined
+      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
+        requests.push(args[2] as OCPP16MeterValuesRequest)
+        const requestParams = args[3] as RequestParams
+        if (requests.length === 1) {
+          firstRequestParams = requestParams
+          return firstResponse.promise
+        }
+        return Promise.resolve({})
+      })
+      const { station } = createGeneratedMeterValuesStation(requestHandler)
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const firstRequest = testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+        connectorId: 1,
+      })
+      void firstRequest.catch(() => undefined)
+      await flushMicrotasks()
+      const secondRequest = testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+        connectorId: 1,
+      })
+      await flushMicrotasks()
+
+      assert.strictEqual(requests.length, 1)
+      assert.ok(firstRequestParams != null)
+      const callError = new OCPPError(ErrorType.GENERIC_ERROR, 'predecessor CALLERROR')
+      firstRequestParams.onError?.(callError, true)
+      firstResponse.reject(callError)
+      await assert.rejects(firstRequest, error => error === callError)
+      await secondRequest
+
+      assert.strictEqual(requests.length, 2)
+      const rebuiltSamples = requests[1].meterValue.flatMap(meterValue => meterValue.sampledValue)
+      assert.strictEqual(
+        rebuiltSamples.find(
+          sampledValue =>
+            sampledValue.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )?.value,
+        '10'
+      )
+      const firstSignedSample = requests[0].meterValue
+        .flatMap(meterValue => meterValue.sampledValue)
+        .find(sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA)
+      const rebuiltSignedSample = rebuiltSamples.find(
+        sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA
+      )
+      assert.ok(firstSignedSample != null)
+      assert.ok(rebuiltSignedSample != null)
+      const firstPublicKey = (JSON.parse(firstSignedSample.value) as { publicKey?: string })
+        .publicKey
+      assert.ok(firstPublicKey != null && firstPublicKey.length > 0)
+      assert.strictEqual(
+        (JSON.parse(rebuiltSignedSample.value) as { publicKey?: string }).publicKey,
+        firstPublicKey
+      )
     })
 
     await it('should resolve OCPP 2.0 OncePerTransaction ownership by delivery certainty', async () => {
@@ -1870,6 +1937,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
           },
         ]
         connectorStatus.transactionId = TEST_TRANSACTION_ID_STRING
+        connectorStatus.transactionStarted = true
       }
 
       instance = new ChargingStationWorkerBroadcastChannel(station)

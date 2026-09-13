@@ -1942,6 +1942,7 @@ export const buildMeterValue = (
     | 'connectorId'
     | 'deferEnergyInterval'
     | 'energyElapsedInterval'
+    | 'energyIntervalWhOverride'
     | 'energyNominalInterval'
     | 'energyRegisterWhOverride'
     | 'evseId'

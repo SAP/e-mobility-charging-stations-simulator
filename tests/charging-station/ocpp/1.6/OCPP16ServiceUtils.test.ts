@@ -1087,12 +1087,79 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
           }).length ?? 0
       assert.strictEqual(countPublicKeys(previousPayload), 0)
       assert.strictEqual(countPublicKeys(replacementPayload), 1)
-      assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry.default, 1244)
+      const replacementIntervalSample = replacementPayload.transactionData
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .find(
+          sampledValue =>
+            sampledValue.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )
+      assert.strictEqual(replacementIntervalSample?.value, '1244')
+      assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry.default, 0)
 
       stopRequestParams.onMessageSent?.()
       bufferedStop.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
       await stop
       assert.strictEqual(stopRequests, 1)
+    })
+
+    await it('should restore terminal interval energy after a definite pre-send failure', async () => {
+      const failure = new OCPPError(ErrorType.GENERIC_ERROR, 'StopTransaction pre-send failure')
+      let stopPayload: OCPP16StopTransactionRequest | undefined
+      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
+        if (args[1] === OCPP16RequestCommand.STOP_TRANSACTION) {
+          stopPayload = args[2] as OCPP16StopTransactionRequest
+          const requestParams = args[3] as RequestParams
+          requestParams.onTransportError?.(failure, false)
+          return Promise.reject(failure)
+        }
+        return Promise.resolve({})
+      })
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          meterSerialNumber: 'SIM-001',
+          ocppStrictCompliance: false,
+          ocppVersion: OCPPVersion.VERSION_16,
+          transactionDataMeterValues: true,
+        },
+      })
+      setupConnectorWithTransaction(station, 1, { energyImport: 1234, transactionId: 100 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.MeterValues = createMeterValuesTemplate([
+        {
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '0',
+        },
+        {
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '0',
+        },
+      ])
+      connectorStatus.transactionBeginMeterValue = {
+        sampledValue: [{ value: '0' }],
+        timestamp: new Date('2026-09-08T09:00:00.000Z'),
+      }
+      connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 10 }
+      upsertConfigurationKey(
+        station,
+        OCPP16StandardParametersKey.StopTxnSampledData,
+        `${OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL}`
+      )
+
+      await assert.rejects(OCPP16ServiceUtils.stopTransactionOnConnector(station, 1), failure)
+
+      const intervalSample = stopPayload?.transactionData
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .find(
+          sampledValue =>
+            sampledValue.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )
+      assert.strictEqual(intervalSample?.value, '10')
+      assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry.default, 10)
     })
 
     await it('should return one in-flight promise per connector and allow a later retry', async () => {

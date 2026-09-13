@@ -18,6 +18,7 @@ import {
   hasFeatureProfile,
   hasReservationExpired,
   isCoherentModeActive,
+  recordTransactionIntervalEmission,
   restoreTransactionIntervalState,
 } from '../../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../../exception/index.js'
@@ -1313,6 +1314,14 @@ export class OCPP16ServiceUtils {
 
     const stopTransactionCarriesPublicKey = (): boolean => stopTransactionHasPublicKey
     const stopTransactionPromise = (async (): Promise<StopTransactionResponse> => {
+      let stopTransactionIntervalState:
+        ReturnType<typeof captureTransactionIntervalState> | undefined
+      let stopTransactionIntervalRestored = false
+      const restoreStopTransactionInterval = (): void => {
+        if (stopTransactionIntervalRestored || stopTransactionIntervalState == null) return
+        stopTransactionIntervalRestored = true
+        restoreTransactionIntervalState(stopTransactionIntervalState, connectorStatus, 'default')
+      }
       try {
         const meterValueDependencies = await TransactionMeterValueDeliveryBarrier.wait(
           connectorStatus,
@@ -1323,6 +1332,8 @@ export class OCPP16ServiceUtils {
         const transactionId = convertToInt(rawTransactionId)
         let strictEndMeterValueIsSolePublicKeyCarrier = false
         const materializeStopTransaction = (): void => {
+          stopTransactionIntervalState = undefined
+          stopTransactionIntervalRestored = false
           const finalEnergy =
             chargingStation.getEnergyActiveImportRegisterByTransactionId(rawTransactionId)
           const meterStop = Math.round(finalEnergy)
@@ -1372,9 +1383,22 @@ export class OCPP16ServiceUtils {
             transactionEndMeterValue != null &&
             (transactionDataEnabled || signingForcesTransactionData)
           ) {
+            const intervalState = captureTransactionIntervalState(connectorStatus)
+            const intervalMeterValue = OCPP16ServiceUtils.buildStopTransactionIntervalMeterValue(
+              chargingStation,
+              connectorId,
+              rawTransactionId,
+              meterStop,
+              transactionEndMeterValue
+            )
+            const transactionDataEndMeterValue = intervalMeterValue ?? transactionEndMeterValue
+            if (intervalMeterValue != null) {
+              completeTransactionIntervalState(intervalState, 'default', [intervalMeterValue])
+              stopTransactionIntervalState = intervalState
+            }
             transactionData = OCPP16ServiceUtils.buildTransactionDataMeterValues(
               connectorStatus.transactionBeginMeterValue as OCPP16MeterValue,
-              transactionEndMeterValue
+              transactionDataEndMeterValue
             )
           }
 
@@ -1477,6 +1501,17 @@ export class OCPP16ServiceUtils {
           const previousTerminalMeterValuesHasPublicKey = terminalMeterValuesHasPublicKey
           const previousStrictEndMeterValueIsSolePublicKeyCarrier =
             strictEndMeterValueIsSolePublicKeyCarrier
+          const previousStopTransactionIntervalState = stopTransactionIntervalState
+          const previousStopTransactionIntervalRestored = stopTransactionIntervalRestored
+          const previousIntervalBaselines =
+            connectorStatus.transactionEnergyActiveImportIntervalBaselines == null
+              ? undefined
+              : { ...connectorStatus.transactionEnergyActiveImportIntervalBaselines }
+          const previousIntervalCarry =
+            connectorStatus.transactionEnergyActiveImportIntervalCarry == null
+              ? undefined
+              : { ...connectorStatus.transactionEnergyActiveImportIntervalCarry }
+          restoreStopTransactionInterval()
           releasePublicKeyDelivery(publicKeyDeliveryToken)
           publicKeyDeliveryToken = undefined
           terminalMeterValuesRequest = undefined
@@ -1502,6 +1537,19 @@ export class OCPP16ServiceUtils {
             terminalMeterValuesHasPublicKey = previousTerminalMeterValuesHasPublicKey
             strictEndMeterValueIsSolePublicKeyCarrier =
               previousStrictEndMeterValueIsSolePublicKeyCarrier
+            stopTransactionIntervalState = previousStopTransactionIntervalState
+            stopTransactionIntervalRestored = previousStopTransactionIntervalRestored
+            if (previousIntervalBaselines == null) {
+              delete connectorStatus.transactionEnergyActiveImportIntervalBaselines
+            } else {
+              connectorStatus.transactionEnergyActiveImportIntervalBaselines =
+                previousIntervalBaselines
+            }
+            if (previousIntervalCarry == null) {
+              delete connectorStatus.transactionEnergyActiveImportIntervalCarry
+            } else {
+              connectorStatus.transactionEnergyActiveImportIntervalCarry = previousIntervalCarry
+            }
             stopTransactionSnapshot = previousSnapshot
             return false
           }
@@ -1713,8 +1761,9 @@ export class OCPP16ServiceUtils {
           ...(bufferStopTransactionWithoutSending && { bufferWithoutSending: true }),
           onError: (error, isCallError) => {
             stopDeliveryState.callError ||= isCallError
-            if (isCallError && stopTransactionHasPublicKey) {
-              releasePublicKeyDelivery(publicKeyDeliveryToken)
+            if (isCallError) {
+              restoreStopTransactionInterval()
+              if (stopTransactionHasPublicKey) releasePublicKeyDelivery(publicKeyDeliveryToken)
             }
             if (stopTransactionRequestSettled && isCallError) {
               clearTransactionEnding(true)
@@ -1776,19 +1825,20 @@ export class OCPP16ServiceUtils {
             RequestCommand.STOP_TRANSACTION,
             stopTransactionSnapshot
           )
+        const definitelyRejected =
+          stopDeliveryState.callError ||
+          (!stopDeliveryState.buffered &&
+            !stopDeliveryState.responseReceived &&
+            !stopDeliveryState.sent &&
+            !stopDeliveryState.transportErrorAmbiguous)
         if (stopTransactionCarriesPublicKey()) {
-          const definitelyRejected =
-            stopDeliveryState.callError ||
-            (!stopDeliveryState.buffered &&
-              !stopDeliveryState.responseReceived &&
-              !stopDeliveryState.sent &&
-              !stopDeliveryState.transportErrorAmbiguous)
           if (stopTransactionCached || !definitelyRejected) {
             retainPublicKeyDelivery(publicKeyDeliveryToken)
           } else {
             releasePublicKeyDelivery(publicKeyDeliveryToken)
           }
         }
+        if (!stopTransactionCached && definitelyRejected) restoreStopTransactionInterval()
         if (
           connectorStatus.transactionId !== rawTransactionId ||
           (!terminalMeterValuesCached && !stopTransactionCached)
@@ -1918,6 +1968,63 @@ export class OCPP16ServiceUtils {
       publicKeyIncluded: includePublicKey && signingConfig.publicKeyHex != null,
       sampledValue: buildSignedOCPP16SampledValue(context, signedData),
     }
+  }
+
+  /**
+   * Builds a StopTransaction transaction-data snapshot carrying restored interval energy without
+   * advancing the cumulative register a second time.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier
+   * @param transactionId - Active transaction identifier
+   * @param meterStop - Final cumulative register in Wh
+   * @param meterValue - Base Transaction.End meter value
+   * @returns An enriched snapshot when interval energy was represented
+   */
+  private static buildStopTransactionIntervalMeterValue (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    transactionId: number | string,
+    meterStop: number,
+    meterValue: OCPP16MeterValue
+  ): OCPP16MeterValue | undefined {
+    const intervalEnergyWh =
+      chargingStation.getConnectorStatus(connectorId)?.transactionEnergyActiveImportIntervalCarry
+        ?.default ?? 0
+    if (intervalEnergyWh <= 0) return
+    const intervalMeterValue = buildMeterValue(
+      chargingStation,
+      transactionId,
+      0,
+      OCPP16StandardParametersKey.StopTxnSampledData,
+      OCPP16MeterValueContext.TRANSACTION_END,
+      false,
+      {
+        advanceEnergy: false,
+        connectorId,
+        energyIntervalWhOverride: intervalEnergyWh,
+        energyRegisterWhOverride: meterStop,
+        snapshot: true,
+        timestamp: meterValue.timestamp,
+      }
+    ) as OCPP16MeterValue
+    const intervalSamples = intervalMeterValue.sampledValue.filter(
+      sampledValue =>
+        sampledValue.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+    )
+    if (!isNotEmptyArray(intervalSamples)) return
+    const enrichedMeterValue = clone(meterValue)
+    enrichedMeterValue.sampledValue.push(...intervalSamples)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus != null) {
+      recordTransactionIntervalEmission(
+        connectorStatus,
+        enrichedMeterValue,
+        'default',
+        intervalEnergyWh,
+        chargingStation.getNumberOfPhases()
+      )
+    }
+    return enrichedMeterValue
   }
 
   private static readonly composeChargingSchedule = (
