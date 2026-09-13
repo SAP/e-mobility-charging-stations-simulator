@@ -7,14 +7,15 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
+  ConnectorStatus,
   EvseStatus,
   OCPP20FirmwareStatusNotificationRequest,
   OCPP20MeterValuesRequest,
-  OCPP20StatusNotificationRequest,
   OCPP20TransactionEventRequest,
   OCPP20TriggerMessageRequest,
   OCPP20TriggerMessageResponse,
   RequestParams,
+  StatusNotificationOptions,
 } from '../../../../src/types/index.js'
 import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
@@ -30,6 +31,7 @@ import {
   MessageTriggerEnumType,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
+  OCPP20ConnectorStatusEnumType,
   OCPP20FirmwareStatusEnumType,
   OCPP20IncomingRequestCommand,
   OCPP20LocationEnumType,
@@ -57,8 +59,36 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_PUBLIC_KEY_HEX,
 } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../helpers/StationHelpers.js'
+import { createConnectorStatus, createMockChargingStation } from '../../helpers/StationHelpers.js'
 import { createOCPP20RequestTestContext } from './OCPP20TestUtils.js'
+
+/**
+ * Adds another connector to an EVSE in the TriggerMessage test topology.
+ * @param chargingStation - Station whose EVSE is extended.
+ * @param evseId - EVSE receiving the connector.
+ * @param connectorId - EVSE-local connector identifier.
+ * @param energyValue - Initial active-import register value.
+ * @returns The newly added connector status.
+ */
+function addTriggerMessageConnector (
+  chargingStation: MockChargingStation,
+  evseId: number,
+  connectorId: number,
+  energyValue: number
+): ConnectorStatus {
+  const evseStatus = chargingStation.getEvseStatus(evseId)
+  assert.ok(evseStatus != null)
+  const connectorStatus = createConnectorStatus(connectorId)
+  connectorStatus.MeterValues = [
+    {
+      measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+      unit: 'Wh',
+    },
+  ] as unknown as NonNullable<EvseStatus['MeterValues']>
+  connectorStatus.energyActiveImportRegisterValue = energyValue
+  evseStatus.connectors.set(connectorId, connectorStatus)
+  return connectorStatus
+}
 
 /**
  * Configures opposite aligned and sampled signing policies for dispatch-path assertions.
@@ -455,6 +485,20 @@ await describe('F06 - TriggerMessage', async () => {
         assert.fail('Expected additionalInfo to be defined')
       }
       assert.ok(response.statusInfo.additionalInfo.includes('999'))
+    })
+
+    await it('should reject a connector that does not belong to the specified EVSE', () => {
+      const response = testableService.handleRequestTriggerMessage(mockStation, {
+        evse: { connectorId: 2, id: 1 },
+        requestedMessage: MessageTriggerEnumType.StatusNotification,
+      })
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
+      if (response.statusInfo?.additionalInfo == null) {
+        assert.fail('Expected statusInfo with additionalInfo to be defined')
+      }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnknownConnectorId)
+      assert.ok(response.statusInfo.additionalInfo.includes('Connector 2 on EVSE 1'))
     })
 
     await it('should accept trigger when evse is undefined', () => {
@@ -961,6 +1005,73 @@ await describe('F06 - TriggerMessage', async () => {
         [...observedEvseIds].sort((a, b) => a - b),
         [1, 2, 3]
       )
+    })
+
+    await it('should sample only the exact connector requested for MeterValues', async () => {
+      addTriggerMessageConnector(mockStation, 1, 2, 20)
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { connectorId: 2, id: 1 },
+        requestedMessage: MessageTriggerEnumType.MeterValues,
+      }
+      const response = createTestableIncomingRequestService(
+        incomingRequestServiceForListener
+      ).handleRequestTriggerMessage(mockStation, request)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+      await flushMicrotasks()
+
+      const meterValuesCalls = requestHandlerMock.mock.calls.filter(
+        call => call.arguments[1] === OCPP20RequestCommand.METER_VALUES
+      )
+      assert.strictEqual(meterValuesCalls.length, 1)
+      const payload = meterValuesCalls[0].arguments[2] as OCPP20MeterValuesRequest
+      assert.strictEqual(payload.evseId, 1)
+      assert.strictEqual(payload.meterValue.length, 1)
+      assert.strictEqual(payload.meterValue[0].sampledValue[0].value, 20)
+    })
+
+    await it('should sample every active connector when only an EVSE is requested', async () => {
+      setupConnectorWithTransaction(mockStation, 1, {
+        energyImport: 111,
+        transactionId: 'txn-evse-1-connector-1',
+      })
+      const connectorStatus = addTriggerMessageConnector(mockStation, 1, 2, 222)
+      connectorStatus.idTagAuthorized = true
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 222
+      connectorStatus.transactionId = 'txn-evse-1-connector-2'
+      connectorStatus.transactionIdTag = 'TAG-txn-evse-1-connector-2'
+      connectorStatus.transactionStart = new Date()
+      connectorStatus.transactionStarted = true
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { id: 1 },
+        requestedMessage: MessageTriggerEnumType.MeterValues,
+      }
+      const response = createTestableIncomingRequestService(
+        incomingRequestServiceForListener
+      ).handleRequestTriggerMessage(mockStation, request)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+      await flushMicrotasks()
+
+      const meterValuesCalls = requestHandlerMock.mock.calls.filter(
+        call => call.arguments[1] === OCPP20RequestCommand.METER_VALUES
+      )
+      assert.strictEqual(meterValuesCalls.length, 1)
+      const payload = meterValuesCalls[0].arguments[2] as OCPP20MeterValuesRequest
+      assert.strictEqual(payload.evseId, 1)
+      assert.strictEqual(payload.meterValue.length, 2)
     })
 
     await it('should use AlignedDataCtrlr signing for triggered MeterValues', async () => {
@@ -1491,7 +1602,8 @@ await describe('F06 - TriggerMessage', async () => {
       )
     })
 
-    await it('should broadcast StatusNotification for all EVSEs on Accepted without specific EVSE', () => {
+    await it('should broadcast StatusNotification to every connector when EVSE is absent', () => {
+      addTriggerMessageConnector(mockStation, 1, 2, 20)
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.StatusNotification,
       }
@@ -1506,39 +1618,57 @@ await describe('F06 - TriggerMessage', async () => {
         response
       )
 
-      // 3 EVSEs (1, 2, 3) × 1 connector each = 3 StatusNotification calls
-      const callCount = requestHandlerMock.mock.callCount()
-      assert.strictEqual(callCount, 3)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 4)
+      const targets = new Set<string>()
       for (const call of requestHandlerMock.mock.calls) {
-        const args = call.arguments as [
-          unknown,
-          string,
-          Partial<OCPP20StatusNotificationRequest>,
-          RequestParams
-        ]
+        const args = call.arguments as [unknown, string, StatusNotificationOptions, RequestParams]
         const [, command, payload, options] = args
         assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
-        assert.notStrictEqual(payload, undefined)
-        assert.ok('evseId' in payload, 'Expected payload to include evseId')
-        assert.ok('connectorId' in payload, 'Expected payload to include connectorId')
-        assert.ok('connectorStatus' in payload, 'Expected payload to include connectorStatus')
-        assert.ok(
-          payload.evseId != null && payload.evseId > 0,
-          'Expected evseId > 0 (EVSE 0 excluded)'
-        )
+        assert.ok(payload.evseId != null)
+        targets.add(`${payload.evseId.toString()}:${payload.connectorId.toString()}`)
         assert.strictEqual(options.skipBufferingOnError, true)
         assert.strictEqual(options.triggerMessage, true)
       }
+      assert.deepStrictEqual(targets, new Set(['1:1', '1:2', '2:2', '3:3']))
     })
 
-    await it('should fire StatusNotification for specific EVSE and connector via listener', () => {
+    await it('should notify every connector of only the specified EVSE', () => {
+      addTriggerMessageConnector(mockStation, 1, 2, 20)
       const request: OCPP20TriggerMessageRequest = {
-        evse: { connectorId: 1, id: 1 },
+        evse: { id: 1 },
         requestedMessage: MessageTriggerEnumType.StatusNotification,
       }
-      const response: OCPP20TriggerMessageResponse = {
-        status: TriggerMessageStatusEnumType.Accepted,
+      const response = testableService.handleRequestTriggerMessage(mockStation, request)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      const payloads = requestHandlerMock.mock.calls.map(
+        call => call.arguments[2] as StatusNotificationOptions
+      )
+      assert.deepStrictEqual(
+        payloads.map(({ connectorId, evseId }) => {
+          assert.ok(evseId != null)
+          return `${evseId.toString()}:${connectorId.toString()}`
+        }),
+        ['1:1', '1:2']
+      )
+    })
+
+    await it('should fire StatusNotification only for the exact requested connector', () => {
+      const connectorStatus = addTriggerMessageConnector(mockStation, 1, 2, 20)
+      connectorStatus.status = OCPP20ConnectorStatusEnumType.Occupied
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { connectorId: 2, id: 1 },
+        requestedMessage: MessageTriggerEnumType.StatusNotification,
       }
+      const response = testableService.handleRequestTriggerMessage(mockStation, request)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
 
       incomingRequestServiceForListener.emit(
         OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
@@ -1551,14 +1681,14 @@ await describe('F06 - TriggerMessage', async () => {
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        Partial<OCPP20StatusNotificationRequest>,
+        StatusNotificationOptions,
         RequestParams
       ]
       const [, command, payload, options] = args
       assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
       assert.strictEqual(payload.evseId, 1)
-      assert.strictEqual(payload.connectorId, 1)
-      assert.ok('connectorStatus' in payload)
+      assert.strictEqual(payload.connectorId, 2)
+      assert.strictEqual(payload.connectorStatus, OCPP20ConnectorStatusEnumType.Occupied)
       assert.strictEqual(options.skipBufferingOnError, true)
       assert.strictEqual(options.triggerMessage, true)
     })
@@ -2170,6 +2300,23 @@ await describe('F06 - TriggerMessage', async () => {
         payload.transactionInfo.chargingState,
         OCPP20ChargingStateEnumType.Charging
       )
+    })
+
+    await it('should emit TransactionEvent only for the exact requested connector', async () => {
+      seedActiveTransaction(1, 'txn-evse-1-connector-1')
+      const connectorStatus = addTriggerMessageConnector(mockStation, 1, 2, 222)
+      connectorStatus.idTagAuthorized = true
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 222
+      connectorStatus.transactionId = 'txn-evse-1-connector-2'
+      connectorStatus.transactionIdTag = 'TAG-txn-evse-1-connector-2'
+      connectorStatus.transactionStart = new Date()
+      connectorStatus.transactionStarted = true
+
+      const payloads = await emitTransactionEventTrigger({ connectorId: 2, id: 1 })
+
+      assert.strictEqual(payloads.length, 1)
+      assert.strictEqual(payloads[0].transactionInfo.transactionId, 'txn-evse-1-connector-2')
+      assert.deepStrictEqual(payloads[0].evse, { connectorId: 2, id: 1 })
     })
 
     await it('should use SampledDataCtrlr signing for triggered TransactionEvent', async () => {

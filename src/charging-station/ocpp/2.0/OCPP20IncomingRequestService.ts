@@ -391,6 +391,12 @@ interface TriggeredTransactionEventTarget {
   transactionId: string
 }
 
+interface TriggerMessageConnectorTarget {
+  readonly connectorId: number
+  readonly connectorStatus: ConnectorStatus
+  readonly evseId: number
+}
+
 /**
  * OCPP 2.0.1 incoming-request service.
  *
@@ -1407,23 +1413,27 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     evseId: number,
     evseStatus: EvseStatus,
     alignedMeasurandsKey: string,
-    timestamp: Date
+    timestamp: Date,
+    connectorId?: number
   ): OCPP20MeterValue | undefined {
-    const idleConnector = evseStatus.connectors.entries().next().value
-    if (idleConnector == null) return
-    const [connectorId] = idleConnector
-    const energyRegisterWhOverride = [...evseStatus.connectors.values()].reduce(
-      (total, connectorStatus) =>
-        total + Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0),
-      0
-    )
+    const resolvedConnectorId = connectorId ?? evseStatus.connectors.keys().next().value
+    if (resolvedConnectorId == null) return
+    const connectorStatus = evseStatus.connectors.get(resolvedConnectorId)
+    if (connectorStatus == null) return
+    const energyRegisterWhOverride =
+      connectorId == null
+        ? [...evseStatus.connectors.values()].reduce(
+            (total, status) => total + Math.max(0, status.energyActiveImportRegisterValue ?? 0),
+            0
+          )
+        : Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0)
     try {
       const meterValue = buildClockAlignedConnectorMeterValue(
         chargingStation,
         {
           advanceEnergy: false,
           commitState: false,
-          connectorId,
+          connectorId: resolvedConnectorId,
           energyRegisterWhOverride,
           evseId,
           idle: true,
@@ -1727,17 +1737,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     evseId: number,
     evseStatus: EvseStatus,
     alignedMeasurandsKey: string,
-    timestamp: Date
+    timestamp: Date,
+    connectorId?: number
   ): TriggeredMeterValuesTarget | undefined {
-    const activeConnectors = [...evseStatus.connectors.entries()].filter(([, connectorStatus]) =>
+    const connectorStatus = connectorId == null ? undefined : evseStatus.connectors.get(connectorId)
+    const connectors: [number, ConnectorStatus][] =
+      connectorId == null
+        ? [...evseStatus.connectors.entries()]
+        : connectorStatus == null
+          ? []
+          : [[connectorId, connectorStatus]]
+    const activeConnectors = connectors.filter(([, connectorStatus]) =>
       this.isTriggeredTransactionActive(connectorStatus)
     )
     if (activeConnectors.length === 0) {
-      if (
-        [...evseStatus.connectors.values()].some(status =>
-          this.hasTriggeredTransactionState(status)
-        )
-      ) {
+      if (connectors.some(([, status]) => this.hasTriggeredTransactionState(status))) {
         return
       }
       const meterValue = this.buildIdleTriggeredMeterValue(
@@ -1745,7 +1759,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         evseId,
         evseStatus,
         alignedMeasurandsKey,
-        timestamp
+        timestamp,
+        connectorId
       )
       return meterValue == null ? undefined : { evseId, samples: [{ meterValue }] }
     }
@@ -3571,7 +3586,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
                   targetEvseId,
                   evseStatus,
                   alignedMeasurandsKey,
-                  timestamp
+                  timestamp,
+                  evse?.id != null && evse.id > 0 ? evse.connectorId : undefined
                 )
             if (target == null) {
               OCPP20ServiceUtils.releaseTriggeredMeterValuesRequests(chargingStation, targetEvseIds)
@@ -4070,14 +4086,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     chargingStation: ChargingStation,
     evse: OCPP20TriggerMessageRequest['evse']
   ): { connectorId: number; evseId: number; transactionId: string }[] {
-    const targetEvseId = evse?.id != null && evse.id > 0 ? evse.id : undefined
     const activeConnectors: { connectorId: number; evseId: number; transactionId: string }[] = []
-    for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors(
-      true
+    for (const { connectorId, connectorStatus, evseId } of this.resolveTriggerMessageConnectors(
+      chargingStation,
+      evse
     )) {
       if (
-        evseId != null &&
-        (targetEvseId == null || evseId === targetEvseId) &&
         connectorStatus.transactionStarted === true &&
         connectorStatus.transactionPending !== true &&
         connectorStatus.transactionRestored !== true &&
@@ -4100,6 +4114,39 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
   ): number[] {
     if (evse?.id != null && evse.id > 0) return [evse.id]
     return [...chargingStation.iterateEvses(true)].map(({ evseId }) => evseId)
+  }
+
+  /**
+   * Resolves physical connectors within the requested TriggerMessage scope.
+   * @param chargingStation - Target charging station.
+   * @param evse - Optional EVSE and connector scope.
+   * @returns Every connector in the requested scope.
+   */
+  private resolveTriggerMessageConnectors (
+    chargingStation: ChargingStation,
+    evse: OCPP20TriggerMessageRequest['evse']
+  ): TriggerMessageConnectorTarget[] {
+    if (evse?.id != null && evse.id > 0) {
+      const evseStatus = chargingStation.getEvseStatus(evse.id)
+      if (evseStatus == null) return []
+      if (evse.connectorId != null) {
+        const connectorStatus = evseStatus.connectors.get(evse.connectorId)
+        return connectorStatus == null
+          ? []
+          : [{ connectorId: evse.connectorId, connectorStatus, evseId: evse.id }]
+      }
+      return [...evseStatus.connectors.entries()]
+        .filter(([connectorId]) => connectorId > 0)
+        .map(([connectorId, connectorStatus]) => ({
+          connectorId,
+          connectorStatus,
+          evseId: evse.id,
+        }))
+    }
+    return [...chargingStation.iterateConnectors(true)].flatMap(
+      ({ connectorId, connectorStatus, evseId }) =>
+        evseId == null ? [] : [{ connectorId, connectorStatus, evseId }]
+    )
   }
 
   /**
@@ -4888,29 +4935,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     )
   }
 
-  private triggerAllEvseStatusNotifications (
-    chargingStation: ChargingStation,
-    errorHandler: (error: unknown) => void
-  ): void {
-    for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors(
-      true
-    )) {
-      const resolvedStatus = connectorStatus.status ?? ConnectorStatusEnum.Available
-      chargingStation.ocppRequestService
-        .requestHandler<StatusNotificationOptions, OCPP20StatusNotificationResponse>(
-          chargingStation,
-          OCPP20RequestCommand.STATUS_NOTIFICATION,
-          {
-            connectorId,
-            connectorStatus: resolvedStatus,
-            evseId,
-          },
-          { skipBufferingOnError: true, triggerMessage: true }
-        )
-        .catch(errorHandler)
-    }
-  }
-
   /**
    * OCPP 2.0.1 F06.FR.06: TriggerMessage with `MessageTrigger.MeterValues`
    * SHALL respond with `MeterValuesRequest` (not `TransactionEventRequest`),
@@ -4953,24 +4977,22 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     evse: OCPP20TriggerMessageRequest['evse'],
     errorHandler: (error: unknown) => void
   ): void {
-    if (evse?.id != null && evse.id > 0 && evse.connectorId != null) {
-      const evseStatus = chargingStation.getEvseStatus(evse.id)
-      const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
-      const resolvedStatus = connectorStatus?.status ?? ConnectorStatusEnum.Available
+    for (const { connectorId, connectorStatus, evseId } of this.resolveTriggerMessageConnectors(
+      chargingStation,
+      evse
+    )) {
       chargingStation.ocppRequestService
         .requestHandler<StatusNotificationOptions, OCPP20StatusNotificationResponse>(
           chargingStation,
           OCPP20RequestCommand.STATUS_NOTIFICATION,
           {
-            connectorId: evse.connectorId,
-            connectorStatus: resolvedStatus,
-            evseId: evse.id,
+            connectorId,
+            connectorStatus: connectorStatus.status ?? ConnectorStatusEnum.Available,
+            evseId,
           },
           { skipBufferingOnError: true, triggerMessage: true }
         )
         .catch(errorHandler)
-    } else if (chargingStation.hasEvses) {
-      this.triggerAllEvseStatusNotifications(chargingStation, errorHandler)
     }
   }
 
@@ -5356,6 +5378,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         statusInfo: {
           additionalInfo: `EVSE ${evse.id.toString()} does not exist`,
           reasonCode: ReasonCodeEnumType.UnknownEvse,
+        },
+      }
+    }
+    if (
+      evse.connectorId != null &&
+      !chargingStation.getEvseStatus(evse.id)?.connectors.has(evse.connectorId)
+    ) {
+      return {
+        status: TriggerMessageStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Connector ${evse.connectorId.toString()} on EVSE ${evse.id.toString()} does not exist`,
+          reasonCode: ReasonCodeEnumType.UnknownConnectorId,
         },
       }
     }

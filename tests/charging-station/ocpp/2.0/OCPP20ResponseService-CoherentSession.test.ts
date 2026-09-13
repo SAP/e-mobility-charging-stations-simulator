@@ -89,6 +89,52 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     assert.strictEqual(createSpy.mock.calls.length, 1, 'createCoherentSession must fire once')
     assert.strictEqual(createSpy.mock.calls[0].arguments[0], TEST_TRANSACTION_UUID)
     assert.strictEqual(createSpy.mock.calls[0].arguments[1], 1)
+    assert.strictEqual(createSpy.mock.calls[0].arguments[2], 1)
+  })
+
+  await it('should bind a Started fallback session to EVSE 2 when connector ids repeat', async () => {
+    const { station: evseStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 2,
+      evseConfiguration: { evsesCount: 2 },
+      stationInfo: {
+        coherentMeterValues: true,
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+    })
+    const firstEvse = evseStation.getEvseStatus(1)
+    const secondEvse = evseStation.getEvseStatus(2)
+    assert.ok(firstEvse != null && secondEvse != null)
+    const firstConnector = firstEvse.connectors.get(1)
+    const secondConnector = secondEvse.connectors.get(2)
+    assert.ok(firstConnector != null && secondConnector != null)
+    secondEvse.connectors.delete(2)
+    secondEvse.connectors.set(1, secondConnector)
+    firstConnector.transactionId = '00000000-0000-4000-8000-000000000001'
+    firstConnector.transactionPending = true
+    secondConnector.transactionId = TEST_TRANSACTION_UUID
+    secondConnector.transactionStarted = false
+    secondConnector.transactionPending = true
+    const evseCreateSpy = mock.method(evseStation, 'createCoherentSession', () => undefined)
+    mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+    const request = buildStartedRequest(TEST_TRANSACTION_UUID)
+    request.evse = { connectorId: 1, id: 2 }
+
+    await testable.handleResponseTransactionEvent(
+      evseStation,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      request
+    )
+
+    assert.strictEqual(firstConnector.transactionPending, true)
+    assert.strictEqual(secondConnector.transactionStarted, true)
+    assert.strictEqual(evseCreateSpy.mock.callCount(), 1)
+    assert.strictEqual(evseCreateSpy.mock.calls[0].arguments[0], TEST_TRANSACTION_UUID)
+    assert.strictEqual(evseCreateSpy.mock.calls[0].arguments[1], 1)
+    assert.strictEqual(evseCreateSpy.mock.calls[0].arguments[2], 2)
   })
 
   await it('should create a coherent session on Started with idTokenInfo omitted (implicit accept)', async () => {

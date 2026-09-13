@@ -3399,7 +3399,7 @@ export class OCPP20ServiceUtils {
       connectorStatus.transactionEnergyActiveImportRegisterValue = persistedEnergyWh
       const restoredSession =
         chargingStation.getCoherentSession(transactionId) ??
-        chargingStation.createCoherentSession(transactionId, connectorId)
+        chargingStation.createCoherentSession(transactionId, connectorId, evseId)
       if (restoredSession != null) {
         restoredSession.socPercent = Math.min(
           Constants.SOC_MAXIMUM_PERCENT,

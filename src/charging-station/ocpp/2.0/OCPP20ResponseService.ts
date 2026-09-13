@@ -509,7 +509,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
               // Restored transactions are reconciled once after replay finishes.
               chargingStation.createCoherentSession(
                 requestPayload.transactionInfo.transactionId,
-                connectorId
+                connectorId,
+                evseId
               )
             }
           }

@@ -466,9 +466,33 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       )
     }
     const isOcpp2 = isOCPP20x(this.chargingStation.stationInfo?.ocppVersion)
-    const evseId =
-      payloadEvseId ??
-      (isOcpp2 ? this.chargingStation.getEvseIdByConnectorId(connectorId) : undefined)
+    const evseId = (() => {
+      if (!isOcpp2) return payloadEvseId
+      if (payloadEvseId != null) {
+        if (this.chargingStation.getConnectorStatus(connectorId, payloadEvseId) == null) {
+          throw new BaseError(
+            `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Connector ${connectorId.toString()} does not exist on EVSE ${payloadEvseId.toString()}`
+          )
+        }
+        return payloadEvseId
+      }
+      let resolvedEvseId: number | undefined
+      for (const candidate of this.chargingStation.iterateConnectors()) {
+        if (candidate.connectorId !== connectorId || candidate.evseId == null) continue
+        if (resolvedEvseId != null) {
+          throw new BaseError(
+            `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: 'evseId' field is required because connector ${connectorId.toString()} exists on multiple EVSEs`
+          )
+        }
+        resolvedEvseId = candidate.evseId
+      }
+      if (resolvedEvseId == null) {
+        throw new BaseError(
+          `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Connector ${connectorId.toString()} does not exist on any EVSE`
+        )
+      }
+      return resolvedEvseId
+    })()
     const connectorStatus = this.chargingStation.getConnectorStatus(connectorId, evseId)
     const transactionId = connectorStatus?.transactionId
     const interval = isOcpp2

@@ -7483,25 +7483,34 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       standardCleanup()
     })
 
-    await it('restores coherent SoC from persisted energy exactly once before arming timers', () => {
+    await it('restores coherent SoC on EVSE 2 when connector ids repeat before arming timers', () => {
       mock.timers.enable({ apis: ['setInterval'] })
       const { station } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
-        connectorsCount: 1,
-        evseConfiguration: { evsesCount: 1 },
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 2 },
         ocppRequestService: { requestHandler: async () => Promise.resolve({}) },
         stationInfo: { coherentMeterValues: true, ocppVersion: OCPPVersion.VERSION_201 },
         websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       const transactionId = '00000000-0000-4000-8000-000000000077'
-      setupConnectorWithTransaction(station, 1, { transactionId })
-      const connectorStatus = station.getConnectorStatus(1, 1)
-      assert.ok(connectorStatus != null)
+      const firstEvse = station.getEvseStatus(1)
+      const secondEvse = station.getEvseStatus(2)
+      assert.ok(firstEvse != null && secondEvse != null)
+      const firstConnector = firstEvse.connectors.get(1)
+      const connectorStatus = secondEvse.connectors.get(2)
+      assert.ok(firstConnector != null && connectorStatus != null)
+      secondEvse.connectors.delete(2)
+      secondEvse.connectors.set(1, connectorStatus)
+      firstConnector.transactionId = '00000000-0000-4000-8000-000000000001'
+      connectorStatus.transactionId = transactionId
+      connectorStatus.transactionStarted = true
       connectorStatus.transactionRestored = true
       connectorStatus.transactionEnergyActiveImportRegisterValue = 4000
       const session: CoherentSession = {
         connectorId: 1,
         currentType: CurrentType.AC,
+        evseId: 2,
         numberOfPhases: 1,
         profile: {
           batteryCapacityWh: 40000,
@@ -7546,14 +7555,20 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(station)
 
       assert.strictEqual(createSpy.mock.callCount(), 1)
+      assert.strictEqual(createSpy.mock.calls[0].arguments[0], transactionId)
+      assert.strictEqual(createSpy.mock.calls[0].arguments[1], 1)
+      assert.strictEqual(createSpy.mock.calls[0].arguments[2], 2)
       assert.strictEqual(station.getCoherentSession(transactionId), session)
+      assert.strictEqual(session.evseId, 2)
       assert.strictEqual(session.socPercent, 40)
       assert.strictEqual(connectorStatus.transactionRestored, undefined)
       const lastUpdatedAt = connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
       assert.ok(lastUpdatedAt != null)
       assert.ok(lastUpdatedAt.getTime() >= resumedAfter)
       assert.strictEqual(updatedTimerSpy.mock.callCount(), 1)
+      assert.strictEqual(updatedTimerSpy.mock.calls[0].arguments[3], 2)
       assert.strictEqual(endedTimerSpy.mock.callCount(), 1)
+      assert.strictEqual(endedTimerSpy.mock.calls[0].arguments[3], 2)
     })
 
     await it('applies restored energy once to an existing coherent session and clamps SoC', () => {

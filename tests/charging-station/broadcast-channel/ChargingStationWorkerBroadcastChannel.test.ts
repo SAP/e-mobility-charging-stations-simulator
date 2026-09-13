@@ -2113,6 +2113,76 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         'OCPP 2.0.1 meter values payload should contain meterValue array'
       )
     })
+    await it('should reject an ambiguous OCPP 2.0 connector unless its EVSE is supplied', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+      const evse1 = station.getEvseStatus(1)
+      const evse2 = station.getEvseStatus(2)
+      assert.ok(evse1 != null)
+      assert.ok(evse2 != null)
+      const connector1 = evse1.connectors.get(1)
+      const connector2 = evse2.connectors.get(2)
+      assert.ok(connector1 != null)
+      assert.ok(connector2 != null)
+      evse2.connectors.delete(2)
+      evse2.connectors.set(1, connector2)
+      connector1.transactionId = 'tx-evse-1'
+      connector1.transactionStarted = true
+      connector1.publicKeySentInTransaction = false
+      connector2.transactionId = 'tx-evse-2'
+      connector2.transactionStarted = true
+      connector2.publicKeySentInTransaction = false
+      const customMeterValue = {
+        sampledValue: [
+          {
+            signedMeterValue: {
+              encodingMethod: 'OCMF',
+              publicKey: 'caller-public-key',
+              signedMeterData: 'caller-signed-data',
+              signingMethod: '',
+            },
+            value: 1,
+          },
+        ],
+        timestamp: new Date(),
+      }
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      await assert.rejects(
+        testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+          connectorId: 1,
+          meterValue: [customMeterValue],
+        }),
+        (error: Error) => error instanceof BaseError && error.message.includes('evseId')
+      )
+      assert.strictEqual(sentRequests.length, 0)
+      assert.strictEqual(connector1.publicKeySentInTransaction, false)
+      assert.strictEqual(connector2.publicKeySentInTransaction, false)
+
+      await assert.rejects(
+        testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+          connectorId: 1,
+          evseId: 3,
+          meterValue: [customMeterValue],
+        }),
+        (error: Error) => error instanceof BaseError && error.message.includes('EVSE 3')
+      )
+      assert.strictEqual(sentRequests.length, 0)
+      assert.strictEqual(connector1.publicKeySentInTransaction, false)
+      assert.strictEqual(connector2.publicKeySentInTransaction, false)
+
+      await testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+        connectorId: 1,
+        evseId: 2,
+        meterValue: [customMeterValue],
+      })
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].payload.evseId, 2)
+      assert.strictEqual(connector1.publicKeySentInTransaction, false)
+      assert.strictEqual(connector2.publicKeySentInTransaction, true)
+    })
+
     await it('should route an EVSE-only meter request to its active connector', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
       const evseStatus = station.getEvseStatus(1)
