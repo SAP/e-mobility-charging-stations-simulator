@@ -1377,6 +1377,19 @@ const resolveEnergyIntervalTemplates = (
     context
   ).filter(template => template.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL)
 
+// Only active import/export quantities have a defined DC output-to-AC-input projection.
+export const DC_STATION_AGGREGATION_DIRECTION: ReadonlyMap<
+  MeterValueMeasurand,
+  'export' | 'import'
+> = new Map([
+  [MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_INTERVAL, 'export'],
+  [MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_REGISTER, 'export'],
+  [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL, 'import'],
+  [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, 'import'],
+  [MeterValueMeasurand.POWER_ACTIVE_EXPORT, 'export'],
+  [MeterValueMeasurand.POWER_ACTIVE_IMPORT, 'import'],
+])
+
 const projectSnapshotDcOutputValue = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -1386,16 +1399,7 @@ const projectSnapshotDcOutputValue = (
   outputValue: number,
   baselineAlreadyProjected: boolean
 ): number => {
-  const projectionDirection =
-    measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT ||
-    measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL ||
-    measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-      ? 'import'
-      : measurand === MeterValueMeasurand.POWER_ACTIVE_EXPORT ||
-          measurand === MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_INTERVAL ||
-          measurand === MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_REGISTER
-        ? 'export'
-        : undefined
+  const projectionDirection = DC_STATION_AGGREGATION_DIRECTION.get(measurand)
   if (
     chargingStation.stationInfo?.currentOutType !== CurrentType.DC ||
     projectionDirection == null
@@ -1618,6 +1622,11 @@ const expandClockAlignedSnapshotSamples = (
     const phaseFamily = resolveSnapshotPhaseFamily(template.phase)
     if (phaseFamily === 'Unsupported') continue
     const resolvedIdentity = resolveSampledValueFields(template, 0, context, template.phase)
+    const canUseLocationAgnosticStationSource =
+      preferBaseline &&
+      evseId === 0 &&
+      (chargingStation.stationInfo?.currentOutType !== CurrentType.DC ||
+        DC_STATION_AGGREGATION_DIRECTION.has(measurand))
     const resolvedLinePhaseIndex = resolveLinePhaseIndex(template.phase)
     const exactSource = baseline.find(
       sample =>
@@ -1626,7 +1635,7 @@ const expandClockAlignedSnapshotSamples = (
           (resolvedLinePhaseIndex != null &&
             resolveLinePhaseIndex(sample.phase) === resolvedLinePhaseIndex)) &&
         canonicalizeCustomData(sample.customData) === canonicalizeCustomData(template.customData) &&
-        (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
+        (sample.location === resolvedIdentity.location || canUseLocationAgnosticStationSource) &&
         (!preferBaseline ||
           areMeterValueUnitsCompatible(
             measurand,
@@ -1655,7 +1664,7 @@ const expandClockAlignedSnapshotSamples = (
         (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
         sample.phase == null &&
         canonicalizeCustomData(sample.customData) === canonicalizeCustomData(template.customData) &&
-        (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
+        (sample.location === resolvedIdentity.location || canUseLocationAgnosticStationSource) &&
         (!preferBaseline ||
           areMeterValueUnitsCompatible(
             measurand,
@@ -1681,7 +1690,7 @@ const expandClockAlignedSnapshotSamples = (
           canonicalizeCustomData(sample.customData) ===
             canonicalizeCustomData(template.customData) &&
           sample.measurand === measurand &&
-          (sample.location === resolvedIdentity.location || evseId === 0) &&
+          (sample.location === resolvedIdentity.location || canUseLocationAgnosticStationSource) &&
           areMeterValueUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit)
         ) {
           phasedPowerByLine.set(line, sample)

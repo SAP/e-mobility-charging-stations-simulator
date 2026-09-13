@@ -25,7 +25,7 @@ import {
   getConnectorChargingProfiles,
   getIdTagsFile,
   prepareChargingProfileKind,
-  recordTransactionIntervalEmission,
+  recordFrozenTransactionIntervalEmission,
   removeExpiredReservations,
   resetAuthorizeConnectorStatus,
   resolveInletToOutputEfficiency,
@@ -252,7 +252,6 @@ interface TriggeredMeterValueTarget {
   cancelled?: boolean
   readonly connectorStatus: ConnectorStatus
   readonly delivery?: TransactionMeterValueDelivery
-  readonly intervalEnergyWh?: number
   readonly intervalState?: ReturnType<typeof captureTransactionIntervalState>
   readonly publicKeyIncluded: boolean
   readonly request: OCPP16MeterValuesRequest
@@ -609,11 +608,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                   intervalState != null &&
                   connectorStatus.transactionId?.toString() === intervalState.transactionId
                 ) {
-                  recordTransactionIntervalEmission(
+                  recordFrozenTransactionIntervalEmission(
                     connectorStatus,
                     target.request.meterValue[0],
                     'default',
-                    target.intervalEnergyWh ?? 0,
                     chargingStation.getNumberOfPhases(),
                     resolveInletToOutputEfficiency(
                       chargingStation.stationInfo?.currentOutType,
@@ -2090,16 +2088,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               target.transactionId != null
                 ? captureTransactionIntervalState(target.connectorStatus)
                 : undefined
-            const intervalEnergyWh =
-              target.transactionId != null
-                ? Math.max(
-                  0,
-                  (target.connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) -
-                      (target.connectorStatus.transactionEnergyActiveImportIntervalBaselines
-                        ?.default ?? 0)
-                ) +
-                  (target.connectorStatus.transactionEnergyActiveImportIntervalCarry?.default ?? 0)
-                : undefined
             const meterValue = buildMeterValue(
               chargingStation,
               target.transactionId,
@@ -2132,7 +2120,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             targets.push({
               connectorStatus: target.connectorStatus,
               delivery,
-              intervalEnergyWh,
               intervalState,
               publicKeyIncluded,
               request,

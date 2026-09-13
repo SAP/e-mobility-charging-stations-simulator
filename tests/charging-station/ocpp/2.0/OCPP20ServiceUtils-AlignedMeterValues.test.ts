@@ -696,6 +696,67 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(stationPower()?.value, 3750)
     })
 
+    await it('matches DC current, reactive power, and voltage samples by their explicit location', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.currentOutType = CurrentType.DC
+      const stationEvse = mockStation.getEvseStatus(0)
+      const physicalEvse = mockStation.getEvseStatus(1)
+      assert.ok(stationEvse != null)
+      assert.ok(physicalEvse != null)
+      const sourcePairs = [
+        [OCPP20MeasurandEnumType.CURRENT_IMPORT, 'A', 11, 22],
+        [OCPP20MeasurandEnumType.POWER_REACTIVE_IMPORT, 'var', 100, 200],
+        [OCPP20MeasurandEnumType.VOLTAGE, 'V', 230, 400],
+      ] as const
+      physicalEvse.MeterValues = sourcePairs.flatMap(
+        ([measurand, unit, inletValue, outletValue]) => [
+          {
+            fluctuationPercent: 0,
+            location: OCPP20LocationEnumType.Inlet,
+            measurand,
+            unit,
+            value: inletValue.toString(),
+          },
+          {
+            fluctuationPercent: 0,
+            location: OCPP20LocationEnumType.Outlet,
+            measurand,
+            unit,
+            value: outletValue.toString(),
+          },
+        ]
+      ) as unknown as NonNullable<EvseStatus['MeterValues']>
+      stationEvse.MeterValues = sourcePairs.map(([measurand, unit]) => ({
+        location: OCPP20LocationEnumType.Outlet,
+        measurand,
+        unit,
+      })) as unknown as NonNullable<EvseStatus['MeterValues']>
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        sourcePairs.map(([measurand]) => measurand).join(',')
+      )
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-dc-location' })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const stationPayload = sentPayloads(requestHandlerMock).find(({ evseId }) => evseId === 0)
+      assert.ok(stationPayload != null)
+      const stationSamples = stationPayload.meterValue.flatMap(({ sampledValue }) => sampledValue)
+      for (const [measurand, , , outletValue] of sourcePairs) {
+        const sample = stationSamples.find(candidate => candidate.measurand === measurand)
+        assert.ok(sample != null)
+        assert.strictEqual(sample.location, OCPP20LocationEnumType.Outlet)
+        assert.strictEqual(sample.value, outletValue)
+      }
+    })
+
     await it('converts DC active export and omits unsupported Outlet families at EVSE 0', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,

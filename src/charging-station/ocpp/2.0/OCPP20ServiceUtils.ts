@@ -125,6 +125,7 @@ import {
   buildClockAlignedConnectorMeterValue,
   buildMeterValue,
   createPayloadConfigs,
+  DC_STATION_AGGREGATION_DIRECTION,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
 import {
@@ -634,16 +635,6 @@ const normalizeClockAlignedAdditiveSample = (
     value: sampledValue.value * namedUnitMultiplier * decimalMultiplier,
   }
 }
-
-// Only active import/export quantities have a defined DC output-to-AC-input projection.
-const DC_STATION_AGGREGATION_DIRECTION = new Map<OCPP20MeasurandEnumType, 'export' | 'import'>([
-  [OCPP20MeasurandEnumType.ENERGY_ACTIVE_EXPORT_INTERVAL, 'export'],
-  [OCPP20MeasurandEnumType.ENERGY_ACTIVE_EXPORT_REGISTER, 'export'],
-  [OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL, 'import'],
-  [OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, 'import'],
-  [OCPP20MeasurandEnumType.POWER_ACTIVE_EXPORT, 'export'],
-  [OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT, 'import'],
-])
 
 const normalizePhysicalMeterValueForStationAggregation = (
   meterValue: OCPP20MeterValue,

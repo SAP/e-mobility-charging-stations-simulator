@@ -21,6 +21,7 @@ import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
 import { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import { addConfigurationKey, buildConfigKey } from '../../../../src/charging-station/index.js'
+import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/TransactionMeterValueDeliveryBarrier.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
@@ -1436,6 +1437,82 @@ await describe('F06 - TriggerMessage', async () => {
       await triggeredStarted.promise
       assert.deepStrictEqual(deliveryOrder, ['periodic', 'triggered'])
       OCPP20ServiceUtils.stopUpdatedMeterValues(mockStation, 1, 1)
+    })
+
+    await it('should preserve restored and newly accrued interval energy behind a rejected predecessor', async () => {
+      const baselineKey = buildConfigKey(
+        OCPP20ComponentName.AlignedDataCtrlr,
+        OCPP20RequiredVariableName.Measurands
+      )
+      addConfigurationKey(
+        mockStation,
+        baselineKey,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+        undefined,
+        { overwrite: true, save: false }
+      )
+      const transactionId = 'txn-trigger-rejected-predecessor'
+      setupConnectorWithTransaction(mockStation, 1, { transactionId })
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.MeterValues = [
+        {
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: 'Wh',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      connectorStatus.transactionEnergyActiveImportIntervalBaselines = { [baselineKey]: 0 }
+      connectorStatus.transactionEnergyActiveImportIntervalCarry = { [baselineKey]: 0 }
+      const predecessor = TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
+      assert.ok(predecessor != null)
+      const triggerStarted = Promise.withResolvers<undefined>()
+      let triggeredInterval: number | undefined
+      requestHandlerMock.mock.mockImplementation((...args: unknown[]) => {
+        if (args[1] !== OCPP20RequestCommand.METER_VALUES) return Promise.resolve({})
+        const payload = args[2] as OCPP20MeterValuesRequest
+        const requestParams = args[3] as RequestParams
+        triggeredInterval = payload.meterValue[0].sampledValue.find(
+          sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )?.value
+        requestParams.onMessageSent?.()
+        requestParams.onResponseReceived?.()
+        triggerStarted.resolve(undefined)
+        return Promise.resolve({})
+      })
+
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 20
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { id: 1 },
+        requestedMessage: MessageTriggerEnumType.MeterValues,
+      }
+      const response = createTestableIncomingRequestService(
+        incomingRequestServiceForListener
+      ).handleRequestTriggerMessage(mockStation, request)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 30
+      await flushMicrotasks()
+      assert.strictEqual(triggeredInterval, undefined)
+
+      connectorStatus.transactionEnergyActiveImportIntervalCarry[baselineKey] = 50
+      predecessor.settle(true)
+      await triggerStarted.promise
+
+      assert.strictEqual(triggeredInterval, 20)
+      assert.strictEqual(
+        connectorStatus.transactionEnergyActiveImportIntervalBaselines[baselineKey],
+        30
+      )
+      assert.strictEqual(
+        connectorStatus.transactionEnergyActiveImportIntervalCarry[baselineKey],
+        60
+      )
     })
 
     await it('should coalesce TxEnded sampling behind an admitted triggered snapshot', async t => {

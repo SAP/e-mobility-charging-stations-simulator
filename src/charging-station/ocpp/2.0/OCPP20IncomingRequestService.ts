@@ -162,7 +162,7 @@ import {
   hasPendingReservations,
   hasQueuedEndedTransactionEvent,
   isTransactionEventQueueStaged,
-  recordTransactionIntervalEmission,
+  recordFrozenTransactionIntervalEmission,
   resetConnectorStatus,
   resolveInletToOutputEfficiency,
   restoreTransactionIntervalState,
@@ -363,7 +363,6 @@ interface TriggeredMeterValueSample {
   readonly connectorId?: number
   readonly delivery?: TransactionMeterValueDelivery
   readonly intervalBaselineKey?: string
-  readonly intervalEnergyWh?: number
   readonly intervalState?: ReturnType<typeof captureTransactionIntervalState>
   readonly meterValue: OCPP20MeterValue
   readonly transactionId?: string
@@ -1791,21 +1790,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           OCPP20ReadingContextEnumType.TRIGGER
         )
         if (isNotEmptyArray(meterValue.sampledValue)) {
-          const intervalEnergyWh =
-            Math.max(
-              0,
-              (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) -
-                (connectorStatus.transactionEnergyActiveImportIntervalBaselines?.[
-                  alignedMeasurandsKey
-                ] ?? 0)
-            ) +
-            (connectorStatus.transactionEnergyActiveImportIntervalCarry?.[alignedMeasurandsKey] ??
-              0)
           samples.push({
             connectorId,
             delivery,
             intervalBaselineKey: alignedMeasurandsKey,
-            intervalEnergyWh,
             intervalState,
             meterValue,
             transactionId,
@@ -1929,11 +1917,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       const connectorStatus = chargingStation.getConnectorStatus(connectorId, target.evseId)
       if (connectorStatus == null) continue
       if (intervalBaselineKey != null && intervalState != null) {
-        recordTransactionIntervalEmission(
+        recordFrozenTransactionIntervalEmission(
           connectorStatus,
           sample.meterValue,
           intervalBaselineKey,
-          sample.intervalEnergyWh ?? 0,
           chargingStation.getNumberOfPhases(),
           resolveInletToOutputEfficiency(
             chargingStation.stationInfo?.currentOutType,

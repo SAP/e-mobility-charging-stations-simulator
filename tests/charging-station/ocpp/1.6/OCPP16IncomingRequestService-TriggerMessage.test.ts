@@ -644,6 +644,95 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
     OCPP16ServiceUtils.stopUpdatedMeterValues(station, 1)
   })
 
+  await it('should preserve restored and newly accrued interval energy behind a rejected predecessor', async t => {
+    t.mock.timers.enable({ apis: ['setInterval'] })
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.MeterValuesSampledData,
+      OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.MeterValues = createMeterValuesTemplate([
+      {
+        measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+        unit: OCPP16MeterValueUnit.WATT_HOUR,
+        value: '0',
+      },
+    ])
+    connectorStatus.transactionStart = new Date(Date.now() + 60_000)
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+    connectorStatus.transactionEnergyActiveImportIntervalBaselines = { default: 0 }
+    connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 50 }
+    const predecessorStarted = Promise.withResolvers<undefined>()
+    const releasePredecessor = Promise.withResolvers<undefined>()
+    const triggerStarted = Promise.withResolvers<undefined>()
+    const failure = new OCPPError(ErrorType.GENERIC_ERROR, 'predecessor rejected')
+    let predecessorInterval: string | undefined
+    let triggeredInterval: string | undefined
+    ;(
+      station.ocppRequestService as unknown as {
+        requestHandler: (...args: unknown[]) => Promise<unknown>
+      }
+    ).requestHandler = async (...args: unknown[]) => {
+      if (args[1] !== OCPP16RequestCommand.METER_VALUES) return {}
+      const payload = args[2] as OCPP16MeterValuesRequest
+      const requestParams = args[3] as RequestParams
+      const interval = payload.meterValue[0].sampledValue.find(
+        sample => sample.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )?.value
+      if (requestParams.triggerMessage === true) {
+        triggeredInterval = interval
+        requestParams.onMessageSent?.()
+        requestParams.onResponseReceived?.()
+        triggerStarted.resolve(undefined)
+        return {}
+      }
+      predecessorInterval = interval
+      predecessorStarted.resolve(undefined)
+      await releasePredecessor.promise
+      requestParams.onTransportError?.(failure, false)
+      throw failure
+    }
+
+    OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 1000)
+    t.mock.timers.tick(1000)
+    await predecessorStarted.promise
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 20
+    const request: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const response = testableService.handleRequestTriggerMessage(station, request)
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      request,
+      response
+    )
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 30
+    await flushMicrotasks()
+    assert.strictEqual(triggeredInterval, undefined)
+
+    releasePredecessor.resolve(undefined)
+    await triggerStarted.promise
+    OCPP16ServiceUtils.stopUpdatedMeterValues(station, 1)
+
+    assert.strictEqual(predecessorInterval, '50')
+    assert.strictEqual(triggeredInterval, '20')
+    assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalBaselines.default, 30)
+    assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry.default, 60)
+  })
+
   await it('should emit the admitted MeterValues snapshot when its transaction starts ending', async () => {
     const { incomingRequestService, station, testableService } =
       createOCPP16IncomingRequestTestContext()

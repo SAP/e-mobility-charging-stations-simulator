@@ -70,6 +70,7 @@ export {
   completeTransactionIntervalState,
   getRepresentedTransactionIntervalEnergyWh,
   getTransactionIntervalConsumptions,
+  recordFrozenTransactionIntervalEmission,
   recordTransactionIntervalConsumption,
   recordTransactionIntervalEmission,
   resolveInletToOutputEfficiency,

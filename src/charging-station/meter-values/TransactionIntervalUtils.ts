@@ -160,3 +160,38 @@ export const recordTransactionIntervalEmission = (
     intervalEnergyWh - representedEnergyWh
   )
 }
+
+/**
+ * Commits a previously frozen interval snapshot against the current transaction state.
+ *
+ * Delivery may wait behind an earlier request whose definitive rejection restores energy,
+ * while the physical register may also continue advancing. Rebase the frozen snapshot's
+ * represented energy onto that current state so neither source of newly available energy is lost.
+ * @param connectorStatus - Connector transaction state to update.
+ * @param meterValue - Frozen MeterValue snapshot being emitted.
+ * @param baselineKey - Configuration-scoped interval baseline key.
+ * @param numberOfPhases - Station phase count used to expand per-phase samples.
+ * @param inletToOutputEfficiency - Efficiency for inlet samples represented at the output.
+ */
+export const recordFrozenTransactionIntervalEmission = (
+  connectorStatus: ConnectorStatus,
+  meterValue: IntervalMeterValue,
+  baselineKey: string,
+  numberOfPhases: number,
+  inletToOutputEfficiency = 1
+): void => {
+  const intervalEnergyWh =
+    Math.max(
+      0,
+      (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) -
+        (connectorStatus.transactionEnergyActiveImportIntervalBaselines?.[baselineKey] ?? 0)
+    ) + (connectorStatus.transactionEnergyActiveImportIntervalCarry?.[baselineKey] ?? 0)
+  recordTransactionIntervalEmission(
+    connectorStatus,
+    meterValue,
+    baselineKey,
+    intervalEnergyWh,
+    numberOfPhases,
+    inletToOutputEfficiency
+  )
+}
