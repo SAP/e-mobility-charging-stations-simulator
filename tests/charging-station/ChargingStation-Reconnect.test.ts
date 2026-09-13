@@ -240,4 +240,46 @@ await describe('ChargingStation reconnect decision on WebSocket close', async ()
 
     assert.strictEqual(openCalls, 0)
   })
+
+  await it('should discard a reconnect sleeper from an earlier lifecycle', async t => {
+    const station = createStationFromTemplate(copyStationTemplate())
+    const internals = station as unknown as StationInternals
+    const oldLifecycle = new AbortController()
+    let lifecycleSignal = oldLifecycle.signal
+    Object.defineProperty(station, 'lifecycleAbortSignal', {
+      configurable: true,
+      get: () => lifecycleSignal,
+    })
+    internals.started = true
+    internals.getReconnectDelay = () => 1000
+    if (station.stationInfo != null) {
+      station.stationInfo.autoReconnectMaxRetries = -1
+    }
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      const reconnectPromise = internals.reconnect()
+
+      internals.stopping = true
+      internals.started = false
+      oldLifecycle.abort()
+      lifecycleSignal = new AbortController().signal
+      const currentSocket = createOpenSocket()
+      internals.wsConnection = currentSocket
+      internals.stopping = false
+      internals.started = true
+      let openCalls = 0
+      internals.openWSConnection = () => {
+        openCalls++
+        currentSocket.close()
+        internals.wsConnection = createOpenSocket()
+      }
+
+      t.mock.timers.tick(1000)
+      await reconnectPromise
+
+      assert.strictEqual(openCalls, 0)
+      assert.strictEqual(internals.wsConnection, currentSocket)
+      assert.strictEqual(currentSocket.readyState, WebSocket.OPEN)
+    })
+  })
 })

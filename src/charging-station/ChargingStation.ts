@@ -3833,6 +3833,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private async reconnect (): Promise<void> {
+    const reconnectLifecycleSignal = this.lifecycleAbortSignal
     if (
       this.stationInfo?.autoReconnectMaxRetries === -1 ||
       this.wsConnectionRetryCount < (this.stationInfo?.autoReconnectMaxRetries ?? 0)
@@ -3846,8 +3847,13 @@ export class ChargingStation extends EventEmitter {
       logger.error(
         `${this.logPrefix()} ${moduleName}.reconnect: WebSocket connection retry in ${formatDurationMilliSeconds(reconnectDelay)}, timeout ${formatDurationMilliSeconds(reconnectTimeout)}`
       )
-      await sleep(reconnectDelay)
-      if (!this.started || this.stopping) {
+      await interruptibleSleep(reconnectDelay, reconnectLifecycleSignal)
+      if (
+        this.lifecycleAbortSignal !== reconnectLifecycleSignal ||
+        reconnectLifecycleSignal.aborted ||
+        !this.started ||
+        this.stopping
+      ) {
         return
       }
       logger.error(

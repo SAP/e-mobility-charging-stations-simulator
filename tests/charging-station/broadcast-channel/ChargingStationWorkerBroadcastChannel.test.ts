@@ -1501,7 +1501,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       assert.deepStrictEqual(result, { carry: 0, keyReserved: true, relayedCalls: 0 })
     })
 
-    await it('should build a generated request after its rejected predecessor settles', async () => {
+    await it('should reject a concurrent generated request without adding barrier backlog', async () => {
       const firstResponse = Promise.withResolvers<unknown>()
       const requests: OCPP16MeterValuesRequest[] = []
       let firstRequestParams: RequestParams | undefined
@@ -1517,7 +1517,6 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       const { station } = createGeneratedMeterValuesStation(requestHandler)
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
-
       const firstRequest = testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
         connectorId: 1,
       })
@@ -1526,16 +1525,29 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       const secondRequest = testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
         connectorId: 1,
       })
-      await flushMicrotasks()
+      const secondOutcome: unknown = await Promise.race([
+        secondRequest.then(
+          () => 'resolved',
+          (error: unknown) => error
+        ),
+        flushMicrotasks().then(() => 'pending'),
+      ])
 
+      await flushMicrotasks()
+      assert.ok(
+        secondOutcome instanceof BaseError &&
+          secondOutcome.message.includes('MeterValues delivery is already in progress')
+      )
+      await assert.rejects(secondRequest, error => error === secondOutcome)
       assert.strictEqual(requests.length, 1)
       assert.ok(firstRequestParams != null)
       const callError = new OCPPError(ErrorType.GENERIC_ERROR, 'predecessor CALLERROR')
       firstRequestParams.onError?.(callError, true)
       firstResponse.reject(callError)
       await assert.rejects(firstRequest, error => error === callError)
-      await secondRequest
-
+      await testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+        connectorId: 1,
+      })
       assert.strictEqual(requests.length, 2)
       const rebuiltSamples = requests[1].meterValue.flatMap(meterValue => meterValue.sampledValue)
       assert.strictEqual(
@@ -1553,13 +1565,10 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       )
       assert.ok(firstSignedSample != null)
       assert.ok(rebuiltSignedSample != null)
-      const firstPublicKey = (JSON.parse(firstSignedSample.value) as { publicKey?: string })
-        .publicKey
-      assert.ok(firstPublicKey != null && firstPublicKey.length > 0)
-      assert.strictEqual(
-        (JSON.parse(rebuiltSignedSample.value) as { publicKey?: string }).publicKey,
-        firstPublicKey
-      )
+      const firstSignedPayload = JSON.parse(firstSignedSample.value) as { publicKey?: string }
+      const rebuiltSignedPayload = JSON.parse(rebuiltSignedSample.value) as { publicKey?: string }
+      assert.ok(firstSignedPayload.publicKey != null && firstSignedPayload.publicKey.length > 0)
+      assert.strictEqual(rebuiltSignedPayload.publicKey, firstSignedPayload.publicKey)
     })
 
     await it('should make a caller-supplied OCPP 1.6 key own OncePerTransaction delivery', async () => {

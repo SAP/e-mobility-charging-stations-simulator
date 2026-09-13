@@ -537,11 +537,22 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       connectorStatus != null &&
       transactionId != null
     ) {
-      transactionDelivery = TransactionMeterValueDeliveryBarrier.begin(
+      transactionDelivery = TransactionMeterValueDeliveryBarrier.beginIfIdle(
         connectorStatus,
         transactionId
       )
       if (transactionDelivery == null) {
+        const currentConnectorStatus = this.chargingStation.getConnectorStatus(connectorId, evseId)
+        if (
+          currentConnectorStatus === connectorStatus &&
+          currentConnectorStatus.transactionStarted === true &&
+          currentConnectorStatus.transactionEnding !== true &&
+          currentConnectorStatus.transactionId?.toString() === transactionId.toString()
+        ) {
+          throw new BaseError(
+            `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: MeterValues delivery is already in progress for this transaction`
+          )
+        }
         throw new BaseError(
           `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Transaction is no longer active`
         )
