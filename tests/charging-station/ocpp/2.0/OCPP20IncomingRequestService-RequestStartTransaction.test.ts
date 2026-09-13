@@ -1,13 +1,10 @@
-import type { mock } from 'node:test'
-
 /**
  * @file Tests for OCPP20IncomingRequestService RequestStartTransaction
  * @description Unit tests for OCPP 2.0 RequestStartTransaction command handling (F01/F02)
  */
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   EvseStatus,
   OCPP20ChargingProfileType,
@@ -16,8 +13,10 @@ import type {
   OCPP20TransactionEventRequest,
 } from '../../../../src/types/index.js'
 
+import { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
   AuthenticationMethod,
@@ -51,6 +50,7 @@ import {
 } from '../auth/helpers/MockFactories.js'
 import {
   createOCPP20ListenerStation,
+  createOCPP20RequestTestContext,
   resetConnectorTransactionState,
   resetLimits,
   resetReportingValueSize,
@@ -920,6 +920,82 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       assert.strictEqual(connectorStatus.transactionId, undefined)
       assert.strictEqual(connectorStatus.remoteStartId, undefined)
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
+    await it('should preserve an accepted remote start when stop cancels its in-flight response', async () => {
+      const { requestService, station: responseStation } = createOCPP20RequestTestContext({
+        baseName: `${TEST_CHARGING_STATION_BASE_NAME}-RESPONSE-CANCELLATION`,
+      })
+      const responseService = new OCPP20IncomingRequestService()
+      const stationId = responseStation.stationInfo?.chargingStationId ?? 'unknown'
+      OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
+      resetConnectorTransactionState(responseStation)
+      resetLimits(responseStation)
+      resetReportingValueSize(responseStation)
+      responseStation.started = true
+      responseStation.recordRequestStatistic = () => undefined
+      responseStation.emitChargingStationEvent = () => undefined
+      Object.assign(responseStation, {
+        ocppIncomingRequestService: responseService,
+        ocppRequestService: requestService,
+      })
+      const transactionEventSpy = mock.method(OCPP20ServiceUtils, 'sendTransactionEvent', () =>
+        Promise.resolve({})
+      )
+      const wsConnection = responseStation.wsConnection
+      assert.ok(wsConnection != null)
+      const responseTransportStarted = Promise.withResolvers<undefined>()
+      let sendCallback: ((error?: Error) => void) | undefined
+      mock.method(wsConnection, 'send', (_data: unknown, callback?: (error?: Error) => void) => {
+        sendCallback = callback
+        responseTransportStarted.resolve(undefined)
+      })
+      ;(
+        responseStation as unknown as {
+          performStop: () => Promise<void>
+        }
+      ).performStop = () => {
+        responseService.stop(responseStation)
+        responseStation.releaseAllBufferedMessageCallbacks()
+        responseStation.started = false
+        return Promise.resolve()
+      }
+      const request: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'IN_FLIGHT_RESPONSE_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 1001,
+      }
+
+      const handling = responseService.incomingRequestHandler(
+        responseStation,
+        'in-flight-response',
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        request
+      )
+      await responseTransportStarted.promise
+      const connectorStatus = responseStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      const transactionId = connectorStatus.transactionId
+      assert.strictEqual(connectorStatus.transactionPending, true)
+
+      await Promise.all([
+        handling,
+        ChargingStation.prototype.stop.call(responseStation, undefined, false),
+      ])
+
+      assert.strictEqual(connectorStatus.transactionPending, true)
+      assert.strictEqual(connectorStatus.transactionId, transactionId)
+      assert.strictEqual(transactionEventSpy.mock.callCount(), 1)
+
+      sendCallback?.()
+      await flushMicrotasks()
+
+      assert.strictEqual(connectorStatus.transactionPending, true)
+      assert.strictEqual(connectorStatus.transactionId, transactionId)
+      assert.strictEqual(transactionEventSpy.mock.callCount(), 1)
     })
 
     // E01.FR.07 + E01.FR.16 + E03.FR.01: Verify transaction sequence number reset

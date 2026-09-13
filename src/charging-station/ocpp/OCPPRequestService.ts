@@ -984,14 +984,26 @@ export abstract class OCPPRequestService {
           responseCallbackReservation = chargingStation.reserveBufferedMessageCallbacks(
             bufferedResponseBytes,
             () => {
-              rejectBeforeSend(
-                new OCPPError(
-                  ErrorType.GENERIC_ERROR,
-                  `Response delivery cancelled for message id '${messageId}'`,
-                  commandName
-                ),
-                false
+              const cancellationError = new OCPPError(
+                ErrorType.GENERIC_ERROR,
+                `Response delivery cancelled for message id '${messageId}'`,
+                commandName
               )
+              if (!transportStarted) {
+                rejectBeforeSend(cancellationError, false)
+                return
+              }
+              if (terminalResponseHandled) return
+              // Once the response has been handed to the transport, delivery is
+              // ambiguous. Preserve its accepted side effects instead of routing
+              // it through the definite-unsent rollback path.
+              sendErrorHandled = true
+              terminalResponseHandled = true
+              clearResponseTimeout()
+              clearSendTimeout()
+              releaseResponseCallbackReservation()
+              notifyMessageSent()
+              resolve(messagePayload)
             }
           )
           if (responseCallbackReservation == null) {

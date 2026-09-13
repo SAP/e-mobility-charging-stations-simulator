@@ -2109,6 +2109,8 @@ await describe('ChargingStation Lifecycle', async () => {
           chargingStationWorkerBroadcastChannel: { unref: () => void }
         }
       ).chargingStationWorkerBroadcastChannel = { unref: () => undefined }
+      station.persistTransactionEventQueues =
+        ChargingStation.prototype.persistTransactionEventQueues.bind(station)
       let queueLength = 1
       const savedQueueLengths: number[] = []
       ;(station as unknown as { saveConfiguration: () => void }).saveConfiguration = () => {
@@ -2123,6 +2125,45 @@ await describe('ChargingStation Lifecycle', async () => {
       await ChargingStation.prototype.delete.call(station, false)
 
       assert.deepStrictEqual(savedQueueLengths, [2])
+    })
+
+    await it('should not retry a failed final queue checkpoint after delete(false)', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
+      const failure = new Error('transient configuration save failure')
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      ;(station as unknown as { deleteAbortController: AbortController }).deleteAbortController =
+        new AbortController()
+      ;(
+        station as unknown as {
+          chargingStationWorkerBroadcastChannel: { unref: () => void }
+        }
+      ).chargingStationWorkerBroadcastChannel = { unref: () => undefined }
+      station.persistTransactionEventQueues =
+        ChargingStation.prototype.persistTransactionEventQueues.bind(station)
+      station.saveTransactionEventQueues =
+        ChargingStation.prototype.saveTransactionEventQueues.bind(station)
+      const savedConnectorCounts: number[] = []
+      ;(
+        station as unknown as {
+          saveConfiguration: (onError?: (error: Error) => void) => void
+        }
+      ).saveConfiguration = onError => {
+        savedConnectorCounts.push(station?.getNumberOfConnectors() ?? 0)
+        onError?.(failure)
+      }
+
+      station.saveTransactionEventQueues(true)
+      await assert.rejects(
+        ChargingStation.prototype.delete.call(station, false),
+        error => error === failure
+      )
+      assert.deepStrictEqual(savedConnectorCounts, [1])
+
+      t.mock.timers.tick(60_000)
+      await flushMicrotasks()
+
+      assert.deepStrictEqual(savedConnectorCounts, [1])
     })
 
     await it('should persist the final queue snapshot after delete(false) cancels reset', async t => {

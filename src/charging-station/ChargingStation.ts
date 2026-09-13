@@ -3621,6 +3621,10 @@ export class ChargingStation extends EventEmitter {
         }
       }
     }
+    // A failed final checkpoint has already armed a deferred retry. Seal all
+    // persistence before clearing the topology so no continuation can overwrite
+    // the retained configuration with an empty snapshot.
+    ChargingStation.prototype.discardPersistence.call(this)
     this.ocppRequestService.cancelPendingRequests(
       this,
       'Charging station deleted while awaiting an OCPP response',
