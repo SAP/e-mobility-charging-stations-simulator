@@ -26,6 +26,7 @@ import {
   getConfigurationKey,
   isCoherentModeActive,
   recordTransactionIntervalEmission,
+  resolveInletToOutputEfficiency,
   resolveLinePhaseIndex,
   resolveMeterValueUnitDivider,
   resolveRootSeed,
@@ -1029,6 +1030,8 @@ interface ResolvedMeterValueIdentity {
   energyRegisterWhOverride?: number
   evseId?: number
   idle?: boolean
+  /** Projects output-side energy overrides to their configured DC meter location. */
+  projectDcForLocation?: boolean
   sampledValueBaseline?: OCPP20SampledValue[]
   sampledValueTemplates?: SampledValueTemplate[]
   snapshot?: boolean
@@ -1946,6 +1949,7 @@ export const buildMeterValue = (
     | 'energyNominalInterval'
     | 'energyRegisterWhOverride'
     | 'evseId'
+    | 'projectDcForLocation'
     | 'snapshot'
     | 'suppressSigning'
     | 'timestamp'
@@ -2602,9 +2606,11 @@ const buildIdentifiedMeterValue = (
           intervalBaselineKey,
           intervalEnergyValue,
           chargingStation.getNumberOfPhases(),
-          chargingStation.stationInfo?.currentOutType === CurrentType.DC && evseId !== 0
-            ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
-            : 1
+          resolveInletToOutputEfficiency(
+            chargingStation.stationInfo?.currentOutType,
+            chargingStation.stationInfo?.conversionEfficiency,
+            evseId
+          )
         )
       }
     }

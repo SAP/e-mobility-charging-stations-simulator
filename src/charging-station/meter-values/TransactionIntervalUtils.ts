@@ -1,5 +1,4 @@
-import type { ConnectorStatus } from '../../types/index.js'
-
+import { type ConnectorStatus, CurrentType } from '../../types/index.js'
 import { isEmpty } from '../../utils/index.js'
 
 export interface TransactionIntervalState {
@@ -8,6 +7,28 @@ export interface TransactionIntervalState {
 }
 
 const transactionIntervalConsumptions = new WeakMap<object, Record<string, number>>()
+
+/**
+ * Resolves the conversion factor used to translate an emitted inlet value back
+ * to the transaction's output-side energy accounting.
+ * @param currentType - Station output current type.
+ * @param configuredEfficiency - Configured inlet-to-output conversion efficiency.
+ * @param evseId - EVSE identity; EVSE zero represents the raw station inlet.
+ * @returns A validated efficiency for a DC output, otherwise one.
+ */
+export const resolveInletToOutputEfficiency = (
+  currentType: CurrentType | undefined,
+  configuredEfficiency: number | undefined,
+  evseId?: number
+): number =>
+  currentType === CurrentType.DC &&
+  evseId !== 0 &&
+  configuredEfficiency != null &&
+  Number.isFinite(configuredEfficiency) &&
+  configuredEfficiency > 0 &&
+  configuredEfficiency <= 1
+    ? configuredEfficiency
+    : 1
 
 export const recordTransactionIntervalConsumption = (
   meterValue: object,

@@ -25,12 +25,14 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
+  CurrentType,
   ErrorType,
   MessageTriggerEnumType,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
   OCPP20FirmwareStatusEnumType,
   OCPP20IncomingRequestCommand,
+  OCPP20LocationEnumType,
   OCPP20MeasurandEnumType,
   OCPP20OptionalVariableName,
   OCPP20ReadingContextEnumType,
@@ -537,6 +539,9 @@ await describe('F06 - TriggerMessage', async () => {
     async function emitTriggeredIntervalWithFailure (
       deliveryAmbiguous: boolean
     ): Promise<{ baseline: number | undefined; carry: number | undefined; represented: number }> {
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.currentOutType = CurrentType.DC
+      mockStation.stationInfo.conversionEfficiency = 0.9
       const baselineKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
         OCPP20RequiredVariableName.Measurands
@@ -556,13 +561,14 @@ await describe('F06 - TriggerMessage', async () => {
       assert.ok(connectorStatus != null)
       connectorStatus.MeterValues = [
         {
+          location: OCPP20LocationEnumType.Inlet,
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
       ] as unknown as NonNullable<EvseStatus['MeterValues']>
       connectorStatus.transactionEnergyActiveImportRegisterValue = 150
-      connectorStatus.transactionEnergyActiveImportIntervalBaselines = { [baselineKey]: 120 }
-      connectorStatus.transactionEnergyActiveImportIntervalCarry = { [baselineKey]: 7 }
+      connectorStatus.transactionEnergyActiveImportIntervalBaselines = { [baselineKey]: 60 }
+      connectorStatus.transactionEnergyActiveImportIntervalCarry = { [baselineKey]: 0 }
       const failure = new OCPPError(
         ErrorType.GENERIC_ERROR,
         deliveryAmbiguous ? 'ambiguous send failure' : 'pre-send failure',
@@ -1051,15 +1057,15 @@ await describe('F06 - TriggerMessage', async () => {
     await it('should restore triggered interval energy after a definite pre-send failure', async () => {
       const { baseline, carry, represented } = await emitTriggeredIntervalWithFailure(false)
 
-      assert.strictEqual(represented, 37)
+      assert.strictEqual(represented, 100)
       assert.strictEqual(baseline, 150)
-      assert.strictEqual(carry, represented)
+      assert.strictEqual(carry, 90)
     })
 
     await it('should keep triggered interval energy consumed after an ambiguous send failure', async () => {
       const { baseline, carry, represented } = await emitTriggeredIntervalWithFailure(true)
 
-      assert.strictEqual(represented, 37)
+      assert.strictEqual(represented, 100)
       assert.strictEqual(baseline, 150)
       assert.strictEqual(carry, 0)
     })

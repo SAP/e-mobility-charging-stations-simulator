@@ -63,6 +63,7 @@ import {
 } from './MeterValueUtils.js'
 import {
   recordTransactionIntervalEmission,
+  resolveInletToOutputEfficiency,
   truncateTransactionIntervalValue,
 } from './TransactionIntervalUtils.js'
 
@@ -712,12 +713,11 @@ export const buildCoherentMeterValue = (
         intervalBaselineKey,
         intervalEnergyValue,
         session.numberOfPhases,
-        session.currentType === CurrentType.DC &&
-          (evseIdOverride ??
-            session.evseId ??
-            context.getEvseIdByConnectorId(session.connectorId)) !== 0
-          ? (context.stationInfo?.conversionEfficiency ?? 1)
-          : 1
+        resolveInletToOutputEfficiency(
+          session.currentType,
+          context.stationInfo?.conversionEfficiency,
+          evseIdOverride ?? session.evseId ?? context.getEvseIdByConnectorId(session.connectorId)
+        )
       )
     }
   }

@@ -164,6 +164,7 @@ import {
   isTransactionEventQueueStaged,
   recordTransactionIntervalEmission,
   resetConnectorStatus,
+  resolveInletToOutputEfficiency,
   restoreTransactionIntervalState,
 } from '../../index.js'
 import {
@@ -1921,7 +1922,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           sample.meterValue,
           intervalBaselineKey,
           sample.intervalEnergyWh ?? 0,
-          chargingStation.getNumberOfPhases()
+          chargingStation.getNumberOfPhases(),
+          resolveInletToOutputEfficiency(
+            chargingStation.stationInfo?.currentOutType,
+            chargingStation.stationInfo?.conversionEfficiency,
+            target.evseId
+          )
         )
         completeTransactionIntervalState(intervalState, intervalBaselineKey, [sample.meterValue])
         restoreIntervalBaselines.push({

@@ -28,6 +28,7 @@ import {
   recordTransactionIntervalEmission,
   removeExpiredReservations,
   resetAuthorizeConnectorStatus,
+  resolveInletToOutputEfficiency,
   restoreTransactionIntervalState,
   setConfigurationKeyValue,
 } from '../../../charging-station/index.js'
@@ -599,7 +600,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                   target.request.meterValue[0],
                   'default',
                   target.intervalEnergyWh ?? 0,
-                  chargingStation.getNumberOfPhases()
+                  chargingStation.getNumberOfPhases(),
+                  resolveInletToOutputEfficiency(
+                    chargingStation.stationInfo?.currentOutType,
+                    chargingStation.stationInfo?.conversionEfficiency
+                  )
                 )
                 completeTransactionIntervalState(
                   intervalState,

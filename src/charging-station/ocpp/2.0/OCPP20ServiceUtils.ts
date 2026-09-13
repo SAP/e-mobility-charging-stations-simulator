@@ -28,6 +28,7 @@ import {
   recordPendingSharedEnergy,
   removeBoundedTransactionEvent,
   resetConnectorStatus,
+  resolveInletToOutputEfficiency,
   resolveLinePhaseIndex,
   resolveRootSeed,
   restoreRejectedTransactionEventIntervalCarry,
@@ -4692,10 +4693,11 @@ export class OCPP20ServiceUtils {
     evseId?: number
   ): number {
     if (meterValues == null) return 0
-    const inletToOutputEfficiency =
-      chargingStation.stationInfo?.currentOutType === CurrentType.DC && evseId !== 0
-        ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
-        : 1
+    const inletToOutputEfficiency = resolveInletToOutputEfficiency(
+      chargingStation.stationInfo?.currentOutType,
+      chargingStation.stationInfo?.conversionEfficiency,
+      evseId
+    )
     let representedEnergyWh = 0
     for (const meterValue of meterValues) {
       const hasTransactionBeginSample = meterValue.sampledValue.some(

@@ -721,7 +721,11 @@ export abstract class OCPPRequestService {
         clearResponseTimeout()
         clearSendTimeout()
         if (bufferedMessage != null) {
-          chargingStation.removeBufferedMessage(bufferedMessage)
+          if (messageType === MessageType.CALL_MESSAGE) {
+            chargingStation.removeBufferedRequest(messageId)
+          } else {
+            chargingStation.removeBufferedMessage(bufferedMessage)
+          }
           bufferedMessage = undefined
         }
         return true
@@ -930,7 +934,12 @@ export abstract class OCPPRequestService {
         this.releaseOutgoingCall(chargingStation, messageId)
         clearResponseTimeout()
         clearSendTimeout()
-        if (bufferedMessage == null || !chargingStation.retainBufferedMessage(bufferedMessage)) {
+        const bufferedMessageRetained =
+          bufferedMessage != null &&
+          (messageType === MessageType.CALL_MESSAGE
+            ? chargingStation.retainBufferedRequest(messageId)
+            : chargingStation.retainBufferedMessage(bufferedMessage))
+        if (!bufferedMessageRetained) {
           const wasBuffered = bufferedMessage != null
           if (!bufferDeferredMessage(ocppError, wasBuffered)) return false
           bufferedMessage = messageToSend

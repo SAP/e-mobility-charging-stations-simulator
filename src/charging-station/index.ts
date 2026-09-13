@@ -72,6 +72,7 @@ export {
   getTransactionIntervalConsumptions,
   recordTransactionIntervalConsumption,
   recordTransactionIntervalEmission,
+  resolveInletToOutputEfficiency,
   restoreTransactionIntervalState,
   truncateTransactionIntervalValue,
 } from './meter-values/TransactionIntervalUtils.js'

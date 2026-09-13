@@ -676,6 +676,39 @@ export function createMockChargingStation (
       return true
     },
 
+    removeBufferedRequest (messageId: string): boolean {
+      const messageIndex = this.messageQueue.findIndex(message => {
+        try {
+          const parsedMessage = JSON.parse(message) as unknown[]
+          return parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId
+        } catch {
+          return false
+        }
+      })
+      if (messageIndex >= 0) {
+        const [message] = this.messageQueue.splice(messageIndex, 1)
+        const [entry] = this.bufferedMessageEntries.splice(messageIndex, 1)
+        entry.callbacks?.onDiscarded?.()
+        this.releaseBufferedMessageCallbacks(entry.reservation)
+        this.acknowledgedBufferedMessages.delete(message)
+        if (messageIndex === 0 && this.bufferedMessageInFlight?.message === message) {
+          this.bufferedMessageInFlight.retracted = true
+        }
+        return true
+      }
+      for (const message of this.acknowledgedBufferedMessages) {
+        try {
+          const parsedMessage = JSON.parse(message) as unknown[]
+          if (parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId) {
+            return this.acknowledgedBufferedMessages.delete(message)
+          }
+        } catch {
+          // Malformed frames cannot match a request id.
+        }
+      }
+      return false
+    },
+
     removeListener: () => station,
 
     removeReservation (reservation: Record<string, unknown>, _reason?: string): void {

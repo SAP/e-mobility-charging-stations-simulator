@@ -25,6 +25,7 @@ import { OCPP16IncomingRequestService } from '../../../../src/charging-station/o
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
+  CurrentType,
   ErrorType,
   OCPP16AuthorizationStatus,
   OCPP16DiagnosticsStatus,
@@ -32,6 +33,7 @@ import {
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
   OCPP16MeterValueFormat,
+  OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
   type OCPP16MeterValuesRequest,
   OCPP16MeterValueUnit,
@@ -515,31 +517,40 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
     await it('should restore triggered interval energy only when delivery was certainly not sent', async () => {
       const runFailure = async (
         configureDelivery: (params: RequestParams, failure: OCPPError) => void
-      ): Promise<number> => {
+      ): Promise<{ carry: number; represented: string }> => {
         const { incomingRequestService, station } = createOCPP16IncomingRequestTestContext()
+        assert.ok(station.stationInfo != null)
+        station.stationInfo.currentOutType = CurrentType.DC
+        station.stationInfo.conversionEfficiency = 0.9
         setupConnectorWithTransaction(station, 1, { transactionId: 100 })
         const connectorStatus = station.getConnectorStatus(1)
         assert.ok(connectorStatus != null)
         connectorStatus.MeterValues = createMeterValuesTemplate([
           {
+            location: OCPP16MeterValueLocation.INLET,
             measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
             unit: OCPP16MeterValueUnit.WATT_HOUR,
             value: '0',
           },
         ])
         connectorStatus.transactionStart = new Date(Date.now() + 60_000)
-        connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 10 }
+        connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 90 }
         upsertConfigurationKey(
           station,
           OCPP16StandardParametersKey.MeterValuesSampledData,
           OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
         )
         const failure = new OCPPError(ErrorType.GENERIC_ERROR, 'triggered MeterValues failed')
+        let represented: string | undefined
         ;(
           station.ocppRequestService as unknown as {
             requestHandler: (...args: unknown[]) => Promise<unknown>
           }
         ).requestHandler = mock.fn((...args: unknown[]) => {
+          const payload = args[2] as OCPP16MeterValuesRequest
+          represented = payload.meterValue[0].sampledValue.find(
+            sample => sample.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+          )?.value
           configureDelivery(args[3] as RequestParams, failure)
           return Promise.reject(failure)
         })
@@ -549,19 +560,25 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
           requestedMessage: OCPP16MessageTrigger.MeterValues,
         })
         await flushMicrotasks()
-        return connectorStatus.transactionEnergyActiveImportIntervalCarry.default
+        assert.ok(represented != null)
+        return {
+          carry: connectorStatus.transactionEnergyActiveImportIntervalCarry.default,
+          represented,
+        }
       }
 
-      assert.strictEqual(
-        await runFailure((params, failure) => params.onTransportError?.(failure, false)),
-        10
+      const preSendFailure = await runFailure((params, failure) =>
+        params.onTransportError?.(failure, false)
       )
-      assert.strictEqual(await runFailure((params, failure) => params.onError?.(failure, true)), 10)
-      assert.strictEqual(await runFailure(params => params.onMessageSent?.()), 0)
-      assert.strictEqual(
-        await runFailure((params, failure) => params.onTransportError?.(failure, true)),
-        0
+      assert.deepStrictEqual(preSendFailure, { carry: 90, represented: '100' })
+      const callError = await runFailure((params, failure) => params.onError?.(failure, true))
+      assert.deepStrictEqual(callError, { carry: 90, represented: '100' })
+      const sentFailure = await runFailure(params => params.onMessageSent?.())
+      assert.deepStrictEqual(sentFailure, { carry: 0, represented: '100' })
+      const ambiguousFailure = await runFailure((params, failure) =>
+        params.onTransportError?.(failure, true)
       )
+      assert.deepStrictEqual(ambiguousFailure, { carry: 0, represented: '100' })
     })
 
     await it('should settle signed triggered MeterValues before StopTransaction is built', async () => {

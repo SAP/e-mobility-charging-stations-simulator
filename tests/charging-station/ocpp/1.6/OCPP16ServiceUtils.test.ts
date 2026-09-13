@@ -23,6 +23,7 @@ import {
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
   ChargePointErrorCode,
+  CurrentType,
   ErrorType,
   OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
@@ -37,6 +38,7 @@ import {
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
   OCPP16MeterValueFormat,
+  OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
@@ -1131,6 +1133,8 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         ocppRequestService: { requestHandler },
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
+          conversionEfficiency: 0.9,
+          currentOutType: CurrentType.DC,
           meterSerialNumber: 'SIM-001',
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_16,
@@ -1147,6 +1151,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
           value: '0',
         },
         {
+          location: OCPP16MeterValueLocation.INLET,
           measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: OCPP16MeterValueUnit.WATT_HOUR,
           value: '0',
@@ -1156,7 +1161,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         sampledValue: [{ value: '0' }],
         timestamp: new Date('2026-09-08T09:00:00.000Z'),
       }
-      connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 10 }
+      connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 90 }
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.StopTxnSampledData,
@@ -1169,10 +1174,12 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         ?.flatMap(meterValue => meterValue.sampledValue)
         .find(
           sampledValue =>
-            sampledValue.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+            sampledValue.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL &&
+            sampledValue.location === OCPP16MeterValueLocation.INLET
         )
-      assert.strictEqual(intervalSample?.value, '10')
-      assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry.default, 10)
+      assert.strictEqual(intervalSample?.location, OCPP16MeterValueLocation.INLET)
+      assert.strictEqual(intervalSample.value, '100')
+      assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry.default, 90)
     })
 
     await it('should return one in-flight promise per connector and allow a later retry', async () => {

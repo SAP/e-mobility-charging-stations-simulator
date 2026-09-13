@@ -895,6 +895,163 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.deepStrictEqual(payload, replacementPayload)
     })
 
+    await it('should remove a reconciled buffered request after its replay response', async () => {
+      const { requestService, station: activeStation } = createOCPP16RequestTestContext()
+      station = activeStation
+      installBufferedMessageCallbackState(activeStation)
+      activeStation.ocppRequestService = requestService
+      activeStation.recordRequestStatistic = () => undefined
+      setupConnectorWithTransaction(activeStation, 1, { transactionId: 42 })
+      const previousPayload: OCPP16StopTransactionRequest = {
+        meterStop: 100,
+        timestamp: new Date('2026-09-13T10:00:00.000Z'),
+        transactionId: 42,
+      }
+      const replacementPayload: OCPP16StopTransactionRequest = {
+        ...previousPayload,
+        meterStop: 125,
+      }
+      const stationInternals = activeStation as unknown as {
+        acknowledgedBufferedMessages: Set<string>
+        messageQueue: string[]
+        saveConfiguration: () => void
+        sendMessageBuffer: (onComplete: () => void) => void
+      }
+      stationInternals.saveConfiguration = () => undefined
+      activeStation.isWebSocketConnectionOpened = () => false
+
+      await assert.rejects(
+        requestService.requestHandler<OCPP16StopTransactionRequest, OCPP16StopTransactionResponse>(
+          activeStation,
+          OCPP16RequestCommand.STOP_TRANSACTION,
+          previousPayload,
+          {
+            rawPayload: true,
+            skipBufferingOnError: false,
+            throwError: true,
+          }
+        ),
+        /WebSocket closed/
+      )
+      const [previousMessage] = stationInternals.messageQueue
+      const [, messageId] = JSON.parse(previousMessage) as [number, string]
+      assert.strictEqual(
+        ChargingStation.prototype.replaceBufferedRequestPayload.call(
+          activeStation,
+          OCPP16RequestCommand.STOP_TRANSACTION,
+          previousPayload,
+          replacementPayload
+        ),
+        true
+      )
+
+      const sentMessages: string[] = []
+      const sendCallbacks: (() => void)[] = []
+      activeStation.isWebSocketConnectionOpened = () => true
+      const wsConnection = activeStation.wsConnection
+      assert.ok(wsConnection != null)
+      mock.method(wsConnection, 'send', (message: unknown, callback?: (error?: Error) => void) => {
+        sentMessages.push(String(message))
+        if (callback != null) sendCallbacks.push(callback)
+      })
+      const sendMessageBuffer = (
+        ChargingStation.prototype as unknown as {
+          sendMessageBuffer: (this: ChargingStation, onComplete: () => void) => void
+        }
+      ).sendMessageBuffer
+      stationInternals.sendMessageBuffer = sendMessageBuffer
+
+      sendMessageBuffer.call(activeStation, () => undefined)
+      await flushMicrotasks()
+      sendCallbacks.shift()?.()
+      await flushMicrotasks()
+      assert.deepStrictEqual(
+        (JSON.parse(sentMessages[0]) as [number, string, OCPP16RequestCommand, unknown])[3],
+        { ...replacementPayload, timestamp: replacementPayload.timestamp.toISOString() }
+      )
+      assert.strictEqual(stationInternals.acknowledgedBufferedMessages.size, 1)
+
+      const cachedRequest = activeStation.requests.get(messageId)
+      assert.ok(cachedRequest != null)
+      cachedRequest[0](
+        { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } },
+        cachedRequest[3]
+      )
+      await flushMicrotasks()
+
+      assert.strictEqual(activeStation.requests.has(messageId), false)
+      assert.strictEqual(stationInternals.acknowledgedBufferedMessages.size, 0)
+      assert.strictEqual(activeStation.getBufferedRequestIds().size, 0)
+      sendMessageBuffer.call(activeStation, () => undefined)
+      await flushMicrotasks()
+      assert.strictEqual(
+        sentMessages.filter(message => (JSON.parse(message) as [number, string])[1] === messageId)
+          .length,
+        1
+      )
+    })
+
+    await it('should not duplicate a reconciled buffered request during cancellation', async () => {
+      const { requestService, station: activeStation } = createOCPP16RequestTestContext()
+      station = activeStation
+      installBufferedMessageCallbackState(activeStation)
+      activeStation.ocppRequestService = requestService
+      activeStation.recordRequestStatistic = () => undefined
+      const previousPayload: OCPP16StopTransactionRequest = {
+        meterStop: 100,
+        timestamp: new Date('2026-09-13T10:00:00.000Z'),
+        transactionId: 42,
+      }
+      const replacementPayload: OCPP16StopTransactionRequest = {
+        ...previousPayload,
+        meterStop: 125,
+      }
+      const stationInternals = activeStation as unknown as {
+        messageQueue: string[]
+        saveConfiguration: () => void
+      }
+      stationInternals.saveConfiguration = () => undefined
+      activeStation.isWebSocketConnectionOpened = () => false
+
+      await assert.rejects(
+        requestService.requestHandler<OCPP16StopTransactionRequest, OCPP16StopTransactionResponse>(
+          activeStation,
+          OCPP16RequestCommand.STOP_TRANSACTION,
+          previousPayload,
+          {
+            rawPayload: true,
+            skipBufferingOnError: false,
+            throwError: true,
+          }
+        ),
+        /WebSocket closed/
+      )
+      assert.strictEqual(
+        ChargingStation.prototype.replaceBufferedRequestPayload.call(
+          activeStation,
+          OCPP16RequestCommand.STOP_TRANSACTION,
+          previousPayload,
+          replacementPayload
+        ),
+        true
+      )
+
+      requestService.cancelPendingRequests(activeStation)
+
+      assert.strictEqual(stationInternals.messageQueue.length, 1)
+      const [, , command, payload] = JSON.parse(stationInternals.messageQueue[0]) as [
+        number,
+        string,
+        OCPP16RequestCommand,
+        OCPP16StopTransactionRequest
+      ]
+      assert.strictEqual(command, OCPP16RequestCommand.STOP_TRANSACTION)
+      assert.deepStrictEqual(payload, {
+        ...replacementPayload,
+        timestamp: replacementPayload.timestamp.toISOString(),
+      })
+    })
+
     await it('should refuse payload replacement after replay reaches the transport', async () => {
       const { station: activeStation } = createOCPP16RequestTestContext()
       station = activeStation

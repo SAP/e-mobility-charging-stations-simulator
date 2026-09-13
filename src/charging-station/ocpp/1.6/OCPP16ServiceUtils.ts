@@ -19,6 +19,7 @@ import {
   hasReservationExpired,
   isCoherentModeActive,
   recordTransactionIntervalEmission,
+  resolveInletToOutputEfficiency,
   restoreTransactionIntervalState,
 } from '../../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../../exception/index.js'
@@ -2005,6 +2006,7 @@ export class OCPP16ServiceUtils {
         connectorId,
         energyIntervalWhOverride: intervalEnergyWh,
         energyRegisterWhOverride: meterStop,
+        projectDcForLocation: true,
         snapshot: true,
         timestamp: meterValue.timestamp,
       }
@@ -2023,7 +2025,11 @@ export class OCPP16ServiceUtils {
         enrichedMeterValue,
         'default',
         intervalEnergyWh,
-        chargingStation.getNumberOfPhases()
+        chargingStation.getNumberOfPhases(),
+        resolveInletToOutputEfficiency(
+          chargingStation.stationInfo?.currentOutType,
+          chargingStation.stationInfo?.conversionEfficiency
+        )
       )
     }
     return enrichedMeterValue

@@ -1428,6 +1428,39 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Retracts the currently owned buffered CALL for an OCPP message id.
+   * Payload replacement keeps the message id stable, so terminal request cleanup
+   * must not depend on the serialized frame captured before replacement.
+   * @param messageId - OCPP unique message identifier
+   * @returns Whether a matching queued or acknowledged request was removed
+   */
+  public removeBufferedRequest (messageId: string): boolean {
+    const messageIndex = this.messageQueue.findIndex(message => {
+      try {
+        const parsedMessage = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
+        return parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId
+      } catch {
+        return false
+      }
+    })
+    if (messageIndex >= 0) {
+      ChargingStation.prototype.removeBufferedMessageEntry.call(this, messageIndex, true)
+      return true
+    }
+    for (const message of this.acknowledgedBufferedMessages) {
+      try {
+        const parsedMessage = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
+        if (parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId) {
+          return this.acknowledgedBufferedMessages.delete(message)
+        }
+      } catch {
+        // Malformed frames cannot match a request id and are handled by the flush path.
+      }
+    }
+    return false
+  }
+
+  /**
    * Removes a reservation and restores the connector to its previous status.
    * @param reservation - The reservation to remove
    * @param reason - The reason for removing the reservation
