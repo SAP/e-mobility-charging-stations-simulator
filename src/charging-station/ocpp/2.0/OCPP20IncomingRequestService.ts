@@ -1300,6 +1300,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     commandName: IncomingRequestCommand,
     commandPayload: JsonType
   ): void {
+    if (commandName === OCPP20IncomingRequestCommand.GET_BASE_REPORT) {
+      const request = commandPayload as OCPP20GetBaseReportRequest
+      this.stationsState.get(chargingStation)?.reportDataCache.delete(request.requestId)
+      return
+    }
     if (commandName === OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION) {
       const request = commandPayload as OCPP20RequestStartTransactionRequest
       const pending = this.pendingRemoteStartResponses.get(request)
