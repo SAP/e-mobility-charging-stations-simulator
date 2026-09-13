@@ -3,10 +3,8 @@
  * @description Unit tests for OCPP 2.0 RequestStopTransaction command handling (F03)
  */
 
-import type { mock } from 'node:test'
-
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
@@ -387,6 +385,36 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
       assert.strictEqual(listenerStation.getConnectorStatus(1)?.transactionEventQueue?.length, 1)
+    })
+
+    await it('should not stop a replacement transaction from a stale accepted response', async () => {
+      const transactionId = await startTransaction(listenerStation, 1, 103)
+      const replacementTransactionId = '00000000-0000-4000-8000-000000000103'
+      const connectorStatus = listenerStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      requestHandlerMock.mock.resetCalls()
+      mock.method(listenerStation, 'getConnectorIdByTransactionId', () => 1)
+      mock.method(listenerStation, 'getEvseIdByTransactionId', () => {
+        connectorStatus.transactionId = replacementTransactionId
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionEnding = false
+        return 1
+      })
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+        listenerStation,
+        { transactionId: transactionId as UUIDv4 } satisfies OCPP20RequestStopTransactionRequest,
+        {
+          status: RequestStartStopStatusEnumType.Accepted,
+        } satisfies OCPP20RequestStopTransactionResponse
+      )
+      await flushMicrotasks()
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+      assert.strictEqual(connectorStatus.transactionId, replacementTransactionId)
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(connectorStatus.transactionEnding, false)
     })
 
     await it('should NOT call requestStopTransaction when response is Rejected', () => {

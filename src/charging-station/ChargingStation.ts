@@ -3781,6 +3781,7 @@ export class ChargingStation extends EventEmitter {
     const finalizeShutdown = async (): Promise<void> => {
       // Settle accepted responses before the stop sequence snapshots transactions.
       releaseIncomingRequests()
+      await OCPP20ServiceUtils.waitForTransactionTerminations(this)
       await flushTransactionEventQueues()
       if (!shutdownGenerationIsCurrent()) return
       await runStopMessageSequence()

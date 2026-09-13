@@ -98,6 +98,7 @@ import {
   convertToBoolean,
   convertToInt,
   convertToIntOrNaN,
+  ensureError,
   formatDurationMilliSeconds,
   generateUUID,
   getErrorMessage,
@@ -141,6 +142,11 @@ import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata } from './OCPP20VariableRegistry.js'
 
 const moduleName = 'OCPP20ServiceUtils'
+
+interface StopTransactionOperation {
+  readonly promise: Promise<OCPP20TransactionEventResponse>
+  readonly transactionId: string
+}
 
 type TransactionEventDeliveryOutcome =
   | 'aborted'
@@ -1129,6 +1135,11 @@ export class OCPP20ServiceUtils {
     new WeakSet<OCPP20TransactionEventRequest>()
 
   private static readonly saturatedTransactionEventQueues = new WeakSet<ConnectorStatus>()
+  private static readonly stopTransactionOperations = new WeakMap<
+    ConnectorStatus,
+    StopTransactionOperation
+  >()
+
   private static readonly transactionEventQueueDrains = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventSendChains = new WeakMap<
     ConnectorStatus,
@@ -3168,14 +3179,13 @@ export class OCPP20ServiceUtils {
       }
     )
 
-    return this.terminateTransaction(
+    return this.requestStopTransaction(
       chargingStation,
       connectorId,
-      connectorStatus,
-      transactionId,
+      evseId,
       OCPP20TriggerReasonEnumType.Deauthorized,
       OCPP20ReasonEnumType.DeAuthorized,
-      evseId
+      transactionId
     )
   }
 
@@ -3186,30 +3196,96 @@ export class OCPP20ServiceUtils {
    * @param evseId - Optional EVSE identifier
    * @param triggerReason - Trigger reason for the stop event
    * @param stoppedReason - Reason the transaction was stopped
+   * @param expectedTransactionId - Optional transaction identity required by the caller
    * @returns Promise resolving to the TransactionEvent response
    */
-  public static async requestStopTransaction (
+  public static requestStopTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
     evseId?: number,
     triggerReason: OCPP20TriggerReasonEnumType = OCPP20TriggerReasonEnumType.RemoteStop,
-    stoppedReason: OCPP20ReasonEnumType = OCPP20ReasonEnumType.Remote
+    stoppedReason: OCPP20ReasonEnumType = OCPP20ReasonEnumType.Remote,
+    expectedTransactionId?: string
   ): Promise<OCPP20TransactionEventResponse> {
-    const { connectorStatus, transactionId } = OCPP20ServiceUtils.resolveActiveTransaction(
-      chargingStation,
-      connectorId,
-      evseId
-    )
+    let connectorStatus: ConnectorStatus | undefined
+    try {
+      connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+    } catch (error) {
+      return Promise.reject(ensureError(error))
+    }
+    const requestedTransactionId =
+      expectedTransactionId ?? connectorStatus?.transactionId?.toString()
+    const activeStopTransaction =
+      connectorStatus != null
+        ? OCPP20ServiceUtils.stopTransactionOperations.get(connectorStatus)
+        : undefined
+    if (activeStopTransaction != null) {
+      if (
+        activeStopTransaction.transactionId === requestedTransactionId ||
+        (expectedTransactionId == null &&
+          connectorStatus?.transactionEnding === true &&
+          requestedTransactionId == null)
+      ) {
+        return activeStopTransaction.promise
+      }
+      return Promise.reject(
+        new OCPPError(
+          ErrorType.GENERIC_ERROR,
+          `${chargingStation.logPrefix()} ${moduleName}.requestStopTransaction: Stop transaction ${activeStopTransaction.transactionId} is still in progress on connector ${connectorId.toString()}; cannot stop replacement transaction ${requestedTransactionId ?? 'unknown'}`,
+          OCPP20RequestCommand.TRANSACTION_EVENT
+        )
+      )
+    }
 
-    return this.terminateTransaction(
+    let activeTransaction: { connectorStatus: ConnectorStatus; transactionId: string }
+    try {
+      activeTransaction = OCPP20ServiceUtils.resolveActiveTransaction(
+        chargingStation,
+        connectorId,
+        evseId
+      )
+    } catch (error) {
+      return Promise.reject(ensureError(error))
+    }
+    if (
+      expectedTransactionId != null &&
+      activeTransaction.transactionId !== expectedTransactionId
+    ) {
+      return Promise.reject(
+        new OCPPError(
+          ErrorType.GENERIC_ERROR,
+          `${chargingStation.logPrefix()} ${moduleName}.requestStopTransaction: Expected transaction ${expectedTransactionId} does not match active transaction ${activeTransaction.transactionId} on connector ${connectorId.toString()}`,
+          OCPP20RequestCommand.TRANSACTION_EVENT
+        )
+      )
+    }
+
+    const { promise, reject, resolve } = Promise.withResolvers<OCPP20TransactionEventResponse>()
+    const operation = { promise, transactionId: activeTransaction.transactionId }
+    OCPP20ServiceUtils.stopTransactionOperations.set(activeTransaction.connectorStatus, operation)
+    OCPP20ServiceUtils.terminateTransaction(
       chargingStation,
       connectorId,
-      connectorStatus,
-      transactionId,
+      activeTransaction.connectorStatus,
+      activeTransaction.transactionId,
       triggerReason,
       stoppedReason,
-      evseId
+      evseId,
+      operation
     )
+      .then(resolve)
+      .catch(reject)
+    promise
+      .finally(() => {
+        if (
+          OCPP20ServiceUtils.stopTransactionOperations.get(activeTransaction.connectorStatus) ===
+          operation
+        ) {
+          OCPP20ServiceUtils.stopTransactionOperations.delete(activeTransaction.connectorStatus)
+        }
+      })
+      .catch(() => undefined)
+    return promise
   }
 
   /**
@@ -3986,14 +4062,13 @@ export class OCPP20ServiceUtils {
           const energySinceDeauth = currentEnergy - connectorStatus.transactionDeauthorizedEnergyWh
           if (maxEnergy > 0 && energySinceDeauth >= maxEnergy) {
             const resolvedEvseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
-            await OCPP20ServiceUtils.terminateTransaction(
+            await OCPP20ServiceUtils.requestStopTransaction(
               chargingStation,
               connectorId,
-              connectorStatus,
-              connectorStatus.transactionId.toString(),
+              resolvedEvseId,
               OCPP20TriggerReasonEnumType.Deauthorized,
               OCPP20ReasonEnumType.DeAuthorized,
-              resolvedEvseId
+              connectorStatus.transactionId.toString()
             )
             return
           }
@@ -4234,6 +4309,30 @@ export class OCPP20ServiceUtils {
       const next = OCPP20ServiceUtils.transactionEventSendChains.get(connectorStatus)
       if (next === pending) return
       pending = next
+    }
+  }
+
+  /**
+   * Waits for every registered transaction termination currently owned by this station.
+   * Operations registered while waiting are included, and rejection does not prevent a
+   * later stopAllTransactions pass from retrying the active transaction.
+   * @param chargingStation - Station whose connector terminations must settle
+   */
+  public static async waitForTransactionTerminations (
+    chargingStation: ChargingStation
+  ): Promise<void> {
+    for (;;) {
+      const pending: Promise<OCPP20TransactionEventResponse>[] = []
+      const seen = new Set<Promise<OCPP20TransactionEventResponse>>()
+      for (const { connectorStatus } of chargingStation.iterateConnectors(true)) {
+        const promise = OCPP20ServiceUtils.stopTransactionOperations.get(connectorStatus)?.promise
+        if (promise != null && !seen.has(promise)) {
+          seen.add(promise)
+          pending.push(promise)
+        }
+      }
+      if (pending.length === 0) return
+      await Promise.allSettled(pending)
     }
   }
 
@@ -6069,7 +6168,8 @@ export class OCPP20ServiceUtils {
     transactionId: string,
     triggerReason: OCPP20TriggerReasonEnumType,
     stoppedReason: OCPP20ReasonEnumType,
-    evseId?: number
+    evseId: number | undefined,
+    operation: StopTransactionOperation
   ): Promise<OCPP20TransactionEventResponse> {
     const transactionEndingAtEntry = connectorStatus.transactionEnding
     const transactionUpdatedSamplerRunning =
@@ -6081,6 +6181,17 @@ export class OCPP20ServiceUtils {
       connectorStatus,
       transactionId
     )
+    const operationOwnsTransaction = (): boolean =>
+      chargingStation.getConnectorStatus(connectorId, evseId) === connectorStatus &&
+      connectorStatus.transactionId?.toString() === transactionId &&
+      OCPP20ServiceUtils.stopTransactionOperations.get(connectorStatus) === operation
+    if (!operationOwnsTransaction()) {
+      throw new OCPPError(
+        ErrorType.GENERIC_ERROR,
+        `${chargingStation.logPrefix()} ${moduleName}.terminateTransaction: Transaction ${transactionId} no longer owns connector ${connectorId.toString()}`,
+        OCPP20RequestCommand.TRANSACTION_EVENT
+      )
+    }
     const checkpoint = {
       publicKeySentInTransaction: connectorStatus.publicKeySentInTransaction,
       transactionEndedMeterValues:
@@ -6209,23 +6320,27 @@ export class OCPP20ServiceUtils {
         error instanceof TransactionEventSignedEvidenceError ||
         (error instanceof TransactionEventDeliveryError && error.outcome === 'write-ahead-failed')
       ) {
-        try {
-          await restoreRetrySensitiveState()
-        } catch (persistenceError: unknown) {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.terminateTransaction: Failed to persist restored transaction state:`,
-            persistenceError
-          )
+        if (operationOwnsTransaction()) {
+          try {
+            await restoreRetrySensitiveState()
+          } catch (persistenceError: unknown) {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.terminateTransaction: Failed to persist restored transaction state:`,
+              persistenceError
+            )
+          }
         }
         throw error
       }
-      await OCPP20ServiceUtils.cleanupEndedTransaction(
-        chargingStation,
-        connectorId,
-        connectorStatus,
-        evseId,
-        transactionId
-      )
+      if (operationOwnsTransaction()) {
+        await OCPP20ServiceUtils.cleanupEndedTransaction(
+          chargingStation,
+          connectorId,
+          connectorStatus,
+          evseId,
+          transactionId
+        )
+      }
       if (hasQueuedEndedTransactionEvent(connectorStatus, transactionId)) {
         try {
           await chargingStation.persistTransactionEventQueues()
@@ -6254,13 +6369,15 @@ export class OCPP20ServiceUtils {
       return response
     }
 
-    await OCPP20ServiceUtils.cleanupEndedTransaction(
-      chargingStation,
-      connectorId,
-      connectorStatus,
-      evseId,
-      transactionId
-    )
+    if (operationOwnsTransaction()) {
+      await OCPP20ServiceUtils.cleanupEndedTransaction(
+        chargingStation,
+        connectorId,
+        connectorStatus,
+        evseId,
+        transactionId
+      )
+    }
 
     return response
   }

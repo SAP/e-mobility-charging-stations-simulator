@@ -8868,6 +8868,168 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       standardCleanup()
     })
 
+    await it('should share one Ended operation for concurrent stops of the same transaction', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const responseGate = Promise.withResolvers<EmptyObject>()
+      const requestStarted = Promise.withResolvers<undefined>()
+      const requestHandler = mock.fn(async (...args: unknown[]): Promise<EmptyObject> => {
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        requestStarted.resolve(undefined)
+        const response = await responseGate.promise
+        requestParams?.onResponseReceived?.()
+        return response
+      })
+      const { station } = createMockChargingStation({
+        baseName: `${TEST_CHARGING_STATION_BASE_NAME}-SINGLE-FLIGHT`,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler },
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      station.isWebSocketConnectionOpened = () => true
+      setupConnectorWithTransaction(station, connectorId, { transactionId })
+      const connectorStatus = station.getConnectorStatus(connectorId, 1)
+      assert.ok(connectorStatus != null)
+
+      const firstStop = OCPP20ServiceUtils.requestStopTransaction(
+        station,
+        connectorId,
+        1,
+        undefined,
+        undefined,
+        transactionId
+      )
+      const secondStop = OCPP20ServiceUtils.requestStopTransaction(
+        station,
+        connectorId,
+        1,
+        undefined,
+        undefined,
+        transactionId
+      )
+
+      assert.strictEqual(secondStop, firstStop)
+      const replacementTransactionId = generateUUID()
+      connectorStatus.transactionId = replacementTransactionId
+      connectorStatus.transactionEnding = false
+      const conflictingStop = OCPP20ServiceUtils.requestStopTransaction(
+        station,
+        connectorId,
+        1,
+        undefined,
+        undefined,
+        replacementTransactionId
+      )
+      connectorStatus.transactionId = transactionId
+      connectorStatus.transactionEnding = true
+      await assert.rejects(conflictingStop, /cannot stop replacement transaction/)
+      await requestStarted.promise
+      assert.strictEqual(requestHandler.mock.callCount(), 1)
+      responseGate.resolve({})
+      await Promise.all([firstStop, secondStop])
+      assert.strictEqual(
+        requestHandler.mock.calls.filter(
+          call =>
+            (call.arguments[2] as OCPP20TransactionEventRequest).eventType ===
+            OCPP20TransactionEventEnumType.Ended
+        ).length,
+        1
+      )
+    })
+
+    await it('should release a failed write-ahead stop so the same transaction can retry', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const writeFailure = new Error('terminal write-ahead failed')
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId, 1)
+      assert.ok(connectorStatus != null)
+      let persistenceCalls = 0
+      mock.method(mockTracking.station, 'persistTransactionEventQueues', () => {
+        persistenceCalls++
+        return persistenceCalls === 1 ? Promise.reject(writeFailure) : Promise.resolve()
+      })
+
+      await assert.rejects(
+        OCPP20ServiceUtils.requestStopTransaction(
+          mockTracking.station,
+          connectorId,
+          1,
+          undefined,
+          undefined,
+          transactionId
+        ),
+        /terminal write-ahead failed/
+      )
+      assert.strictEqual(connectorStatus.transactionId, transactionId)
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+
+      await OCPP20ServiceUtils.requestStopTransaction(
+        mockTracking.station,
+        connectorId,
+        1,
+        undefined,
+        undefined,
+        transactionId
+      )
+
+      assert.strictEqual(
+        mockTracking.sentRequests.filter(
+          ({ payload }) => payload.eventType === OCPP20TransactionEventEnumType.Ended
+        ).length,
+        1
+      )
+    })
+
+    await it('should not mutate a replacement connector while an older stop waits to stage', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const replacementTransactionId = generateUUID()
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
+      const originalConnectorStatus = mockTracking.station.getConnectorStatus(connectorId, 1)
+      const evseStatus = mockTracking.station.getEvseStatus(1)
+      assert.ok(originalConnectorStatus != null)
+      assert.ok(evseStatus != null)
+      const predecessor = TransactionMeterValueDeliveryBarrier.begin(
+        originalConnectorStatus,
+        transactionId
+      )
+      assert.ok(predecessor != null)
+
+      const stopped = OCPP20ServiceUtils.requestStopTransaction(
+        mockTracking.station,
+        connectorId,
+        1,
+        undefined,
+        undefined,
+        transactionId
+      )
+      await flushMicrotasks()
+      const replacementConnectorStatus = {
+        ...originalConnectorStatus,
+        transactionEnding: false,
+        transactionEventQueue: [],
+        transactionId: replacementTransactionId,
+        transactionIdTag: 'REPLACEMENT',
+        transactionSeqNo: 0,
+        transactionStarted: true,
+      }
+      evseStatus.connectors.set(connectorId, replacementConnectorStatus)
+      predecessor.settle(true)
+
+      await assert.rejects(stopped, /no longer owns connector/)
+      assert.strictEqual(replacementConnectorStatus.transactionId, replacementTransactionId)
+      assert.strictEqual(replacementConnectorStatus.transactionIdTag, 'REPLACEMENT')
+      assert.strictEqual(replacementConnectorStatus.transactionStarted, true)
+      assert.strictEqual(replacementConnectorStatus.transactionEnding, false)
+      assert.strictEqual(replacementConnectorStatus.transactionSeqNo, 0)
+      assert.deepStrictEqual(replacementConnectorStatus.transactionEventQueue, [])
+      assert.strictEqual(mockTracking.sentRequests.length, 0)
+    })
+
     await it('should default to RemoteStop triggerReason and Remote stoppedReason', async () => {
       // Arrange
       const connectorId = 1

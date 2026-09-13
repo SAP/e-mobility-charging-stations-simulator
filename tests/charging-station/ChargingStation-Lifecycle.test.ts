@@ -15,6 +15,9 @@ import { OCPP16IncomingRequestService } from '../../src/charging-station/ocpp/1.
 import { OCPP16RequestService } from '../../src/charging-station/ocpp/1.6/OCPP16RequestService.js'
 import { OCPP16ResponseService } from '../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import { OCPP16ServiceUtils } from '../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
+import { OCPP20IncomingRequestService } from '../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPP20RequestService } from '../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
+import { OCPP20ResponseService } from '../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { stopRunningTransactions } from '../../src/charging-station/ocpp/OCPPServiceOperations.js'
 import {
@@ -31,6 +34,11 @@ import {
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
   OCPP16VendorParametersKey,
+  OCPP20IncomingRequestCommand,
+  OCPP20RequestCommand,
+  OCPP20TransactionEventEnumType,
+  type OCPP20TransactionEventRequest,
+  OCPP20TriggerReasonEnumType,
   OCPPVersion,
 } from '../../src/types/index.js'
 import { AsyncLock, AsyncLockType, Constants } from '../../src/utils/index.js'
@@ -1957,6 +1965,136 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(saveAttempts, 2)
       await pacedRetry
     })
+
+    for (const stopTransactions of [false, true]) {
+      await it(`waits for an accepted RequestStopTransaction released during stop(${stopTransactions.toString()})`, async () => {
+        const transactionId = '00000000-0000-4000-8000-000000000025'
+        const predecessorStarted = Promise.withResolvers<undefined>()
+        const releasePredecessor = Promise.withResolvers<undefined>()
+        const endedStarted = Promise.withResolvers<undefined>()
+        const releaseEnded = Promise.withResolvers<undefined>()
+        const sentEventTypes: OCPP20TransactionEventEnumType[] = []
+        const requestHandler = mock.fn(
+          async (...args: unknown[]): Promise<Record<string, never>> => {
+            if (args[1] !== OCPP20RequestCommand.TRANSACTION_EVENT) return {}
+            const request = args[2] as OCPP20TransactionEventRequest
+            const requestParams = args[3] as RequestParams | undefined
+            sentEventTypes.push(request.eventType)
+            requestParams?.onMessageSent?.()
+            if (request.eventType === OCPP20TransactionEventEnumType.Updated) {
+              predecessorStarted.resolve(undefined)
+              await releasePredecessor.promise
+            } else if (request.eventType === OCPP20TransactionEventEnumType.Ended) {
+              endedStarted.resolve(undefined)
+              await releaseEnded.promise
+            }
+            requestParams?.onResponseReceived?.()
+            return {}
+          }
+        )
+        const result = createMockChargingStation({
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler },
+          ocppVersion: OCPPVersion.VERSION_20,
+          started: true,
+          stationInfo: { enableStatistics: false },
+        })
+        const activeStation = result.station
+        station = activeStation
+        const incomingRequestService = new OCPP20IncomingRequestService()
+        const requestService = new OCPP20RequestService(new OCPP20ResponseService())
+        mock.method(requestService, 'requestHandler', requestHandler)
+        const stationLifecycle = activeStation as unknown as {
+          lifecycleAbortController: AbortController
+          ocppIncomingRequestService: OCPP20IncomingRequestService
+          ocppRequestService: OCPP20RequestService
+          performStop: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stop?: boolean
+          ) => Promise<void>
+          sharedLRUCache: { deleteChargingStationConfiguration: (hash?: string) => void }
+          stopMessageSequence: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stop?: boolean
+          ) => Promise<void>
+        }
+        stationLifecycle.lifecycleAbortController = new AbortController()
+        stationLifecycle.ocppIncomingRequestService = incomingRequestService
+        stationLifecycle.ocppRequestService = requestService
+        stationLifecycle.performStop = (
+          ChargingStation.prototype as unknown as {
+            performStop: typeof stationLifecycle.performStop
+          }
+        ).performStop
+        stationLifecycle.sharedLRUCache = { deleteChargingStationConfiguration: () => undefined }
+        stationLifecycle.stopMessageSequence = async (reason, shouldStopTransactions) => {
+          if (shouldStopTransactions === true) await stopRunningTransactions(activeStation, reason)
+        }
+        activeStation.isWebSocketConnectionOpened = () => true
+        activeStation.inAcceptedState = () => true
+        activeStation.recordRequestStatistic = () => undefined
+        setupConnectorWithTransaction(activeStation, 1, { transactionId })
+        const predecessor = OCPP20ServiceUtils.sendTransactionEvent(
+          activeStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          1,
+          transactionId,
+          { evseId: 1 }
+        )
+        await predecessorStarted.promise
+        const wsConnection = activeStation.wsConnection
+        assert.ok(wsConnection != null)
+        mock.method(
+          wsConnection,
+          'send',
+          (_message: unknown, callback?: (error?: Error) => void): void => {
+            callback?.(new Error('ambiguous RequestStopTransaction response delivery'))
+          }
+        )
+        await incomingRequestService.incomingRequestHandler(
+          activeStation,
+          'buffered-request-stop-response',
+          OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+          { transactionId }
+        )
+        const stationInternals = activeStation as unknown as { messageQueue: string[] }
+        assert.strictEqual(stationInternals.messageQueue.length, 1)
+
+        let stopSettled = false
+        const stopped = ChargingStation.prototype.stop.call(
+          activeStation,
+          undefined,
+          stopTransactions
+        )
+        void stopped.then(() => {
+          stopSettled = true
+          return undefined
+        })
+        await flushMicrotasks()
+        assert.strictEqual(stopSettled, false)
+        assert.deepStrictEqual(sentEventTypes, [OCPP20TransactionEventEnumType.Updated])
+
+        releasePredecessor.resolve(undefined)
+        await endedStarted.promise
+        assert.strictEqual(stopSettled, false)
+        assert.deepStrictEqual(sentEventTypes, [
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TransactionEventEnumType.Ended,
+        ])
+
+        releaseEnded.resolve(undefined)
+        await Promise.allSettled([predecessor])
+        await stopped
+        assert.strictEqual(stopSettled, true)
+        assert.strictEqual(
+          sentEventTypes.filter(eventType => eventType === OCPP20TransactionEventEnumType.Ended)
+            .length,
+          1
+        )
+      })
+    }
 
     await it('persists events queued while transaction delivery settles during stop', async () => {
       const transactionEventQueue: unknown[] = []

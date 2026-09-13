@@ -696,14 +696,19 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           const connectorId = chargingStation.getConnectorIdByTransactionId(request.transactionId)
           const evseId = chargingStation.getEvseIdByTransactionId(request.transactionId)
           if (connectorId != null && evseId != null) {
-            OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
-              (error: unknown) => {
-                logger.error(
-                  `${chargingStation.logPrefix()} ${moduleName}.constructor: RequestStopTransaction error:`,
-                  error
-                )
-              }
-            )
+            OCPP20ServiceUtils.requestStopTransaction(
+              chargingStation,
+              connectorId,
+              evseId,
+              undefined,
+              undefined,
+              request.transactionId
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.constructor: RequestStopTransaction error:`,
+                error
+              )
+            })
           }
         }
       }

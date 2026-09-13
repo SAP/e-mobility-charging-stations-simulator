@@ -2978,16 +2978,14 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       const stopPromise = OCPP20ServiceUtils.requestStopTransaction(mockStation, 1, 1)
       await flushPendingPromises()
-      await assert.rejects(
-        OCPP20ServiceUtils.requestStopTransaction(mockStation, 1, 1),
-        /No active transaction/
-      )
+      const secondStopPromise = OCPP20ServiceUtils.requestStopTransaction(mockStation, 1, 1)
+      assert.strictEqual(secondStopPromise, stopPromise)
       await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
       const eventTypesWhileEnding = sentTransactionEvents(requestHandlerMock).map(
         event => event.eventType
       )
       releaseEndedRequest()
-      await stopPromise
+      await Promise.all([stopPromise, secondStopPromise])
 
       assert.deepEqual(eventTypesWhileEnding, [OCPP20TransactionEventEnumType.Ended])
     })
