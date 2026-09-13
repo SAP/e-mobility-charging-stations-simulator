@@ -4,11 +4,15 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ResetRequest } from '../../../../src/types/index.js'
 
-import { GenericStatus, ResetType } from '../../../../src/types/index.js'
+import {
+  GenericStatus,
+  OCPP16IncomingRequestCommand,
+  ResetType,
+} from '../../../../src/types/index.js'
 import {
   setupConnectorWithTransaction,
   standardCleanup,
@@ -108,6 +112,73 @@ await describe('OCPP16IncomingRequestService — Reset', async () => {
     assert.strictEqual(typeof response, 'object')
     assert.notStrictEqual(response.status, undefined)
     assert.strictEqual(response.status, GenericStatus.Accepted)
+  })
+
+  await it('should send the Reset response before starting the station reset', async () => {
+    const { incomingRequestService, station } = testContext
+    station.started = true
+    station.inAcceptedState = () => true
+    station.recordRequestStatistic = () => undefined
+    const callOrder: string[] = []
+    const reset = mock.fn((): Promise<void> => {
+      callOrder.push('reset')
+      return Promise.resolve()
+    })
+    Object.assign(station, { reset })
+    const sendResponse = mock.fn((...args: unknown[]): Promise<void> => {
+      callOrder.push('response')
+      const requestParams = args[4] as undefined | { onMessageSent?: () => void }
+      requestParams?.onMessageSent?.()
+      return Promise.resolve()
+    })
+    Object.assign(station.ocppRequestService, { sendResponse })
+
+    await incomingRequestService.incomingRequestHandler(
+      station,
+      'reset-response-before-stop',
+      OCPP16IncomingRequestCommand.RESET,
+      { type: ResetType.HARD }
+    )
+
+    assert.strictEqual(sendResponse.mock.callCount(), 1)
+    assert.strictEqual(reset.mock.callCount(), 1)
+    assert.deepStrictEqual(callOrder, ['response', 'reset'])
+  })
+
+  await it('should discard a Reset action when its response settles in a newer lifecycle', async () => {
+    const { incomingRequestService, station } = testContext
+    const responseStarted = Promise.withResolvers<undefined>()
+    const releaseResponse = Promise.withResolvers<undefined>()
+    const stationLifecycle = station as unknown as { lifecycleAbortController: AbortController }
+    stationLifecycle.lifecycleAbortController = new AbortController()
+    Object.defineProperty(station, 'lifecycleAbortSignal', {
+      configurable: true,
+      get: () => stationLifecycle.lifecycleAbortController.signal,
+    })
+    station.started = true
+    station.inAcceptedState = () => true
+    station.recordRequestStatistic = () => undefined
+    const reset = mock.fn((): Promise<void> => Promise.resolve())
+    Object.assign(station, { reset })
+    const sendResponse = mock.fn((): Promise<void> => {
+      responseStarted.resolve(undefined)
+      return releaseResponse.promise
+    })
+    Object.assign(station.ocppRequestService, { sendResponse })
+
+    const handling = incomingRequestService.incomingRequestHandler(
+      station,
+      'stale-reset-response',
+      OCPP16IncomingRequestCommand.RESET,
+      { type: ResetType.HARD }
+    )
+    await responseStarted.promise
+    stationLifecycle.lifecycleAbortController.abort()
+    stationLifecycle.lifecycleAbortController = new AbortController()
+    releaseResponse.resolve(undefined)
+    await handling
+
+    assert.strictEqual(reset.mock.callCount(), 0)
   })
 
   // Additional test: Verify response structure

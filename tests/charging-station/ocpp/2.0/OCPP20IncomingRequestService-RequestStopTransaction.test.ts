@@ -417,6 +417,64 @@ await describe('F03 - Remote Stop Transaction', async () => {
       assert.strictEqual(connectorStatus.transactionEnding, false)
     })
 
+    await it('should drop a prior-lifecycle Accepted callback during a later shutdown', async () => {
+      const transactionId = await startTransaction(listenerStation, 1, 104)
+      requestHandlerMock.mock.resetCalls()
+      const responseSendStarted = Promise.withResolvers<undefined>()
+      const releaseResponse = Promise.withResolvers<undefined>()
+      let deliveryCallbacks: undefined | { onMessageSent?: () => void }
+      mock.method(
+        listenerStation.ocppRequestService,
+        'sendResponse',
+        (...args: unknown[]): Promise<void> => {
+          deliveryCallbacks = args[4] as typeof deliveryCallbacks
+          responseSendStarted.resolve(undefined)
+          return releaseResponse.promise
+        }
+      )
+      const stationLifecycle = listenerStation as unknown as {
+        lifecycleAbortController: AbortController
+        stopping: boolean
+      }
+      stationLifecycle.lifecycleAbortController = new AbortController()
+      Object.defineProperty(listenerStation, 'lifecycleAbortSignal', {
+        configurable: true,
+        get: () => stationLifecycle.lifecycleAbortController.signal,
+      })
+      const admittedLifecycleSignal = listenerStation.lifecycleAbortSignal
+      const request = {
+        transactionId: transactionId as UUIDv4,
+      } satisfies OCPP20RequestStopTransactionRequest
+
+      const handling = listenerService.incomingRequestHandler(
+        listenerStation,
+        'stale-request-stop-response',
+        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+        request,
+        admittedLifecycleSignal,
+        () =>
+          listenerStation.lifecycleAbortSignal === admittedLifecycleSignal &&
+          !admittedLifecycleSignal.aborted,
+        () => true
+      )
+      await responseSendStarted.promise
+      listenerService.stop(listenerStation)
+      stationLifecycle.lifecycleAbortController.abort()
+      stationLifecycle.lifecycleAbortController = new AbortController()
+      listenerService.activate(listenerStation, listenerStation.lifecycleAbortSignal)
+      stationLifecycle.stopping = true
+      deliveryCallbacks?.onMessageSent?.()
+      releaseResponse.resolve(undefined)
+      await handling
+      stationLifecycle.stopping = false
+
+      const connectorStatus = listenerStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+      assert.strictEqual(connectorStatus.transactionId, transactionId)
+      assert.notStrictEqual(connectorStatus.transactionEnding, true)
+    })
+
     await it('should NOT call requestStopTransaction when response is Rejected', () => {
       const request: OCPP20RequestStopTransactionRequest = {
         transactionId: 'any-transaction-id' as UUIDv4,

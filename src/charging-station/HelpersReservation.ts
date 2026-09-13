@@ -60,10 +60,12 @@ export const hasPendingReservations = (chargingStation: ChargingStation): boolea
  * single error log at the end so a partial-failure batch is still
  * observable.
  * @param chargingStation - The charging station whose expired reservations should be cleared.
+ * @param isOperationCurrent - Optional operation-ownership guard for post-await mutation.
  * @returns Resolves once every expiry sweep has settled; individual failures are logged, never rethrown.
  */
 export const removeExpiredReservations = async (
-  chargingStation: ChargingStation
+  chargingStation: ChargingStation,
+  isOperationCurrent?: () => boolean
 ): Promise<void> => {
   const reservations: Reservation[] = []
   for (const { connectorStatus } of chargingStation.iterateConnectors()) {
@@ -73,7 +75,11 @@ export const removeExpiredReservations = async (
   }
   const results = await Promise.allSettled(
     reservations.map(reservation =>
-      chargingStation.removeReservation(reservation, ReservationTerminationReason.EXPIRED)
+      chargingStation.removeReservation(
+        reservation,
+        ReservationTerminationReason.EXPIRED,
+        isOperationCurrent
+      )
     )
   )
   let failureCount = 0

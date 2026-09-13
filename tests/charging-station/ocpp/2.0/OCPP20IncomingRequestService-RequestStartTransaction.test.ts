@@ -495,6 +495,62 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxStarted)
   })
 
+  await it('should admit only one of two remote starts authorized concurrently', async () => {
+    const authorizationStarted = Promise.withResolvers<undefined>()
+    const releaseAuthorization = Promise.withResolvers<undefined>()
+    let authorizationCalls = 0
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+    OCPPAuthServiceFactory.setInstanceForTesting(
+      stationId,
+      createMockAuthService({
+        authorize: async () => {
+          authorizationCalls++
+          if (authorizationCalls === 2) authorizationStarted.resolve(undefined)
+          await releaseAuthorization.promise
+          return createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthResultStatus.ACCEPTED,
+          })
+        },
+      })
+    )
+    const requests = [
+      {
+        evseId: 1,
+        idToken: { idToken: 'CONCURRENT_TOKEN_1', type: OCPP20IdTokenEnumType.ISO14443 },
+        remoteStartId: 103,
+      },
+      {
+        evseId: 1,
+        idToken: { idToken: 'CONCURRENT_TOKEN_2', type: OCPP20IdTokenEnumType.ISO14443 },
+        remoteStartId: 104,
+      },
+    ] satisfies OCPP20RequestStartTransactionRequest[]
+
+    const responses = requests.map(request =>
+      testableService.handleRequestStartTransaction(mockStation, request)
+    )
+    await authorizationStarted.promise
+    releaseAuthorization.resolve(undefined)
+    const [firstResponse, secondResponse] = await Promise.all(responses)
+
+    const acceptedResponses = [firstResponse, secondResponse].filter(
+      response => response.status === RequestStartStopStatusEnumType.Accepted
+    )
+    const rejectedResponses = [firstResponse, secondResponse].filter(
+      response => response.status === RequestStartStopStatusEnumType.Rejected
+    )
+    assert.strictEqual(acceptedResponses.length, 1)
+    assert.strictEqual(rejectedResponses.length, 1)
+    assert.strictEqual(rejectedResponses[0].statusInfo?.reasonCode, ReasonCodeEnumType.TxStarted)
+    const connectorStatus = mockStation.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    assert.strictEqual(connectorStatus.transactionId, acceptedResponses[0].transactionId)
+    const acceptedRequest = firstResponse === acceptedResponses[0] ? requests[0] : requests[1]
+    assert.strictEqual(connectorStatus.transactionIdTag, acceptedRequest.idToken.idToken)
+    assert.strictEqual(connectorStatus.remoteStartId, acceptedRequest.remoteStartId)
+  })
+
   await it('should not overwrite the transaction identity while Started delivery owns the connector', async () => {
     const connectorStatus = mockStation.getConnectorStatus(1)
     if (connectorStatus == null) {
@@ -636,6 +692,309 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.ok(response.transactionId.length > 0, 'transactionId should not be empty')
   })
 
+  await it('should reject an explicit inoperative EVSE without reserving its connector', async () => {
+    const evseStatus = mockStation.getEvseStatus(1)
+    const connectorStatus = mockStation.getConnectorStatus(1, 1)
+    assert.ok(evseStatus != null)
+    assert.ok(connectorStatus != null)
+    evseStatus.availability = OCPP20OperationalStatusEnumType.Inoperative
+
+    const response = await testableService.handleRequestStartTransaction(mockStation, {
+      evseId: 1,
+      idToken: {
+        idToken: 'EXPLICIT_INOPERATIVE',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 498,
+    })
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.NotFound)
+    assert.strictEqual(connectorStatus.transactionPending, undefined)
+    assert.strictEqual(connectorStatus.transactionId, undefined)
+    assert.strictEqual(connectorStatus.remoteStartId, undefined)
+  })
+
+  await it('should reject when the EVSE becomes inoperative during authorization', async () => {
+    const authorizationStarted = Promise.withResolvers<undefined>()
+    const releaseAuthorization = Promise.withResolvers<undefined>()
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+    OCPPAuthServiceFactory.setInstanceForTesting(
+      stationId,
+      createMockAuthService({
+        authorize: async () => {
+          authorizationStarted.resolve(undefined)
+          await releaseAuthorization.promise
+          return createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthResultStatus.ACCEPTED,
+          })
+        },
+      })
+    )
+    const evseStatus = mockStation.getEvseStatus(1)
+    const connectorStatus = mockStation.getConnectorStatus(1, 1)
+    assert.ok(evseStatus != null)
+    assert.ok(connectorStatus != null)
+
+    const handling = testableService.handleRequestStartTransaction(mockStation, {
+      evseId: 1,
+      idToken: {
+        idToken: 'BECOMES_INOPERATIVE',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 499,
+    })
+    await authorizationStarted.promise
+    evseStatus.availability = OCPP20OperationalStatusEnumType.Inoperative
+    releaseAuthorization.resolve(undefined)
+    const response = await handling
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.NotFound)
+    assert.strictEqual(connectorStatus.transactionPending, undefined)
+    assert.strictEqual(connectorStatus.transactionId, undefined)
+    assert.strictEqual(connectorStatus.remoteStartId, undefined)
+  })
+
+  for (const explicitEvse of [false, true]) {
+    await it(`should select an eligible sibling connector for ${explicitEvse ? 'an explicit' : 'an automatic'} EVSE target`, async () => {
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connector1 = mockStation.getConnectorStatus(1, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connector1 != null)
+      connector1.availability = OCPP20OperationalStatusEnumType.Inoperative
+      connector1.status = ConnectorStatusEnum.Unavailable
+      const connector2 = createConnectorStatus(2)
+      evseStatus.connectors.set(2, connector2)
+
+      const response = await testableService.handleRequestStartTransaction(mockStation, {
+        ...(explicitEvse && { evseId: 1 }),
+        idToken: {
+          idToken: `MULTI_CONNECTOR_${explicitEvse.toString()}`,
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: explicitEvse ? 1496 : 1497,
+      })
+
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+      assert.strictEqual(connector1.transactionPending, undefined)
+      assert.strictEqual(connector1.transactionId, undefined)
+      assert.strictEqual(connector2.transactionPending, true)
+      assert.strictEqual(connector2.transactionId, response.transactionId)
+    })
+  }
+
+  await it('should reject a free connector when its EVSE already owns a transaction', async () => {
+    const evseStatus = mockStation.getEvseStatus(1)
+    const connector1 = mockStation.getConnectorStatus(1, 1)
+    assert.ok(evseStatus != null)
+    assert.ok(connector1 != null)
+    connector1.transactionId = '00000000-0000-4000-8000-000000001502'
+    connector1.transactionStarted = true
+    const connector2 = createConnectorStatus(2)
+    evseStatus.connectors.set(2, connector2)
+
+    const response = await testableService.handleRequestStartTransaction(mockStation, {
+      evseId: 1,
+      idToken: {
+        idToken: 'SIBLING_ACTIVE_TRANSACTION',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 1502,
+    })
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxInProgress)
+    assert.strictEqual(connector2.transactionPending, undefined)
+    assert.strictEqual(connector2.transactionId, undefined)
+  })
+
+  await it('should echo an explicit sibling transaction that becomes pending during authorization', async () => {
+    const authorizationStarted = Promise.withResolvers<undefined>()
+    const releaseAuthorization = Promise.withResolvers<undefined>()
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+    OCPPAuthServiceFactory.setInstanceForTesting(
+      stationId,
+      createMockAuthService({
+        authorize: async () => {
+          authorizationStarted.resolve(undefined)
+          await releaseAuthorization.promise
+          return createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthResultStatus.ACCEPTED,
+          })
+        },
+      })
+    )
+    const evseStatus = mockStation.getEvseStatus(1)
+    const selectedConnector = mockStation.getConnectorStatus(1, 1)
+    assert.ok(evseStatus != null)
+    assert.ok(selectedConnector != null)
+    const siblingConnector = createConnectorStatus(2)
+    evseStatus.connectors.set(2, siblingConnector)
+    const siblingTransactionId = '00000000-0000-4000-8000-000000001504'
+
+    const handling = testableService.handleRequestStartTransaction(mockStation, {
+      evseId: 1,
+      idToken: {
+        idToken: 'SIBLING_PENDING_DURING_AUTH',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 1504,
+    })
+    await authorizationStarted.promise
+    siblingConnector.transactionId = siblingTransactionId
+    siblingConnector.transactionPending = true
+    releaseAuthorization.resolve(undefined)
+    const response = await handling
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxStarted)
+    assert.strictEqual(response.transactionId, siblingTransactionId)
+    assert.strictEqual(selectedConnector.transactionPending, undefined)
+    assert.strictEqual(selectedConnector.transactionId, undefined)
+  })
+
+  await it('should reject when a sibling connector starts during authorization', async () => {
+    const authorizationStarted = Promise.withResolvers<undefined>()
+    const releaseAuthorization = Promise.withResolvers<undefined>()
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+    OCPPAuthServiceFactory.setInstanceForTesting(
+      stationId,
+      createMockAuthService({
+        authorize: async () => {
+          authorizationStarted.resolve(undefined)
+          await releaseAuthorization.promise
+          return createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthResultStatus.ACCEPTED,
+          })
+        },
+      })
+    )
+    const evseStatus = mockStation.getEvseStatus(1)
+    const selectedConnector = mockStation.getConnectorStatus(1, 1)
+    assert.ok(evseStatus != null)
+    assert.ok(selectedConnector != null)
+    const siblingConnector = createConnectorStatus(2)
+    evseStatus.connectors.set(2, siblingConnector)
+
+    const handling = testableService.handleRequestStartTransaction(mockStation, {
+      evseId: 1,
+      idToken: {
+        idToken: 'SIBLING_STARTS_DURING_AUTH',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 1503,
+    })
+    await authorizationStarted.promise
+    siblingConnector.transactionId = '00000000-0000-4000-8000-000000001503'
+    siblingConnector.transactionStarting = true
+    releaseAuthorization.resolve(undefined)
+    const response = await handling
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxInProgress)
+    assert.strictEqual(selectedConnector.transactionPending, undefined)
+    assert.strictEqual(selectedConnector.transactionId, undefined)
+  })
+
+  await it('should reject an explicit connector made inoperative before authorization', async () => {
+    const connectorStatus = mockStation.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    testableService.handleRequestChangeAvailability(mockStation, {
+      evse: { connectorId: 1, id: 1 },
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
+    })
+
+    const response = await testableService.handleRequestStartTransaction(mockStation, {
+      evseId: 1,
+      idToken: {
+        idToken: 'EXPLICIT_CONNECTOR_INOPERATIVE',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 1498,
+    })
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.NotFound)
+    assert.strictEqual(connectorStatus.availability, OCPP20OperationalStatusEnumType.Inoperative)
+    assert.strictEqual(connectorStatus.transactionPending, undefined)
+    assert.strictEqual(connectorStatus.transactionId, undefined)
+  })
+
+  await it('should skip a connector made inoperative during automatic EVSE selection', async () => {
+    const connector1 = mockStation.getConnectorStatus(1, 1)
+    const connector2 = mockStation.getConnectorStatus(2, 2)
+    assert.ok(connector1 != null)
+    assert.ok(connector2 != null)
+    testableService.handleRequestChangeAvailability(mockStation, {
+      evse: { connectorId: 1, id: 1 },
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
+    })
+
+    const response = await testableService.handleRequestStartTransaction(mockStation, {
+      idToken: {
+        idToken: 'AUTO_CONNECTOR_INOPERATIVE',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 1499,
+    })
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+    assert.strictEqual(connector1.transactionPending, undefined)
+    assert.strictEqual(connector1.transactionId, undefined)
+    assert.strictEqual(connector2.transactionPending, true)
+    assert.strictEqual(connector2.transactionId, response.transactionId)
+  })
+
+  for (const explicitEvse of [false, true]) {
+    await it(`should reject an ${explicitEvse ? 'explicit' : 'automatically selected'} connector made inoperative during authorization`, async () => {
+      const authorizationStarted = Promise.withResolvers<undefined>()
+      const releaseAuthorization = Promise.withResolvers<undefined>()
+      const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+      OCPPAuthServiceFactory.setInstanceForTesting(
+        stationId,
+        createMockAuthService({
+          authorize: async () => {
+            authorizationStarted.resolve(undefined)
+            await releaseAuthorization.promise
+            return createMockAuthorizationResult({
+              method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+              status: AuthResultStatus.ACCEPTED,
+            })
+          },
+        })
+      )
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+
+      const handling = testableService.handleRequestStartTransaction(mockStation, {
+        ...(explicitEvse && { evseId: 1 }),
+        idToken: {
+          idToken: `BECOMES_CONNECTOR_INOPERATIVE_${explicitEvse.toString()}`,
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: explicitEvse ? 1500 : 1501,
+      })
+      await authorizationStarted.promise
+      testableService.handleRequestChangeAvailability(mockStation, {
+        evse: { connectorId: 1, id: 1 },
+        operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
+      })
+      releaseAuthorization.resolve(undefined)
+      const response = await handling
+
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.NotFound)
+      assert.strictEqual(connectorStatus.availability, OCPP20OperationalStatusEnumType.Inoperative)
+      assert.strictEqual(connectorStatus.transactionPending, undefined)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(connectorStatus.remoteStartId, undefined)
+    })
+  }
+
   // FR: F01 — EVSE availability during auto-selection
   await it('should skip inoperative EVSEs during auto-selection without evseId', async () => {
     // Arrange
@@ -724,12 +1083,11 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
     assert.strictEqual(evse2Connector.transactionId, response.transactionId)
 
-    testable.onResponseSendError(
+    await testable.onResponseSendError(
       station,
       OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
       request
     )
-    await flushMicrotasks()
 
     assert.strictEqual(evse1Connector.status, ConnectorStatusEnum.Unavailable)
     assert.strictEqual(evse1Connector.transactionPending, true)
@@ -865,6 +1223,172 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       ]
       assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
       assert.strictEqual(args[2].eventType, OCPP20TransactionEventEnumType.Started)
+    })
+
+    await it('should not send Started when termination begins before response delivery', async () => {
+      const startRequest: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'ENDING_BEFORE_RESPONSE',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 105,
+      }
+      const response = await testableService.handleRequestStartTransaction(
+        listenerStation,
+        startRequest
+      )
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+      const connectorStatus = listenerStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionEnding = true
+      requestHandlerMock.mock.resetCalls()
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        listenerStation,
+        startRequest,
+        response
+      )
+      await flushMicrotasks()
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+    })
+
+    await it('should not duplicate Started when a local start owns the pending transaction', async () => {
+      const startRequest: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'LOCAL_START_OWNS_PENDING',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 106,
+      }
+      const response = await testableService.handleRequestStartTransaction(
+        listenerStation,
+        startRequest
+      )
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+      const connectorStatus = listenerStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionStarting = true
+      requestHandlerMock.mock.resetCalls()
+      const createCoherentSession = mock.method(
+        listenerStation,
+        'createCoherentSession',
+        () => undefined
+      )
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        listenerStation,
+        startRequest,
+        response
+      )
+      await flushMicrotasks()
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+      assert.strictEqual(createCoherentSession.mock.callCount(), 0)
+      assert.strictEqual(connectorStatus.transactionPending, true)
+      assert.strictEqual(connectorStatus.transactionStarting, true)
+    })
+
+    await it('should reject a non-whitelisted response callback while stopping', async () => {
+      resetConnectorTransactionState(listenerStation)
+      requestHandlerMock.mock.resetCalls()
+      const responseSendStarted = Promise.withResolvers<undefined>()
+      const releaseResponse = Promise.withResolvers<undefined>()
+      let deliveryCallbacks: undefined | { onMessageSent?: () => void }
+      mock.method(
+        listenerStation.ocppRequestService,
+        'sendResponse',
+        (...args: unknown[]): Promise<void> => {
+          deliveryCallbacks = args[4] as typeof deliveryCallbacks
+          responseSendStarted.resolve(undefined)
+          return releaseResponse.promise
+        }
+      )
+      const request: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'STOPPING_RESPONSE_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 106,
+      }
+      const handling = listenerService.incomingRequestHandler(
+        listenerStation,
+        'stopping-response',
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        request
+      )
+      await responseSendStarted.promise
+      const connectorStatus = listenerStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(connectorStatus.transactionPending, true)
+
+      ;(listenerStation as unknown as { stopping: boolean }).stopping = true
+      deliveryCallbacks?.onMessageSent?.()
+      releaseResponse.resolve(undefined)
+      await handling
+      ;(listenerStation as unknown as { stopping: boolean }).stopping = false
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+      assert.strictEqual(connectorStatus.transactionPending, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(connectorStatus.remoteStartId, undefined)
+    })
+
+    await it('should dispatch a buffered Accepted response replayed on a replacement socket', async () => {
+      resetConnectorTransactionState(listenerStation)
+      requestHandlerMock.mock.resetCalls()
+      let deliveryCallbacks:
+        | undefined
+        | { onError?: () => void; onMessageSent?: () => void; onRequestBuffered?: () => void }
+      mock.method(
+        listenerStation.ocppRequestService,
+        'sendResponse',
+        (...args: unknown[]): Promise<void> => {
+          deliveryCallbacks = args[4] as typeof deliveryCallbacks
+          deliveryCallbacks?.onRequestBuffered?.()
+          return Promise.reject(new Error('response retained for replay'))
+        }
+      )
+      let sourceIsCurrent = true
+      const request: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'REPLAYED_RESPONSE_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 105,
+      }
+
+      await listenerService.incomingRequestHandler(
+        listenerStation,
+        'replayed-response',
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        request,
+        listenerStation.lifecycleAbortSignal,
+        () => true,
+        () => sourceIsCurrent
+      )
+      const connectorStatus = listenerStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(connectorStatus.transactionPending, true)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+
+      sourceIsCurrent = false
+      deliveryCallbacks?.onMessageSent?.()
+      deliveryCallbacks?.onError?.()
+      await flushMicrotasks()
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      assert.strictEqual(connectorStatus.transactionPending, true)
+      assert.strictEqual(typeof connectorStatus.transactionId, 'string')
+      assert.strictEqual(connectorStatus.transactionIdTag, request.idToken.idToken)
+      assert.strictEqual(connectorStatus.remoteStartId, request.remoteStartId)
     })
 
     await it('should NOT call TransactionEvent when response is Rejected', () => {
@@ -1005,12 +1529,11 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       assert.strictEqual(connectorStatus.transactionId, response.transactionId)
       assert.strictEqual(connectorStatus.remoteStartId, request.remoteStartId)
 
-      testableService.onResponseSendError(
+      await testableService.onResponseSendError(
         listenerStation,
         OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
         request
       )
-      await flushMicrotasks()
 
       assert.strictEqual(connectorStatus.transactionPending, false)
       assert.strictEqual(connectorStatus.transactionId, undefined)
@@ -1018,7 +1541,157 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
-    await it('should preserve an accepted remote start when stop cancels its in-flight response', async () => {
+    await it('should not reserve a transaction when the request source reconnects during authorization', async () => {
+      const { requestService, station: responseStation } = createOCPP20RequestTestContext({
+        baseName: `${TEST_CHARGING_STATION_BASE_NAME}-STALE-AUTH-SOURCE`,
+      })
+      const responseService = new OCPP20IncomingRequestService()
+      const authorizationStarted = Promise.withResolvers<undefined>()
+      const releaseAuthorization = Promise.withResolvers<undefined>()
+      const stationId = responseStation.stationInfo?.chargingStationId ?? 'unknown'
+      OCPPAuthServiceFactory.setInstanceForTesting(
+        stationId,
+        createMockAuthService({
+          authorize: async () => {
+            authorizationStarted.resolve(undefined)
+            await releaseAuthorization.promise
+            return createMockAuthorizationResult({
+              method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+              status: AuthResultStatus.ACCEPTED,
+            })
+          },
+        })
+      )
+      resetConnectorTransactionState(responseStation)
+      resetLimits(responseStation)
+      resetReportingValueSize(responseStation)
+      responseStation.started = true
+      responseStation.recordRequestStatistic = () => undefined
+      responseStation.emitChargingStationEvent = () => undefined
+      Object.assign(responseStation, {
+        ocppIncomingRequestService: responseService,
+        ocppRequestService: requestService,
+      })
+      const sendResponse = mock.method(requestService, 'sendResponse', () => Promise.resolve())
+      let sourceCurrent = true
+      const request: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'STALE_SOURCE_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 1001,
+      }
+
+      const handling = responseService.incomingRequestHandler(
+        responseStation,
+        'stale-source-response',
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        request,
+        responseStation.lifecycleAbortSignal,
+        () => true,
+        () => sourceCurrent
+      )
+      await authorizationStarted.promise
+      sourceCurrent = false
+      releaseAuthorization.resolve(undefined)
+      await handling
+
+      const connectorStatus = responseStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      assert.notStrictEqual(connectorStatus.transactionPending, true)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(connectorStatus.remoteStartId, undefined)
+      assert.strictEqual(sendResponse.mock.callCount(), 0)
+    })
+
+    await it('should not mutate a restarted transaction when old authorization completes', async () => {
+      const { requestService, station: responseStation } = createOCPP20RequestTestContext({
+        baseName: `${TEST_CHARGING_STATION_BASE_NAME}-STALE-HANDLER-ROLLBACK`,
+      })
+      const responseService = new OCPP20IncomingRequestService()
+      const authorizationStarted = Promise.withResolvers<undefined>()
+      const releaseAuthorization = Promise.withResolvers<undefined>()
+      const stationId = responseStation.stationInfo?.chargingStationId ?? 'unknown'
+      OCPPAuthServiceFactory.setInstanceForTesting(
+        stationId,
+        createMockAuthService({
+          authorize: async () => {
+            authorizationStarted.resolve(undefined)
+            await releaseAuthorization.promise
+            return createMockAuthorizationResult({
+              method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+              status: AuthResultStatus.ACCEPTED,
+            })
+          },
+        })
+      )
+      resetConnectorTransactionState(responseStation)
+      resetLimits(responseStation)
+      resetReportingValueSize(responseStation)
+      responseStation.started = true
+      responseStation.recordRequestStatistic = () => undefined
+      responseStation.emitChargingStationEvent = () => undefined
+      Object.assign(responseStation, {
+        ocppIncomingRequestService: responseService,
+        ocppRequestService: requestService,
+      })
+      const sendResponse = mock.method(requestService, 'sendResponse', () => Promise.resolve())
+      const stationLifecycle = responseStation as unknown as {
+        lifecycleAbortController: AbortController
+        performStop: () => Promise<void>
+      }
+      stationLifecycle.lifecycleAbortController = new AbortController()
+      Object.defineProperty(responseStation, 'lifecycleAbortSignal', {
+        configurable: true,
+        get: () => stationLifecycle.lifecycleAbortController.signal,
+      })
+      stationLifecycle.performStop = () => {
+        responseService.stop(responseStation)
+        stationLifecycle.lifecycleAbortController.abort()
+        stationLifecycle.lifecycleAbortController = new AbortController()
+        responseStation.started = false
+        return Promise.resolve()
+      }
+      const request: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'STALE_HANDLER_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 1002,
+      }
+
+      const handling = responseService.incomingRequestHandler(
+        responseStation,
+        'stale-handler-response',
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        request
+      )
+      await authorizationStarted.promise
+      const connectorStatus = responseStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      assert.notStrictEqual(connectorStatus.transactionPending, true)
+
+      await ChargingStation.prototype.stop.call(responseStation, undefined, false)
+      responseStation.start()
+      const replacementTransactionId = '00000000-0000-4000-8000-000000000105'
+      connectorStatus.transactionPending = true
+      connectorStatus.transactionId = replacementTransactionId
+      connectorStatus.transactionIdTag = 'RESTARTED_WINNER'
+      connectorStatus.remoteStartId = 1003
+      releaseAuthorization.resolve(undefined)
+      await handling
+
+      assert.strictEqual(responseStation.started, true)
+      assert.strictEqual(connectorStatus.transactionPending, true)
+      assert.strictEqual(connectorStatus.transactionId, replacementTransactionId)
+      assert.strictEqual(connectorStatus.transactionIdTag, 'RESTARTED_WINNER')
+      assert.strictEqual(connectorStatus.remoteStartId, 1003)
+      assert.strictEqual(sendResponse.mock.callCount(), 0)
+    })
+
+    await it('should roll back an accepted remote start when stop cancels its in-flight response', async () => {
       const { requestService, station: responseStation } = createOCPP20RequestTestContext({
         baseName: `${TEST_CHARGING_STATION_BASE_NAME}-RESPONSE-CANCELLATION`,
       })
@@ -1074,7 +1747,6 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       await responseTransportStarted.promise
       const connectorStatus = responseStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
-      const transactionId = connectorStatus.transactionId
       assert.strictEqual(connectorStatus.transactionPending, true)
 
       await Promise.all([
@@ -1082,19 +1754,19 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         ChargingStation.prototype.stop.call(responseStation, undefined, false),
       ])
 
-      assert.strictEqual(connectorStatus.transactionPending, true)
-      assert.strictEqual(connectorStatus.transactionId, transactionId)
-      assert.strictEqual(transactionEventSpy.mock.callCount(), 1)
+      assert.strictEqual(connectorStatus.transactionPending, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(transactionEventSpy.mock.callCount(), 0)
 
       sendCallback?.()
       await flushMicrotasks()
 
-      assert.strictEqual(connectorStatus.transactionPending, true)
-      assert.strictEqual(connectorStatus.transactionId, transactionId)
-      assert.strictEqual(transactionEventSpy.mock.callCount(), 1)
+      assert.strictEqual(connectorStatus.transactionPending, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(transactionEventSpy.mock.callCount(), 0)
     })
 
-    await it('should preserve Accepted side effects when an ambiguous response is buffered then discarded on stop', async () => {
+    await it('should roll back Accepted side effects when an ambiguous response is discarded on stop', async () => {
       const { requestService, station: responseStation } = createOCPP20RequestTestContext({
         baseName: `${TEST_CHARGING_STATION_BASE_NAME}-BUFFERED-RESPONSE-CANCELLATION`,
       })
@@ -1146,16 +1818,15 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       )
       const connectorStatus = responseStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
-      const transactionId = connectorStatus.transactionId
       assert.strictEqual(connectorStatus.transactionPending, true)
       assert.strictEqual(transactionEventSpy.mock.callCount(), 0)
 
       await ChargingStation.prototype.stop.call(responseStation, undefined, false)
       await flushMicrotasks()
 
-      assert.strictEqual(connectorStatus.transactionPending, true)
-      assert.strictEqual(connectorStatus.transactionId, transactionId)
-      assert.strictEqual(transactionEventSpy.mock.callCount(), 1)
+      assert.strictEqual(connectorStatus.transactionPending, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(transactionEventSpy.mock.callCount(), 0)
     })
 
     // E01.FR.07 + E01.FR.16 + E03.FR.01: Verify transaction sequence number reset

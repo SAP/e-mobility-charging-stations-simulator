@@ -466,13 +466,15 @@ export class OCPP16ServiceUtils {
    * @param connectorIds - Array of connector identifiers to update
    * @param chargePointStatus - New charge point status to set
    * @param availabilityType - Operative or inoperative availability type
+   * @param isOperationCurrent - Optional operation-ownership guard for post-await mutation
    * @returns Accepted or scheduled availability change response
    */
   public static changeAvailability = async (
     chargingStation: ChargingStation,
     connectorIds: number[],
     chargePointStatus: OCPP16ChargePointStatus,
-    availabilityType: OCPP16AvailabilityType
+    availabilityType: OCPP16AvailabilityType,
+    isOperationCurrent?: () => boolean
   ): Promise<OCPP16ChangeAvailabilityResponse> => {
     const responses: OCPP16ChangeAvailabilityResponse[] = []
     for (const connectorId of connectorIds) {
@@ -487,10 +489,14 @@ export class OCPP16ServiceUtils {
       }
       connectorStatus.availability = availabilityType
       if (response === OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
-        await sendAndSetConnectorStatus(chargingStation, {
-          connectorId,
-          status: chargePointStatus,
-        })
+        await sendAndSetConnectorStatus(
+          chargingStation,
+          { connectorId, status: chargePointStatus },
+          { isOperationCurrent, send: true }
+        )
+        if (isOperationCurrent?.() === false) {
+          return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED
+        }
       }
       responses.push(response)
     }

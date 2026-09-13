@@ -207,6 +207,12 @@ interface TransactionEventQueueSaveOutcome {
   readonly error?: Error
 }
 
+interface TransactionEventQueueSaveWaiter {
+  readonly lifecycleSignal: AbortSignal
+  readonly reject: (error: Error) => void
+  readonly resolve: (value: undefined) => void
+}
+
 class TransactionEventQueuePersistenceDiscardedError extends BaseError {}
 
 class TransactionEventQueuePersistenceSupersededError extends BaseError {}
@@ -308,12 +314,19 @@ export class ChargingStation extends EventEmitter {
   private stopPromise?: Promise<void>
   private templateFileHash: string
   private templateFileWatcher?: FSWatcher
+  private transactionEventQueueCommittedVersion = 0
+  private transactionEventQueueMutationVersion = 0
   private transactionEventQueueSaveDelayResolve?: () => void
   private transactionEventQueueSaveDirty = false
   private transactionEventQueueSaveImmediate = false
   private transactionEventQueueSaveOwner?: object
   private transactionEventQueueSavePromise?: Promise<TransactionEventQueueSaveOutcome>
   private transactionEventQueueSaveSetTimeout?: NodeJS.Timeout
+  private readonly transactionEventQueueSaveWaiters = new Map<
+    number,
+    Set<TransactionEventQueueSaveWaiter>
+  >()
+
   private wsConnectionRetryCount: number
   private readonly wsConnectionsClosedByRequest: WeakSet<WebSocket>
   private wsPingSetInterval?: NodeJS.Timeout
@@ -439,12 +452,21 @@ export class ChargingStation extends EventEmitter {
   /**
    * Adds a reservation to the specified connector.
    * @param reservation - The reservation to add
+   * @param isOperationCurrent - Optional operation-ownership guard for post-await mutation.
    */
-  public async addReservation (reservation: Reservation): Promise<void> {
+  public async addReservation (
+    reservation: Reservation,
+    isOperationCurrent?: () => boolean
+  ): Promise<void> {
     const reservationFound = this.getReservationBy('reservationId', reservation.reservationId)
     if (reservationFound != null) {
-      await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING)
+      await this.removeReservation(
+        reservationFound,
+        ReservationTerminationReason.REPLACE_EXISTING,
+        isOperationCurrent
+      )
     }
+    if (isOperationCurrent?.() === false) return
     const connectorStatus = this.getConnectorStatus(reservation.connectorId)
     if (connectorStatus == null) {
       logger.error(
@@ -459,7 +481,7 @@ export class ChargingStation extends EventEmitter {
         connectorId: reservation.connectorId,
         status: ConnectorStatusEnum.Reserved,
       },
-      { send: reservation.connectorId !== 0 }
+      { isOperationCurrent, send: reservation.connectorId !== 0 }
     )
   }
 
@@ -1346,7 +1368,7 @@ export class ChargingStation extends EventEmitter {
     this.wsConnection = wsConnection
 
     wsConnection.on('message', data => {
-      this.onMessage(data).catch((error: unknown) =>
+      this.onMessage(data, wsConnection).catch((error: unknown) =>
         logger.error(
           `${this.logPrefix()} ${moduleName}.openWSConnection: Error while processing WebSocket message:`,
           error
@@ -1371,7 +1393,7 @@ export class ChargingStation extends EventEmitter {
     wsConnection.on('pong', this.onPong.bind(this))
   }
 
-  /** Forces and awaits durable persistence of the latest transaction event queue snapshot. */
+  /** Forces and awaits durable persistence of the current transaction event queue snapshot. */
   public async persistTransactionEventQueues (): Promise<void> {
     if (this.persistenceDiscarded) {
       throw new TransactionEventQueuePersistenceDiscardedError(
@@ -1379,30 +1401,31 @@ export class ChargingStation extends EventEmitter {
       )
     }
     this.saveTransactionEventQueues()
-    while (this.transactionEventQueueSaveDirty || this.transactionEventQueueSavePromise != null) {
-      const pendingSave = this.transactionEventQueueSavePromise
-      if (pendingSave == null) {
-        this.saveTransactionEventQueues()
-        if (this.transactionEventQueueSavePromise == null) {
-          throw new BaseError('TransactionEvent queue persistence stalled without an active save')
-        }
-        continue
-      }
-      const outcome = await pendingSave
-      if (outcome.error != null) {
-        const retrySave = this.transactionEventQueueSavePromise
-        if (
-          outcome.error instanceof TransactionEventQueuePersistenceSupersededError &&
-          retrySave !== pendingSave
-        ) {
-          if (retrySave != null) {
-            ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
-          }
-          continue
-        }
-        throw outcome.error
-      }
+    const persistenceState = this as unknown as {
+      transactionEventQueueCommittedVersion?: number
+      transactionEventQueueMutationVersion?: number
+      transactionEventQueueSaveWaiters?: Map<number, Set<TransactionEventQueueSaveWaiter>>
     }
+    const targetVersion = persistenceState.transactionEventQueueMutationVersion ?? 0
+    if ((persistenceState.transactionEventQueueCommittedVersion ?? 0) >= targetVersion) return
+    const waitersByVersion =
+      persistenceState.transactionEventQueueSaveWaiters ??
+      new Map<number, Set<TransactionEventQueueSaveWaiter>>()
+    persistenceState.transactionEventQueueSaveWaiters = waitersByVersion
+    const { promise, reject, resolve } = Promise.withResolvers<undefined>()
+    const waiter = { lifecycleSignal: this.lifecycleAbortSignal, reject, resolve }
+    let waiters = waitersByVersion.get(targetVersion)
+    if (waiters == null) {
+      waiters = new Set()
+      waitersByVersion.set(targetVersion, waiters)
+    }
+    waiters.add(waiter)
+    if ((persistenceState.transactionEventQueueCommittedVersion ?? 0) >= targetVersion) {
+      waiters.delete(waiter)
+      if (waiters.size === 0) waitersByVersion.delete(targetVersion)
+      resolve(undefined)
+    }
+    await promise
   }
 
   /**
@@ -1471,11 +1494,14 @@ export class ChargingStation extends EventEmitter {
    * Removes a reservation and restores the connector to its previous status.
    * @param reservation - The reservation to remove
    * @param reason - The reason for removing the reservation
+   * @param isOperationCurrent - Optional operation-ownership guard for post-await mutation.
    */
   public async removeReservation (
     reservation: Reservation,
-    reason: ReservationTerminationReason
+    reason: ReservationTerminationReason,
+    isOperationCurrent?: () => boolean
   ): Promise<void> {
+    if (isOperationCurrent?.() === false) return
     const connectorStatus = this.getConnectorStatus(reservation.connectorId)
     if (connectorStatus == null) {
       logger.error(
@@ -1497,8 +1523,9 @@ export class ChargingStation extends EventEmitter {
             connectorId: reservation.connectorId,
             status: ConnectorStatusEnum.Available,
           },
-          { send: reservation.connectorId !== 0 }
+          { isOperationCurrent, send: reservation.connectorId !== 0 }
         )
+        if (isOperationCurrent?.() === false) return
         delete connectorStatus.reservation
         break
       default:
@@ -1781,16 +1808,13 @@ export class ChargingStation extends EventEmitter {
    */
   public saveTransactionEventQueues (deferred = false): void {
     if (this.persistenceDiscarded) return
+    const persistenceState = this as unknown as {
+      transactionEventQueueMutationVersion?: number
+    }
+    persistenceState.transactionEventQueueMutationVersion =
+      (persistenceState.transactionEventQueueMutationVersion ?? 0) + 1
     this.transactionEventQueueSaveDirty = true
-    if (!deferred) {
-      ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
-    }
-    if (this.transactionEventQueueSavePromise == null) {
-      const owner = {}
-      this.transactionEventQueueSaveOwner = owner
-      this.transactionEventQueueSavePromise =
-        ChargingStation.prototype.drainTransactionEventQueueSaves.call(this, owner)
-    }
+    ChargingStation.prototype.startTransactionEventQueueSave.call(this, deferred)
   }
 
   /**
@@ -1921,6 +1945,7 @@ export class ChargingStation extends EventEmitter {
         }
         this.starting = true
         try {
+          this.ocppIncomingRequestService.activate(this, this.lifecycleAbortSignal)
           if (this.stationInfo?.enableStatistics === true) {
             this.performanceStatistics?.start()
           }
@@ -2228,6 +2253,12 @@ export class ChargingStation extends EventEmitter {
     this.transactionEventQueueSaveDirty = false
     this.transactionEventQueueSaveImmediate = false
     ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
+    ChargingStation.prototype.rejectTransactionEventQueueSaveWaiters.call(
+      this,
+      new TransactionEventQueuePersistenceDiscardedError(
+        'TransactionEvent queue persistence was discarded by station deletion'
+      )
+    )
   }
 
   private async drainTransactionEventQueueSaves (
@@ -2242,6 +2273,7 @@ export class ChargingStation extends EventEmitter {
         await ChargingStation.prototype.waitForTransactionEventQueueSaveDelay.call(this)
         if (!generationIsCurrent()) break
       }
+      const savedVersion = this.transactionEventQueueMutationVersion
       this.transactionEventQueueSaveDirty = false
       this.transactionEventQueueSaveImmediate = false
       let currentSaveError: Error | undefined
@@ -2250,16 +2282,32 @@ export class ChargingStation extends EventEmitter {
       })
       await this.pendingConfigurationSave
       saveError = currentSaveError
-      if (!generationIsCurrent()) break
       if (currentSaveError != null) {
         this.transactionEventQueueSaveDirty = true
+        ChargingStation.prototype.rejectTransactionEventQueueSaveWaiters.call(
+          this,
+          currentSaveError,
+          savedVersion
+        )
         break
       }
+      this.transactionEventQueueCommittedVersion = Math.max(
+        this.transactionEventQueueCommittedVersion,
+        savedVersion
+      )
+      ChargingStation.prototype.resolveTransactionEventQueueSaveWaiters.call(this, savedVersion)
+      if (!generationIsCurrent()) break
     }
     if (!generationIsCurrent() && !this.persistenceDiscarded) {
       this.transactionEventQueueSaveDirty = true
       saveError ??= new TransactionEventQueuePersistenceSupersededError(
         'TransactionEvent queue persistence lifecycle generation was superseded'
+      )
+      ChargingStation.prototype.rejectTransactionEventQueueSaveWaiters.call(
+        this,
+        saveError,
+        undefined,
+        lifecycleSignal
       )
     }
     if (this.persistenceDiscarded && saveError == null) {
@@ -2271,7 +2319,10 @@ export class ChargingStation extends EventEmitter {
       delete this.transactionEventQueueSaveOwner
       delete this.transactionEventQueueSavePromise
       if (this.transactionEventQueueSaveDirty && !this.persistenceDiscarded) {
-        this.saveTransactionEventQueues(!this.transactionEventQueueSaveImmediate)
+        ChargingStation.prototype.startTransactionEventQueueSave.call(
+          this,
+          !this.transactionEventQueueSaveImmediate
+        )
       }
     }
     return saveError == null ? {} : { error: saveError }
@@ -2722,7 +2773,12 @@ export class ChargingStation extends EventEmitter {
     errorCallback(new OCPPError(errorType, errorMessage, requestCommandName, errorDetails))
   }
 
-  private async handleIncomingMessage (request: IncomingRequest): Promise<void> {
+  private async handleIncomingMessage (
+    request: IncomingRequest,
+    messageLifecycleSignal: AbortSignal,
+    messageLifecycleIsCurrent: () => boolean,
+    messageSourceIsCurrent: () => boolean
+  ): Promise<void> {
     const [messageType, messageId, commandName, commandPayload] = request
     if (this.requests.has(messageId)) {
       throw new OCPPError(
@@ -2742,7 +2798,10 @@ export class ChargingStation extends EventEmitter {
       this,
       messageId,
       commandName,
-      commandPayload
+      commandPayload,
+      messageLifecycleSignal,
+      messageLifecycleIsCurrent,
+      messageSourceIsCurrent
     )
     this.emitChargingStationEvent(ChargingStationEvents.updated)
   }
@@ -3440,7 +3499,15 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private async onMessage (data: RawData): Promise<void> {
+  private async onMessage (
+    data: RawData,
+    sourceConnection: undefined | WebSocket = this.wsConnection ?? undefined
+  ): Promise<void> {
+    if (sourceConnection !== this.wsConnection || !this.started) return
+    const messageLifecycleSignal = this.lifecycleAbortSignal
+    const messageSourceIsCurrent = (): boolean => sourceConnection === this.wsConnection
+    const messageLifecycleIsCurrent = (): boolean =>
+      this.lifecycleAbortSignal === messageLifecycleSignal && !messageLifecycleSignal.aborted
     let request: ErrorResponse | IncomingRequest | Response | undefined
     let messageType: MessageType | undefined
     let errorMsg: string
@@ -3449,6 +3516,13 @@ export class ChargingStation extends EventEmitter {
       request = JSON.parse(data.toString()) as ErrorResponse | IncomingRequest | Response
       if (Array.isArray(request)) {
         ;[messageType] = request
+        if (
+          this.isStopping() &&
+          messageType !== MessageType.CALL_RESULT_MESSAGE &&
+          messageType !== MessageType.CALL_ERROR_MESSAGE
+        ) {
+          return
+        }
         switch (messageType) {
           // Error Message
           case MessageType.CALL_ERROR_MESSAGE:
@@ -3456,7 +3530,13 @@ export class ChargingStation extends EventEmitter {
             break
           // Incoming Message
           case MessageType.CALL_MESSAGE:
-            await this.handleIncomingMessage(request as IncomingRequest)
+            if (!messageLifecycleIsCurrent()) return
+            await this.handleIncomingMessage(
+              request as IncomingRequest,
+              messageLifecycleSignal,
+              messageLifecycleIsCurrent,
+              messageSourceIsCurrent
+            )
             break
           // Response Message
           case MessageType.CALL_RESULT_MESSAGE:
@@ -3485,7 +3565,9 @@ export class ChargingStation extends EventEmitter {
         )
       }
     } catch (error) {
+      if (this.isStopping()) return
       if (!Array.isArray(request)) {
+        if (!messageLifecycleIsCurrent() || !messageSourceIsCurrent()) return
         const e = ensureError(error)
         logger.error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -3539,6 +3621,7 @@ export class ChargingStation extends EventEmitter {
           }
           break
         case MessageType.CALL_MESSAGE:
+          if (!messageLifecycleIsCurrent() || !messageSourceIsCurrent()) return
           ;[, , commandName] = request as IncomingRequest
           await this.ocppRequestService.sendError(this, messageId, ocppError, commandName)
           break
@@ -3721,6 +3804,7 @@ export class ChargingStation extends EventEmitter {
     reason?: StopTransactionReason,
     stopTransactions?: boolean
   ): Promise<void> {
+    const shutdownDeadline = Date.now() + OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS
     const shutdownLifecycleSignal =
       this.lifecycleAbortController?.signal ?? this.lifecycleAbortSignal
     OCPP20ServiceUtils.pauseTransactionMeterValues(this)
@@ -3753,6 +3837,7 @@ export class ChargingStation extends EventEmitter {
       releaseIncomingRequests()
       this.closeWSConnection({ byRequest: true })
       this.lifecycleAbortController?.abort()
+      OCPP20ServiceUtils.cancelTransactionTerminations(this)
       this.ocppRequestService.cancelPendingRequests(this, undefined, false, {
         handleTransportStartedSends: true,
         preserveRetainableWaiters: false,
@@ -3764,7 +3849,7 @@ export class ChargingStation extends EventEmitter {
     }
     const shutdownGenerationIsCurrent = (): boolean =>
       (this.lifecycleAbortController?.signal ?? this.lifecycleAbortSignal) ===
-      shutdownLifecycleSignal
+        shutdownLifecycleSignal && !shutdownLifecycleSignal.aborted
     let awaitedTransactionEventQueueSave: Promise<TransactionEventQueueSaveOutcome> | undefined
     const flushTransactionEventQueues = async (): Promise<void> => {
       ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
@@ -3786,7 +3871,6 @@ export class ChargingStation extends EventEmitter {
       if (!shutdownGenerationIsCurrent()) return
       await runStopMessageSequence()
       if (!shutdownGenerationIsCurrent()) return
-      finalizeTransport()
       await Promise.all(
         this.iterateConnectors().map(({ connectorStatus }) =>
           OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
@@ -3810,8 +3894,10 @@ export class ChargingStation extends EventEmitter {
         error
       )
     } finally {
-      finalizeTransport()
+      OCPP20ServiceUtils.cancelTransactionTerminations(this)
+      const remainingShutdownTime = Math.max(shutdownDeadline - Date.now(), 0)
       if (
+        remainingShutdownTime > 0 &&
         shutdownGenerationIsCurrent() &&
         (this.transactionEventQueueSaveDirty ||
           (this.transactionEventQueueSavePromise != null &&
@@ -3820,8 +3906,8 @@ export class ChargingStation extends EventEmitter {
         try {
           await promiseWithTimeout(
             flushTransactionEventQueues(),
-            OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS,
-            `Timeout ${formatDurationMilliSeconds(OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS)} reached while persisting the final transaction event queue snapshot`
+            remainingShutdownTime,
+            `Timeout ${formatDurationMilliSeconds(remainingShutdownTime)} reached while persisting the final transaction event queue snapshot`
           )
         } catch (error: unknown) {
           logger.error(
@@ -3830,9 +3916,13 @@ export class ChargingStation extends EventEmitter {
           )
         }
       }
+      finalizeTransport()
       // Seal this lifecycle epoch. Any persistence or delivery continuation that
       // settles after the absolute finalization deadline observes a stale signal.
-      if (shutdownGenerationIsCurrent()) {
+      if (
+        (this.lifecycleAbortController?.signal ?? this.lifecycleAbortSignal) ===
+        shutdownLifecycleSignal
+      ) {
         this.lifecycleAbortController = new AbortController()
       }
     }
@@ -3887,6 +3977,28 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  private rejectTransactionEventQueueSaveWaiters (
+    error: Error,
+    throughVersion?: number,
+    lifecycleSignal?: AbortSignal
+  ): void {
+    const waitersByVersion = (
+      this as unknown as {
+        transactionEventQueueSaveWaiters?: Map<number, Set<TransactionEventQueueSaveWaiter>>
+      }
+    ).transactionEventQueueSaveWaiters
+    if (waitersByVersion == null) return
+    for (const [version, waiters] of waitersByVersion) {
+      if (throughVersion != null && version > throughVersion) continue
+      for (const waiter of waiters) {
+        if (lifecycleSignal != null && waiter.lifecycleSignal !== lifecycleSignal) continue
+        waiters.delete(waiter)
+        waiter.reject(error)
+      }
+      if (waiters.size === 0) waitersByVersion.delete(version)
+    }
+  }
+
   private releaseTransactionEventQueueSaveDelay (): void {
     if (this.transactionEventQueueSaveDirty) this.transactionEventQueueSaveImmediate = true
     if (this.transactionEventQueueSaveSetTimeout != null) {
@@ -3924,6 +4036,20 @@ export class ChargingStation extends EventEmitter {
       ChargingStation.prototype.clearIntervalFlushMessageBuffer.call(this)
     }
     return callbacks
+  }
+
+  private resolveTransactionEventQueueSaveWaiters (throughVersion: number): void {
+    const waitersByVersion = (
+      this as unknown as {
+        transactionEventQueueSaveWaiters?: Map<number, Set<TransactionEventQueueSaveWaiter>>
+      }
+    ).transactionEventQueueSaveWaiters
+    if (waitersByVersion == null) return
+    for (const [version, waiters] of waitersByVersion) {
+      if (version > throughVersion) continue
+      waitersByVersion.delete(version)
+      for (const waiter of waiters) waiter.resolve(undefined)
+    }
   }
 
   private restoreAcknowledgedBufferedMessages (): void {
@@ -4506,6 +4632,18 @@ export class ChargingStation extends EventEmitter {
       this.startAutomaticTransactionGenerator(undefined, ATGStopAbsoluteDuration)
     }
     this.flushMessageBuffer()
+  }
+
+  private startTransactionEventQueueSave (deferred: boolean): void {
+    if (!deferred) {
+      ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
+    }
+    if (this.transactionEventQueueSavePromise == null) {
+      const owner = {}
+      this.transactionEventQueueSaveOwner = owner
+      this.transactionEventQueueSavePromise =
+        ChargingStation.prototype.drainTransactionEventQueueSaves.call(this, owner)
+    }
   }
 
   private startWebSocketPing (): void {

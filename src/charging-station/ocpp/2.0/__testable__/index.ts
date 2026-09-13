@@ -199,7 +199,7 @@ export interface TestableOCPP20IncomingRequestService {
   handleRequestReset: (
     chargingStation: ChargingStation,
     commandPayload: OCPP20ResetRequest
-  ) => Promise<OCPP20ResetResponse>
+  ) => OCPP20ResetResponse
 
   handleRequestSendLocalList: (
     chargingStation: ChargingStation,
@@ -268,7 +268,7 @@ export interface TestableOCPP20IncomingRequestService {
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand,
     commandPayload: JsonType
-  ) => void
+  ) => Promise<void>
 
   sendFirmwareStatusNotification: (
     chargingStation: ChargingStation,

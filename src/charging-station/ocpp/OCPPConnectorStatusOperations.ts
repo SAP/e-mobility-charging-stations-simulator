@@ -25,12 +25,14 @@ import { OCPP20Constants } from './2.0/OCPP20Constants.js'
  * @param options.responseTimeoutMs - Optional CSMS response timeout in milliseconds.
  * @param options.expectedTransactionId - When set, apply the response locally only while the connector still owns this transaction.
  * @param options.lifecycleAbortSignal - When set, apply the response only within the captured lifecycle generation.
+ * @param options.isOperationCurrent - When set, apply the response locally only while the owning operation remains current.
  */
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
   commandParams: StatusNotificationOptions,
   options?: {
     expectedTransactionId?: number | string
+    isOperationCurrent?: () => boolean
     lifecycleAbortSignal?: AbortSignal
     responseTimeoutMs?: number
     send: boolean
@@ -72,6 +74,7 @@ export const sendAndSetConnectorStatus = async (
     (options.lifecycleAbortSignal != null &&
       (options.lifecycleAbortSignal.aborted ||
         chargingStation.lifecycleAbortSignal !== options.lifecycleAbortSignal)) ||
+    options.isOperationCurrent?.() === false ||
     (options.expectedTransactionId != null &&
       currentConnectorStatus.transactionId !== options.expectedTransactionId)
   ) {
