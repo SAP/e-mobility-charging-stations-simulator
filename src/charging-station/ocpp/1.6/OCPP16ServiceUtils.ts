@@ -88,6 +88,7 @@ import {
   createPayloadConfigs,
   getSampledValueTemplate,
   PayloadValidatorOptions,
+  projectSnapshotDcOutputValue,
 } from '../OCPPServiceUtils.js'
 import { generateSignedMeterData } from '../OCPPSignedMeterDataGenerator.js'
 import {
@@ -404,6 +405,16 @@ export class OCPP16ServiceUtils {
         `Missing MeterValues for default measurand '${OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}' in template on connector id ${connectorId.toString()}`
       )
     }
+    const meterStopOutputWh = meterStop ?? 0
+    const projectedMeterStopWh = projectSnapshotDcOutputValue(
+      chargingStation,
+      connectorId,
+      undefined,
+      sampledValueTemplate.location,
+      OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+      meterStopOutputWh,
+      false
+    )
     const unitDivider =
       sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR
         ? Constants.UNIT_DIVIDER_KILO
@@ -412,7 +423,7 @@ export class OCPP16ServiceUtils {
     meterValue.sampledValue.push(
       buildOCPP16SampledValue(
         sampledValueTemplate,
-        roundTo((meterStop ?? 0) / unitDivider, 4),
+        roundTo(projectedMeterStopWh / unitDivider, 4),
         OCPP16MeterValueContext.TRANSACTION_END
       )
     )
@@ -427,7 +438,7 @@ export class OCPP16ServiceUtils {
       if (signingCfg != null) {
         const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
           signingCfg,
-          meterStop ?? 0,
+          meterStopOutputWh,
           OCPP16MeterValueContext.TRANSACTION_END,
           transactionId,
           publicKeySentInTransaction,

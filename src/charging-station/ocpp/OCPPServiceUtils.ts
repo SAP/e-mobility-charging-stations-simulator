@@ -1390,7 +1390,7 @@ export const DC_STATION_AGGREGATION_DIRECTION: ReadonlyMap<
   [MeterValueMeasurand.POWER_ACTIVE_IMPORT, 'import'],
 ])
 
-const projectSnapshotDcOutputValue = (
+export const projectSnapshotDcOutputValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId: number | undefined,
