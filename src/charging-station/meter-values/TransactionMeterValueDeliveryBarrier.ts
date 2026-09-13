@@ -3,6 +3,7 @@ import type { ConnectorStatus } from '../../types/ConnectorStatus.js'
 export interface TransactionMeterValueDelivery {
   readonly markBuffered: () => void
   readonly settle: (definitivelyRejected?: boolean) => void
+  readonly waitForSettlement: () => Promise<boolean>
   readonly waitForTurn: () => Promise<void> | undefined
 }
 
@@ -140,6 +141,7 @@ export class TransactionMeterValueDeliveryBarrier {
         if (pending.size === 0) this.pendingByTransaction.delete(transactionId)
         markReady()
       },
+      waitForSettlement: () => settlement.promise,
       waitForTurn: () => pendingDelivery.turnPromise,
     }
   }

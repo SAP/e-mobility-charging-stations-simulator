@@ -66,16 +66,28 @@ const prepareTestConnectorStatus = (
   connectorStatus: ConnectorStatus,
   numberOfPhases = 3,
   inletToOutputEfficiency = 1
-): ConnectorStatus =>
-  preparePersistedTransactionEventQueue(
+): ConnectorStatus => {
+  const persistedQueue: unknown = connectorStatus.transactionEventQueue
+  if (Array.isArray(persistedQueue)) {
+    for (const candidate of persistedQueue) {
+      if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) continue
+      const queuedEvent = candidate as { ownerConnectorId?: number; ownerEvseId?: number }
+      queuedEvent.ownerEvseId ??= 1
+      queuedEvent.ownerConnectorId ??= 1
+    }
+  }
+  return preparePersistedTransactionEventQueue(
     prepareConnectorStatus(connectorStatus, numberOfPhases, inletToOutputEfficiency),
     request =>
       validateTransactionEvent(
         JSON.parse(JSON.stringify(request)) as OCPP20TransactionEventRequest
       ),
+    1,
+    1,
     numberOfPhases,
     inletToOutputEfficiency
   )
+}
 
 await describe('ChargingStationConfigurationUtils', async () => {
   let testStation: ChargingStation | undefined
@@ -433,7 +445,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       }
 
       const restoredConnectorStatus = preparePersistedTransactionEventQueue(
-        prepareConnectorStatus(connectorStatus)
+        prepareConnectorStatus(connectorStatus),
+        undefined,
+        1,
+        1
       )
 
       assert.strictEqual(restoredConnectorStatus.transactionEventQueue, undefined)
@@ -675,6 +690,189 @@ await describe('ChargingStationConfigurationUtils', async () => {
         } as unknown as ConnectorStatus)
         assert.strictEqual(withoutActiveHistory.transactionSeqNo, undefined)
       }
+    })
+
+    await it('should reject an active non-terminal MAX sequence while retaining terminal and historical MAX events', () => {
+      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const activeTransactionId = '00000000-0000-4000-8000-000000000140'
+      const event = (
+        transactionId: string,
+        seqNo: number,
+        eventType: OCPP20TransactionEventEnumType
+      ) => ({
+        ownerConnectorId: 1,
+        ownerEvseId: 1,
+        request: {
+          eventType,
+          seqNo,
+          timestamp,
+          transactionInfo: { transactionId },
+          triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+        },
+        seqNo,
+        timestamp,
+      })
+
+      assert.throws(
+        () =>
+          prepareTestConnectorStatus({
+            transactionEventQueue: [
+              event(
+                activeTransactionId,
+                Number.MAX_SAFE_INTEGER,
+                OCPP20TransactionEventEnumType.Updated
+              ),
+            ],
+            transactionId: activeTransactionId,
+            transactionSeqNo: Number.MAX_SAFE_INTEGER,
+            transactionStarted: true,
+          } as unknown as ConnectorStatus),
+        /cannot allocate a safe sequence number/
+      )
+
+      const terminal = prepareTestConnectorStatus({
+        transactionEventQueue: [
+          event(activeTransactionId, Number.MAX_SAFE_INTEGER, OCPP20TransactionEventEnumType.Ended),
+        ],
+        transactionId: activeTransactionId,
+        transactionSeqNo: Number.MAX_SAFE_INTEGER,
+        transactionStarted: true,
+      } as unknown as ConnectorStatus)
+      assert.strictEqual(terminal.transactionEventQueue?.[0].seqNo, Number.MAX_SAFE_INTEGER)
+      assert.strictEqual(terminal.transactionEnding, true)
+
+      const historical = prepareTestConnectorStatus({
+        transactionEventQueue: [
+          event(
+            '00000000-0000-4000-8000-000000000141',
+            Number.MAX_SAFE_INTEGER,
+            OCPP20TransactionEventEnumType.Ended
+          ),
+        ],
+      } as unknown as ConnectorStatus)
+      assert.strictEqual(historical.transactionEventQueue?.[0].seqNo, Number.MAX_SAFE_INTEGER)
+      assert.strictEqual(historical.transactionSeqNo, undefined)
+    })
+
+    await it('should validate canonical queue ownership and migrate only attested legacy cohorts', () => {
+      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const transactionId = '00000000-0000-4000-8000-000000000150'
+      const request = (
+        eventType: OCPP20TransactionEventEnumType,
+        seqNo: number,
+        evse?: { connectorId?: number; id: number }
+      ) => ({
+        eventType,
+        ...(evse != null && { evse }),
+        seqNo,
+        timestamp,
+        transactionInfo: { transactionId },
+        triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+      })
+      const hydrateLegacy = (connectorStatus: ConnectorStatus, evseId = 1): ConnectorStatus =>
+        preparePersistedTransactionEventQueue(
+          prepareConnectorStatus(connectorStatus),
+          candidate =>
+            validateTransactionEvent(
+              JSON.parse(JSON.stringify(candidate)) as OCPP20TransactionEventRequest
+            ),
+          evseId,
+          1
+        )
+
+      const crossedOwner = hydrateLegacy({
+        transactionEventQueue: [
+          {
+            ownerConnectorId: 1,
+            ownerEvseId: 2,
+            request: request(OCPP20TransactionEventEnumType.Started, 0, { id: 1 }),
+            seqNo: 0,
+            timestamp,
+          },
+          {
+            ownerConnectorId: 1,
+            ownerEvseId: 1,
+            request: request(OCPP20TransactionEventEnumType.Updated, 1),
+            seqNo: 1,
+            timestamp,
+          },
+        ],
+      } as unknown as ConnectorStatus)
+      assert.deepStrictEqual(crossedOwner.transactionEventQueue, [])
+      assert.strictEqual(crossedOwner.transactionSeqNo, undefined)
+
+      const sameConnectorDifferentEvse = hydrateLegacy({
+        transactionEventQueue: [
+          {
+            ownerConnectorId: 1,
+            ownerEvseId: 2,
+            request: request(OCPP20TransactionEventEnumType.Updated, 1),
+            seqNo: 1,
+            timestamp,
+          },
+        ],
+      } as unknown as ConnectorStatus)
+      assert.deepStrictEqual(sameConnectorDifferentEvse.transactionEventQueue, [])
+
+      const contradictoryPayload = hydrateLegacy({
+        transactionEventQueue: [
+          {
+            ownerConnectorId: 1,
+            ownerEvseId: 1,
+            request: request(OCPP20TransactionEventEnumType.Started, 0, { id: 2 }),
+            seqNo: 0,
+            timestamp,
+          },
+          {
+            ownerConnectorId: 1,
+            ownerEvseId: 1,
+            request: request(OCPP20TransactionEventEnumType.Updated, 1),
+            seqNo: 1,
+            timestamp,
+          },
+        ],
+      } as unknown as ConnectorStatus)
+      assert.deepStrictEqual(contradictoryPayload.transactionEventQueue, [])
+
+      const migrated = hydrateLegacy({
+        transactionEventQueue: [
+          {
+            request: request(OCPP20TransactionEventEnumType.Started, 0, { id: 1 }),
+            seqNo: 0,
+            timestamp,
+          },
+          {
+            request: request(OCPP20TransactionEventEnumType.Updated, 1),
+            seqNo: 1,
+            timestamp,
+          },
+        ],
+      } as unknown as ConnectorStatus)
+      assert.deepStrictEqual(
+        migrated.transactionEventQueue?.map(({ ownerConnectorId, ownerEvseId }) => ({
+          ownerConnectorId,
+          ownerEvseId,
+        })),
+        [
+          { ownerConnectorId: 1, ownerEvseId: 1 },
+          { ownerConnectorId: 1, ownerEvseId: 1 },
+        ]
+      )
+
+      const unattested = hydrateLegacy({
+        publicKeySentInTransaction: true,
+        transactionEventQueue: [
+          {
+            request: request(OCPP20TransactionEventEnumType.Updated, 7),
+            seqNo: 7,
+            timestamp,
+          },
+        ],
+        transactionId,
+      } as unknown as ConnectorStatus)
+      assert.deepStrictEqual(unattested.transactionEventQueue, [])
+      assert.strictEqual(unattested.transactionSeqNo, undefined)
+      assert.strictEqual(unattested.publicKeySentInTransaction, false)
     })
 
     await it('should keep the first valid persisted event for each structured identity', () => {
@@ -962,7 +1160,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(queue[0].seqNo, 0)
       assert.strictEqual(queue.at(-1)?.seqNo, Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
     })
-    await it('should evict oldest lifecycle cohorts while hydrating a byte-oversized queue', () => {
+    await it('should reject byte-oversized lifecycle queues without evicting any cohort', () => {
       const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
       const queuedEvent = (
         eventType: OCPP20TransactionEventEnumType,
@@ -1014,26 +1212,25 @@ await describe('ChargingStationConfigurationUtils', async () => {
           Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
       )
 
-      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
-      const queue = restoredConnectorStatus.transactionEventQueue
-
-      assert.ok(queue != null)
-      assert.strictEqual(queue.length, 1)
-      assert.ok(
-        Buffer.byteLength(JSON.stringify(queue), 'utf8') <=
-          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+      assert.throws(() => prepareTestConnectorStatus(connectorStatus), /exceeds hard limits/)
+      assert.deepStrictEqual(
+        connectorStatus.transactionEventQueue?.map(
+          queuedEvent => queuedEvent.request.transactionInfo.transactionId
+        ),
+        [oversizedStartedTransactionId, oldestCompletedTransactionId, newestCompletedTransactionId]
       )
-      assert.strictEqual(
-        queue[0].request.transactionInfo.transactionId,
-        newestCompletedTransactionId
+      assert.deepStrictEqual(
+        connectorStatus.transactionEventQueue.map(({ request }) => [
+          request.eventType,
+          request.seqNo,
+          request.triggerReason,
+        ]),
+        [
+          [OCPP20TransactionEventEnumType.Started, 0, OCPP20TriggerReasonEnumType.Authorized],
+          [OCPP20TransactionEventEnumType.Ended, 1, OCPP20TriggerReasonEnumType.StopAuthorized],
+          [OCPP20TransactionEventEnumType.Ended, 2, OCPP20TriggerReasonEnumType.StopAuthorized],
+        ]
       )
-      assert.strictEqual(
-        (queue[0].request.customData?.payload as string | undefined)?.length,
-        642_000
-      )
-      assert.strictEqual(queue[0].request.eventType, OCPP20TransactionEventEnumType.Ended)
-      assert.strictEqual(queue[0].request.seqNo, 2)
-      assert.strictEqual(queue[0].request.triggerReason, OCPP20TriggerReasonEnumType.StopAuthorized)
     })
 
     await it('should preserve a historical signing key when mandatory update endpoints exceed the cap', () => {

@@ -41,10 +41,21 @@ import { Constants } from '../../src/utils/index.js'
 
 const validateTransactionEvent = createAjv().compile(transactionEventRequestSchema)
 
-const prepareTestConnectorStatus = (connectorStatus: ConnectorStatus): ConnectorStatus =>
-  preparePersistedTransactionEventQueue(prepareConnectorStatus(connectorStatus), request =>
-    validateTransactionEvent(JSON.parse(JSON.stringify(request)) as OCPP20TransactionEventRequest)
+const prepareTestConnectorStatus = (connectorStatus: ConnectorStatus): ConnectorStatus => {
+  for (const queuedEvent of connectorStatus.transactionEventQueue ?? []) {
+    queuedEvent.ownerEvseId ??= 1
+    queuedEvent.ownerConnectorId ??= 1
+  }
+  return preparePersistedTransactionEventQueue(
+    prepareConnectorStatus(connectorStatus),
+    request =>
+      validateTransactionEvent(
+        JSON.parse(JSON.stringify(request)) as OCPP20TransactionEventRequest
+      ),
+    1,
+    1
   )
+}
 
 const assertSchemaValid = (request: OCPP20TransactionEventRequest): void => {
   const wireRequest = JSON.parse(JSON.stringify(request)) as OCPP20TransactionEventRequest
@@ -1080,41 +1091,92 @@ await describe('TransactionEventQueueUtils', async () => {
     )
   })
 
-  await it('should distribute lifecycle-only fallback across historical transactions', () => {
+  await it('should retain every lifecycle core when mandatory records exceed the soft budget', () => {
     const eventCount = Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1
-    const connectorStatus = {
-      transactionEventQueue: Array.from({ length: eventCount }, (_, seqNo) =>
-        toQueuedEvent({
-          eventType: OCPP20TransactionEventEnumType.Started,
-          seqNo,
-          timestamp: new Date(seqNo * 1000),
-          transactionInfo: {
-            transactionId: `00000000-0000-4000-8001-${seqNo.toString().padStart(12, '0')}`,
-          },
-          triggerReason: OCPP20TriggerReasonEnumType.Authorized,
-        })
-      ),
-    } as unknown as ConnectorStatus
+    const transactionEventQueue = Array.from({ length: eventCount }, (_, seqNo) =>
+      toQueuedEvent({
+        eventType:
+          seqNo % 2 === 0
+            ? OCPP20TransactionEventEnumType.Started
+            : OCPP20TransactionEventEnumType.Ended,
+        seqNo,
+        timestamp: new Date(seqNo * 1000),
+        transactionInfo: {
+          transactionId: `00000000-0000-4000-8001-${seqNo.toString().padStart(12, '0')}`,
+        },
+        triggerReason: OCPP20TriggerReasonEnumType.Authorized,
+      })
+    )
+    const connectorStatus = { transactionEventQueue } as unknown as ConnectorStatus
 
     const result = boundTransactionEventQueue(connectorStatus)
 
-    const queue = connectorStatus.transactionEventQueue
-    assert.ok(queue != null)
-    assert.strictEqual(result.overLimit, false)
-    assert.ok(queue.length <= Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
-    assert.ok(result.bytes <= Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES)
-    assert.strictEqual(
-      queue.some(queuedEvent => queuedEvent.seqNo === 0),
-      true
+    assert.strictEqual(result.overLimit, true)
+    assert.deepStrictEqual(result.removedEvents, [])
+    assert.deepStrictEqual(connectorStatus.transactionEventQueue, transactionEventQueue)
+  })
+
+  await it('should admit lifecycle cores after the Updated soft byte budget is exceeded', () => {
+    const transactionId = '00000000-0000-4000-8002-888888888888'
+    const started = toQueuedEvent({
+      customData: {
+        payload: 'x'.repeat(Math.floor(Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES * 0.76)),
+        vendorId: 'test',
+      },
+      eventType: OCPP20TransactionEventEnumType.Started,
+      seqNo: 0,
+      timestamp: new Date(0),
+      transactionInfo: { transactionId },
+      triggerReason: OCPP20TriggerReasonEnumType.Authorized,
+    })
+    const connectorStatus = { transactionEventQueue: [started] } as unknown as ConnectorStatus
+    const ended = toQueuedEvent({
+      eventType: OCPP20TransactionEventEnumType.Ended,
+      seqNo: 1,
+      timestamp: new Date(1000),
+      transactionInfo: { transactionId },
+      triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+    })
+
+    const result = enqueueBoundedTransactionEvent(connectorStatus, ended)
+
+    assert.strictEqual(result.inserted, true)
+    assert.strictEqual(result.capacityRejected, undefined)
+    assert.deepStrictEqual(connectorStatus.transactionEventQueue, [started, ended])
+  })
+
+  await it('should reject lifecycle admission without evicting admitted lifecycle cores', () => {
+    const transactionEventQueue = Array.from(
+      { length: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH },
+      (_, seqNo) =>
+        toQueuedEvent({
+          eventType:
+            seqNo % 2 === 0
+              ? OCPP20TransactionEventEnumType.Started
+              : OCPP20TransactionEventEnumType.Ended,
+          seqNo,
+          timestamp: new Date(seqNo * 1000),
+          transactionInfo: {
+            transactionId: `00000000-0000-4000-8002-${seqNo.toString().padStart(12, '0')}`,
+          },
+          triggerReason: OCPP20TriggerReasonEnumType.Authorized,
+        })
     )
-    assert.strictEqual(
-      queue.some(queuedEvent => queuedEvent.seqNo === eventCount - 1),
-      true
-    )
-    assert.strictEqual(
-      result.removedEvents.some(queuedEvent => queuedEvent.seqNo > eventCount * 0.75),
-      true
-    )
+    const connectorStatus = { transactionEventQueue } as unknown as ConnectorStatus
+    const attempted = toQueuedEvent({
+      eventType: OCPP20TransactionEventEnumType.Ended,
+      seqNo: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH,
+      timestamp: new Date(Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH * 1000),
+      transactionInfo: { transactionId: '00000000-0000-4000-8002-999999999999' },
+      triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+    })
+
+    const result = enqueueBoundedTransactionEvent(connectorStatus, attempted)
+
+    assert.strictEqual(result.inserted, false)
+    assert.strictEqual(result.capacityRejected, true)
+    assert.deepStrictEqual(result.removedEvents, [])
+    assert.deepStrictEqual(connectorStatus.transactionEventQueue, transactionEventQueue)
   })
 
   await it('should reject admission without mutating existing queue state', () => {

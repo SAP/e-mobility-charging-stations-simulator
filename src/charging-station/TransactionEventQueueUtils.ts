@@ -926,31 +926,6 @@ const boundTransactionEventQueueToLimits = (
     }
   }
 
-  if (isOverLimit()) {
-    const cohorts = new Map<string, { events: QueuedTransactionEvent[]; firstIndex: number }>()
-    for (const [index, queuedEvent] of queue.entries()) {
-      const transactionId = queuedEvent.request.transactionInfo.transactionId
-      const cohort = cohorts.get(transactionId) ?? {
-        events: [],
-        firstIndex: index,
-      }
-      cohort.events.push(queuedEvent)
-      cohorts.set(transactionId, cohort)
-    }
-    const removableCohorts = distributeRemovalCandidates(
-      [...cohorts.entries()]
-        .filter(
-          ([transactionId, cohort]) =>
-            transactionId !== activeTransactionId && !cohort.events.some(isProtected)
-        )
-        .sort((left, right) => left[1].firstIndex - right[1].firstIndex)
-    )
-    for (const [, cohort] of removableCohorts) {
-      if (!isOverLimit()) break
-      remove(cohort.events, false)
-    }
-  }
-
   if (
     activeTransactionId != null &&
     removedPublicKeyTransactionIds.has(activeTransactionId) &&
@@ -1036,6 +1011,9 @@ export const enqueueBoundedTransactionEvent = (
       : queuedEvent
   const queuedEventBytes = getQueuedTransactionEventBytes(queuedEventWithMetadata)
   const projectedBytes = accounting.bytes + queuedEventBytes + (queue.length === 0 ? 0 : 1)
+  let rollbackQueueSnapshot:
+    readonly { queuedEvent: QueuedTransactionEvent; value: QueuedTransactionEvent }[] | undefined
+  let rollbackIntervalCarry: Record<string, number> | undefined
   if (queue.length + 1 > maxLength || projectedBytes > maxBytes) {
     const simulatedQueue = queue.map(event => structuredClone(event))
     const simulatedQueuedEvent = structuredClone(queuedEventWithMetadata)
@@ -1112,6 +1090,14 @@ export const enqueueBoundedTransactionEvent = (
         removedEvents: [],
       }
     }
+    rollbackQueueSnapshot = queue.map(existingEvent => ({
+      queuedEvent: existingEvent,
+      value: structuredClone(existingEvent),
+    }))
+    rollbackIntervalCarry =
+      connectorStatus.transactionEnergyActiveImportIntervalCarry == null
+        ? undefined
+        : { ...connectorStatus.transactionEnergyActiveImportIntervalCarry }
   }
   queuedEvent.deliveryAttempted ??= false
   queue.splice(insertionIndex, 0, queuedEvent)
@@ -1134,8 +1120,25 @@ export const enqueueBoundedTransactionEvent = (
     targetBytes
   )
   if (bounded.overLimit) {
-    const candidateIndex = queue.indexOf(queuedEvent)
-    if (candidateIndex >= 0) queue.splice(candidateIndex, 1)
+    if (rollbackQueueSnapshot != null) {
+      for (const { queuedEvent: existingEvent, value } of rollbackQueueSnapshot) {
+        for (const key of Object.keys(existingEvent)) Reflect.deleteProperty(existingEvent, key)
+        Object.assign(existingEvent, value)
+      }
+      queue.splice(
+        0,
+        queue.length,
+        ...rollbackQueueSnapshot.map(({ queuedEvent: existingEvent }) => existingEvent)
+      )
+      if (rollbackIntervalCarry == null) {
+        delete connectorStatus.transactionEnergyActiveImportIntervalCarry
+      } else {
+        connectorStatus.transactionEnergyActiveImportIntervalCarry = rollbackIntervalCarry
+      }
+    } else {
+      const candidateIndex = queue.indexOf(queuedEvent)
+      if (candidateIndex >= 0) queue.splice(candidateIndex, 1)
+    }
     const restoredAccounting = buildTransactionEventQueueAccounting(connectorStatus, queue)
     if (!hadQueue && queue.length === 0) {
       delete connectorStatus.transactionEventQueue
@@ -1144,12 +1147,12 @@ export const enqueueBoundedTransactionEvent = (
     return {
       bytes: restoredAccounting.bytes,
       capacityRejected: true,
-      changed: bounded.changed,
+      changed: false,
       inserted: false,
       overLimit:
         queue.length > Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH ||
         restoredAccounting.bytes > Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES,
-      removedEvents: bounded.removedEvents,
+      removedEvents: [],
     }
   }
   return { ...bounded, changed: true, inserted: true }

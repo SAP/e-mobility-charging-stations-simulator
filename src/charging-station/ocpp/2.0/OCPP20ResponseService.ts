@@ -397,10 +397,13 @@ export class OCPP20ResponseService extends OCPPResponseService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: TransactionEvent(${requestPayload.eventType}) response received`
     )
+    const replayOwner = OCPP20ServiceUtils.getReplayedTransactionEventOwner(requestPayload)
     const evseId =
+      replayOwner?.evseId ??
       requestPayload.evse?.id ??
       chargingStation.getEvseIdByTransactionId(requestPayload.transactionInfo.transactionId)
     const connectorId =
+      replayOwner?.connectorId ??
       requestPayload.evse?.connectorId ??
       chargingStation.getConnectorIdByTransactionId(requestPayload.transactionInfo.transactionId)
     const connectorStatus =

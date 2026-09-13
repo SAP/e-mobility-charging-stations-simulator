@@ -231,6 +231,76 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(startEnded.mock.callCount(), 0)
   })
 
+  await it('routes a replay response to its canonical EVSE when connector ids overlap', async () => {
+    const { station: multiEvseStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 2,
+      evseConfiguration: { evsesCount: 2 },
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+    })
+    const secondEvse = multiEvseStation.getEvseStatus(2)
+    const secondOwner = multiEvseStation.getConnectorStatus(2, 2)
+    assert.ok(secondEvse != null)
+    assert.ok(secondOwner != null)
+    secondEvse.connectors.delete(2)
+    secondEvse.connectors.set(1, secondOwner)
+    const wrongOwner = multiEvseStation.getConnectorStatus(1, 1)
+    const canonicalOwner = multiEvseStation.getConnectorStatus(1, 2)
+    assert.ok(wrongOwner != null)
+    assert.ok(canonicalOwner != null)
+    for (const connectorStatus of [wrongOwner, canonicalOwner]) {
+      connectorStatus.transactionId = TEST_TRANSACTION_UUID
+      connectorStatus.transactionPending = true
+      connectorStatus.transactionStarted = false
+      connectorStatus.transactionStarting = true
+      connectorStatus.transactionRestored = true
+    }
+    const startedRequest = buildTransactionEventRequest(
+      TEST_TRANSACTION_UUID,
+      OCPP20TransactionEventEnumType.Started
+    )
+    delete startedRequest.evse
+    canonicalOwner.transactionEventQueue = [
+      {
+        ownerConnectorId: 1,
+        ownerEvseId: 2,
+        request: startedRequest,
+        seqNo: 0,
+        timestamp: startedRequest.timestamp,
+      },
+    ]
+    multiEvseStation.isWebSocketConnectionOpened = () => true
+    multiEvseStation.inAcceptedState = () => true
+    mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+    mock.method(multiEvseStation.ocppRequestService, 'requestHandler', (async (
+      ...args: unknown[]
+    ) => {
+      if (args[1] !== OCPP20RequestCommand.TRANSACTION_EVENT) return {}
+      const request = args[2] as OCPP20TransactionEventRequest
+      const requestParams = args[3] as RequestParams
+      requestParams.onMessageSent?.()
+      await testable.handleResponseTransactionEvent(
+        multiEvseStation,
+        { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+        request
+      )
+      requestParams.onResponseReceived?.()
+      return {}
+    }) as typeof multiEvseStation.ocppRequestService.requestHandler)
+
+    await OCPP20ServiceUtils.sendQueuedTransactionEvents(multiEvseStation, 1, 2)
+
+    assert.strictEqual(canonicalOwner.transactionStarted, true)
+    assert.strictEqual(canonicalOwner.transactionPending, false)
+    assert.strictEqual(wrongOwner.transactionStarted, false)
+    assert.strictEqual(wrongOwner.transactionPending, true)
+  })
+
   await it('commits the exact restored queued Started event after transient owner state is cleared', async () => {
     const connectorStatus = station.getConnectorStatus(1, 1)
     const evseStatus = station.getEvseStatus(1)
@@ -247,7 +317,13 @@ await describe('D01 - TransactionEvent Response', async () => {
     startedRequest.seqNo = 0
     delete startedRequest.meterValue
     connectorStatus.transactionEventQueue = [
-      { request: startedRequest, seqNo: 0, timestamp: startedRequest.timestamp },
+      {
+        ownerConnectorId: 1,
+        ownerEvseId: 1,
+        request: startedRequest,
+        seqNo: 0,
+        timestamp: startedRequest.timestamp,
+      },
     ]
     const persistedConnectorStatus = JSON.parse(JSON.stringify(connectorStatus)) as ConnectorStatus
     const restoredConnectorStatus = preparePersistedTransactionEventQueue(
@@ -258,7 +334,9 @@ await describe('D01 - TransactionEvent Response', async () => {
           OCPP20RequestCommand.TRANSACTION_EVENT,
           request,
           { forceValidation: true }
-        )
+        ),
+      1,
+      1
     )
     evseStatus.connectors.set(1, restoredConnectorStatus)
     assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)

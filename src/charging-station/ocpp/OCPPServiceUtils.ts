@@ -1130,7 +1130,11 @@ const createVersionedSampledValueDispatcher = (
               OCPP20ComponentName.SampledDataCtrlr,
               VendorParametersKey.SignStartedReadings
             )
-          } else if (context == null || context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC) {
+          } else if (
+            context == null ||
+            context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
+            (context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK && transactionId != null)
+          ) {
             signingEnabledForContext = isOCPP20FlagEnabled(
               chargingStation,
               signReadingsComponent,

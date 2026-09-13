@@ -122,15 +122,24 @@ const TRANSACTION_FLOWS = [
 const preparePersistedConnectorStatus = (
   station: ChargingStation,
   connectorStatus: ConnectorStatus
-): ConnectorStatus =>
-  preparePersistedTransactionEventQueue(prepareConnectorStatus(connectorStatus), request =>
-    station.ocppRequestService.validateRequestPayload(
-      station,
-      OCPP20RequestCommand.TRANSACTION_EVENT,
-      request,
-      { forceValidation: true }
-    )
+): ConnectorStatus => {
+  for (const queuedEvent of connectorStatus.transactionEventQueue ?? []) {
+    queuedEvent.ownerEvseId ??= 1
+    queuedEvent.ownerConnectorId ??= 1
+  }
+  return preparePersistedTransactionEventQueue(
+    prepareConnectorStatus(connectorStatus),
+    request =>
+      station.ocppRequestService.validateRequestPayload(
+        station,
+        OCPP20RequestCommand.TRANSACTION_EVENT,
+        request,
+        { forceValidation: true }
+      ),
+    1,
+    1
   )
+}
 
 await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
   await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () => {
@@ -784,6 +793,22 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Verify sequence number is reset
         assert.strictEqual(connectorStatus?.transactionSeqNo, undefined)
+      })
+
+      await it('should allocate MAX_SAFE_INTEGER from an active MAX_SAFE_INTEGER minus one counter', () => {
+        const connectorStatus = mockStation.getConnectorStatus(1)
+        assert.ok(connectorStatus != null)
+        connectorStatus.transactionSeqNo = Number.MAX_SAFE_INTEGER - 1
+
+        const request = buildTransactionEvent(mockStation, {
+          connectorId: 1,
+          eventType: OCPP20TransactionEventEnumType.Updated,
+          transactionId: generateUUID(),
+          triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+        })
+
+        assert.strictEqual(request.seqNo, Number.MAX_SAFE_INTEGER)
+        assert.strictEqual(connectorStatus.transactionSeqNo, Number.MAX_SAFE_INTEGER)
       })
 
       await it('should reject sequence overflow before mutating transaction metadata', () => {

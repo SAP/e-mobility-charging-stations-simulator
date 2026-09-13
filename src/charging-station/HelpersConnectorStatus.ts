@@ -293,7 +293,10 @@ export type PersistedTransactionEventRequestValidator = (
 
 const prepareQueuedTransactionEvent = (
   candidate: unknown,
-  validateRequest: PersistedTransactionEventRequestValidator
+  validateRequest: PersistedTransactionEventRequestValidator,
+  ownerEvseId: number,
+  ownerConnectorId: number,
+  allowLegacyOwnerMigration: boolean
 ): QueuedTransactionEvent | undefined => {
   if (
     !isJsonObject(candidate) ||
@@ -305,6 +308,28 @@ const prepareQueuedTransactionEvent = (
     typeof candidate.request.triggerReason !== 'string' ||
     typeof candidate.request.transactionInfo.transactionId !== 'string' ||
     candidate.seqNo !== candidate.request.seqNo
+  ) {
+    return undefined
+  }
+  const hasOwnerEvseId = Object.hasOwn(candidate, 'ownerEvseId')
+  const hasOwnerConnectorId = Object.hasOwn(candidate, 'ownerConnectorId')
+  if (!hasOwnerEvseId && !hasOwnerConnectorId) {
+    if (!allowLegacyOwnerMigration) return undefined
+    candidate.ownerEvseId = ownerEvseId
+    candidate.ownerConnectorId = ownerConnectorId
+  } else if (
+    !hasOwnerEvseId ||
+    !hasOwnerConnectorId ||
+    candidate.ownerEvseId !== ownerEvseId ||
+    candidate.ownerConnectorId !== ownerConnectorId
+  ) {
+    return undefined
+  }
+  if (
+    isJsonObject(candidate.request.evse) &&
+    (candidate.request.evse.id !== ownerEvseId ||
+      (candidate.request.evse.connectorId != null &&
+        candidate.request.evse.connectorId !== ownerConnectorId))
   ) {
     return undefined
   }
@@ -506,13 +531,17 @@ export const prepareConnectorStatus = (
  * deriving sequence, signing, or lifecycle ownership from it.
  * @param connectorStatus - Queue owner to finalize in place.
  * @param validateRequest - Canonical TransactionEvent request validator; absent for non-OCPP 2.0.
+ * @param ownerEvseId - Canonical EVSE that owns the persisted queue.
+ * @param ownerConnectorId - Canonical connector that owns the persisted queue.
  * @param numberOfPhases - Physical phase count for legacy interval migration.
  * @param inletToOutputEfficiency - DC inlet-to-output efficiency for legacy interval migration.
  * @returns The same connector status after queue finalization.
  */
 export const preparePersistedTransactionEventQueue = (
   connectorStatus: ConnectorStatus,
-  validateRequest?: PersistedTransactionEventRequestValidator,
+  validateRequest: PersistedTransactionEventRequestValidator | undefined,
+  ownerEvseId: number,
+  ownerConnectorId: number,
   numberOfPhases = 3,
   inletToOutputEfficiency = 1
 ): ConnectorStatus => {
@@ -532,6 +561,55 @@ export const preparePersistedTransactionEventQueue = (
     connectorStatus.publicKeySentInTransaction = false
   } else if (isNotEmptyArray(connectorStatus.transactionEventQueue)) {
     const transactionId = connectorStatus.transactionId?.toString()
+    const persistedQueue = connectorStatus.transactionEventQueue as unknown[]
+    const invalidOwnerCohorts = new Set<string>()
+    const legacyOwnerCohorts = new Set<string>()
+    const legacyOwnerAttestations = new Set<string>()
+    for (const candidate of persistedQueue) {
+      if (
+        !isJsonObject(candidate) ||
+        !isJsonObject(candidate.request) ||
+        !isJsonObject(candidate.request.transactionInfo) ||
+        typeof candidate.request.transactionInfo.transactionId !== 'string'
+      ) {
+        continue
+      }
+      const candidateTransactionId = candidate.request.transactionInfo.transactionId
+      const hasOwnerEvseId = Object.hasOwn(candidate, 'ownerEvseId')
+      const hasOwnerConnectorId = Object.hasOwn(candidate, 'ownerConnectorId')
+      if (!hasOwnerEvseId && !hasOwnerConnectorId) {
+        legacyOwnerCohorts.add(candidateTransactionId)
+      } else if (
+        !hasOwnerEvseId ||
+        !hasOwnerConnectorId ||
+        candidate.ownerEvseId !== ownerEvseId ||
+        candidate.ownerConnectorId !== ownerConnectorId
+      ) {
+        invalidOwnerCohorts.add(candidateTransactionId)
+      }
+      const requestEvse = candidate.request.evse
+      if (
+        isJsonObject(requestEvse) &&
+        (requestEvse.id !== ownerEvseId ||
+          (requestEvse.connectorId != null && requestEvse.connectorId !== ownerConnectorId))
+      ) {
+        invalidOwnerCohorts.add(candidateTransactionId)
+      }
+      if (
+        candidate.request.eventType === OCPP20TransactionEventEnumType.Started &&
+        validateRequest(candidate.request as unknown as OCPP20TransactionEventRequest) &&
+        isJsonObject(requestEvse) &&
+        requestEvse.id === ownerEvseId &&
+        (requestEvse.connectorId == null || requestEvse.connectorId === ownerConnectorId)
+      ) {
+        legacyOwnerAttestations.add(candidateTransactionId)
+      }
+    }
+    for (const legacyTransactionId of legacyOwnerCohorts) {
+      if (!legacyOwnerAttestations.has(legacyTransactionId)) {
+        invalidOwnerCohorts.add(legacyTransactionId)
+      }
+    }
     let removedActivePublicKeyCarrier = false
     const preparedQueue: QueuedTransactionEvent[] = []
     const preparedEventIndexes = new Map<string, number>()
@@ -545,7 +623,16 @@ export const preparePersistedTransactionEventQueue = (
           ? candidate.request.transactionInfo.transactionId
           : undefined
       const candidatePublicKey = getPersistedCandidateRawPublicKey(candidate)
-      const queuedEvent = prepareQueuedTransactionEvent(candidate, validateRequest)
+      const queuedEvent =
+        candidateTransactionId == null || invalidOwnerCohorts.has(candidateTransactionId)
+          ? undefined
+          : prepareQueuedTransactionEvent(
+            candidate,
+            validateRequest,
+            ownerEvseId,
+            ownerConnectorId,
+            legacyOwnerCohorts.has(candidateTransactionId)
+          )
       let replacementIndex: number | undefined
       if (queuedEvent != null) {
         const queuedTransactionId = queuedEvent.request.transactionInfo.transactionId
@@ -627,8 +714,8 @@ export const preparePersistedTransactionEventQueue = (
       } else if (
         transactionId != null &&
         candidateTransactionId === transactionId &&
-        candidatePublicKey != null &&
-        (!isJsonObject(candidate) || candidate.deliveryAttempted !== true)
+        (!isJsonObject(candidate) || candidate.deliveryAttempted !== true) &&
+        (candidatePublicKey != null || invalidOwnerCohorts.has(candidateTransactionId))
       ) {
         removedActivePublicKeyCarrier = true
       }
@@ -715,6 +802,19 @@ export const preparePersistedTransactionEventQueue = (
     }
   }
   let transactionId = connectorStatus.transactionId?.toString()
+  if (transactionId != null && connectorStatus.transactionSeqNo === Number.MAX_SAFE_INTEGER) {
+    const hasTerminalEvent =
+      connectorStatus.transactionEventQueue?.some(
+        queuedEvent =>
+          queuedEvent.request.transactionInfo.transactionId === transactionId &&
+          queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended
+      ) === true
+    if (!hasTerminalEvent) {
+      throw new BaseError(
+        `Persisted active transaction ${transactionId} cannot allocate a safe sequence number after ${Number.MAX_SAFE_INTEGER.toString()}`
+      )
+    }
+  }
   const hasQueuedTransactionEvent =
     transactionId != null &&
     connectorStatus.transactionEventQueue?.some(

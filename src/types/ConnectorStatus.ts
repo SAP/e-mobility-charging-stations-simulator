@@ -66,6 +66,10 @@ export interface QueuedTransactionEvent {
   deliveryAttempted?: boolean
   /** The terminal payload must be rebuilt after earlier MeterValues outcomes settle. */
   meterValuePredecessorsPending?: boolean
+  /** Canonical connector that owns this durable queue entry. */
+  ownerConnectorId?: number
+  /** Canonical EVSE that owns this durable queue entry. */
+  ownerEvseId?: number
   request: OCPP20TransactionEventRequest
   seqNo: number
   timestamp: Date

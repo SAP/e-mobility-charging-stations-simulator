@@ -647,7 +647,8 @@ interface PendingClockAlignedMeterValuesRequest {
   request: OCPP20MeterValuesRequest
   responseTimeoutMs: number
   restoreIntervalBaselines: Map<object, IntervalBaselineRestore>
-  settleCallbacks: (() => void)[]
+  settleCallbacks: ((definitivelyRejected: boolean) => void)[]
+  settled?: boolean
   triggerMessage?: boolean
 }
 
@@ -691,6 +692,33 @@ const runIntervalBaselineRestores = (
     restore(consumed)
   }
   chargingStation.saveTransactionEventQueues()
+}
+
+const settlePendingClockAlignedRequest = (
+  chargingStation: ChargingStation,
+  state: ClockAlignedMeterValuesSendState,
+  pending: PendingClockAlignedMeterValuesRequest,
+  definitivelyRejected: boolean
+): void => {
+  if (pending.settled === true) return
+  pending.settled = true
+  if (state.pending === pending) delete state.pending
+  if (definitivelyRejected) {
+    runIntervalBaselineRestores(chargingStation, pending.restoreIntervalBaselines)
+    for (const token of pending.publicKeyDeliveryTokens) releasePublicKeyDelivery(token)
+  } else {
+    for (const token of pending.publicKeyDeliveryTokens) retainPublicKeyDelivery(token)
+  }
+  for (const settle of pending.settleCallbacks) {
+    try {
+      settle(definitivelyRejected)
+    } catch (error: unknown) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.settlePendingClockAlignedRequest: Error settling an aligned MeterValues owner:`,
+        error
+      )
+    }
+  }
 }
 
 const normalizeClockAlignedAdditiveSample = (
@@ -1201,6 +1229,11 @@ export class OCPP20ServiceUtils {
     Map<string, number>
   >()
 
+  private static readonly replayedTransactionEventOwners = new WeakMap<
+    OCPP20TransactionEventRequest,
+    { connectorId: number; evseId: number }
+  >()
+
   private static readonly replayedTransactionEventRequests =
     new WeakSet<OCPP20TransactionEventRequest>()
 
@@ -1219,6 +1252,11 @@ export class OCPP20ServiceUtils {
   private static readonly transactionEventSendChains = new WeakMap<
     ConnectorStatus,
     Promise<unknown>
+  >()
+
+  private static readonly transactionMeterValueDeliveries = new WeakMap<
+    QueuedTransactionEvent,
+    TransactionMeterValueDelivery
   >()
 
   private static readonly triggeredTransactionEventReservations = new WeakMap<
@@ -1605,18 +1643,22 @@ export class OCPP20ServiceUtils {
    */
   public static cancelClockAlignedMeterValuesRequests (chargingStation: ChargingStation): void {
     const stationStates = OCPP20ServiceUtils.clockAlignedMeterValuesSendStates.get(chargingStation)
-    if (stationStates == null) return
-    for (const [evseId, state] of stationStates) {
+    for (const [evseId, state] of stationStates ?? []) {
       if (state.pending != null) {
-        runIntervalBaselineRestores(chargingStation, state.pending.restoreIntervalBaselines)
-        for (const token of state.pending.publicKeyDeliveryTokens) releasePublicKeyDelivery(token)
+        const pending = state.pending
         delete state.pending
+        settlePendingClockAlignedRequest(chargingStation, state, pending, true)
       }
       delete state.triggerReserved
-      if (state.inFlight == null) stationStates.delete(evseId)
+      if (state.inFlight == null) stationStates?.delete(evseId)
     }
-    if (isEmpty(stationStates)) {
+    if (stationStates != null && isEmpty(stationStates)) {
       OCPP20ServiceUtils.clockAlignedMeterValuesSendStates.delete(chargingStation)
+    }
+    for (const { connectorStatus } of chargingStation.iterateConnectors(true)) {
+      for (const queuedEvent of connectorStatus.transactionEventQueue ?? []) {
+        OCPP20ServiceUtils.settleQueuedTransactionMeterValueDelivery(queuedEvent, false)
+      }
     }
   }
 
@@ -2170,17 +2212,17 @@ export class OCPP20ServiceUtils {
         if (evseInTransaction && transactionId == null && usesEvseMeterTemplate) continue
         const transactionMeterValueDelivery =
           transactionId != null && !suppressEvseEmission
-            ? TransactionMeterValueDeliveryBarrier.beginIfIdle(connectorStatus, transactionId)
+            ? TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
             : undefined
         if (
           transactionId != null &&
           !suppressEvseEmission &&
           transactionMeterValueDelivery == null
         ) {
-          continue
+          throw new BaseError(
+            `Cannot reserve clock-aligned TransactionEvent delivery for transaction ${transactionId.toString()}`
+          )
         }
-        const transactionMeterValueTurn = transactionMeterValueDelivery?.waitForTurn()
-        if (transactionMeterValueTurn != null) await transactionMeterValueTurn
         if (
           transactionId != null &&
           (connectorStatus.transactionId?.toString() !== transactionId.toString() ||
@@ -2617,7 +2659,9 @@ export class OCPP20ServiceUtils {
                       skipBufferingOnError: false,
                       throwError: true,
                     },
-                    transactionMeterValueDelivery
+                    transactionMeterValueDelivery,
+                    undefined,
+                    true
                   )
                     .then(() => undefined)
                     .catch((error: unknown) => {
@@ -2625,6 +2669,7 @@ export class OCPP20ServiceUtils {
                         `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.TRANSACTION_EVENT}':`,
                         error
                       )
+                      if (error instanceof TransactionEventQueueCapacityError) throw error
                     }),
               })
             }
@@ -2863,6 +2908,12 @@ export class OCPP20ServiceUtils {
       Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS,
       'Default'
     )
+  }
+
+  public static getReplayedTransactionEventOwner (
+    request: OCPP20TransactionEventRequest
+  ): undefined | { connectorId: number; evseId: number } {
+    return OCPP20ServiceUtils.replayedTransactionEventOwners.get(request)
   }
 
   public static getTransactionEnergyMeteringConfiguration (chargingStation: ChargingStation):
@@ -3700,7 +3751,7 @@ export class OCPP20ServiceUtils {
     restoreIntervalBaselines: readonly IntervalBaselineRestore[] = [],
     triggerMessage = false,
     publicKeyDeliveryTokens: readonly PublicKeyDeliveryToken[] = [],
-    onSettled?: () => void
+    onSettled?: (definitivelyRejected: boolean) => void
   ): Promise<void> {
     let stationStates = OCPP20ServiceUtils.clockAlignedMeterValuesSendStates.get(chargingStation)
     if (stationStates == null) {
@@ -3715,19 +3766,16 @@ export class OCPP20ServiceUtils {
     const incomingRestores = new Map(
       restoreIntervalBaselines.map(restore => [restore.key, restore])
     )
-    const releaseTokens = (tokens: readonly PublicKeyDeliveryToken[]): void => {
-      for (const token of tokens) releasePublicKeyDelivery(token)
-    }
-    const retainTokens = (tokens: readonly PublicKeyDeliveryToken[]): void => {
-      for (const token of tokens) retainPublicKeyDelivery(token)
-    }
-    const settlePending = (pending: PendingClockAlignedMeterValuesRequest): void => {
-      for (const settle of pending.settleCallbacks) settle()
-    }
     const rejectIncoming = (): Promise<void> => {
-      runIntervalBaselineRestores(chargingStation, incomingRestores)
-      releaseTokens(publicKeyDeliveryTokens)
-      onSettled?.()
+      const rejected: PendingClockAlignedMeterValuesRequest = {
+        publicKeyDeliveryTokens: [...publicKeyDeliveryTokens],
+        request,
+        responseTimeoutMs: responseTimeoutMs ?? 0,
+        restoreIntervalBaselines: incomingRestores,
+        settleCallbacks: onSettled != null ? [onSettled] : [],
+        triggerMessage,
+      }
+      settlePendingClockAlignedRequest(chargingStation, state, rejected, true)
       if (state.inFlight == null && state.pending == null && state.triggerReserved !== true) {
         stationStates.delete(evseId)
       }
@@ -3787,16 +3835,12 @@ export class OCPP20ServiceUtils {
         return
       }
       if (clockAlignedRequestRequiresExactDelivery(failed)) {
-        runIntervalBaselineRestores(chargingStation, later.restoreIntervalBaselines)
-        releaseTokens(later.publicKeyDeliveryTokens)
-        settlePending(later)
+        settlePendingClockAlignedRequest(chargingStation, sendState, later, true)
         sendState.pending = failed
         return
       }
       if (clockAlignedRequestRequiresExactDelivery(later)) {
-        runIntervalBaselineRestores(chargingStation, failed.restoreIntervalBaselines)
-        releaseTokens(failed.publicKeyDeliveryTokens)
-        settlePending(failed)
+        settlePendingClockAlignedRequest(chargingStation, sendState, failed, true)
         return
       }
       sendState.pending = {
@@ -3823,9 +3867,7 @@ export class OCPP20ServiceUtils {
           !registrationAllowsSend ||
           OCPP20ServiceUtils.isChargingStationStopping(chargingStation)
         ) {
-          runIntervalBaselineRestores(chargingStation, pending.restoreIntervalBaselines)
-          releaseTokens(pending.publicKeyDeliveryTokens)
-          settlePending(pending)
+          settlePendingClockAlignedRequest(chargingStation, sendState, pending, true)
           break
         }
         sendState.inFlightRequiresExactDelivery = clockAlignedRequestRequiresExactDelivery(pending)
@@ -3860,8 +3902,7 @@ export class OCPP20ServiceUtils {
             throwError: true,
             triggerMessage: pending.triggerMessage,
           })
-          retainTokens(pending.publicKeyDeliveryTokens)
-          settlePending(pending)
+          settlePendingClockAlignedRequest(chargingStation, sendState, pending, false)
         } catch (error: unknown) {
           const hasLaterPending = stationStates.get(evseId)?.pending != null
           const unclassifiedCancellation =
@@ -3879,13 +3920,10 @@ export class OCPP20ServiceUtils {
             if (hasLaterPending) {
               restorePending(pending)
             } else {
-              runIntervalBaselineRestores(chargingStation, pending.restoreIntervalBaselines)
-              releaseTokens(pending.publicKeyDeliveryTokens)
-              settlePending(pending)
+              settlePendingClockAlignedRequest(chargingStation, sendState, pending, true)
             }
           } else {
-            retainTokens(pending.publicKeyDeliveryTokens)
-            settlePending(pending)
+            settlePendingClockAlignedRequest(chargingStation, sendState, pending, false)
           }
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.METER_VALUES}':`,
@@ -3961,6 +3999,7 @@ export class OCPP20ServiceUtils {
    * @param requestParams - Optional transport behavior overrides
    * @param transactionMeterValueDelivery - Optional transaction MeterValues serialization owner
    * @param startedOwnership - Provisional state required before a Started delivery
+   * @param queueBeforeDelivery - Whether to durably admit this event before attempting transport
    * @returns Promise resolving to the TransactionEvent response
    */
   public static sendTransactionEvent (
@@ -3972,7 +4011,8 @@ export class OCPP20ServiceUtils {
     options: Omit<OCPP20TransactionEventOptions, 'eventType'> = {},
     requestParams?: RequestParams,
     transactionMeterValueDelivery?: TransactionMeterValueDelivery,
-    startedOwnership?: 'pending' | 'starting'
+    startedOwnership?: 'pending' | 'starting',
+    queueBeforeDelivery = false
   ): Promise<OCPP20TransactionEventResponse> {
     return OCPP20ServiceUtils.sendTransactionEventWithPredecessors(
       chargingStation,
@@ -3985,7 +4025,8 @@ export class OCPP20ServiceUtils {
       undefined,
       transactionMeterValueDelivery,
       undefined,
-      startedOwnership
+      startedOwnership,
+      queueBeforeDelivery
     )
   }
 
@@ -4732,6 +4773,8 @@ export class OCPP20ServiceUtils {
         break
       }
       const queuedEvent = queue[0]
+      const eventConnectorId = queuedEvent.ownerConnectorId ?? connectorId
+      const eventEvseId = queuedEvent.ownerEvseId ?? evseId
       if (
         isTransactionEventQueueBlocked(queuedEvent) ||
         isTransactionEventQueueStaged(queuedEvent)
@@ -4749,10 +4792,10 @@ export class OCPP20ServiceUtils {
       ) {
         OCPP20ServiceUtils.restoreNextQueuedStartedTransaction(
           chargingStation,
-          connectorId,
+          eventConnectorId,
           connectorStatus,
           exhaustedStartedTransactionId,
-          evseId
+          eventEvseId
         )
         delete connectorStatus.transactionStartedExhaustedTransactionId
       }
@@ -4766,10 +4809,10 @@ export class OCPP20ServiceUtils {
         ) {
           OCPP20ServiceUtils.rebuildQueuedEndedMeterValues(
             chargingStation,
-            connectorId,
+            eventConnectorId,
             connectorStatus,
             queuedEvent,
-            evseId
+            eventEvseId
           )
           try {
             await chargingStation.persistTransactionEventQueues()
@@ -4812,6 +4855,10 @@ export class OCPP20ServiceUtils {
           }
         }
         OCPP20ServiceUtils.replayedTransactionEventRequests.add(queuedEvent.request)
+        OCPP20ServiceUtils.replayedTransactionEventOwners.set(queuedEvent.request, {
+          connectorId: eventConnectorId,
+          evseId: eventEvseId ?? eventConnectorId,
+        })
         setTransactionEventQueueInFlight(connectorStatus, queuedEvent)
         try {
           await OCPP20ServiceUtils.sendBuiltTransactionEvent(
@@ -4828,6 +4875,7 @@ export class OCPP20ServiceUtils {
             OCPP20ServiceUtils.isLifecycleGenerationCurrent(chargingStation, lifecycleAbortSignal)
           ) {
             clearTransactionEventQueueInFlight(connectorStatus, queuedEvent)
+            OCPP20ServiceUtils.replayedTransactionEventOwners.delete(queuedEvent.request)
             OCPP20ServiceUtils.replayedTransactionEventRequests.delete(queuedEvent.request)
           }
         }
@@ -4839,13 +4887,14 @@ export class OCPP20ServiceUtils {
         retainPublicKeyDelivery(publicKeyDeliveryToken)
         if (queue[0] === queuedEvent) {
           shiftBoundedTransactionEvent(connectorStatus)
+          OCPP20ServiceUtils.settleQueuedTransactionMeterValueDelivery(queuedEvent, false)
           queueChanged = true
           if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
             const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
               chargingStation,
-              connectorId,
+              eventConnectorId,
               connectorStatus,
-              evseId,
+              eventEvseId,
               queuedEvent.request.transactionInfo.transactionId
             )
             if (
@@ -4861,10 +4910,10 @@ export class OCPP20ServiceUtils {
           } else if (
             await OCPP20ServiceUtils.reconcileExhaustedStartedTransaction(
               chargingStation,
-              connectorId,
+              eventConnectorId,
               connectorStatus,
               queuedEvent.request.transactionInfo.transactionId,
-              evseId
+              eventEvseId
             )
           ) {
             queueChanged = false
@@ -4925,6 +4974,7 @@ export class OCPP20ServiceUtils {
         if (queue[0] === queuedEvent) {
           const failedTransactionId = queuedEvent.request.transactionInfo.transactionId
           shiftBoundedTransactionEvent(connectorStatus, preserveIntervalEnergy)
+          OCPP20ServiceUtils.settleQueuedTransactionMeterValueDelivery(queuedEvent, true)
           OCPP20ServiceUtils.transferRejectedTransactionEventPublicKey(
             connectorStatus,
             queuedEvent.request,
@@ -4942,9 +4992,9 @@ export class OCPP20ServiceUtils {
           if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
             const transactionFinalized = await OCPP20ServiceUtils.cleanupEndedTransaction(
               chargingStation,
-              connectorId,
+              eventConnectorId,
               connectorStatus,
-              evseId,
+              eventEvseId,
               failedTransactionId
             )
             if (
@@ -4960,10 +5010,10 @@ export class OCPP20ServiceUtils {
           } else if (
             await OCPP20ServiceUtils.reconcileExhaustedStartedTransaction(
               chargingStation,
-              connectorId,
+              eventConnectorId,
               connectorStatus,
               failedTransactionId,
-              evseId,
+              eventEvseId,
               wasQueuedStartedEvent
             )
           ) {
@@ -4994,12 +5044,16 @@ export class OCPP20ServiceUtils {
     connectorStatus: ConnectorStatus,
     request: OCPP20TransactionEventRequest,
     markOffline = false,
-    publicKeyDeliveryToken?: PublicKeyDeliveryToken
-  ): void {
+    publicKeyDeliveryToken?: PublicKeyDeliveryToken,
+    ownerConnectorId = 1,
+    ownerEvseId = ownerConnectorId
+  ): QueuedTransactionEvent | undefined {
     if (markOffline) request.offline = true
     const isUpdatedEvent = request.eventType === OCPP20TransactionEventEnumType.Updated
     const queuedEvent: QueuedTransactionEvent = {
       deliveryAttempted: false,
+      ownerConnectorId,
+      ownerEvseId,
       request,
       seqNo: request.seqNo,
       timestamp: new Date(),
@@ -5018,7 +5072,7 @@ export class OCPP20ServiceUtils {
     }
     const result = enqueueBoundedTransactionEvent(connectorStatus, queuedEvent)
     if (!result.inserted) {
-      if (result.capacityRejected === true && isUpdatedEvent) {
+      if (isUpdatedEvent) {
         restoreRejectedTransactionEventIntervalCarry(connectorStatus, queuedEvent)
         OCPP20ServiceUtils.transferRejectedTransactionEventPublicKey(
           connectorStatus,
@@ -5029,7 +5083,7 @@ export class OCPP20ServiceUtils {
       }
       if (result.changed) chargingStation.saveTransactionEventQueues()
       if (result.capacityRejected === true) throw new TransactionEventQueueCapacityError()
-      return
+      return undefined
     }
     if (
       (isNotEmptyArray(result.removedEvents) || result.overLimit) &&
@@ -5042,7 +5096,11 @@ export class OCPP20ServiceUtils {
     } else if (!result.overLimit && !isNotEmptyArray(result.removedEvents)) {
       OCPP20ServiceUtils.saturatedTransactionEventQueues.delete(connectorStatus)
     }
+    for (const removedEvent of result.removedEvents) {
+      OCPP20ServiceUtils.settleQueuedTransactionMeterValueDelivery(removedEvent, true)
+    }
     chargingStation.saveTransactionEventQueues(isUpdatedEvent)
+    return queuedEvent
   }
 
   private static finalizeEndedIntervalEnergyCoverage (
@@ -5480,7 +5538,9 @@ export class OCPP20ServiceUtils {
         return false
       }
       restoreRejectedTransactionEventIntervalCarry(connectorStatus, queuedEvent)
-      removeBoundedTransactionEvent(connectorStatus, queuedEvent)
+      if (removeBoundedTransactionEvent(connectorStatus, queuedEvent)) {
+        OCPP20ServiceUtils.settleQueuedTransactionMeterValueDelivery(queuedEvent, true)
+      }
       OCPP20ServiceUtils.transferRejectedTransactionEventPublicKey(
         connectorStatus,
         queuedEvent.request,
@@ -5741,7 +5801,8 @@ export class OCPP20ServiceUtils {
     endedPredecessors?: EndedTransactionEventPredecessors,
     preparedMeterValueDelivery?: TransactionMeterValueDelivery,
     terminalDeliveryIsCurrent?: () => boolean,
-    startedOwnership?: 'pending' | 'starting'
+    startedOwnership?: 'pending' | 'starting',
+    queueBeforeDelivery = false
   ): Promise<OCPP20TransactionEventResponse> {
     const lifecycleAbortSignal = chargingStation.lifecycleAbortSignal
     let publicKeyDeliveryToken: PublicKeyDeliveryToken | undefined
@@ -5787,6 +5848,10 @@ export class OCPP20ServiceUtils {
           `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Dropping TransactionEvent(Updated) after transaction ending started`
         )
         releasePublicKeyDelivery(publicKeyDeliveryToken)
+        if (queueBeforeDelivery) {
+          transactionMeterValueDelivery?.settle(true)
+          transactionMeterValueDelivery = undefined
+        }
         return { idTokenInfo: undefined }
       }
       if (
@@ -5798,6 +5863,79 @@ export class OCPP20ServiceUtils {
           connectorStatus,
           transactionId
         )
+      }
+
+      if (queueBeforeDelivery) {
+        if (
+          eventType !== OCPP20TransactionEventEnumType.Updated ||
+          transactionMeterValueDelivery == null
+        ) {
+          throw new BaseError('Only metered TransactionEvent(Updated) may be queued eagerly')
+        }
+        const eagerDelivery = transactionMeterValueDelivery
+        const previousSeqNo = connectorStatus.transactionSeqNo
+        const previousEvseSent = connectorStatus.transactionEvseSent
+        const previousIdTokenSent = connectorStatus.transactionIdTokenSent
+        try {
+          const webSocketOpen = chargingStation.isWebSocketConnectionOpened()
+          const transactionEventRequest = buildTransactionEvent(chargingStation, {
+            connectorId,
+            eventType,
+            transactionId,
+            ...options,
+            triggerReason,
+            ...(!webSocketOpen && { offline: true }),
+          })
+          publicKeyDeliveryToken =
+            transferPublicKeyDelivery(publicKeyDeliveryToken, transactionEventRequest) ??
+            claimPublicKeyDelivery(
+              connectorStatus,
+              transactionId,
+              transactionEventRequest,
+              transactionEventRequest.meterValue?.some(meterValue =>
+                meterValue.sampledValue.some(sampledValue =>
+                  isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
+                )
+              ) === true
+            )
+          const queuedEvent = OCPP20ServiceUtils.enqueueTransactionEvent(
+            chargingStation,
+            connectorStatus,
+            transactionEventRequest,
+            transactionEventRequest.offline === true,
+            publicKeyDeliveryToken,
+            connectorId,
+            evseId ?? connectorId
+          )
+          if (queuedEvent == null) {
+            throw new TransactionEventQueueCapacityError()
+          }
+          OCPP20ServiceUtils.transactionMeterValueDeliveries.set(queuedEvent, eagerDelivery)
+          const settlement = eagerDelivery.waitForSettlement()
+          eagerDelivery.markBuffered()
+          transactionMeterValueDelivery = undefined
+          retainPublicKeyDelivery(publicKeyDeliveryToken)
+          if (webSocketOpen && chargingStation.inAcceptedState()) {
+            OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
+              chargingStation,
+              connectorId,
+              connectorStatus,
+              evseId
+            )
+            await settlement
+          }
+          return { idTokenInfo: undefined }
+        } catch (error: unknown) {
+          if (previousSeqNo == null) delete connectorStatus.transactionSeqNo
+          else connectorStatus.transactionSeqNo = previousSeqNo
+          if (previousEvseSent == null) delete connectorStatus.transactionEvseSent
+          else connectorStatus.transactionEvseSent = previousEvseSent
+          if (previousIdTokenSent == null) delete connectorStatus.transactionIdTokenSent
+          else connectorStatus.transactionIdTokenSent = previousIdTokenSent
+          eagerDelivery.settle(true)
+          transactionMeterValueDelivery = undefined
+          throw error
+        }
       }
 
       const ensureTerminalDeliveryIsCurrent = (definitelyUnsent = true): void => {
@@ -5959,7 +6097,9 @@ export class OCPP20ServiceUtils {
             connectorStatus,
             transactionEventRequest,
             transactionEventRequest.offline === true,
-            publicKeyDeliveryToken
+            publicKeyDeliveryToken,
+            connectorId,
+            evseId ?? connectorId
           )
           const queuedEvent = connectorStatus.transactionEventQueue?.find(
             event => event.request === transactionEventRequest
@@ -6000,7 +6140,9 @@ export class OCPP20ServiceUtils {
             connectorStatus,
             transactionEventRequest,
             false,
-            publicKeyDeliveryToken
+            publicKeyDeliveryToken,
+            connectorId,
+            evseId ?? connectorId
           )
           stagedEvent = connectorStatus.transactionEventQueue?.find(
             queuedEvent => queuedEvent.request === transactionEventRequest
@@ -6065,7 +6207,9 @@ export class OCPP20ServiceUtils {
             connectorStatus,
             transactionEventRequest,
             false,
-            publicKeyDeliveryToken
+            publicKeyDeliveryToken,
+            connectorId,
+            evseId ?? connectorId
           )
           OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
             chargingStation,
@@ -6169,7 +6313,9 @@ export class OCPP20ServiceUtils {
                     connectorStatus,
                     transactionEventRequest,
                     transactionEventRequest.offline === true,
-                    publicKeyDeliveryToken
+                    publicKeyDeliveryToken,
+                    connectorId,
+                    evseId ?? connectorId
                   )
                 }
                 retainPublicKeyDelivery(publicKeyDeliveryToken)
@@ -6206,7 +6352,9 @@ export class OCPP20ServiceUtils {
                   connectorStatus,
                   transactionEventRequest,
                   false,
-                  publicKeyDeliveryToken
+                  publicKeyDeliveryToken,
+                  connectorId,
+                  evseId ?? connectorId
                 )
                 stagedEvent = connectorStatus.transactionEventQueue?.find(
                   queuedEvent => queuedEvent.request === transactionEventRequest
@@ -6450,6 +6598,16 @@ export class OCPP20ServiceUtils {
         OCPP20ServiceUtils.transactionEventSendChains.delete(connectorStatus)
       }
     }
+  }
+
+  private static settleQueuedTransactionMeterValueDelivery (
+    queuedEvent: QueuedTransactionEvent,
+    definitivelyRejected: boolean
+  ): void {
+    const delivery = OCPP20ServiceUtils.transactionMeterValueDeliveries.get(queuedEvent)
+    if (delivery == null) return
+    OCPP20ServiceUtils.transactionMeterValueDeliveries.delete(queuedEvent)
+    delivery.settle(definitivelyRejected)
   }
 
   private static async terminateTransaction (

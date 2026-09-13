@@ -1420,7 +1420,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         chargingStation,
         meterValuesReservation.targets.map(target => target.evseId)
       )
-      for (const { delivery } of meterValuesReservation.deliveryTargets) delivery.settle()
+      for (const { delivery } of meterValuesReservation.deliveryTargets) delivery.settle(true)
     }
     const reservedTransactionTargets = this.triggerTransactionEventReservations.get(request)
     if (reservedTransactionTargets != null) {
@@ -1966,7 +1966,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     chargingStation: ChargingStation,
     target: TriggeredMeterValuesTarget,
     errorHandler: (error: unknown) => void,
-    onSettled: () => void
+    onSettled: (definitivelyRejected: boolean) => void
   ): void {
     const samples = target.samples.filter(sample => {
       if (sample.connectorId == null || sample.transactionId == null) return true
@@ -1978,7 +1978,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     })
     if (isEmpty(samples)) {
       OCPP20ServiceUtils.releaseTriggeredMeterValuesRequests(chargingStation, [target.evseId])
-      onSettled()
+      onSettled(true)
       return
     }
 
@@ -5168,8 +5168,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       const deliveryTargets = reservation.deliveryTargets.filter(
         deliveryTarget => deliveryTarget.evseId === target.evseId
       )
-      const settleDeliveries = (): void => {
-        for (const { delivery } of deliveryTargets) delivery.settle()
+      const settleDeliveries = (definitivelyRejected: boolean): void => {
+        for (const { delivery } of deliveryTargets) delivery.settle(definitivelyRejected)
       }
       ;(async () => {
         const deliveryTurns = deliveryTargets.flatMap(({ delivery }) => {
@@ -5180,7 +5180,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         this.emitEvseMeterValues(chargingStation, target, errorHandler, settleDeliveries)
       })().catch((error: unknown) => {
         OCPP20ServiceUtils.releaseTriggeredMeterValuesRequests(chargingStation, [target.evseId])
-        settleDeliveries()
+        settleDeliveries(true)
         errorHandler(error)
       })
     }

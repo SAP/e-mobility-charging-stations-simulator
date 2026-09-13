@@ -2946,10 +2946,12 @@ export class ChargingStation extends EventEmitter {
         ? (this.stationInfo.conversionEfficiency ?? 1)
         : 1
     if (restorePersistedTransactions) {
-      for (const { connectorStatus } of this.iterateConnectors()) {
+      for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors()) {
         preparePersistedTransactionEventQueue(
           connectorStatus,
           transactionEventRequestValidator,
+          evseId ?? connectorId,
+          connectorId,
           queueNormalizationPhaseCount,
           queueInletToOutputEfficiency
         )
