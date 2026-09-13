@@ -404,14 +404,22 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         response: GenericResponse
       ) => {
         if (response.status === GenericStatus.Accepted) {
-          const { connectorId, idTag } = request
-          if (connectorId != null) {
-            const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-            if (connectorStatus != null) {
-              connectorStatus.transactionRemoteStarted = true
-            }
-          }
+          const { chargingProfile, connectorId, idTag } = request
           if (connectorId == null) return
+          const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+          if (connectorStatus != null) {
+            connectorStatus.transactionRemoteStarted = true
+          }
+          if (chargingProfile != null) {
+            OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, chargingProfile)
+            logger.debug(
+              `${chargingStation.logPrefix()} ${moduleName}.constructor: Charging profile(s) set at delivered remote start transaction on ${
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                chargingStation.stationInfo?.chargingStationId
+              }#${connectorId.toString()}`,
+              chargingProfile
+            )
+          }
           OCPP16ServiceUtils.startTransactionOnConnector(chargingStation, connectorId, idTag)
             .then(response => {
               if (response.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
@@ -1650,11 +1658,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
     if (
       chargingProfile != null &&
-      !this.setRemoteStartTransactionChargingProfile(
-        chargingStation,
-        transactionConnectorId,
-        chargingProfile
-      )
+      !this.isRemoteStartTransactionChargingProfileValid(chargingProfile)
     ) {
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
@@ -2151,6 +2155,22 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_RESPONSE_EMPTY
   }
 
+  private isRemoteStartTransactionChargingProfileValid (
+    chargingProfile: OCPP16ChargingProfile
+  ): boolean {
+    const valid =
+      chargingProfile.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE &&
+      chargingProfile.transactionId == null
+    if (!valid) {
+      logger.debug(
+        `${moduleName}.isRemoteStartTransactionChargingProfileValid: Not allowed to set ${
+          chargingProfile.chargingProfilePurpose
+        } charging profile(s)${chargingProfile.transactionId != null ? ' with transactionId set' : ''} at remote start transaction`
+      )
+    }
+    return valid
+  }
+
   private notifyRemoteStartTransactionRejected (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -2168,33 +2188,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       }', status '${connectorStatus?.status}'`
     )
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
-  }
-
-  private setRemoteStartTransactionChargingProfile (
-    chargingStation: ChargingStation,
-    connectorId: number,
-    chargingProfile: OCPP16ChargingProfile
-  ): boolean {
-    if (
-      chargingProfile.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE &&
-      chargingProfile.transactionId == null
-    ) {
-      OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, chargingProfile)
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.setRemoteStartTransactionChargingProfile: Charging profile(s) set at remote start transaction on ${
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          chargingStation.stationInfo?.chargingStationId
-        }#${connectorId.toString()}`,
-        chargingProfile
-      )
-      return true
-    }
-    logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.setRemoteStartTransactionChargingProfile: Not allowed to set ${
-        chargingProfile.chargingProfilePurpose
-      } charging profile(s)${chargingProfile.transactionId != null ? ' with transactionId set' : ''} at remote start transaction`
-    )
-    return false
   }
 
   private async updateFirmwareSimulation (

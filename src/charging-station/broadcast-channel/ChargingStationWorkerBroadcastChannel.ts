@@ -62,7 +62,10 @@ import {
   completeTransactionIntervalState,
   restoreTransactionIntervalState,
 } from '../meter-values/TransactionIntervalUtils.js'
-import { TransactionMeterValueDeliveryBarrier } from '../meter-values/TransactionMeterValueDeliveryBarrier.js'
+import {
+  type TransactionMeterValueDelivery,
+  TransactionMeterValueDeliveryBarrier,
+} from '../meter-values/TransactionMeterValueDeliveryBarrier.js'
 import {
   buildMeterValue,
   OCPP16ServiceUtils,
@@ -71,6 +74,7 @@ import {
 } from '../ocpp/index.js'
 import {
   claimPublicKeyDelivery,
+  getOCPP16SignedMeterValuePublicKey,
   releasePublicKeyDelivery,
   retainPublicKeyDelivery,
 } from '../ocpp/OCPPSignedMeterValueUtils.js'
@@ -488,16 +492,31 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
     const requestedMeterValues = requestedMeterValuesPayload as
       OCPP16MeterValue[] | OCPP20MeterValue[] | undefined
+    const requestedPublicKeyIncluded =
+      requestedMeterValues?.some(meterValue =>
+        isOcpp2
+          ? (meterValue as OCPP20MeterValue).sampledValue.some(sampledValue =>
+              isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
+            )
+          : (meterValue as OCPP16MeterValue).sampledValue.some(sampledValue =>
+              isNotEmptyString(getOCPP16SignedMeterValuePublicKey(sampledValue))
+            )
+      ) === true
     if (requestedMeterValues == null && connectorStatus?.transactionEnding === true) {
       throw new BaseError(
         `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Transaction is ending`
       )
     }
-    const transactionDelivery =
-      requestedMeterValues == null && connectorStatus != null && transactionId != null
-        ? TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
-        : undefined
-    if (requestedMeterValues == null && connectorStatus != null && transactionId != null) {
+    let transactionDelivery: TransactionMeterValueDelivery | undefined
+    if (
+      (requestedMeterValues == null || requestedPublicKeyIncluded) &&
+      connectorStatus != null &&
+      transactionId != null
+    ) {
+      transactionDelivery = TransactionMeterValueDeliveryBarrier.begin(
+        connectorStatus,
+        transactionId
+      )
       if (transactionDelivery == null) {
         throw new BaseError(
           `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Transaction is no longer active`
@@ -528,7 +547,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       requestedMeterValues == null && connectorStatus != null && transactionId != null
         ? captureTransactionIntervalState(connectorStatus)
         : undefined
-    let generatedPublicKeyIncluded = false
+    let publicKeyIncluded = requestedPublicKeyIncluded
     let meterValues: (OCPP16MeterValue | OCPP20MeterValue)[]
     try {
       meterValues = (() => {
@@ -553,15 +572,15 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         // SignedData SampledValue when signing is enabled for the connector.
         // OCPP 2.0.x signing is applied inline by the versioned dispatcher.
         if (!isOcpp2 && transactionId != null) {
-          generatedPublicKeyIncluded = OCPP16ServiceUtils.appendSignedUpdatedReadings(
+          publicKeyIncluded = OCPP16ServiceUtils.appendSignedUpdatedReadings(
             this.chargingStation,
             connectorId,
             convertToInt(transactionId),
             meterValue as OCPP16MeterValue
           )
         } else if (isOcpp2) {
-          generatedPublicKeyIncluded = (meterValue as OCPP20MeterValue).sampledValue.some(
-            sampledValue => isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
+          publicKeyIncluded = (meterValue as OCPP20MeterValue).sampledValue.some(sampledValue =>
+            isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
           )
         }
         return [meterValue]
@@ -588,12 +607,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     ) as MeterValuesRequest
     const publicKeyDeliveryToken =
       connectorStatus != null && transactionId != null
-        ? claimPublicKeyDelivery(
-          connectorStatus,
-          transactionId,
-          request,
-          generatedPublicKeyIncluded
-        )
+        ? claimPublicKeyDelivery(connectorStatus, transactionId, request, publicKeyIncluded)
         : undefined
     const deliveryState = {
       buffered: false,
@@ -626,8 +640,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       onError: (error, isCallError) => {
         deliveryState.callError ||= isCallError
         if (isCallError || deliveryState.buffered) {
-          const definitivelyRejected = isCallError || !deliveryState.transportErrorAmbiguous
-          if (definitivelyRejected) restoreRejectedDelivery()
+          const definitivelyRejected = !deliveryState.transportErrorAmbiguous
+          if (definitivelyRejected) {
+            restoreRejectedDelivery()
+          } else {
+            retainPublicKeyDelivery(publicKeyDeliveryToken)
+          }
           markDeliverySettled(definitivelyRejected)
         }
         this.requestParams.onError?.(error, isCallError)

@@ -18,6 +18,9 @@ import {
   GenericStatus,
   OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
+  OCPP16ChargingProfileKindType,
+  OCPP16ChargingProfilePurposeType,
+  OCPP16ChargingRateUnitType,
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
 } from '../../../../src/types/index.js'
@@ -32,6 +35,7 @@ import {
   createOCPP16IncomingRequestTestContext,
   createOCPP16ListenerStation,
   createOCPP16NonContiguousConnectorsContext,
+  createOCPP16RequestTestContext,
   type OCPP16IncomingRequestTestContext,
   setMockRequestHandler,
 } from './OCPP16TestUtils.js'
@@ -312,6 +316,81 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
     // Assert
     assert.strictEqual(response.status, GenericStatus.Rejected)
+  })
+
+  await it('should not install a TxProfile before the accepted response is delivered', async () => {
+    const { incomingRequestService, station, testableService } = testContext
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    const request: RemoteStartTransactionRequest = {
+      chargingProfile: {
+        chargingProfileId: 91,
+        chargingProfileKind: OCPP16ChargingProfileKindType.RELATIVE,
+        chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_PROFILE,
+        chargingSchedule: {
+          chargingRateUnit: OCPP16ChargingRateUnitType.WATT,
+          chargingSchedulePeriod: [{ limit: 7000, startPeriod: 0 }],
+        },
+        stackLevel: 0,
+      },
+      connectorId: 1,
+      idTag: TEST_ID_TAG,
+    }
+
+    const response = await testableService.handleRequestRemoteStartTransaction(station, request)
+    assert.strictEqual(response.status, GenericStatus.Accepted)
+    assert.deepStrictEqual(connectorStatus.chargingProfiles, [])
+
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+      station,
+      request,
+      response
+    )
+    await flushMicrotasks()
+
+    assert.deepStrictEqual(connectorStatus.chargingProfiles, [request.chargingProfile])
+  })
+
+  await it('should leave a TxProfile uninstalled after response callback budget rejection', async () => {
+    const { requestService, station } = createOCPP16RequestTestContext({
+      baseName: 'remote-start-response-budget',
+    })
+    const service = new OCPP16IncomingRequestService()
+    station.ocppRequestService = requestService
+    station.recordRequestStatistic = () => undefined
+    const reservation = station.reserveBufferedMessageCallbacks(1024 * 1024)
+    assert.ok(reservation != null)
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    const request: RemoteStartTransactionRequest = {
+      chargingProfile: {
+        chargingProfileId: 92,
+        chargingProfileKind: OCPP16ChargingProfileKindType.RELATIVE,
+        chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_PROFILE,
+        chargingSchedule: {
+          chargingRateUnit: OCPP16ChargingRateUnitType.WATT,
+          chargingSchedulePeriod: [{ limit: 7000, startPeriod: 0 }],
+        },
+        stackLevel: 0,
+      },
+      connectorId: 1,
+      idTag: TEST_ID_TAG,
+    }
+
+    await assert.rejects(
+      service.incomingRequestHandler(
+        station,
+        'remote-start-over-callback-budget',
+        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+        request
+      ),
+      /Response callback capacity exceeded/
+    )
+
+    assert.deepStrictEqual(connectorStatus.chargingProfiles, [])
+    assert.strictEqual(connectorStatus.transactionRemoteStarted, false)
+    station.releaseBufferedMessageCallbacks(reservation)
   })
 
   // --- Event listeners ---

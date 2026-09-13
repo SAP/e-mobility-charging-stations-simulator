@@ -1111,29 +1111,28 @@ export class OCPP16ServiceUtils {
           sent: false,
           transportErrorAmbiguous: false,
         }
+        let rejectedDeliveryRestored = false
+        const restoreRejectedDelivery = (): void => {
+          if (rejectedDeliveryRestored) return
+          rejectedDeliveryRestored = true
+          restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
+          releasePublicKeyDelivery(publicKeyDeliveryToken)
+        }
         const handleDeliveryFailure = (error: unknown): void => {
-          if (
-            !deliveryState.buffered &&
-            !deliveryState.callError &&
-            !deliveryState.responseReceived &&
-            !deliveryState.sent &&
-            !deliveryState.transportErrorAmbiguous
-          ) {
-            restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
-            releasePublicKeyDelivery(publicKeyDeliveryToken)
+          const definitelyRejected =
+            !deliveryState.transportErrorAmbiguous &&
+            (deliveryState.callError || (!deliveryState.responseReceived && !deliveryState.sent))
+          if (!deliveryState.buffered && definitelyRejected) {
+            restoreRejectedDelivery()
           } else if (
             !deliveryState.buffered &&
-            !deliveryState.callError &&
-            (deliveryState.sent || deliveryState.transportErrorAmbiguous)
+            (deliveryState.sent ||
+              deliveryState.responseReceived ||
+              deliveryState.transportErrorAmbiguous)
           ) {
             retainPublicKeyDelivery(publicKeyDeliveryToken)
           }
-          if (!deliveryState.buffered) {
-            markDeliverySettled(
-              deliveryState.callError ||
-                (!deliveryState.sent && !deliveryState.transportErrorAmbiguous)
-            )
-          }
+          if (!deliveryState.buffered) markDeliverySettled(definitelyRejected)
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error while sending '${RequestCommand.METER_VALUES}':`,
             error
@@ -1149,11 +1148,11 @@ export class OCPP16ServiceUtils {
                 onError: (_error, isCallError) => {
                   deliveryState.callError ||= isCallError
                   if (isCallError || deliveryState.buffered) {
-                    const definitivelyRejected =
-                      isCallError || !deliveryState.transportErrorAmbiguous
+                    const definitivelyRejected = !deliveryState.transportErrorAmbiguous
                     if (definitivelyRejected) {
-                      restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
-                      releasePublicKeyDelivery(publicKeyDeliveryToken)
+                      restoreRejectedDelivery()
+                    } else {
+                      retainPublicKeyDelivery(publicKeyDeliveryToken)
                     }
                     markDeliverySettled(definitivelyRejected)
                   }
@@ -1656,7 +1655,11 @@ export class OCPP16ServiceUtils {
                 onError: (error, isCallError) => {
                   meterValuesDeliveryState.callError ||= isCallError
                   if (isCallError) {
-                    transferRejectedTerminalMeterValues()
+                    if (meterValuesDeliveryState.transportErrorAmbiguous) {
+                      retainPublicKeyDelivery(publicKeyDeliveryToken)
+                    } else {
+                      transferRejectedTerminalMeterValues()
+                    }
                     markMeterValuesSettled()
                   } else if (!meterValuesReplaySettled) {
                     meterValuesReplayError = error
@@ -1732,10 +1735,9 @@ export class OCPP16ServiceUtils {
                 }
               } else {
                 const definitelyRejected =
-                  meterValuesDeliveryState.callError ||
-                  (!meterValuesDeliveryState.responseReceived &&
-                    !meterValuesDeliveryState.sent &&
-                    !meterValuesDeliveryState.transportErrorAmbiguous)
+                  !meterValuesDeliveryState.transportErrorAmbiguous &&
+                  (meterValuesDeliveryState.callError ||
+                    (!meterValuesDeliveryState.responseReceived && !meterValuesDeliveryState.sent))
                 if (definitelyRejected && transferRejectedTerminalMeterValues()) {
                   // The StopTransaction fallback now owns the rejected terminal public key.
                 } else if (definitelyRejected) {

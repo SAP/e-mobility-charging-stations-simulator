@@ -799,11 +799,6 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
           params.onMessageSent?.()
           params.onError?.(failure, true)
         },
-        (params: RequestParams, failure: OCPPError) => {
-          params.onTransportError?.(failure, true)
-          params.onRequestBuffered?.()
-          params.onError?.(failure, true)
-        },
       ]) {
         assert.deepStrictEqual(
           await runPeriodicMeterValuesFailure(() => {
@@ -812,6 +807,24 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
           { carry: 10, keyCounts: [1, 1], keyReserved: false }
         )
       }
+    })
+
+    await it('should preserve an ambiguous periodic attempt after replay CALLERROR', async t => {
+      t.mock.timers.enable({ apis: ['setInterval'] })
+
+      assert.deepStrictEqual(
+        await runPeriodicMeterValuesFailure(
+          () => {
+            t.mock.timers.tick(1000)
+          },
+          (params, failure) => {
+            params.onTransportError?.(failure, true)
+            params.onRequestBuffered?.()
+            params.onError?.(failure, true)
+          }
+        ),
+        { carry: 0, keyCounts: [1, 0], keyReserved: true }
+      )
     })
 
     await it('should retain energy consumption and the key after possible periodic delivery', async t => {
@@ -1791,7 +1804,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.strictEqual(connectorStatus.transactionEnding, undefined)
     })
 
-    await it('should continue StopTransaction when replay CALLERROR precedes the send callback', async t => {
+    await it('should preserve an ambiguous strict end frame when replay CALLERROR precedes the send callback', async t => {
       t.mock.timers.enable({ apis: ['setTimeout'] })
       const transportFailure = new Error('terminal MeterValues transport failure')
       const firstSendFailed = Promise.withResolvers<undefined>()
@@ -1886,7 +1899,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         ?.flatMap(meterValue => meterValue.sampledValue)
         .find(sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA)
       assert.ok(stopSignedSample != null)
-      assert.notStrictEqual(
+      assert.strictEqual(
         (JSON.parse(stopSignedSample.value) as { publicKey: string }).publicKey,
         ''
       )

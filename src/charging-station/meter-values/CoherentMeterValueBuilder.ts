@@ -637,7 +637,8 @@ export const buildCoherentMeterValue = (
   deferEnergyInterval = false,
   intervalBaselineKey = 'default'
 ): MeterValue => {
-  const connectorStatus = connectorStatusOverride ?? context.getConnectorStatus(session.connectorId)
+  const connectorStatus =
+    connectorStatusOverride ?? context.getConnectorStatus(session.connectorId, session.evseId)
   if (connectorStatus == null) {
     logger.warn(
       `${context.logPrefix()} ${moduleName}.buildCoherentMeterValue: missing connector ${session.connectorId.toString()} for transaction ${String(session.transactionId)}`
@@ -664,7 +665,7 @@ export const buildCoherentMeterValue = (
       advanceConnectorEnergyRegister(connectorStatus, committedSharedEnergyWh)
       advanceStationEnergyRegister(
         context,
-        evseIdOverride ?? context.getEvseIdByConnectorId(session.connectorId),
+        evseIdOverride ?? session.evseId ?? context.getEvseIdByConnectorId(session.connectorId),
         session.currentType,
         MeterValueLocation.OUTLET,
         committedSharedEnergyWh
@@ -712,7 +713,9 @@ export const buildCoherentMeterValue = (
         intervalEnergyValue,
         session.numberOfPhases,
         session.currentType === CurrentType.DC &&
-          (evseIdOverride ?? context.getEvseIdByConnectorId(session.connectorId)) !== 0
+          (evseIdOverride ??
+            session.evseId ??
+            context.getEvseIdByConnectorId(session.connectorId)) !== 0
           ? (context.stationInfo?.conversionEfficiency ?? 1)
           : 1
       )
@@ -750,7 +753,8 @@ export const buildCoherentMeterValueSnapshot = (
   energyRegisterWhOverride?: number,
   intervalBaselineKey = 'default'
 ): MeterValue => {
-  const connectorStatus = connectorStatusOverride ?? context.getConnectorStatus(session.connectorId)
+  const connectorStatus =
+    connectorStatusOverride ?? context.getConnectorStatus(session.connectorId, session.evseId)
   if (connectorStatus == null) {
     return { sampledValue: [], timestamp: new Date() }
   }

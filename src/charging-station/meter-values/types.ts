@@ -136,6 +136,7 @@ export const EvProfilesFileSchema = z.object({
 export interface CoherentSession {
   readonly connectorId: number
   readonly currentType: CurrentType
+  readonly evseId?: number
   readonly numberOfPhases: number
   readonly profile: EvProfile
   readonly rampUpDurationMs: number
@@ -155,7 +156,7 @@ export interface CoherentSession {
  */
 export interface ICoherentContext {
   getConnectorMaximumAvailablePower: (connectorId: number, evseId?: number) => number
-  getConnectorStatus: (connectorId: number) => ConnectorStatus | undefined
+  getConnectorStatus: (connectorId: number, evseId?: number) => ConnectorStatus | undefined
   getEvseIdByConnectorId: (connectorId: number) => number | undefined
   getEvseStatus: (evseId: number) => EvseStatus | undefined
   getNumberOfPhases: () => number

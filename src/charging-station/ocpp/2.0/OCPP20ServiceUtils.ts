@@ -1358,25 +1358,30 @@ export class OCPP20ServiceUtils {
    * Build meter values for the start of a transaction.
    * @param chargingStation - Target charging station
    * @param transactionId - Transaction identifier
+   * @param connectorId - Resolved connector identifier
+   * @param evseId - Resolved EVSE identifier
    * @returns Array of OCPP 2.0.1 meter values at transaction begin
    */
   static buildTransactionStartedMeterValues (
     chargingStation: ChargingStation,
-    transactionId: number | string
+    transactionId: number | string,
+    connectorId?: number,
+    evseId?: number
   ): OCPP20MeterValue[] {
     try {
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.SampledDataCtrlr,
         OCPP20RequiredVariableName.TxStartedMeasurands
       )
-      const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
-      const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
+      const resolvedConnectorId =
+        connectorId ?? chargingStation.getConnectorIdByTransactionId(transactionId)
+      const resolvedEvseId = evseId ?? chargingStation.getEvseIdByTransactionId(transactionId)
       const startedMeterValue =
-        connectorId != null
+        resolvedConnectorId != null
           ? OCPP20ServiceUtils.buildTransactionMeterValue(
             chargingStation,
-            connectorId,
-            evseId,
+            resolvedConnectorId,
+            resolvedEvseId,
             transactionId,
             0,
             measurandsKey,
@@ -3223,12 +3228,14 @@ export class OCPP20ServiceUtils {
    * This also resets the EVSE and IdToken sent flags per E01.FR.16 and E03.FR.01.
    * @param chargingStation - The charging station instance
    * @param connectorId - The connector ID for which to reset the transaction state
+   * @param evseId - EVSE containing the connector when connector ids are EVSE-local
    */
   public static resetTransactionSequenceNumber (
     chargingStation: ChargingStation,
-    connectorId: number
+    connectorId: number,
+    evseId?: number
   ): void {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (connectorStatus != null) {
       connectorStatus.transactionSeqNo = undefined // Reset to undefined, will be set to 0 on first use
       connectorStatus.transactionEvseSent = undefined // E01.FR.16: EVSE must be sent in first event of new transaction

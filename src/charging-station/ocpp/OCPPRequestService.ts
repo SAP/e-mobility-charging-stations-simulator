@@ -694,6 +694,8 @@ export abstract class OCPPRequestService {
       let sendErrorBuffered = false
       let transportStarted = false
       let terminalResponseHandled = false
+      let everTransportAmbiguous = false
+      let responseDeliveryNotified = false
       const clearResponseTimeout = (): void => {
         if (responseTimeout != null) {
           clearTimeout(responseTimeout)
@@ -791,6 +793,10 @@ export abstract class OCPPRequestService {
         params.skipBufferingOnError === false ||
         (params.bufferOnErrorDuringStationStop === true && chargingStation.isStopping())
       const notifyMessageSent = (): void => {
+        if (messageType !== MessageType.CALL_MESSAGE) {
+          if (responseDeliveryNotified) return
+          responseDeliveryNotified = true
+        }
         clearResponseTimeout()
         if (messageType === MessageType.CALL_MESSAGE) {
           responseTimeout = setTimeout(() => {
@@ -842,6 +848,11 @@ export abstract class OCPPRequestService {
             ? undefined
             : {
                 onDiscarded: () => {
+                  if (everTransportAmbiguous) {
+                    notifyMessageSent()
+                    resolve(messagePayload)
+                    return
+                  }
                   try {
                     params.onError?.(ocppError, false)
                   } catch (error: unknown) {
@@ -862,6 +873,7 @@ export abstract class OCPPRequestService {
         forceBuffer = false
       ): boolean => {
         if (sendErrorHandled) return sendErrorBuffered
+        everTransportAmbiguous ||= deliveryAmbiguous
         sendErrorHandled = true
         if (messageType === MessageType.CALL_MESSAGE) {
           this.releaseOutgoingCall(chargingStation, messageId)
@@ -997,6 +1009,7 @@ export abstract class OCPPRequestService {
               // Once the response has been handed to the transport, delivery is
               // ambiguous. Preserve its accepted side effects instead of routing
               // it through the definite-unsent rollback path.
+              everTransportAmbiguous = true
               sendErrorHandled = true
               terminalResponseHandled = true
               clearResponseTimeout()

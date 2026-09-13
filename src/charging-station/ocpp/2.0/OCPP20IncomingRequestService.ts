@@ -636,15 +636,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         request: OCPP20RequestStartTransactionRequest,
         response: OCPP20RequestStartTransactionResponse
       ) => {
+        const pending = this.pendingRemoteStartResponses.get(request)
         this.pendingRemoteStartResponses.delete(request)
-        if (response.status === RequestStartStopStatusEnumType.Accepted) {
-          const connectorId = chargingStation.getConnectorIdByTransactionId(response.transactionId)
-          if (connectorId != null && response.transactionId != null) {
-            const txId = response.transactionId
-            chargingStation.createCoherentSession(txId, connectorId)
+        const txId = response.transactionId
+        if (
+          response.status === RequestStartStopStatusEnumType.Accepted &&
+          txId != null &&
+          pending?.transactionId === txId
+        ) {
+          const { connectorId, evseId } = pending
+          const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+          if (connectorStatus?.transactionId?.toString() === txId) {
+            chargingStation.createCoherentSession(txId, connectorId, evseId)
             const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
               chargingStation,
-              txId
+              txId,
+              connectorId,
+              evseId
             )
             OCPP20ServiceUtils.sendTransactionEvent(
               chargingStation,
@@ -653,6 +661,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
               connectorId,
               txId,
               {
+                evseId,
                 ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
                 remoteStartId: request.remoteStartId,
               }
@@ -3173,7 +3182,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
     const connectorId = chargingStation.getConnectorIdByEvseId(resolvedEvseId)
     const connectorStatus =
-      connectorId != null ? chargingStation.getConnectorStatus(connectorId) : null
+      connectorId != null
+        ? chargingStation.getConnectorStatus(connectorId, resolvedEvseId)
+        : undefined
 
     if (connectorStatus == null || connectorId == null) {
       const errorMsg = `Connector ${connectorId?.toString() ?? 'undefined'} status is undefined`
@@ -3363,7 +3374,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
 
     try {
       // E01.FR.07 + E01.FR.16 + E03.FR.01: ensure clean transaction state for new transaction
-      OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(
+        chargingStation,
+        connectorId,
+        resolvedEvseId
+      )
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Setting transaction state for connector ${connectorId.toString()}, transaction ID: ${transactionId}`
       )
@@ -3400,7 +3415,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         transactionId,
       }
     } catch (error) {
-      await this.resetConnectorOnStartTransactionError(chargingStation, connectorId, resolvedEvseId)
+      await this.resetConnectorOnStartTransactionError(
+        chargingStation,
+        connectorId,
+        resolvedEvseId,
+        transactionId
+      )
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Error starting transaction:`,
         ensureError(error)

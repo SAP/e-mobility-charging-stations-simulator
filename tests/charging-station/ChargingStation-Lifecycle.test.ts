@@ -1102,9 +1102,9 @@ await describe('ChargingStation Lifecycle', async () => {
       const sentMessages: string[] = []
       const wsConnection = activeStation.wsConnection
       assert.ok(wsConnection != null)
-      mock.method(wsConnection, 'send', (message: unknown, callback?: (error?: Error) => void) => {
+      mock.method(wsConnection, 'send', (message: unknown): never => {
         sentMessages.push(String(message))
-        callback?.(new Error('connection lost'))
+        throw new Error('connection unavailable before send')
       })
       let discarded = 0
       let sent = 0

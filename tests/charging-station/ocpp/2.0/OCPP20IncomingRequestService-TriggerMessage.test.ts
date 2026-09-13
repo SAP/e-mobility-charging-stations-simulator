@@ -706,8 +706,8 @@ await describe('F06 - TriggerMessage', async () => {
       }
       const wsConnection = station.wsConnection
       assert.ok(wsConnection != null)
-      mock.method(wsConnection, 'send', (_message: unknown, callback?: (error?: Error) => void) => {
-        callback?.(new Error('response transport failed'))
+      mock.method(wsConnection, 'send', (): never => {
+        throw new Error('response transport unavailable before send')
       })
       const firstRequest: OCPP20TriggerMessageRequest = {
         evse: { id: 1 },

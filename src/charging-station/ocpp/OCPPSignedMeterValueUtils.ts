@@ -4,11 +4,27 @@ import type { ConnectorStatus } from '../../types/ConnectorStatus.js'
 
 import { BaseError } from '../../exception/index.js'
 import {
+  OCPP16MeterValueFormat,
+  type OCPP16SampledValue,
   PublicKeyWithSignedMeterValueEnumType,
   type SampledValue,
   SigningMethodEnumType,
 } from '../../types/index.js'
-import { getErrorMessage, isNotEmptyString, logger } from '../../utils/index.js'
+import { getErrorMessage, isJsonObject, isNotEmptyString, logger } from '../../utils/index.js'
+
+export const getOCPP16SignedMeterValuePublicKey = (
+  sampledValue: OCPP16SampledValue
+): string | undefined => {
+  if (sampledValue.format !== OCPP16MeterValueFormat.SIGNED_DATA) return undefined
+  try {
+    const signedMeterValue: unknown = JSON.parse(sampledValue.value)
+    return isJsonObject(signedMeterValue) && typeof signedMeterValue.publicKey === 'string'
+      ? signedMeterValue.publicKey
+      : undefined
+  } catch {
+    return undefined
+  }
+}
 
 export interface PublicKeyDeliveryToken {
   readonly carrier: object

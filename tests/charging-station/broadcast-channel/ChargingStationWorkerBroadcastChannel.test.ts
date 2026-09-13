@@ -1488,7 +1488,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       assert.deepStrictEqual(result, { carry: 10, keyReserved: false, relayedCalls: 0 })
     })
 
-    await it('should restore ambiguous generated consumption after replay returns CALLERROR', async () => {
+    await it('should preserve ambiguous generated consumption after replay returns CALLERROR', async () => {
       const result = await runGeneratedMeterValuesFailure(
         (params, failure) => {
           params.onTransportError?.(failure, true)
@@ -1498,7 +1498,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         (params, failure) => params.onError?.(failure, true)
       )
 
-      assert.deepStrictEqual(result, { carry: 10, keyReserved: false, relayedCalls: 0 })
+      assert.deepStrictEqual(result, { carry: 0, keyReserved: true, relayedCalls: 0 })
     })
 
     await it('should build a generated request after its rejected predecessor settles', async () => {
@@ -1560,6 +1560,154 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         (JSON.parse(rebuiltSignedSample.value) as { publicKey?: string }).publicKey,
         firstPublicKey
       )
+    })
+
+    await it('should make a caller-supplied OCPP 1.6 key own OncePerTransaction delivery', async () => {
+      const requests: OCPP16MeterValuesRequest[] = []
+      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
+        requests.push(args[2] as OCPP16MeterValuesRequest)
+        const params = args[3] as RequestParams
+        params.onMessageSent?.()
+        params.onResponseReceived?.()
+        return Promise.resolve({})
+      })
+      const { connectorStatus, station } = createGeneratedMeterValuesStation(requestHandler)
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+      const customMeterValue = {
+        sampledValue: [
+          {
+            format: OCPP16MeterValueFormat.SIGNED_DATA,
+            value: JSON.stringify({
+              encodingMethod: 'OCMF',
+              publicKey: 'caller-public-key',
+              signedMeterData: 'caller-signed-data',
+              signingMethod: '',
+            }),
+          },
+        ],
+        timestamp: new Date(),
+      }
+
+      await testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+        connectorId: 1,
+        meterValue: [customMeterValue],
+      })
+      await testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, { connectorId: 1 })
+
+      assert.strictEqual(requests.length, 2)
+      assert.strictEqual(requests[0].meterValue[0], customMeterValue)
+      const generatedSignedValue = requests[1].meterValue[0].sampledValue.find(
+        sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA
+      )
+      assert.ok(generatedSignedValue != null)
+      assert.strictEqual(
+        (JSON.parse(generatedSignedValue.value) as { publicKey?: string }).publicKey,
+        ''
+      )
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+    })
+
+    await it('should release a caller-supplied OCPP 1.6 key after definite pre-send failure', async () => {
+      const failure = new OCPPError(ErrorType.GENERIC_ERROR, 'custom MeterValues not sent')
+      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
+        const params = args[3] as RequestParams
+        params.onTransportError?.(failure, false)
+        return Promise.reject(failure)
+      })
+      const { connectorStatus, station } = createGeneratedMeterValuesStation(requestHandler)
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      await assert.rejects(
+        testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+          connectorId: 1,
+          meterValue: [
+            {
+              sampledValue: [
+                {
+                  format: OCPP16MeterValueFormat.SIGNED_DATA,
+                  value: JSON.stringify({
+                    encodingMethod: 'OCMF',
+                    publicKey: 'caller-public-key',
+                    signedMeterData: 'caller-signed-data',
+                    signingMethod: '',
+                  }),
+                },
+              ],
+              timestamp: new Date(),
+            },
+          ],
+        }),
+        error => error === failure
+      )
+
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
+    })
+
+    await it('should account for caller-supplied OCPP 2.0 public-key delivery', async () => {
+      const failure = new OCPPError(ErrorType.GENERIC_ERROR, 'custom MeterValues not sent')
+      let rejectDelivery = false
+      let deliveredRequest: unknown
+      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
+        deliveredRequest = args[2]
+        const params = args[3] as RequestParams
+        if (rejectDelivery) {
+          params.onTransportError?.(failure, false)
+          return Promise.reject(failure)
+        }
+        params.onMessageSent?.()
+        params.onResponseReceived?.()
+        return Promise.resolve({})
+      })
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_201,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: TEST_TRANSACTION_ID_STRING })
+      const connectorStatus = station.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+      const customMeterValue = {
+        sampledValue: [
+          {
+            signedMeterValue: {
+              encodingMethod: 'OCMF',
+              publicKey: 'caller-public-key',
+              signedMeterData: 'caller-signed-data',
+              signingMethod: '',
+            },
+            value: 1,
+          },
+        ],
+        timestamp: new Date(),
+      }
+
+      await testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+        connectorId: 1,
+        evseId: 1,
+        meterValue: [customMeterValue],
+      })
+      assert.strictEqual(
+        (deliveredRequest as { meterValue: unknown[] }).meterValue[0],
+        customMeterValue
+      )
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+
+      connectorStatus.publicKeySentInTransaction = false
+      rejectDelivery = true
+      await assert.rejects(
+        testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+          connectorId: 1,
+          evseId: 1,
+          meterValue: [customMeterValue],
+        }),
+        error => error === failure
+      )
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
     })
 
     await it('should resolve OCPP 2.0 OncePerTransaction ownership by delivery certainty', async () => {

@@ -1011,6 +1011,41 @@ await describe('TransactionEventQueueUtils', async () => {
     )
   })
 
+  await it('should distribute intermediate eviction across short transaction histories', () => {
+    const connectorStatus = {
+      transactionEventQueue: Array.from({ length: 9 }, (_, seqNo) =>
+        toQueuedEvent({
+          customData: { payload: 'x'.repeat(150_000), vendorId: 'test' },
+          eventType: OCPP20TransactionEventEnumType.Updated,
+          seqNo,
+          timestamp: new Date(seqNo * 1000),
+          transactionInfo: {
+            transactionId: `00000000-0000-4000-8000-${Math.floor(seqNo / 3)
+              .toString()
+              .padStart(12, '0')}`,
+          },
+          triggerReason: OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        })
+      ),
+    } as unknown as ConnectorStatus
+
+    const result = boundTransactionEventQueue(connectorStatus)
+
+    const queue = connectorStatus.transactionEventQueue
+    assert.ok(queue != null)
+    assert.strictEqual(result.overLimit, false)
+    assert.ok(result.bytes <= Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES)
+    const retainedTransactionIds = new Set(
+      queue.map(queuedEvent => queuedEvent.request.transactionInfo.transactionId)
+    )
+    assert.strictEqual(retainedTransactionIds.size, 3)
+    const removedSeqNos = new Set(result.removedEvents.map(queuedEvent => queuedEvent.seqNo))
+    for (const interiorSeqNo of [1, 4, 7]) {
+      assert.strictEqual(removedSeqNos.has(interiorSeqNo), true)
+    }
+    assert.strictEqual(queue.length + result.removedEvents.length, 9)
+  })
+
   await it('should distribute singleton eviction across historical transactions', () => {
     const connectorStatus = {
       transactionEventQueue: Array.from({ length: 4 }, (_, seqNo) =>

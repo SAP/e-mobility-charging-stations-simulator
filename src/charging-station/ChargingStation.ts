@@ -690,14 +690,20 @@ export class ChargingStation extends EventEmitter {
    * `manager.createSession` would return `undefined` anyway.
    * @param transactionId - Transaction identifier from the CSMS.
    * @param connectorId - Connector on which the transaction is running.
+   * @param evseId - EVSE containing the connector when connector ids are EVSE-local.
    * @returns The active or newly-created session, or `undefined` when
    *   coherent mode is not usable.
    */
   public createCoherentSession (
     transactionId: number | string,
-    connectorId: number
+    connectorId: number,
+    evseId?: number
   ): CoherentSession | undefined {
-    return CoherentMeterValuesManager.peekInstance(this)?.createSession(transactionId, connectorId)
+    return CoherentMeterValuesManager.peekInstance(this)?.createSession(
+      transactionId,
+      connectorId,
+      evseId
+    )
   }
 
   /**
