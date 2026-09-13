@@ -712,6 +712,41 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.ok(connectorStatus.transactionUpdatedMeterValuesSetInterval != null)
     })
 
+    await it('should coalesce periodic ticks while one MeterValues request is pending', async t => {
+      t.mock.timers.enable({ apis: ['setInterval'] })
+      const firstResponse = Promise.withResolvers<unknown>()
+      let requestCount = 0
+      const requestHandler = mock.fn(() => {
+        requestCount++
+        return requestCount === 1 ? firstResponse.promise : Promise.resolve({})
+      })
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.MeterValues = createMeterValuesTemplate([
+        {
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '0',
+        },
+      ])
+
+      OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 1000)
+      t.mock.timers.tick(10_000)
+      await flushMicrotasks()
+      assert.strictEqual(requestCount, 1)
+
+      firstResponse.resolve({})
+      await flushMicrotasks()
+      t.mock.timers.tick(1000)
+      await flushMicrotasks()
+      assert.strictEqual(requestCount, 2)
+    })
+
     const runPeriodicMeterValuesFailure = async (
       tickInterval: () => void,
       configureDelivery: (params: RequestParams, failure: OCPPError) => void
@@ -833,27 +868,31 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       t.mock.timers.enable({ apis: ['setInterval'] })
       const scenarios: {
         configureDelivery: (params: RequestParams, failure: OCPPError) => void
+        expectedKeyCounts: number[]
         name: string
       }[] = [
         {
           configureDelivery: params => params.onMessageSent?.(),
+          expectedKeyCounts: [1, 0],
           name: 'post-send response timeout',
         },
         {
           configureDelivery: (params, failure) => params.onTransportError?.(failure, true),
+          expectedKeyCounts: [1, 0],
           name: 'ambiguous transport failure',
         },
         {
           configureDelivery: params => params.onRequestBuffered?.(),
+          expectedKeyCounts: [1],
           name: 'buffered request',
         },
       ]
-      for (const { configureDelivery, name } of scenarios) {
+      for (const { configureDelivery, expectedKeyCounts, name } of scenarios) {
         assert.deepStrictEqual(
           await runPeriodicMeterValuesFailure(() => {
             t.mock.timers.tick(1000)
           }, configureDelivery),
-          { carry: 0, keyCounts: [1, 0], keyReserved: true },
+          { carry: 0, keyCounts: expectedKeyCounts, keyReserved: true },
           name
         )
       }

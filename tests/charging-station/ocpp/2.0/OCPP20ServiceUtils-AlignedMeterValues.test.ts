@@ -2678,6 +2678,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       meterValuesBlocked = false
       firstRequest.resolve(undefined)
       await firstSweep
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(240_000))
 
       const stationPayloads = sentPayloads(requestHandlerMock).filter(
         payload => payload.evseId === 0
@@ -2689,15 +2690,15 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.deepStrictEqual(
         coalescedIntervals.map(sample => [sample.unitOfMeasure?.unit, sample.value]),
         [
-          ['Wh', 40],
-          ['kWh', 0.04],
+          ['Wh', 60],
+          ['kWh', 0.06],
         ]
       )
       const coalescedReactiveInterval = stationPayloads[1].meterValue[0].sampledValue.find(
         sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_INTERVAL
       )
-      assert.strictEqual(coalescedReactiveInterval?.value, 10)
-      assert.strictEqual(stationPayloads[1].meterValue[0].timestamp.getTime(), 180_000)
+      assert.strictEqual(coalescedReactiveInterval?.value, 5)
+      assert.strictEqual(stationPayloads[1].meterValue[0].timestamp.getTime(), 240_000)
     })
 
     await it('retries failed aligned interval energy on the next boundary', async () => {
@@ -3491,16 +3492,19 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       await flushPendingPromises()
 
       const transactionEvents = sentTransactionEvents(requestHandlerMock)
-      assert.strictEqual(transactionEvents.length, 2)
+      assert.strictEqual(transactionEvents.length, 1)
       const publicKeyCount = (event: OCPP20TransactionEventOptions): number =>
         event.meterValue
           ?.flatMap(meterValue => meterValue.sampledValue)
           .filter(sample => (sample.signedMeterValue?.publicKey.length ?? 0) > 0).length ?? 0
       assert.strictEqual(publicKeyCount(transactionEvents[0]), 1)
-      assert.strictEqual(publicKeyCount(transactionEvents[1]), 0)
 
       releaseFirstSend?.()
       await flushPendingPromises()
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      const completedTransactionEvents = sentTransactionEvents(requestHandlerMock)
+      assert.strictEqual(completedTransactionEvents.length, 2)
+      assert.strictEqual(publicKeyCount(completedTransactionEvents[1]), 0)
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
     })
 

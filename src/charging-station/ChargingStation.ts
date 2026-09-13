@@ -197,6 +197,12 @@ interface BufferedMessageEntry {
   reservation?: BufferedMessageCallbackReservation
 }
 
+interface ConfigurationSaveRequest {
+  readonly configurationHash: string
+  readonly lifecycleSignal: AbortSignal
+  readonly onErrorCallbacks: ((error: Error) => void)[]
+}
+
 interface TransactionEventQueueSaveOutcome {
   readonly error?: Error
 }
@@ -294,6 +300,7 @@ export class ChargingStation extends EventEmitter {
   private readonly messageQueue: string[]
   private ocppIncomingRequestService!: OCPPIncomingRequestService
   private pendingConfigurationSave: Promise<void> = Promise.resolve()
+  private pendingConfigurationSaveRequest?: ConfigurationSaveRequest
   private persistenceDiscarded = false
   private readonly sharedLRUCache: SharedLRUCache
   private startAfterStopPromise?: Promise<void>
@@ -3991,7 +3998,19 @@ export class ChargingStation extends EventEmitter {
           } satisfies ChargingStationConfiguration),
           'hex'
         )
-        if (this.configurationFileHash !== configurationHash) {
+        const pendingSaveRequest = this.pendingConfigurationSaveRequest
+        if (
+          (pendingSaveRequest == null && this.configurationFileHash !== configurationHash) ||
+          (pendingSaveRequest != null &&
+            (pendingSaveRequest.configurationHash !== configurationHash ||
+              pendingSaveRequest.lifecycleSignal !== lifecycleSignal))
+        ) {
+          const saveRequest: ConfigurationSaveRequest = {
+            configurationHash,
+            lifecycleSignal,
+            onErrorCallbacks: onError == null ? [] : [onError],
+          }
+          this.pendingConfigurationSaveRequest = saveRequest
           this.pendingConfigurationSave = AsyncLock.runExclusive(
             AsyncLockType.configuration,
             () => {
@@ -4015,27 +4034,42 @@ export class ChargingStation extends EventEmitter {
               this.sharedLRUCache.setChargingStationConfiguration(configurationData)
               this.configurationFileHash = configurationHash
             }
-          ).catch((error: unknown) => {
-            // File-system failures are already logged at error level by the atomic
-            // write via handleFileException; absorb them here at debug level. Other
-            // failures inside the lock body (JSON serialization, cache mutation, ...)
-            // would otherwise go unobserved, so log them at error level.
-            const saveError = ensureError(error)
-            const isErrnoException =
-              'code' in saveError && typeof (saveError as NodeJS.ErrnoException).code === 'string'
-            if (isErrnoException) {
-              logger.debug(
-                `${this.logPrefix()} ${moduleName}.saveConfiguration: configuration save rejected:`,
-                saveError
-              )
-            } else {
-              logger.error(
-                `${this.logPrefix()} ${moduleName}.saveConfiguration: unexpected error inside configuration save lock:`,
-                saveError
-              )
-            }
-            onError?.(saveError)
-          })
+          )
+            .catch((error: unknown) => {
+              // File-system failures are already logged at error level by the atomic
+              // write via handleFileException; absorb them here at debug level. Other
+              // failures inside the lock body (JSON serialization, cache mutation, ...)
+              // would otherwise go unobserved, so log them at error level.
+              const saveError = ensureError(error)
+              const isErrnoException =
+                'code' in saveError && typeof (saveError as NodeJS.ErrnoException).code === 'string'
+              if (isErrnoException) {
+                logger.debug(
+                  `${this.logPrefix()} ${moduleName}.saveConfiguration: configuration save rejected:`,
+                  saveError
+                )
+              } else {
+                logger.error(
+                  `${this.logPrefix()} ${moduleName}.saveConfiguration: unexpected error inside configuration save lock:`,
+                  saveError
+                )
+              }
+              for (const errorCallback of saveRequest.onErrorCallbacks) {
+                errorCallback(saveError)
+              }
+            })
+            .finally(() => {
+              if (this.pendingConfigurationSaveRequest === saveRequest) {
+                delete this.pendingConfigurationSaveRequest
+              }
+            })
+        } else if (pendingSaveRequest != null) {
+          if (onError != null) pendingSaveRequest.onErrorCallbacks.push(onError)
+          logger.debug(
+            `${this.logPrefix()} ${moduleName}.saveConfiguration: Coalescing unchanged pending charging station configuration file ${
+              this.configurationFile
+            }`
+          )
         } else {
           logger.debug(
             `${this.logPrefix()} ${moduleName}.saveConfiguration: Not saving unchanged charging station configuration file ${

@@ -25,6 +25,7 @@ import {
 } from '../../../../src/charging-station/ocpp/auth/index.js'
 import {
   AttributeEnumType,
+  ConnectorStatusEnum,
   OCPP20ChargingProfileKindEnumType,
   OCPP20ChargingProfilePurposeEnumType,
   OCPP20ChargingRateUnitEnumType,
@@ -682,11 +683,19 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.NotFound)
   })
 
-  await it('should roll back only the resolved EVSE-local connector after definite response failure', async () => {
+  await it('should roll back and notify only the resolved EVSE-local connector after definite response failure', async () => {
+    const statusNotifications: unknown[][] = []
     const { station } = createMockChargingStation({
       connectorsCount: 2,
       evseConfiguration: { evsesCount: 2 },
-      ocppRequestService: { requestHandler: async () => Promise.resolve({}) },
+      ocppRequestService: {
+        requestHandler: async (...args: unknown[]) => {
+          if (args[1] === OCPP20RequestCommand.STATUS_NOTIFICATION) {
+            statusNotifications.push(args)
+          }
+          return Promise.resolve({})
+        },
+      },
       stationInfo: { ocppStrictCompliance: false, ocppVersion: OCPPVersion.VERSION_201 },
     })
     const evse1 = station.getEvseStatus(1)
@@ -695,9 +704,10 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.ok(evse2 != null)
     const evse1Connector = evse1.connectors.get(1)
     assert.ok(evse1Connector != null)
-    const evse2Connector = createConnectorStatus(1)
+    const evse2Connector = createConnectorStatus(1, { status: ConnectorStatusEnum.Occupied })
     evse2.connectors.clear()
     evse2.connectors.set(1, evse2Connector)
+    evse1Connector.status = ConnectorStatusEnum.Unavailable
     evse1Connector.transactionPending = true
     evse1Connector.transactionId = 'evse-1-existing-transaction'
     const service = new OCPP20IncomingRequestService()
@@ -721,10 +731,18 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     )
     await flushMicrotasks()
 
+    assert.strictEqual(evse1Connector.status, ConnectorStatusEnum.Unavailable)
     assert.strictEqual(evse1Connector.transactionPending, true)
     assert.strictEqual(evse1Connector.transactionId, 'evse-1-existing-transaction')
+    assert.strictEqual(evse2Connector.status, ConnectorStatusEnum.Available)
     assert.strictEqual(evse2Connector.transactionPending, false)
     assert.strictEqual(evse2Connector.transactionId, undefined)
+    assert.strictEqual(statusNotifications.length, 1)
+    assert.deepStrictEqual(statusNotifications[0]?.[2], {
+      connectorId: 1,
+      evseId: 2,
+      status: ConnectorStatusEnum.Available,
+    })
   })
 
   await it('should start and meter the exact EVSE-local connector after response delivery', async () => {

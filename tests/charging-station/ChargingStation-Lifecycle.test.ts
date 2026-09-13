@@ -17,6 +17,7 @@ import { OCPP16ServiceUtils } from '../../src/charging-station/ocpp/1.6/OCPP16Se
 import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { stopRunningTransactions } from '../../src/charging-station/ocpp/OCPPServiceOperations.js'
 import {
+  AvailabilityType,
   OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
   OCPP16IncomingRequestCommand,
@@ -28,7 +29,7 @@ import {
   OCPP16VendorParametersKey,
   OCPPVersion,
 } from '../../src/types/index.js'
-import { Constants } from '../../src/utils/index.js'
+import { AsyncLock, AsyncLockType, Constants } from '../../src/utils/index.js'
 import {
   flushMicrotasks,
   setupConnectorWithTransaction,
@@ -1613,6 +1614,73 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(activeStation.requests.size, 0)
       assert.strictEqual(connectorStatus.transactionStarted, false)
       assert.strictEqual(connectorStatus.transactionId, undefined)
+    })
+
+    await it('persists a reverted snapshot queued behind a stale pending save', async () => {
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const configurationDirectory = mkdtempSync(join(tmpdir(), 'configuration-save-race-'))
+      const configurationFile = join(configurationDirectory, 'station.json')
+      const saveConfiguration = (
+        ChargingStation.prototype as unknown as {
+          saveConfiguration: (this: ChargingStation) => void
+        }
+      ).saveConfiguration
+      const stationPersistence = station as unknown as {
+        configurationFile: string
+        configurationFileHash: string
+        getAutomaticTransactionGeneratorConfiguration: () => undefined
+        getConfigurationFromFile: () => Record<string, never>
+        pendingConfigurationSave: Promise<void>
+        persistenceDiscarded: boolean
+      }
+      Object.assign(stationPersistence, {
+        configurationFile,
+        configurationFileHash: '',
+        getAutomaticTransactionGeneratorConfiguration: () => undefined,
+        getConfigurationFromFile: () => ({}),
+        pendingConfigurationSave: Promise.resolve(),
+        persistenceDiscarded: false,
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.availability = AvailabilityType.Operative
+
+      try {
+        saveConfiguration.call(station)
+        await stationPersistence.pendingConfigurationSave
+
+        const lockAcquired = Promise.withResolvers<undefined>()
+        const releaseLock = Promise.withResolvers<undefined>()
+        const heldLock = AsyncLock.runExclusive(AsyncLockType.configuration, async () => {
+          lockAcquired.resolve(undefined)
+          await releaseLock.promise
+        })
+        await lockAcquired.promise
+
+        connectorStatus.availability = AvailabilityType.Inoperative
+        saveConfiguration.call(station)
+        const staleSave = stationPersistence.pendingConfigurationSave
+        connectorStatus.availability = AvailabilityType.Operative
+        saveConfiguration.call(station)
+        const revertedSave = stationPersistence.pendingConfigurationSave
+
+        releaseLock.resolve(undefined)
+        await revertedSave
+        await heldLock
+        assert.notStrictEqual(revertedSave, staleSave)
+
+        const persistedConfiguration = JSON.parse(readFileSync(configurationFile, 'utf8')) as {
+          connectorsStatus: [number, ConnectorStatus][]
+        }
+        assert.strictEqual(
+          persistedConfiguration.connectorsStatus.find(([connectorId]) => connectorId === 1)?.[1]
+            .availability,
+          AvailabilityType.Operative
+        )
+      } finally {
+        rmSync(configurationDirectory, { force: true, recursive: true })
+      }
     })
 
     await it('coalesces transaction queue persistence to one dirty follow-up save', async () => {

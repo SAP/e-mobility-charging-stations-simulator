@@ -1754,10 +1754,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     for (const [connectorId, connectorStatus] of activeConnectors) {
       const transactionId = connectorStatus.transactionId?.toString()
       if (transactionId == null) continue
-      const delivery = TransactionMeterValueDeliveryBarrier.beginIfIdle(
-        connectorStatus,
-        transactionId
-      )
+      const delivery = TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
       if (delivery == null) {
         for (const sample of samples) sample.delivery?.settle(true)
         return
@@ -4049,7 +4046,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     const txId = connectorStatus?.transactionId
     resetConnectorStatus(connectorStatus)
     chargingStation.destroyCoherentSession(txId)
-    await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
+    await restoreConnectorStatus(chargingStation, connectorId, connectorStatus, evseId)
   }
 
   /**
@@ -4162,8 +4159,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         const evse = chargingStation.getEvseStatus(evseId)
         if (evse) {
           for (const [connectorId] of evse.connectors) {
-            const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-            restoreConnectorStatus(chargingStation, connectorId, connectorStatus).catch(
+            const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+            restoreConnectorStatus(chargingStation, connectorId, connectorStatus, evseId).catch(
               (error: unknown) => {
                 logger.error(
                   `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: Error restoring connector ${connectorId.toString()} status:`,
@@ -4936,13 +4933,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       const settleDeliveries = (): void => {
         for (const { delivery } of deliveryTargets) delivery.settle()
       }
-      try {
+      ;(async () => {
+        const deliveryTurns = deliveryTargets.flatMap(({ delivery }) => {
+          const deliveryTurn = delivery.waitForTurn()
+          return deliveryTurn == null ? [] : [deliveryTurn]
+        })
+        if (deliveryTurns.length > 0) await Promise.all(deliveryTurns)
         this.emitEvseMeterValues(chargingStation, target, errorHandler, settleDeliveries)
-      } catch (error) {
+      })().catch((error: unknown) => {
         OCPP20ServiceUtils.releaseTriggeredMeterValuesRequests(chargingStation, [target.evseId])
         settleDeliveries()
         errorHandler(error)
-      }
+      })
     }
   }
 

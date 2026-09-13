@@ -326,7 +326,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
     assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
   })
 
-  await it('should serialize periodic MeterValues behind an accepted trigger snapshot', async t => {
+  await it('should coalesce periodic MeterValues behind an accepted trigger snapshot', async t => {
     t.mock.timers.enable({ apis: ['setInterval'] })
     const { incomingRequestService, station, testableService } =
       createOCPP16IncomingRequestTestContext()
@@ -381,8 +381,72 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
     assert.deepStrictEqual(deliveryOrder, ['triggered'])
 
     releaseTriggered.resolve(undefined)
+    await flushMicrotasks()
+    assert.deepStrictEqual(deliveryOrder, ['triggered'])
+    t.mock.timers.tick(1000)
     await periodicStarted.promise
     assert.deepStrictEqual(deliveryOrder, ['triggered', 'periodic'])
+    OCPP16ServiceUtils.stopUpdatedMeterValues(station, 1)
+  })
+
+  await it('should emit one accepted trigger behind a pending periodic MeterValues request', async t => {
+    t.mock.timers.enable({ apis: ['setInterval'] })
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    const releasePeriodic = Promise.withResolvers<undefined>()
+    const triggeredStarted = Promise.withResolvers<undefined>()
+    const deliveryOrder: string[] = []
+    let meterValuesCount = 0
+    ;(
+      station.ocppRequestService as unknown as {
+        requestHandler: (...args: unknown[]) => Promise<unknown>
+      }
+    ).requestHandler = async (...args: unknown[]) => {
+      if (args[1] !== OCPP16RequestCommand.METER_VALUES) return {}
+      const requestParams = args[3] as RequestParams
+      meterValuesCount++
+      if (requestParams.triggerMessage === true) {
+        deliveryOrder.push('triggered')
+        triggeredStarted.resolve(undefined)
+      } else {
+        deliveryOrder.push('periodic')
+        await releasePeriodic.promise
+      }
+      requestParams.onResponseReceived?.()
+      return {}
+    }
+
+    OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 1000)
+    t.mock.timers.tick(1000)
+    await flushMicrotasks()
+    assert.deepStrictEqual(deliveryOrder, ['periodic'])
+
+    const request: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const response = testableService.handleRequestTriggerMessage(station, request)
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      request,
+      response
+    )
+    await flushMicrotasks()
+    assert.deepStrictEqual(deliveryOrder, ['periodic'])
+
+    releasePeriodic.resolve(undefined)
+    await triggeredStarted.promise
+    assert.deepStrictEqual(deliveryOrder, ['periodic', 'triggered'])
+    assert.strictEqual(meterValuesCount, 2)
     OCPP16ServiceUtils.stopUpdatedMeterValues(station, 1)
   })
 

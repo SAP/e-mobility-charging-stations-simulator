@@ -125,11 +125,13 @@ export const sendPostTransactionStatus = async (
  * @param chargingStation - Target charging station
  * @param connectorId - Connector ID to restore
  * @param connectorStatus - Current connector status to evaluate
+ * @param evseId - Optional EVSE identifier for EVSE-local connector IDs
  */
 export const restoreConnectorStatus = async (
   chargingStation: ChargingStation,
   connectorId: number,
-  connectorStatus: ConnectorStatus | undefined
+  connectorStatus: ConnectorStatus | undefined,
+  evseId?: number
 ): Promise<void> => {
   if (
     connectorStatus?.reservation != null &&
@@ -137,11 +139,13 @@ export const restoreConnectorStatus = async (
   ) {
     await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
+      ...(evseId != null && { evseId }),
       status: ConnectorStatusEnum.Reserved,
     })
   } else if (connectorStatus?.status !== ConnectorStatusEnum.Available) {
     await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
+      ...(evseId != null && { evseId }),
       status: ConnectorStatusEnum.Available,
     })
   }

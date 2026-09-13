@@ -196,6 +196,45 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(transactionEvent.seqNo, 0)
       })
 
+      await it('should derive an Ended fallback transaction ID from the exact EVSE connector', () => {
+        const firstConnector = mockStation.getConnectorStatus(1, 1)
+        const secondConnector = mockStation.getConnectorStatus(2, 2)
+        const secondEvse = mockStation.getEvseStatus(2)
+        assert.ok(firstConnector != null)
+        assert.ok(secondConnector != null)
+        assert.ok(secondEvse != null)
+        firstConnector.transactionId = '00000000-0000-4000-8000-000000000101'
+        secondConnector.transactionId = '00000000-0000-4000-8000-000000000202'
+        secondEvse.connectors.delete(2)
+        secondEvse.connectors.set(1, secondConnector)
+
+        const endedEvent = buildTransactionEvent(mockStation, {
+          connectorId: 1,
+          eventType: OCPP20TransactionEventEnumType.Ended,
+          evseId: 2,
+        })
+
+        assert.strictEqual(endedEvent.transactionInfo.transactionId, secondConnector.transactionId)
+        assert.deepStrictEqual(endedEvent.evse, { connectorId: 1, id: 2 })
+        assert.strictEqual(firstConnector.transactionSeqNo, undefined)
+        assert.strictEqual(secondConnector.transactionSeqNo, 0)
+
+        delete secondConnector.transactionId
+        const unownedEndedEvent = buildTransactionEvent(mockStation, {
+          connectorId: 1,
+          eventType: OCPP20TransactionEventEnumType.Ended,
+          evseId: 2,
+        })
+        assert.notStrictEqual(
+          unownedEndedEvent.transactionInfo.transactionId,
+          firstConnector.transactionId
+        )
+        assert.match(
+          unownedEndedEvent.transactionInfo.transactionId,
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
+        )
+      })
+
       await it('should increment sequence number for subsequent events', () => {
         const connectorId = 2
         const transactionId = generateUUID()
@@ -6731,6 +6770,43 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         })
       })
 
+      await it('should coalesce periodic ticks while one TransactionEvent is pending', async t => {
+        t.mock.timers.enable({ apis: ['setInterval'] })
+        const firstResponse = Promise.withResolvers<unknown>()
+        let transactionEventRequests = 0
+        mockTracking.requestHandlerMock.mock.mockImplementation((...args: unknown[]) => {
+          if (args[1] !== OCPP20RequestCommand.TRANSACTION_EVENT) return Promise.resolve({})
+          transactionEventRequests++
+          return transactionEventRequests === 1 ? firstResponse.promise : Promise.resolve({})
+        })
+        const transactionId = generateUUID()
+        setupConnectorWithTransaction(mockStation, 1, { transactionId })
+        const observedIntervals: number[] = []
+        mock.method(
+          OCPP20ServiceUtils,
+          'buildTransactionMeterValue',
+          (...args: Parameters<typeof OCPP20ServiceUtils.buildTransactionMeterValue>) => {
+            observedIntervals.push(args[4])
+            return {
+              sampledValue: [{ value: 1 }],
+              timestamp: new Date(),
+            }
+          }
+        )
+
+        OCPP20ServiceUtils.startUpdatedMeterValues(mockStation, 1, 1000, 1)
+        t.mock.timers.tick(10_000)
+        for (let index = 0; index < 10; index++) await flushMicrotasks()
+        assert.strictEqual(transactionEventRequests, 1)
+
+        firstResponse.resolve({})
+        await flushMicrotasks()
+        t.mock.timers.tick(1000)
+        for (let index = 0; index < 10; index++) await flushMicrotasks()
+        assert.strictEqual(transactionEventRequests, 2)
+        assert.deepStrictEqual(observedIntervals, [1000, 10_000])
+      })
+
       await it('should not start timer when interval is zero', () => {
         const connectorId = 1
 
@@ -9059,6 +9135,68 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         [7]
       )
       assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
+    })
+
+    await it('bounds collected TxEnded samples while preserving interval energy and signing evidence', t => {
+      t.mock.timers.enable({ apis: ['setInterval'] })
+      const connectorId = 1
+      const transactionId = generateUUID()
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId, 1)
+      assert.ok(connectorStatus != null)
+      let sampleIndex = 0
+      mock.method(OCPP20ServiceUtils, 'buildTransactionMeterValue', () => {
+        const index = sampleIndex++
+        return {
+          sampledValue: [
+            {
+              context: OCPP20ReadingContextEnumType.SAMPLE_PERIODIC,
+              ...(index === 0 || index === 50
+                ? {
+                    signedMeterValue: {
+                      encodingMethod: 'OCMF',
+                      publicKey: index === 0 ? 'public-key' : '',
+                      signedMeterData: `signed-${index.toString()}`,
+                      signingMethod: '',
+                    },
+                  }
+                : { customData: { padding: 'x'.repeat(15_000), vendorId: 'test' } }),
+              measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
+              unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
+              value: 1,
+            },
+          ],
+          timestamp: new Date(index * 1000),
+        }
+      })
+
+      OCPP20ServiceUtils.startEndedMeterValues(mockTracking.station, connectorId, 1, 1)
+      t.mock.timers.tick(100)
+      OCPP20ServiceUtils.stopEndedMeterValues(mockTracking.station, connectorId, 1)
+
+      const collected = connectorStatus.transactionEndedMeterValues as OCPP20MeterValue[]
+      assert.ok(collected.length < sampleIndex)
+      assert.ok(
+        Buffer.byteLength(JSON.stringify(collected), 'utf8') <=
+          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+      )
+      assert.strictEqual(collected[0].timestamp.getTime(), 0)
+      assert.strictEqual(collected.at(-1)?.timestamp.getTime(), 99_000)
+      const intervalSamples = collected.flatMap(meterValue => meterValue.sampledValue)
+      assert.strictEqual(
+        intervalSamples.reduce((total, sampledValue) => total + sampledValue.value, 0),
+        sampleIndex
+      )
+      assert.ok(
+        intervalSamples.some(
+          sampledValue => sampledValue.signedMeterValue?.publicKey === 'public-key'
+        )
+      )
+      assert.ok(
+        intervalSamples.some(
+          sampledValue => sampledValue.signedMeterValue?.signedMeterData === 'signed-50'
+        )
+      )
     })
 
     await it('preserves consumed signed interval carry through Ended queue compaction', async () => {

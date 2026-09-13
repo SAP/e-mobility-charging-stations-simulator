@@ -1047,6 +1047,8 @@ export class OCPP16ServiceUtils {
     }
     const rawTransactionId = connectorStatus.transactionId
     OCPP16ServiceUtils.periodicMeterValuesIntervals.set(connectorStatus, interval)
+    let lastSampleAt = Date.now()
+    let elapsedIntervalCarry = 0
     connectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
       let delivery: TransactionMeterValueDelivery | undefined
       ;(async () => {
@@ -1059,7 +1061,11 @@ export class OCPP16ServiceUtils {
         ) {
           return
         }
-        delivery = TransactionMeterValueDeliveryBarrier.begin(connectorStatus, rawTransactionId)
+        elapsedIntervalCarry += interval
+        delivery = TransactionMeterValueDeliveryBarrier.beginIfIdle(
+          connectorStatus,
+          rawTransactionId
+        )
         if (delivery == null) return
         const deliveryTurn = delivery.waitForTurn()
         if (deliveryTurn != null) await deliveryTurn
@@ -1074,12 +1080,16 @@ export class OCPP16ServiceUtils {
           return
         }
         const transactionId = convertToInt(rawTransactionId)
+        const sampleAt = Date.now()
+        const elapsedInterval = Math.max(elapsedIntervalCarry, sampleAt - lastSampleAt)
         const intervalState = captureTransactionIntervalState(connectorStatus)
         const meterValue = buildMeterValue(
           chargingStation,
           transactionId,
-          interval
+          elapsedInterval
         ) as OCPP16MeterValue
+        lastSampleAt = sampleAt
+        elapsedIntervalCarry = 0
         completeTransactionIntervalState(intervalState, 'default', [meterValue])
         const publicKeyIncluded = OCPP16ServiceUtils.appendSignedUpdatedReadings(
           chargingStation,

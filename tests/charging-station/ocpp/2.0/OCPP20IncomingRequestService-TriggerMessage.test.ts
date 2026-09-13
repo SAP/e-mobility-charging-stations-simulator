@@ -901,7 +901,7 @@ await describe('F06 - TriggerMessage', async () => {
       })
     }
 
-    await it('should broadcast MeterValuesRequest for all EVSEs on Accepted (F06.FR.06)', () => {
+    await it('should broadcast MeterValuesRequest for all EVSEs on Accepted (F06.FR.06)', async () => {
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.MeterValues,
       }
@@ -916,6 +916,7 @@ await describe('F06 - TriggerMessage', async () => {
         request,
         response
       )
+      await flushMicrotasks()
 
       // F06.FR.06: TriggerMessage(MessageTrigger.MeterValues) without a
       // specific EVSE MUST emit one MeterValuesRequest per EVSE. Fixture has
@@ -1216,7 +1217,7 @@ await describe('F06 - TriggerMessage', async () => {
       ])
     })
 
-    await it('should serialize periodic updates behind an accepted triggered MeterValues snapshot', async t => {
+    await it('should coalesce periodic updates behind an accepted triggered MeterValues snapshot', async t => {
       t.mock.timers.enable({ apis: ['setInterval'] })
       setupConnectorWithTransaction(mockStation, 1, {
         transactionId: 'txn-meter-trigger-periodic-order',
@@ -1265,12 +1266,68 @@ await describe('F06 - TriggerMessage', async () => {
       assert.deepStrictEqual(deliveryOrder, ['triggered'])
 
       releaseTriggered.resolve(undefined)
+      await flushMicrotasks()
+      assert.deepStrictEqual(deliveryOrder, ['triggered'])
+      t.mock.timers.tick(1000)
       await periodicStarted.promise
       assert.deepStrictEqual(deliveryOrder, ['triggered', 'periodic'])
       OCPP20ServiceUtils.stopUpdatedMeterValues(mockStation, 1, 1)
     })
 
-    await it('should serialize TxEnded sampling behind an admitted triggered snapshot', async t => {
+    await it('should emit one accepted trigger behind a pending periodic TransactionEvent', async t => {
+      t.mock.timers.enable({ apis: ['setInterval'] })
+      const transactionId = 'txn-periodic-before-trigger'
+      setupConnectorWithTransaction(mockStation, 1, { transactionId })
+      const releasePeriodic = Promise.withResolvers<undefined>()
+      const triggeredStarted = Promise.withResolvers<undefined>()
+      const deliveryOrder: string[] = []
+      requestHandlerMock.mock.mockImplementation(async (...args: unknown[]) => {
+        const command = args[1] as OCPP20RequestCommand
+        const requestParams = args[3] as RequestParams
+        if (command === OCPP20RequestCommand.TRANSACTION_EVENT) {
+          deliveryOrder.push('periodic')
+          requestParams.onMessageSent?.()
+          await releasePeriodic.promise
+          requestParams.onResponseReceived?.()
+        } else if (command === OCPP20RequestCommand.METER_VALUES) {
+          deliveryOrder.push('triggered')
+          requestParams.onMessageSent?.()
+          requestParams.onResponseReceived?.()
+          triggeredStarted.resolve(undefined)
+        }
+        return {}
+      })
+
+      OCPP20ServiceUtils.startUpdatedMeterValues(mockStation, 1, 1000, 1)
+      t.mock.timers.tick(1000)
+      await flushMicrotasks()
+      assert.deepStrictEqual(deliveryOrder, ['periodic'])
+
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { id: 1 },
+        requestedMessage: MessageTriggerEnumType.MeterValues,
+      }
+      const listenerTestable = createTestableIncomingRequestService(
+        incomingRequestServiceForListener
+      )
+      const response = listenerTestable.handleRequestTriggerMessage(mockStation, request)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+      await flushMicrotasks()
+      assert.deepStrictEqual(deliveryOrder, ['periodic'])
+
+      releasePeriodic.resolve(undefined)
+      await triggeredStarted.promise
+      assert.deepStrictEqual(deliveryOrder, ['periodic', 'triggered'])
+      OCPP20ServiceUtils.stopUpdatedMeterValues(mockStation, 1, 1)
+    })
+
+    await it('should coalesce TxEnded sampling behind an admitted triggered snapshot', async t => {
       t.mock.timers.enable({ apis: ['setInterval'] })
       configureSigningPolicies(mockStation, true, false)
       addConfigurationKey(
@@ -1365,6 +1422,8 @@ await describe('F06 - TriggerMessage', async () => {
       assert.deepStrictEqual(connectorStatus.transactionEndedMeterValues, [])
 
       releaseTrigger.resolve(undefined)
+      for (let index = 0; index < 10; index++) await flushMicrotasks()
+      t.mock.timers.tick(1000)
       for (let index = 0; index < 10; index++) await flushMicrotasks()
       OCPP20ServiceUtils.stopEndedMeterValues(mockStation, 1, 1)
 

@@ -591,114 +591,121 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             for (const target of targets ?? []) {
               const { connectorStatus, delivery, intervalState, publicKeyIncluded } = target
               const { transactionId } = target.request
-              if (
-                intervalState != null &&
-                connectorStatus.transactionId?.toString() === intervalState.transactionId
-              ) {
-                recordTransactionIntervalEmission(
-                  connectorStatus,
-                  target.request.meterValue[0],
-                  'default',
-                  target.intervalEnergyWh ?? 0,
-                  chargingStation.getNumberOfPhases(),
-                  resolveInletToOutputEfficiency(
-                    chargingStation.stationInfo?.currentOutType,
-                    chargingStation.stationInfo?.conversionEfficiency
-                  )
-                )
-                completeTransactionIntervalState(
-                  intervalState,
-                  'default',
-                  target.request.meterValue
-                )
-              }
-              const publicKeyDeliveryToken =
-                transactionId != null
-                  ? claimPublicKeyDelivery(
+              ;(async () => {
+                const deliveryTurn = delivery?.waitForTurn()
+                if (deliveryTurn != null) await deliveryTurn
+                if (
+                  intervalState != null &&
+                  connectorStatus.transactionId?.toString() === intervalState.transactionId
+                ) {
+                  recordTransactionIntervalEmission(
                     connectorStatus,
-                    transactionId,
-                    target.request,
-                    publicKeyIncluded
+                    target.request.meterValue[0],
+                    'default',
+                    target.intervalEnergyWh ?? 0,
+                    chargingStation.getNumberOfPhases(),
+                    resolveInletToOutputEfficiency(
+                      chargingStation.stationInfo?.currentOutType,
+                      chargingStation.stationInfo?.conversionEfficiency
+                    )
                   )
-                  : undefined
-              const deliveryState = {
-                buffered: false,
-                callError: false,
-                responseReceived: false,
-                sent: false,
-                transportErrorAmbiguous: false,
-              }
-              let deliverySettled = false
-              const markDeliverySettled = (definitivelyRejected = false): void => {
-                if (deliverySettled) return
-                deliverySettled = true
-                delivery?.settle(definitivelyRejected)
-              }
-              let restored = false
-              const restoreRejectedDelivery = (): void => {
-                if (restored) return
-                restored = true
-                if (intervalState != null) {
-                  restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
+                  completeTransactionIntervalState(
+                    intervalState,
+                    'default',
+                    target.request.meterValue
+                  )
                 }
-                releasePublicKeyDelivery(publicKeyDeliveryToken)
-              }
-              chargingStation.ocppRequestService
-                .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
-                  chargingStation,
-                  OCPP16RequestCommand.METER_VALUES,
-                  target.request,
-                  {
-                    onError: (_error, isCallError) => {
-                      deliveryState.callError ||= isCallError
-                      if (isCallError) {
-                        if (!deliveryState.transportErrorAmbiguous) restoreRejectedDelivery()
-                        markDeliverySettled(!deliveryState.transportErrorAmbiguous)
-                      }
-                    },
-                    onMessageSent: () => {
-                      deliveryState.sent = true
-                    },
-                    onRequestBuffered: () => {
-                      deliveryState.buffered = true
-                      delivery?.markBuffered()
-                    },
-                    onResponseReceived: () => {
-                      deliveryState.responseReceived = true
-                      retainPublicKeyDelivery(publicKeyDeliveryToken)
-                      markDeliverySettled()
-                    },
-                    onTransportError: (_error, deliveryAmbiguous) => {
-                      deliveryState.transportErrorAmbiguous ||= deliveryAmbiguous
-                      if (deliveryAmbiguous) retainPublicKeyDelivery(publicKeyDeliveryToken)
-                    },
-                    triggerMessage: true,
+                const publicKeyDeliveryToken =
+                  transactionId != null
+                    ? claimPublicKeyDelivery(
+                      connectorStatus,
+                      transactionId,
+                      target.request,
+                      publicKeyIncluded
+                    )
+                    : undefined
+                const deliveryState = {
+                  buffered: false,
+                  callError: false,
+                  responseReceived: false,
+                  sent: false,
+                  transportErrorAmbiguous: false,
+                }
+                let deliverySettled = false
+                const markDeliverySettled = (definitivelyRejected = false): void => {
+                  if (deliverySettled) return
+                  deliverySettled = true
+                  delivery?.settle(definitivelyRejected)
+                }
+                let restored = false
+                const restoreRejectedDelivery = (): void => {
+                  if (restored) return
+                  restored = true
+                  if (intervalState != null) {
+                    restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
                   }
-                )
-                .then(() => {
-                  retainPublicKeyDelivery(publicKeyDeliveryToken)
-                  markDeliverySettled()
-                  return undefined
-                })
-                .catch((error: unknown) => {
-                  if (
-                    !deliveryState.buffered &&
-                    !deliveryState.callError &&
-                    !deliveryState.responseReceived &&
-                    !deliveryState.sent &&
-                    !deliveryState.transportErrorAmbiguous
-                  ) {
-                    restoreRejectedDelivery()
-                  } else if (
-                    deliveryState.sent ||
-                    deliveryState.responseReceived ||
-                    deliveryState.transportErrorAmbiguous
-                  ) {
+                  releasePublicKeyDelivery(publicKeyDeliveryToken)
+                }
+                chargingStation.ocppRequestService
+                  .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
+                    chargingStation,
+                    OCPP16RequestCommand.METER_VALUES,
+                    target.request,
+                    {
+                      onError: (_error, isCallError) => {
+                        deliveryState.callError ||= isCallError
+                        if (isCallError) {
+                          if (!deliveryState.transportErrorAmbiguous) restoreRejectedDelivery()
+                          markDeliverySettled(!deliveryState.transportErrorAmbiguous)
+                        }
+                      },
+                      onMessageSent: () => {
+                        deliveryState.sent = true
+                      },
+                      onRequestBuffered: () => {
+                        deliveryState.buffered = true
+                        delivery?.markBuffered()
+                      },
+                      onResponseReceived: () => {
+                        deliveryState.responseReceived = true
+                        retainPublicKeyDelivery(publicKeyDeliveryToken)
+                        markDeliverySettled()
+                      },
+                      onTransportError: (_error, deliveryAmbiguous) => {
+                        deliveryState.transportErrorAmbiguous ||= deliveryAmbiguous
+                        if (deliveryAmbiguous) retainPublicKeyDelivery(publicKeyDeliveryToken)
+                      },
+                      triggerMessage: true,
+                    }
+                  )
+                  .then(() => {
                     retainPublicKeyDelivery(publicKeyDeliveryToken)
-                  }
-                  if (!deliveryState.buffered) markDeliverySettled()
-                  errorHandler(error)
-                })
+                    markDeliverySettled()
+                    return undefined
+                  })
+                  .catch((error: unknown) => {
+                    if (
+                      !deliveryState.buffered &&
+                      !deliveryState.callError &&
+                      !deliveryState.responseReceived &&
+                      !deliveryState.sent &&
+                      !deliveryState.transportErrorAmbiguous
+                    ) {
+                      restoreRejectedDelivery()
+                    } else if (
+                      deliveryState.sent ||
+                      deliveryState.responseReceived ||
+                      deliveryState.transportErrorAmbiguous
+                    ) {
+                      retainPublicKeyDelivery(publicKeyDeliveryToken)
+                    }
+                    if (!deliveryState.buffered) markDeliverySettled()
+                    errorHandler(error)
+                  })
+              })().catch((error: unknown) => {
+                delivery?.settle(true)
+                errorHandler(error)
+              })
             }
             break
           }
@@ -2016,10 +2023,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               : undefined
           const delivery =
             transactionId != null
-              ? TransactionMeterValueDeliveryBarrier.beginIfIdle(
-                target.connectorStatus,
-                transactionId
-              )
+              ? TransactionMeterValueDeliveryBarrier.begin(target.connectorStatus, transactionId)
               : undefined
           if (transactionId != null && delivery == null) {
             for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)

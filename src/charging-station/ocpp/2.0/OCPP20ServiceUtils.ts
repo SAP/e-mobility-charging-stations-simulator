@@ -809,6 +809,130 @@ const coalesceClockAlignedMeterValuesRequests = (
   }
 }
 
+const COLLECTED_ENDED_METER_VALUES_HEADROOM_RATIO = 0.75
+const MAX_COLLECTED_ENDED_METER_VALUES = Math.floor(
+  Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH * COLLECTED_ENDED_METER_VALUES_HEADROOM_RATIO
+)
+const MAX_COLLECTED_ENDED_METER_VALUE_BYTES = Math.floor(
+  Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES * COLLECTED_ENDED_METER_VALUES_HEADROOM_RATIO
+)
+interface CollectedEndedMeterValuesAccounting {
+  bytes: number
+  last?: OCPP20MeterValue
+  length: number
+  meterValues: OCPP20MeterValue[]
+}
+const collectedEndedMeterValuesAccounting = new WeakMap<
+  ConnectorStatus,
+  CollectedEndedMeterValuesAccounting
+>()
+
+const getCollectedMeterValuesBytes = (meterValues: readonly OCPP20MeterValue[]): number =>
+  Buffer.byteLength(JSON.stringify(meterValues), 'utf8')
+
+const appendBoundedCollectedEndedMeterValue = (
+  connectorStatus: ConnectorStatus,
+  meterValue: OCPP20MeterValue
+): void => {
+  const meterValues = connectorStatus.transactionEndedMeterValues as OCPP20MeterValue[] | undefined
+  if (meterValues == null) return
+  let accounting = collectedEndedMeterValuesAccounting.get(connectorStatus)
+  if (
+    accounting?.meterValues !== meterValues ||
+    accounting.length !== meterValues.length ||
+    accounting.last !== meterValues.at(-1)
+  ) {
+    accounting = {
+      bytes: getCollectedMeterValuesBytes(meterValues),
+      last: meterValues.at(-1),
+      length: meterValues.length,
+      meterValues,
+    }
+  }
+  const serializedMeterValueBytes = Buffer.byteLength(JSON.stringify(meterValue), 'utf8')
+  accounting.bytes += serializedMeterValueBytes + (meterValues.length === 0 ? 0 : 1)
+  meterValues.push(meterValue)
+  accounting.last = meterValue
+  accounting.length = meterValues.length
+  collectedEndedMeterValuesAccounting.set(connectorStatus, accounting)
+  if (
+    accounting.length <= MAX_COLLECTED_ENDED_METER_VALUES &&
+    accounting.bytes <= MAX_COLLECTED_ENDED_METER_VALUE_BYTES
+  ) {
+    return
+  }
+
+  const retainedIndexes = new Set<number>([0, meterValues.length - 1])
+  let firstSignedIndex: number | undefined
+  let latestSignedIndex: number | undefined
+  let publicKeyIndex: number | undefined
+  const intervalTotals = new Map<string, { readonly sample: OCPP20SampledValue; total: number }>()
+  for (const [meterValueIndex, collectedMeterValue] of meterValues.entries()) {
+    for (const sampledValue of collectedMeterValue.sampledValue) {
+      if (sampledValue.signedMeterValue != null) {
+        firstSignedIndex ??= meterValueIndex
+        latestSignedIndex = meterValueIndex
+        if (
+          publicKeyIndex == null &&
+          isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
+        ) {
+          publicKeyIndex = meterValueIndex
+        }
+      }
+      if (!isClockAlignedIntervalSample(sampledValue) || !Number.isFinite(sampledValue.value)) {
+        continue
+      }
+      const identity = clockAlignedSampleIdentity({ ...sampledValue, signedMeterValue: undefined })
+      const total = intervalTotals.get(identity)
+      if (total == null) {
+        intervalTotals.set(identity, { sample: sampledValue, total: sampledValue.value })
+      } else {
+        total.total += sampledValue.value
+      }
+    }
+  }
+  for (const index of [firstSignedIndex, latestSignedIndex, publicKeyIndex]) {
+    if (index != null) retainedIndexes.add(index)
+  }
+
+  const retainedMeterValues = meterValues.filter((_, index) => retainedIndexes.has(index))
+  const retainedIntervalTotals = new Map<string, number>()
+  const retainedUnsignedSamples = new Map<string, OCPP20SampledValue>()
+  for (const retainedMeterValue of retainedMeterValues) {
+    for (const sampledValue of retainedMeterValue.sampledValue) {
+      if (!isClockAlignedIntervalSample(sampledValue) || !Number.isFinite(sampledValue.value)) {
+        continue
+      }
+      const identity = clockAlignedSampleIdentity({ ...sampledValue, signedMeterValue: undefined })
+      retainedIntervalTotals.set(
+        identity,
+        (retainedIntervalTotals.get(identity) ?? 0) + sampledValue.value
+      )
+      if (sampledValue.signedMeterValue == null) retainedUnsignedSamples.set(identity, sampledValue)
+    }
+  }
+  const latestMeterValue = retainedMeterValues.at(-1)
+  if (latestMeterValue != null) {
+    for (const [identity, { sample, total }] of intervalTotals) {
+      const missingEnergy = total - (retainedIntervalTotals.get(identity) ?? 0)
+      if (missingEnergy === 0) continue
+      const retainedSample = retainedUnsignedSamples.get(identity)
+      if (retainedSample != null) {
+        retainedSample.value += missingEnergy
+        continue
+      }
+      const aggregateSample = structuredClone(sample)
+      delete aggregateSample.signedMeterValue
+      aggregateSample.value = missingEnergy
+      latestMeterValue.sampledValue.push(aggregateSample)
+    }
+  }
+  meterValues.splice(0, meterValues.length, ...retainedMeterValues)
+  accounting.bytes = getCollectedMeterValuesBytes(meterValues)
+  accounting.last = meterValues.at(-1)
+  accounting.length = meterValues.length
+}
+
 const normalizeElectricalPhase = (phase: string | undefined): string | undefined => {
   const lineIndex = resolveLinePhaseIndex(phase)
   return lineIndex != null ? `L${lineIndex.toString()}` : phase
@@ -1950,7 +2074,7 @@ export class OCPP20ServiceUtils {
         if (evseInTransaction && transactionId == null && usesEvseMeterTemplate) continue
         const transactionMeterValueDelivery =
           transactionId != null && !suppressEvseEmission
-            ? TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
+            ? TransactionMeterValueDeliveryBarrier.beginIfIdle(connectorStatus, transactionId)
             : undefined
         if (
           transactionId != null &&
@@ -3644,6 +3768,8 @@ export class OCPP20ServiceUtils {
     if (connectorStatus.transactionEndedMeterValuesSetInterval != null) {
       OCPP20ServiceUtils.stopEndedMeterValues(chargingStation, connectorId, evseId)
     }
+    let lastSampleAt = Date.now()
+    let elapsedIntervalCarry = 0
     connectorStatus.transactionEndedMeterValuesSetInterval = setInterval(() => {
       ;(async () => {
         const activeConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
@@ -3654,8 +3780,9 @@ export class OCPP20ServiceUtils {
         ) {
           return
         }
+        elapsedIntervalCarry += interval
         const transactionId = activeConnectorStatus.transactionId.toString()
-        const delivery = TransactionMeterValueDeliveryBarrier.begin(
+        const delivery = TransactionMeterValueDeliveryBarrier.beginIfIdle(
           activeConnectorStatus,
           transactionId
         )
@@ -3673,6 +3800,8 @@ export class OCPP20ServiceUtils {
           return
         }
         try {
+          const sampleAt = Date.now()
+          const elapsedInterval = Math.max(elapsedIntervalCarry, sampleAt - lastSampleAt)
           const measurandsKey = buildConfigKey(
             OCPP20ComponentName.SampledDataCtrlr,
             OCPP20RequiredVariableName.TxEndedMeasurands
@@ -3682,12 +3811,14 @@ export class OCPP20ServiceUtils {
             connectorId,
             evseId,
             transactionId,
-            interval,
+            elapsedInterval,
             measurandsKey
           )
           if (isNotEmptyArray(meterValue.sampledValue)) {
-            currentConnectorStatus.transactionEndedMeterValues?.push(meterValue)
+            appendBoundedCollectedEndedMeterValue(currentConnectorStatus, meterValue)
           }
+          lastSampleAt = sampleAt
+          elapsedIntervalCarry = 0
           delivery.settle()
         } catch (error) {
           delivery.settle(true)
@@ -3838,6 +3969,8 @@ export class OCPP20ServiceUtils {
       )
       OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
     }
+    let lastSampleAt = Date.now()
+    let elapsedIntervalCarry = 0
     initialConnectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
       ;(async () => {
         const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
@@ -3874,8 +4007,12 @@ export class OCPP20ServiceUtils {
             return
           }
         }
+        elapsedIntervalCarry += interval
         const transactionId = connectorStatus.transactionId.toString()
-        const delivery = TransactionMeterValueDeliveryBarrier.begin(connectorStatus, transactionId)
+        const delivery = TransactionMeterValueDeliveryBarrier.beginIfIdle(
+          connectorStatus,
+          transactionId
+        )
         if (delivery == null) return
         const deliveryTurn = delivery.waitForTurn()
         if (deliveryTurn != null) await deliveryTurn
@@ -3888,17 +4025,21 @@ export class OCPP20ServiceUtils {
           return
         }
         try {
+          const sampleAt = Date.now()
+          const elapsedInterval = Math.max(elapsedIntervalCarry, sampleAt - lastSampleAt)
           const meterValue = OCPP20ServiceUtils.buildTransactionMeterValue(
             chargingStation,
             connectorId,
             evseId,
             transactionId,
-            interval,
+            elapsedInterval,
             buildConfigKey(
               OCPP20ComponentName.SampledDataCtrlr,
               OCPP20RequiredVariableName.TxUpdatedMeasurands
             )
           )
+          lastSampleAt = sampleAt
+          elapsedIntervalCarry = 0
           // OCPP 2.0.1 `MeterValueType.sampledValue` cardinality is `1..*`, while
           // `TransactionEventRequest.meterValue` is `0..*`: when `TxUpdatedMeasurands`
           // yields no sampled values, omit the `meterValue` field entirely rather
@@ -6225,29 +6366,34 @@ export function buildTransactionEvent (
   const triggerReason = commandParams.triggerReason ?? defaultTriggerReason
   const inputEvse = commandParams.evse
   const connectorId = commandParams.connectorId ?? inputEvse?.connectorId ?? inputEvse?.id ?? 1
-  const transactionId =
-    commandParams.transactionId ??
-    (eventType === OCPP20TransactionEventEnumType.Ended
-      ? (chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString() ??
-        generateUUID())
-      : generateUUID())
-
-  if (!validateIdentifierString(transactionId, 36)) {
-    const errorMsg = `Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId}`
-    logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
-    throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
-  }
-
-  const evseId = commandParams.evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
+  const evseId =
+    commandParams.evseId ?? inputEvse?.id ?? chargingStation.getEvseIdByConnectorId(connectorId)
   if (evseId == null) {
     const errorMsg = `Cannot find EVSE ID for connector ${connectorId.toString()}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
     throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
   }
 
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+  const exactConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+  const connectorStatus =
+    exactConnectorStatus ??
+    (inputEvse != null && commandParams.evseId == null
+      ? chargingStation.getConnectorStatus(connectorId)
+      : undefined)
   if (connectorStatus == null) {
     const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
+    logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
+    throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
+  }
+
+  const transactionId =
+    commandParams.transactionId ??
+    (eventType === OCPP20TransactionEventEnumType.Ended
+      ? (exactConnectorStatus?.transactionId?.toString() ?? generateUUID())
+      : generateUUID())
+
+  if (!validateIdentifierString(transactionId, 36)) {
+    const errorMsg = `Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
     throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
   }
