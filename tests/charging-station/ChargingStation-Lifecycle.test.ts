@@ -2678,8 +2678,11 @@ await describe('ChargingStation Lifecycle', async () => {
       const firstStopRejected = assert.rejects(firstStop, /shutdown finalized/)
       await persistenceStarted.promise
       const shutdown = stationLifecycle.performStop.call(activeStation)
-      t.mock.timers.tick(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS)
-      for (let index = 0; index < 10; index++) await Promise.resolve()
+      blockPersistence = false
+      for (let index = 0; index < 10; index++) {
+        t.mock.timers.runAll()
+        await Promise.resolve()
+      }
       await shutdown
       await firstStopRejected
 
@@ -2706,9 +2709,8 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(startEnded.mock.callCount(), 1)
       assert.strictEqual(connectorStatus.transactionRestored, undefined)
 
-      blockPersistence = false
       activeStation.started = true
-      await OCPP20ServiceUtils.requestStopTransaction(
+      const retry = OCPP20ServiceUtils.requestStopTransaction(
         activeStation,
         1,
         1,
@@ -2716,6 +2718,11 @@ await describe('ChargingStation Lifecycle', async () => {
         undefined,
         transactionId
       )
+      for (let index = 0; index < 10; index++) {
+        t.mock.timers.runAll()
+        await Promise.resolve()
+      }
+      await retry
       const endedCalls = requestHandler.mock.calls.filter(
         call => call.arguments[1] === OCPP20RequestCommand.TRANSACTION_EVENT
       )

@@ -1011,6 +1011,7 @@ export const enqueueBoundedTransactionEvent = (
       ? { ...queuedEvent, deliveryAttempted: false }
       : queuedEvent
   const queuedEventBytes = getQueuedTransactionEventBytes(queuedEventWithMetadata)
+  const candidateExceedsByteLimit = queuedEventBytes + 2 > maxBytes
   const projectedBytes = accounting.bytes + queuedEventBytes + (queue.length === 0 ? 0 : 1)
   let rollbackQueueSnapshot:
     readonly { queuedEvent: QueuedTransactionEvent; value: QueuedTransactionEvent }[] | undefined
@@ -1075,7 +1076,7 @@ export const enqueueBoundedTransactionEvent = (
       targetLength,
       targetBytes
     )
-    if (simulatedBound.overLimit && !isLifecycleEvent) {
+    if (simulatedBound.overLimit && (!isLifecycleEvent || candidateExceedsByteLimit)) {
       if (!hadQueue) {
         delete connectorStatus.transactionEventQueue
         transactionEventQueueAccounting.delete(connectorStatus)
@@ -1120,7 +1121,7 @@ export const enqueueBoundedTransactionEvent = (
     targetLength,
     targetBytes
   )
-  if (bounded.overLimit && !isLifecycleEvent) {
+  if (bounded.overLimit && (!isLifecycleEvent || candidateExceedsByteLimit)) {
     if (rollbackQueueSnapshot != null) {
       for (const { queuedEvent: existingEvent, value } of rollbackQueueSnapshot) {
         for (const key of Object.keys(existingEvent)) Reflect.deleteProperty(existingEvent, key)

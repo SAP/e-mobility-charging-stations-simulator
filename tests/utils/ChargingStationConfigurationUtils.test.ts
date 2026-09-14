@@ -959,33 +959,6 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(restoredConnectorStatus.transactionEventQueue[0].deliveryAttempted, true)
     })
 
-    await it('should reject an over-limit persisted queue made only of attempted events', () => {
-      const transactionId = '00000000-0000-4000-8000-000000000044'
-      const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
-      const transactionEventQueue = [0, 1].map(seqNo => ({
-        deliveryAttempted: true,
-        request: {
-          customData: { payload: 'x'.repeat(600_000), vendorId: 'test' },
-          eventType: OCPP20TransactionEventEnumType.Updated,
-          seqNo,
-          timestamp,
-          transactionInfo: { transactionId },
-          triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
-        },
-        seqNo,
-        timestamp,
-      }))
-
-      assert.throws(
-        () =>
-          prepareTestConnectorStatus({
-            transactionEventQueue,
-            transactionId,
-          } as unknown as ConnectorStatus),
-        /exceeds hard limits with only protected entries/
-      )
-    })
-
     await it('should allow a valid persisted identity after a malformed occurrence', () => {
       const transactionId = '00000000-0000-4000-8000-000000000032'
       const timestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()

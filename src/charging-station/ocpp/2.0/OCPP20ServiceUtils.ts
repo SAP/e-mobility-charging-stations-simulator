@@ -1630,24 +1630,32 @@ export class OCPP20ServiceUtils {
         OCPP20ReadingContextEnumType.TRANSACTION_BEGIN,
         timestamp
       )
-      const alignedMeterValue = buildClockAlignedConnectorMeterValue(
-        chargingStation,
-        {
-          advanceEnergy: false,
-          commitState: false,
-          connectorId: resolvedConnectorId,
-          evseId: resolvedEvseId,
-          timestamp,
-          transactionId,
-        },
-        0,
-        buildConfigKey(
-          OCPP20ComponentName.AlignedDataCtrlr,
-          OCPP20RequiredVariableName.TxEndedMeasurands
-        ),
-        OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+      const alignedMeasurandsKey = buildConfigKey(
+        OCPP20ComponentName.AlignedDataCtrlr,
+        OCPP20RequiredVariableName.TxEndedMeasurands
       )
-      const sampledValue = [...sampledMeterValue.sampledValue, ...alignedMeterValue.sampledValue]
+      const alignedMeterValue =
+        getConfigurationKey(chargingStation, alignedMeasurandsKey)?.value != null ||
+        isEndedIntervalRecoverySigningRequired(chargingStation)
+          ? buildClockAlignedConnectorMeterValue(
+            chargingStation,
+            {
+              advanceEnergy: false,
+              commitState: false,
+              connectorId: resolvedConnectorId,
+              evseId: resolvedEvseId,
+              timestamp,
+              transactionId,
+            },
+            0,
+            alignedMeasurandsKey,
+            OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+          )
+          : undefined
+      const sampledValue = [
+        ...sampledMeterValue.sampledValue,
+        ...(alignedMeterValue?.sampledValue ?? []),
+      ]
       return isNotEmptyArray(sampledValue) ? [{ sampledValue, timestamp }] : []
     } catch (error) {
       logger.warn(
@@ -4045,6 +4053,7 @@ export class OCPP20ServiceUtils {
       undefined,
       transactionMeterValueDelivery,
       undefined,
+      undefined,
       startedOwnership,
       queueBeforeDelivery
     )
@@ -4658,25 +4667,30 @@ export class OCPP20ServiceUtils {
         `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: ${getErrorMessage(error)}`
       )
     }
-    try {
-      alignedFinalMeterValue = buildClockAlignedConnectorMeterValue(
-        chargingStation,
-        {
-          advanceEnergy: false,
-          commitState: false,
-          connectorId,
-          evseId: evseId ?? connectorId,
-          timestamp: boundaryTimestamp,
-          transactionId,
-        },
-        getEnabledAlignedEnergyInterval(chargingStation) ?? 0,
-        alignedMeasurandsKey,
-        OCPP20ReadingContextEnumType.TRANSACTION_END
-      )
-    } catch (error) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: Failed to build aligned terminal evidence: ${getErrorMessage(error)}`
-      )
+    if (
+      getConfigurationKey(chargingStation, alignedMeasurandsKey)?.value != null ||
+      isEndedIntervalRecoverySigningRequired(chargingStation)
+    ) {
+      try {
+        alignedFinalMeterValue = buildClockAlignedConnectorMeterValue(
+          chargingStation,
+          {
+            advanceEnergy: false,
+            commitState: false,
+            connectorId,
+            evseId: evseId ?? connectorId,
+            timestamp: boundaryTimestamp,
+            transactionId,
+          },
+          getEnabledAlignedEnergyInterval(chargingStation) ?? 0,
+          alignedMeasurandsKey,
+          OCPP20ReadingContextEnumType.TRANSACTION_END
+        )
+      } catch (error) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: Failed to build aligned terminal evidence: ${getErrorMessage(error)}`
+        )
+      }
     }
 
     const finalRepresentedEnergyWh = OCPP20ServiceUtils.getRepresentedEndedIntervalEnergyWh(
@@ -4728,6 +4742,9 @@ export class OCPP20ServiceUtils {
           unitOfMeasure: { unit: OCPP20UnitEnumType.WATT_HOUR },
           value: recoverableIntervalEnergy,
         })
+        if (!meterValues.includes(finalMeterValue)) {
+          meterValues.push(finalMeterValue)
+        }
       }
     }
     const endedRequestMeterValues = meterValues
@@ -5012,6 +5029,14 @@ export class OCPP20ServiceUtils {
             error
           )
           retainPublicKeyDelivery(publicKeyDeliveryToken)
+          // Release every eager (queued-before-delivery) awaiter now that the queue is safely
+          // buffered for a later replay: the autonomous aligned emitter must not block on a
+          // reconnect that may never happen. Events stay queued and deliver on reconnect.
+          for (const preservedEvent of connectorStatus.transactionEventQueue ?? []) {
+            if (preservedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated) {
+              OCPP20ServiceUtils.settleQueuedTransactionMeterValueDelivery(preservedEvent, false)
+            }
+          }
           chargingStation.saveTransactionEventQueues()
           queueChanged = false
           break
@@ -5854,6 +5879,7 @@ export class OCPP20ServiceUtils {
     endedPredecessors?: EndedTransactionEventPredecessors,
     preparedMeterValueDelivery?: TransactionMeterValueDelivery,
     terminalDeliveryIsCurrent?: () => boolean,
+    terminalDeliveryAbortSignal?: AbortSignal,
     startedOwnership?: 'pending' | 'starting',
     queueBeforeDelivery = false
   ): Promise<OCPP20TransactionEventResponse> {
@@ -5891,6 +5917,7 @@ export class OCPP20ServiceUtils {
           ?.has(transactionId) === true
       const queuedBehindTransactionEventDelivery =
         !isReservedTriggeredDelivery &&
+        eventType === OCPP20TransactionEventEnumType.Updated &&
         OCPP20ServiceUtils.transactionEventSendChains.has(connectorStatus)
       if (
         eventType === OCPP20TransactionEventEnumType.Updated &&
@@ -6004,7 +6031,31 @@ export class OCPP20ServiceUtils {
           definitelyUnsent
         )
       }
-      const performDelivery = async (): Promise<OCPP20TransactionEventResponse> => {
+      const persistTerminalEventQueue = async (): Promise<void> => {
+        const persistence = chargingStation.persistTransactionEventQueues()
+        if (terminalDeliveryAbortSignal == null) {
+          await persistence
+          return
+        }
+        if (terminalDeliveryAbortSignal.aborted) ensureTerminalDeliveryIsCurrent()
+        const cancelled = Promise.withResolvers<undefined>()
+        const onAbort = (): void => {
+          cancelled.resolve(undefined)
+        }
+        terminalDeliveryAbortSignal.addEventListener('abort', onAbort, { once: true })
+        try {
+          await Promise.race([persistence, cancelled.promise])
+          ensureTerminalDeliveryIsCurrent()
+        } finally {
+          terminalDeliveryAbortSignal.removeEventListener('abort', onAbort)
+        }
+      }
+      const performDelivery = async (
+        previousDelivery?: Promise<unknown>
+      ): Promise<OCPP20TransactionEventResponse> => {
+        const waitForPreviousDelivery = async (): Promise<void> => {
+          if (previousDelivery != null) await previousDelivery.catch(() => undefined)
+        }
         ensureTerminalDeliveryIsCurrent()
         if (eventType === OCPP20TransactionEventEnumType.Started && startedOwnership != null) {
           let currentConnectorStatus: ConnectorStatus | undefined
@@ -6034,6 +6085,7 @@ export class OCPP20ServiceUtils {
         }
         const transactionOwnedWhenQueued =
           connectorStatus.transactionId?.toString() === transactionId
+        if (queuedBehindTransactionEventDelivery) await Promise.resolve()
         const webSocketOpen = chargingStation.isWebSocketConnectionOpened()
         const canSend = webSocketOpen && chargingStation.inAcceptedState()
         if (!canSend && requestParams?.skipBufferingOnError === true) {
@@ -6165,16 +6217,33 @@ export class OCPP20ServiceUtils {
               setTransactionEventQueueStaged(connectorStatus, queuedEvent, true)
             }
             try {
-              await chargingStation.persistTransactionEventQueues()
+              await persistTerminalEventQueue()
             } catch (error: unknown) {
               if (queuedEvent != null) {
                 setTransactionEventQueueStaged(connectorStatus, queuedEvent, false)
                 setTransactionEventQueueBlocked(queuedEvent, false)
               }
               if (restorePreDurableQueue()) endedPredecessors?.onRolledBack?.()
+              if (error instanceof TransactionEventDeliveryError && error.outcome === 'aborted') {
+                throw error
+              }
               throw new TransactionEventDeliveryError('write-ahead-failed', error, false, true)
             }
+            await waitForPreviousDelivery()
             ensureTerminalDeliveryIsCurrent()
+            if (
+              !OCPP20ServiceUtils.isLifecycleGenerationCurrent(
+                chargingStation,
+                lifecycleAbortSignal
+              )
+            ) {
+              throw new TransactionEventDeliveryError(
+                'aborted',
+                new BaseError('TransactionEvent lifecycle generation was sealed'),
+                false,
+                true
+              )
+            }
             if (queuedEvent != null) {
               endedPredecessors?.onPersisted?.(queuedEvent)
               setTransactionEventQueueStaged(connectorStatus, queuedEvent, false)
@@ -6200,11 +6269,14 @@ export class OCPP20ServiceUtils {
             setTransactionEventQueueStaged(connectorStatus, stagedEvent, true)
             predecessorSettlement = blockUntilPredecessorsSettle(stagedEvent)
             try {
-              await chargingStation.persistTransactionEventQueues()
+              await persistTerminalEventQueue()
             } catch (error: unknown) {
               setTransactionEventQueueStaged(connectorStatus, stagedEvent, false)
               setTransactionEventQueueBlocked(stagedEvent, false)
               if (restorePreDurableQueue()) endedPredecessors?.onRolledBack?.()
+              if (error instanceof TransactionEventDeliveryError && error.outcome === 'aborted') {
+                throw error
+              }
               throw new TransactionEventDeliveryError('write-ahead-failed', error, false, true)
             }
             ensureTerminalDeliveryIsCurrent()
@@ -6223,6 +6295,7 @@ export class OCPP20ServiceUtils {
               )
             }
           }
+          await waitForPreviousDelivery()
         }
         const removeStagedEvent = (persistRemoval = true): void => {
           if (stagedEvent == null) return
@@ -6611,11 +6684,12 @@ export class OCPP20ServiceUtils {
           finishPendingDelivery()
         }
       }
-      return isReservedTriggeredDelivery
+      return isReservedTriggeredDelivery || queuedBehindTransactionEventDelivery
         ? await performDelivery()
         : await OCPP20ServiceUtils.serializeTransactionEventDelivery(
           connectorStatus,
-          performDelivery
+          performDelivery,
+          eventType === OCPP20TransactionEventEnumType.Ended
         )
     } catch (error) {
       if (OCPP20ServiceUtils.isLifecycleGenerationCurrent(chargingStation, lifecycleAbortSignal)) {
@@ -6633,14 +6707,17 @@ export class OCPP20ServiceUtils {
 
   private static async serializeTransactionEventDelivery<T>(
     connectorStatus: ConnectorStatus,
-    operation: () => Promise<T>
+    operation: (previous?: Promise<unknown>) => Promise<T>,
+    stageBeforePrevious = false
   ): Promise<T> {
     const previous = OCPP20ServiceUtils.transactionEventSendChains.get(connectorStatus)
     const { promise, resolve } = Promise.withResolvers<undefined>()
     OCPP20ServiceUtils.transactionEventSendChains.set(connectorStatus, promise)
     try {
-      if (previous != null) await previous.catch(() => undefined)
-      return await operation()
+      if (!stageBeforePrevious && previous != null) {
+        await previous.catch(() => undefined)
+      }
+      return await operation(stageBeforePrevious ? previous : undefined)
     } finally {
       resolve(undefined)
       if (OCPP20ServiceUtils.transactionEventSendChains.get(connectorStatus) === promise) {
@@ -6841,7 +6918,8 @@ export class OCPP20ServiceUtils {
           },
         },
         undefined,
-        operationOwnsTransaction
+        operationOwnsTransaction,
+        operation.cancellationController.signal
       )
     } catch (error) {
       if (
