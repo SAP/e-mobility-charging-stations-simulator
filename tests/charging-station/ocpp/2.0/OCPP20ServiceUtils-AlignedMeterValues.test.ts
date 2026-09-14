@@ -3651,13 +3651,24 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(queuedTransactionEvents.every(({ ownerConnectorId }) => ownerConnectorId === 1))
       assert.ok(queuedTransactionEvents.every(({ ownerEvseId }) => ownerEvseId === 1))
 
+      const stop = OCPP20ServiceUtils.requestStopTransaction(mockStation, 1, 1)
+      await flushPendingPromises()
+      const queuedEnded = queuedTransactionEvents.find(
+        ({ request }) => request.eventType === OCPP20TransactionEventEnumType.Ended
+      )
+      assert.strictEqual(queuedEnded?.meterValuePredecessorsPending, true)
+      assert.ok(
+        Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue), 'utf8') <=
+          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+      )
+
       firstSend.resolve(undefined)
-      await Promise.all(sweeps)
+      await Promise.all([...sweeps, stop])
       await OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
       await flushPendingPromises()
       const completedTransactionEvents = sentTransactionEvents(requestHandlerMock)
       assert.deepStrictEqual(
-        completedTransactionEvents.map(({ seqNo, timestamp }) => ({
+        completedTransactionEvents.slice(0, 3).map(({ seqNo, timestamp }) => ({
           seqNo,
           timestamp: timestamp.getTime(),
         })),
@@ -3671,13 +3682,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         event.meterValue
           ?.flatMap(meterValue => meterValue.sampledValue)
           .filter(sample => (sample.signedMeterValue?.publicKey.length ?? 0) > 0).length ?? 0
-      assert.deepStrictEqual(completedTransactionEvents.map(publicKeyCount), [1, 0, 0])
+      assert.deepStrictEqual(completedTransactionEvents.slice(0, 3).map(publicKeyCount), [1, 0, 0])
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
-
-      await OCPP20ServiceUtils.requestStopTransaction(mockStation, 1, 1)
-      const allTransactionEvents = sentTransactionEvents(requestHandlerMock)
       assert.strictEqual(
-        allTransactionEvents.at(-1)?.eventType,
+        completedTransactionEvents.at(-1)?.eventType,
         OCPP20TransactionEventEnumType.Ended
       )
     })

@@ -1124,7 +1124,10 @@ const createVersionedSampledValueDispatcher = (
         // including station/EVSE readings that have no transaction identity.
         if (signReadings) {
           let signingEnabledForContext = true
-          if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
+          if (
+            context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN &&
+            signReadingsComponent === OCPP20ComponentName.SampledDataCtrlr
+          ) {
             signingEnabledForContext = isOCPP20FlagEnabled(
               chargingStation,
               OCPP20ComponentName.SampledDataCtrlr,

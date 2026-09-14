@@ -761,11 +761,7 @@ export const preparePersistedTransactionEventQueue = (
         : -1
     connectorStatus.transactionEventQueue = preparedQueue
     const bounded = boundTransactionEventQueue(connectorStatus)
-    if (bounded.overLimit) {
-      throw new BaseError(
-        'Persisted TransactionEvent queue exceeds hard limits with only protected entries'
-      )
-    }
+
     if (
       transactionId != null &&
       bounded.removedEvents.some(

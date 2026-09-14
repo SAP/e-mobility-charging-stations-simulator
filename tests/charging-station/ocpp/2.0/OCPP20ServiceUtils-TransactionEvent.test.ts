@@ -69,6 +69,7 @@ import {
   PublicKeyWithSignedMeterValueEnumType,
   type RequestParams,
   type SampledValueTemplate,
+  SigningMethodEnumType,
   Voltage,
 } from '../../../../src/types/index.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
@@ -78,7 +79,10 @@ import {
   standardCleanup,
   withMockTimers,
 } from '../../../helpers/TestLifecycleHelpers.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import {
+  TEST_CHARGING_STATION_BASE_NAME,
+  TEST_PUBLIC_KEY_HEX,
+} from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import {
   type CapturedOCPPRequest,
@@ -795,18 +799,30 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus?.transactionSeqNo, undefined)
       })
 
-      await it('should allocate MAX_SAFE_INTEGER from an active MAX_SAFE_INTEGER minus one counter', () => {
+      await it('should reserve MAX_SAFE_INTEGER for the terminal event', () => {
         const connectorStatus = mockStation.getConnectorStatus(1)
         assert.ok(connectorStatus != null)
         connectorStatus.transactionSeqNo = Number.MAX_SAFE_INTEGER - 1
+        const transactionId = generateUUID()
+
+        assert.throws(
+          () =>
+            buildTransactionEvent(mockStation, {
+              connectorId: 1,
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              transactionId,
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            }),
+          /reserving the final value for Ended/
+        )
+        assert.strictEqual(connectorStatus.transactionSeqNo, Number.MAX_SAFE_INTEGER - 1)
 
         const request = buildTransactionEvent(mockStation, {
           connectorId: 1,
-          eventType: OCPP20TransactionEventEnumType.Updated,
-          transactionId: generateUUID(),
-          triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+          eventType: OCPP20TransactionEventEnumType.Ended,
+          transactionId,
+          triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
         })
-
         assert.strictEqual(request.seqNo, Number.MAX_SAFE_INTEGER)
         assert.strictEqual(connectorStatus.transactionSeqNo, Number.MAX_SAFE_INTEGER)
       })
@@ -11297,6 +11313,96 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(
         sampledValue.measurand,
         OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+    })
+
+    await it('should include aligned signed Begin and End evidence when sampled signing is disabled', async () => {
+      const station = mockTracking.station
+      const evseStatus = station.getEvseStatus(1)
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(evseStatus != null)
+      assert.ok(connectorStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+          value: '1000',
+        },
+      ] as unknown as ConnectorStatus['MeterValues']
+      const transactionId = generateUUID()
+      setupConnectorWithTransaction(station, 1, { transactionId })
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 1000
+      addConfigurationKey(
+        station,
+        buildConfigKey(
+          OCPP20ComponentName.AlignedDataCtrlr,
+          OCPP20RequiredVariableName.TxEndedMeasurands
+        ),
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+        undefined,
+        { save: false }
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(
+          OCPP20ComponentName.AlignedDataCtrlr,
+          OCPP20OptionalVariableName.SignReadings
+        ),
+        'true',
+        undefined,
+        { save: false }
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          OCPP20OptionalVariableName.SignReadings
+        ),
+        'false',
+        undefined,
+        { save: false }
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey'),
+        TEST_PUBLIC_KEY_HEX,
+        undefined,
+        { save: false }
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.FiscalMetering, 'SigningMethod'),
+        SigningMethodEnumType.ECDSA_secp256k1_SHA256,
+        undefined,
+        { save: false }
+      )
+
+      const [beginMeterValue] = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
+        station,
+        transactionId,
+        1,
+        1
+      )
+      connectorStatus.transactionBeginMeterValue = beginMeterValue
+      await OCPP20ServiceUtils.requestStopTransaction(station, 1, 1)
+
+      const endedEvent = mockTracking.sentRequests.find(
+        request =>
+          request.command === OCPP20RequestCommand.TRANSACTION_EVENT &&
+          request.payload.eventType === OCPP20TransactionEventEnumType.Ended
+      )?.payload as OCPP20TransactionEventRequest | undefined
+      assert.ok(endedEvent != null)
+      const signedSamples = (endedEvent.meterValue ?? [])
+        .flatMap(meterValue => meterValue.sampledValue)
+        .filter(sampledValue => sampledValue.signedMeterValue != null)
+      assert.ok(signedSamples.length >= 2)
+      assert.deepStrictEqual(
+        new Set(signedSamples.map(sampledValue => sampledValue.context)),
+        new Set([
+          OCPP20ReadingContextEnumType.TRANSACTION_BEGIN,
+          OCPP20ReadingContextEnumType.TRANSACTION_END,
+        ])
       )
     })
 

@@ -971,6 +971,7 @@ export const enqueueBoundedTransactionEvent = (
   queuedEvent: QueuedTransactionEvent
 ): EnqueuedTransactionEventQueue => {
   const hadQueue = connectorStatus.transactionEventQueue != null
+  const isLifecycleEvent = queuedEvent.request.eventType !== OCPP20TransactionEventEnumType.Updated
   connectorStatus.transactionEventQueue ??= []
   const accounting = getTransactionEventQueueAccounting(connectorStatus)
   const { queue } = accounting
@@ -1074,7 +1075,7 @@ export const enqueueBoundedTransactionEvent = (
       targetLength,
       targetBytes
     )
-    if (simulatedBound.overLimit) {
+    if (simulatedBound.overLimit && !isLifecycleEvent) {
       if (!hadQueue) {
         delete connectorStatus.transactionEventQueue
         transactionEventQueueAccounting.delete(connectorStatus)
@@ -1119,7 +1120,7 @@ export const enqueueBoundedTransactionEvent = (
     targetLength,
     targetBytes
   )
-  if (bounded.overLimit) {
+  if (bounded.overLimit && !isLifecycleEvent) {
     if (rollbackQueueSnapshot != null) {
       for (const { queuedEvent: existingEvent, value } of rollbackQueueSnapshot) {
         for (const key of Object.keys(existingEvent)) Reflect.deleteProperty(existingEvent, key)

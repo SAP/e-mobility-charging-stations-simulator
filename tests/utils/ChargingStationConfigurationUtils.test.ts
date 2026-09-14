@@ -1160,7 +1160,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(queue[0].seqNo, 0)
       assert.strictEqual(queue.at(-1)?.seqNo, Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
     })
-    await it('should reject byte-oversized lifecycle queues without evicting any cohort', () => {
+    await it('should hydrate byte-oversized lifecycle cores without evicting any cohort', () => {
       const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
       const queuedEvent = (
         eventType: OCPP20TransactionEventEnumType,
@@ -1212,7 +1212,8 @@ await describe('ChargingStationConfigurationUtils', async () => {
           Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
       )
 
-      assert.throws(() => prepareTestConnectorStatus(connectorStatus), /exceeds hard limits/)
+      const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
+      assert.strictEqual(restoredConnectorStatus, connectorStatus)
       assert.deepStrictEqual(
         connectorStatus.transactionEventQueue?.map(
           queuedEvent => queuedEvent.request.transactionInfo.transactionId

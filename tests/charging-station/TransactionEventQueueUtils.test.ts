@@ -1145,7 +1145,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.deepStrictEqual(connectorStatus.transactionEventQueue, [started, ended])
   })
 
-  await it('should reject lifecycle admission without evicting admitted lifecycle cores', () => {
+  await it('should admit mandatory lifecycle cores beyond the soft queue budget', () => {
     const transactionEventQueue = Array.from(
       { length: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH },
       (_, seqNo) =>
@@ -1173,10 +1173,12 @@ await describe('TransactionEventQueueUtils', async () => {
 
     const result = enqueueBoundedTransactionEvent(connectorStatus, attempted)
 
-    assert.strictEqual(result.inserted, false)
-    assert.strictEqual(result.capacityRejected, true)
+    assert.strictEqual(result.inserted, true)
+    assert.strictEqual(result.capacityRejected, undefined)
+    assert.strictEqual(result.overLimit, true)
     assert.deepStrictEqual(result.removedEvents, [])
-    assert.deepStrictEqual(connectorStatus.transactionEventQueue, transactionEventQueue)
+    assert.strictEqual(connectorStatus.transactionEventQueue, transactionEventQueue)
+    assert.strictEqual(connectorStatus.transactionEventQueue.at(-1), attempted)
   })
 
   await it('should reject admission without mutating existing queue state', () => {
