@@ -146,7 +146,10 @@ export const getCoherentSampleSnapshot = (
     return {
       ...lastSample,
       deltaEnergyWh: 0,
-      energyRegisterWh: Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0),
+      energyRegisterWh: Math.max(
+        0,
+        connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+      ),
     }
   }
   return buildZeroSample(

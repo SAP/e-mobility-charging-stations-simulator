@@ -1092,14 +1092,20 @@ export const enqueueBoundedTransactionEvent = (
         removedEvents: [],
       }
     }
-    rollbackQueueSnapshot = queue.map(existingEvent => ({
-      queuedEvent: existingEvent,
-      value: structuredClone(existingEvent),
-    }))
-    rollbackIntervalCarry =
-      connectorStatus.transactionEnergyActiveImportIntervalCarry == null
-        ? undefined
-        : { ...connectorStatus.transactionEnergyActiveImportIntervalCarry }
+    // Rollback state is consumed only when the real insertion is rejected
+    // below; for a lifecycle core that requires the candidate to exceed the
+    // byte cap on its own. Skip the full deep clone otherwise so the saturated
+    // append path stays allocation-light.
+    if (!isLifecycleEvent || candidateExceedsByteLimit) {
+      rollbackQueueSnapshot = queue.map(existingEvent => ({
+        queuedEvent: existingEvent,
+        value: structuredClone(existingEvent),
+      }))
+      rollbackIntervalCarry =
+        connectorStatus.transactionEnergyActiveImportIntervalCarry == null
+          ? undefined
+          : { ...connectorStatus.transactionEnergyActiveImportIntervalCarry }
+    }
   }
   queuedEvent.deliveryAttempted ??= false
   queue.splice(insertionIndex, 0, queuedEvent)

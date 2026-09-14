@@ -1164,7 +1164,9 @@ export class OCPP20VariableManager {
         }
       } else if (variableName === OCPP20RequiredVariableName.Enabled.toLowerCase()) {
         if (attributeValue.trim().toLowerCase() === 'true') {
-          chargingStation.restartAlignedMeterValues()
+          if (previousValue?.trim().toLowerCase() !== 'true') {
+            chargingStation.restartAlignedMeterValues()
+          }
         } else if (previousValue?.trim().toLowerCase() === 'true') {
           chargingStation.restartAlignedMeterValues(undefined, true)
         } else {

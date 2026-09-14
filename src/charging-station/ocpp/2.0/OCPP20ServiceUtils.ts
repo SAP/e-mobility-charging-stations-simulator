@@ -143,6 +143,17 @@ import { getVariableMetadata } from './OCPP20VariableRegistry.js'
 
 const moduleName = 'OCPP20ServiceUtils'
 
+// Measurands that are not applicable to the station main power meter (evseId 0).
+// J01.FR.14 note: "evseId = 0 (grid meter) will not have a Current.Offered or
+// SoC measurand." Current.Offered/Power.Offered are "strictly speaking no
+// measured values" (part2 note 1), so summing them into the grid aggregate is
+// meaningless; State of Charge is battery-scoped.
+const GRID_METER_INAPPLICABLE_MEASURANDS: Partial<Record<OCPP20MeasurandEnumType, true>> = {
+  [OCPP20MeasurandEnumType.CURRENT_OFFERED]: true,
+  [OCPP20MeasurandEnumType.POWER_OFFERED]: true,
+  [OCPP20MeasurandEnumType.STATE_OF_CHARGE]: true,
+}
+
 interface StopTransactionOperation {
   readonly cancel: (error: OCPPError) => boolean
   readonly cancellationController: AbortController
@@ -2302,7 +2313,8 @@ export class OCPP20ServiceUtils {
               )
                 .filter(
                   sampledValue =>
-                    sampledValue.measurand !== OCPP20MeasurandEnumType.STATE_OF_CHARGE
+                    sampledValue.measurand == null ||
+                      GRID_METER_INAPPLICABLE_MEASURANDS[sampledValue.measurand] !== true
                 )
                 .sort(
                   (left, right) =>

@@ -69,8 +69,8 @@ export class Constants {
   static readonly DEFAULT_PERFORMANCE_DIRECTORY = 'performance'
 
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator'
-
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
+
   /**
    * Peak jitter fraction: consumers scale the base delay by a uniform draw in
    * `[0, jitterPercent)`. See `computeExponentialBackOffDelay` (uni-directional
@@ -124,13 +124,13 @@ export class Constants {
   static readonly DEFAULT_TX_UPDATED_INTERVAL_SECONDS = 30
 
   static readonly DEFAULT_UI_SERVER_HOST = 'localhost'
-
   static readonly DEFAULT_UI_SERVER_PORT = 8080
-  static readonly DEFAULT_WS_HANDSHAKE_TIMEOUT_SECONDS = 30
 
+  static readonly DEFAULT_WS_HANDSHAKE_TIMEOUT_SECONDS = 30
   static readonly DEFAULT_WS_PING_INTERVAL_SECONDS = 30
   static readonly DEFAULT_WS_RECONNECT_DELAY_SECONDS = 30
   static readonly DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET_MS = 1000
+
   static readonly EMPTY_FROZEN_OBJECT = Object.freeze({})
 
   static readonly EMPTY_FUNCTION: () => void = Object.freeze(() => {
