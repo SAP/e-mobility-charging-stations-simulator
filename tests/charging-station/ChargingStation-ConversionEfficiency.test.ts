@@ -187,6 +187,8 @@ await describe('ChargingStation AC/DC conversion efficiency', async () => {
       connectorStatus.transactionId = transactionId
       connectorStatus.transactionEventQueue = [
         {
+          ownerConnectorId: 1,
+          ownerEvseId: 1,
           request: {
             eventType: 'Updated',
             meterValue: [

@@ -332,7 +332,7 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(restoredResponse.statusInfo?.reasonCode, ReasonCodeEnumType.NotEnabled)
     })
 
-    await it('should reject a second MeterValues trigger until reserved capacity is released', () => {
+    await it('should reject a second MeterValues trigger until reserved capacity is released', async () => {
       const firstRequest: OCPP20TriggerMessageRequest = {
         evse: { id: 1 },
         requestedMessage: MessageTriggerEnumType.MeterValues,
@@ -352,7 +352,7 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(rejectedResponse.status, TriggerMessageStatusEnumType.Rejected)
       assert.strictEqual(rejectedResponse.statusInfo?.reasonCode, ReasonCodeEnumType.OutOfMemory)
 
-      testableService.onResponseSendError(
+      await testableService.onResponseSendError(
         mockStation,
         OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
         firstRequest
@@ -1663,7 +1663,7 @@ await describe('F06 - TriggerMessage', async () => {
       await flushMicrotasks()
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
 
-      listenerTestable.onResponseSendError(
+      await listenerTestable.onResponseSendError(
         mockStation,
         OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
         request
@@ -2089,7 +2089,7 @@ await describe('F06 - TriggerMessage', async () => {
       assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
     })
 
-    await it('should release a TransactionEvent reservation when the response cannot be sent', () => {
+    await it('should release a TransactionEvent reservation when the response cannot be sent', async () => {
       seedActiveTransaction(1, 'txn-reservation-release')
       const firstRequest: OCPP20TriggerMessageRequest = {
         evse: { id: 1 },
@@ -2108,7 +2108,7 @@ await describe('F06 - TriggerMessage', async () => {
         TriggerMessageStatusEnumType.Rejected
       )
 
-      testableService.onResponseSendError(
+      await testableService.onResponseSendError(
         mockStation,
         OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
         firstRequest
