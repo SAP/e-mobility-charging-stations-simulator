@@ -9,9 +9,9 @@
   },
   "volta": {
     "node": "24.21.0",
-    "pnpm": "12.4.0"
+    "pnpm": "12.4.1"
   },
-  "packageManager": "pnpm@12.4.0",
+  "packageManager": "pnpm@12.4.1",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -44,7 +44,7 @@
     "@vue/test-utils": "^2.5.0",
     "@vue/tsconfig": "^0.9.1",
     "jsdom": "^30.0.1",
-    "vite": "^8.2.2",
+    "vite": "^8.3.0",
     "vitest": "^5.0.0",
     "vue-tsc": "^3.3.11"
   }
