@@ -7,12 +7,14 @@
       "auto_insert_summary": true,
       "auto_run_on_draft_pr": true,
       "use_custom_summarize_prompt": false,
-      "use_custom_summarize_output_template": false
+      "use_custom_summarize_output_template": false,
+      "model": "gpt-5.6-sol"
     },
     "review": {
       "auto_generate_review": true,
       "auto_run_on_draft_pr": true,
-      "use_custom_review_focus": false
+      "use_custom_review_focus": false,
+      "model": "gpt-5.6-sol"
     }
   }
 }
