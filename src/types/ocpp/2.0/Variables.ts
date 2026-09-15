@@ -48,6 +48,7 @@ export enum OCPP20OptionalVariableName {
   RetryBackOffRandomRange = 'RetryBackOffRandomRange',
   RetryBackOffRepeatTimes = 'RetryBackOffRepeatTimes',
   RetryBackOffWaitMinimum = 'RetryBackOffWaitMinimum',
+  SendDuringIdle = 'SendDuringIdle',
   SignReadings = 'SignReadings',
   ValueSize = 'ValueSize',
   WebSocketPingInterval = 'WebSocketPingInterval',

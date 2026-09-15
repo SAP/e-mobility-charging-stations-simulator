@@ -195,6 +195,7 @@ await describe('OCPP16CoherentMeterValues', async () => {
   beforeEach(() => {
     const ctx = createOCPP16ResponseTestContext()
     station = ctx.station
+    station.isStopping = () => false
     responseService = ctx.responseService
     setMockRequestHandler(station, async () => Promise.resolve({}))
     mock.method(OCPP16ServiceUtils, 'startUpdatedMeterValues', () => {
@@ -294,6 +295,7 @@ await describe('OCPP16CoherentMeterValues', async () => {
     // Fresh station for second run — same seed + transactionId must reproduce.
     const ctx2 = createOCPP16ResponseTestContext()
     const station2 = ctx2.station
+    station2.isStopping = () => false
     const responseService2 = ctx2.responseService
     setMockRequestHandler(station2, async () => Promise.resolve({}))
     for (const { connectorId } of station2.iterateConnectors(true)) {

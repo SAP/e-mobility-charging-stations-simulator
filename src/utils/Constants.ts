@@ -14,6 +14,8 @@ const DAY_IN_SECONDS = 86_400
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Constants {
+  static readonly DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS = 900
+
   static readonly DEFAULT_ATG_CONFIGURATION: Readonly<AutomaticTransactionGeneratorConfiguration> =
     Object.freeze({
       enable: false,
@@ -137,11 +139,19 @@ export class Constants {
 
   static readonly ENV_SIMULATOR_COLD_START = 'SIMULATOR_COLD_START'
 
+  /** Maximum station-local outgoing OCPP CALLs retained behind the active CALL. */
+  static readonly MAX_OUTGOING_CALL_WAITERS = 1024
+
   static readonly MAX_RANDOM_INTEGER = 281_474_976_710_655 // 2^48 - 1 (randomInt() limit)
 
   // Node.js setInterval/setTimeout maximum safe delay value (2^31-1 ms ≈ 24.8 days)
   // Values exceeding this limit cause Node.js to reset the delay to 1ms
   static readonly MAX_SETINTERVAL_DELAY_MS = 2_147_483_647
+
+  /** Serialized-size compaction target for durable OCPP 2.0.1 TransactionEvent backlogs. */
+  static readonly MAX_TRANSACTION_EVENT_QUEUE_BYTES = 1024 * 1024
+  /** Queue-length compaction target for durable OCPP 2.0.1 TransactionEvent backlogs. */
+  static readonly MAX_TRANSACTION_EVENT_QUEUE_LENGTH = 10_000
   /** Milliseconds per day; equal to `24 * MS_PER_HOUR`. */
   static readonly MS_PER_DAY = DAY_IN_MS
 

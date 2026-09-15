@@ -156,10 +156,25 @@ await describe('OCPP 2.0 Request Call Chain — requestHandler → buildRequestP
       assert.strictEqual(sentPayload.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
     })
 
+    await it('should resolve an omitted connector within the supplied EVSE', async () => {
+      await service.requestHandler(station, OCPP20RequestCommand.TRANSACTION_EVENT, {
+        eventType: OCPP20TransactionEventEnumType.Started,
+        evse: { id: 2 },
+        triggerReason: OCPP20TriggerReasonEnumType.Authorized,
+      })
+
+      assert.strictEqual(sendMessageMock.mock.calls.length, 1)
+      const sentPayload = sendMessageMock.mock.calls[0]
+        .arguments[2] as OCPP20TransactionEventRequest
+      assert.deepStrictEqual(sentPayload.evse, { id: 2 })
+      assert.strictEqual(station.getConnectorStatus(1, 1)?.transactionSeqNo, undefined)
+      assert.strictEqual(station.getConnectorStatus(2, 2)?.transactionSeqNo, 0)
+    })
+
     await it('should resolve connectorId from evse when passed in OCPP wire format', async () => {
       await service.requestHandler(station, OCPP20RequestCommand.TRANSACTION_EVENT, {
         eventType: OCPP20TransactionEventEnumType.Started,
-        evse: { connectorId: 2, id: 1 },
+        evse: { connectorId: 2, id: 2 },
         triggerReason: OCPP20TriggerReasonEnumType.Authorized,
       })
 

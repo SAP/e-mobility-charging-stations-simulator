@@ -17,15 +17,22 @@ import { create } from 'tar'
 
 import {
   canProceedChargingProfile,
+  captureTransactionIntervalState,
   type ChargingStation,
   checkChargingStationState,
+  completeTransactionIntervalState,
   getConfigurationKey,
   getConnectorChargingProfiles,
   getIdTagsFile,
   prepareChargingProfileKind,
+  recordFrozenTransactionIntervalEmission,
   removeExpiredReservations,
   resetAuthorizeConnectorStatus,
+  resolveInletToOutputEfficiency,
+  restoreTransactionIntervalState,
   setConfigurationKeyValue,
+  type TransactionMeterValueDelivery,
+  TransactionMeterValueDeliveryBarrier,
 } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
@@ -84,8 +91,6 @@ import {
   type OCPP16SendLocalListRequest,
   type OCPP16SendLocalListResponse,
   OCPP16StandardParametersKey,
-  type OCPP16StartTransactionRequest,
-  type OCPP16StartTransactionResponse,
   type OCPP16StatusNotificationResponse,
   OCPP16StopTransactionReason,
   OCPP16SupportedFeatureProfiles,
@@ -137,6 +142,11 @@ import {
   isIncomingRequestCommandSupported,
   isMessageTriggerSupported,
 } from '../OCPPServiceUtils.js'
+import {
+  claimPublicKeyDelivery,
+  releasePublicKeyDelivery,
+  retainPublicKeyDelivery,
+} from '../OCPPSignedMeterValueUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -233,6 +243,19 @@ interface OCPP16StationState {
    * set from OCPP 1.6 code directly.
    */
   stopped?: boolean
+  triggeredMeterValueTargets?: Set<TriggeredMeterValueTarget>
+}
+
+interface TriggeredMeterValueTarget {
+  cancelled?: boolean
+  readonly connectorStatus: ConnectorStatus
+  readonly delivery?: TransactionMeterValueDelivery
+  readonly intervalState?: ReturnType<typeof captureTransactionIntervalState>
+  readonly publicKeyIncluded: boolean
+  readonly request: OCPP16MeterValuesRequest
+  reservationReleased?: boolean
+  readonly transactionId?: number
+  readonly triggerRequest: OCPP16TriggerMessageRequest
 }
 
 /**
@@ -281,6 +304,21 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
     OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
   ]
+
+  private readonly pendingResetActions = new WeakMap<
+    ResetRequest,
+    (lifecycleSignal: AbortSignal) => Promise<void>
+  >()
+
+  private readonly pendingTriggeredMeterValues = new WeakMap<
+    ConnectorStatus,
+    Set<number | undefined>
+  >()
+
+  private readonly triggerMeterValuesReservations = new WeakMap<
+    OCPP16TriggerMessageRequest,
+    readonly TriggeredMeterValueTarget[]
+  >()
 
   /**
    * Constructs an OCPP 1.6 Incoming Request Service with request handlers, validators, and event listeners.
@@ -372,6 +410,23 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     )
     // Handle incoming request events
     this.on(
+      OCPP16IncomingRequestCommand.RESET,
+      (chargingStation: ChargingStation, request: ResetRequest, response: GenericResponse) => {
+        const action = this.pendingResetActions.get(request)
+        this.pendingResetActions.delete(request)
+        if (response.status !== GenericStatus.Accepted || action == null) return
+        this.runOutsideIncomingRequestContext(() => {
+          const lifecycleSignal = chargingStation.lifecycleAbortSignal
+          action(lifecycleSignal).catch((error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.constructor: Reset error:`,
+              error
+            )
+          })
+        })
+      }
+    )
+    this.on(
       OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
       (
         chargingStation: ChargingStation,
@@ -379,38 +434,37 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         response: GenericResponse
       ) => {
         if (response.status === GenericStatus.Accepted) {
-          const { connectorId, idTag } = request
-          if (connectorId != null) {
-            const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-            if (connectorStatus != null) {
-              connectorStatus.transactionRemoteStarted = true
-            }
+          const { chargingProfile, connectorId, idTag } = request
+          if (connectorId == null) return
+          const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+          if (connectorStatus != null) {
+            connectorStatus.transactionRemoteStarted = true
           }
-          chargingStation.ocppRequestService
-            .requestHandler<Partial<OCPP16StartTransactionRequest>, OCPP16StartTransactionResponse>(
-              chargingStation,
-              OCPP16RequestCommand.START_TRANSACTION,
-              {
-                connectorId,
-                idTag,
-              }
+          if (chargingProfile != null) {
+            OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, chargingProfile)
+            logger.debug(
+              `${chargingStation.logPrefix()} ${moduleName}.constructor: Charging profile(s) set at delivered remote start transaction on ${
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                chargingStation.stationInfo?.chargingStationId
+              }#${connectorId.toString()}`,
+              chargingProfile
             )
+          }
+          OCPP16ServiceUtils.startTransactionOnConnector(chargingStation, connectorId, idTag)
             .then(response => {
               if (response.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
                 logger.debug(
                   `${chargingStation.logPrefix()} ${moduleName}.constructor: Remote start transaction ACCEPTED on ${
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     chargingStation.stationInfo?.chargingStationId
-                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  }#${connectorId?.toString()} for idTag '${truncateId(idTag)}'`
+                  }#${connectorId.toString()} for idTag '${truncateId(idTag)}'`
                 )
               } else {
                 logger.debug(
                   `${chargingStation.logPrefix()} ${moduleName}.constructor: Remote start transaction REJECTED on ${
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     chargingStation.stationInfo?.chargingStationId
-                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  }#${connectorId?.toString()} for idTag '${truncateId(idTag)}'`
+                  }#${connectorId.toString()} for idTag '${truncateId(idTag)}'`
                 )
               }
               return undefined
@@ -500,7 +554,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             // after an exception unwind of the FTP path) does not
             // leak to the CSMS.
             const diagnosticsInProgress =
-              this.stationsState.get(chargingStation)?.diagnosticsUploadInProgress === true
+              this.getStationState(chargingStation)?.diagnosticsUploadInProgress === true
             const diagnosticsStatus = chargingStation.stationInfo?.diagnosticsStatus
             const diagnosticsTriggerStatus =
               diagnosticsInProgress && diagnosticsStatus === OCPP16DiagnosticsStatus.Uploading
@@ -526,7 +580,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             // 'Downloading' after an exception unwind of
             // updateFirmwareSimulation) does not leak to the CSMS.
             const firmwareInProgress =
-              this.stationsState.get(chargingStation)?.firmwareUpdateInProgress === true
+              this.getStationState(chargingStation)?.firmwareUpdateInProgress === true
             const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
             const firmwareTriggerStatus =
               firmwareInProgress &&
@@ -560,80 +614,134 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               )
               .catch(errorHandler)
             break
-          case OCPP16MessageTrigger.MeterValues:
-            if (connectorId != null) {
-              const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-              if (
-                connectorStatus?.transactionStarted === true &&
-                connectorStatus.transactionId != null
-              ) {
-                const transactionId = convertToInt(connectorStatus.transactionId)
-                const meterValue = buildMeterValue(
-                  chargingStation,
-                  transactionId,
-                  0
-                ) as OCPP16MeterValue
-                OCPP16ServiceUtils.appendSignedUpdatedReadings(
-                  chargingStation,
-                  connectorId,
-                  transactionId,
-                  meterValue,
-                  OCPP16MeterValueContext.TRIGGER
-                )
+          case OCPP16MessageTrigger.MeterValues: {
+            const targets = this.triggerMeterValuesReservations.get(request)
+            this.triggerMeterValuesReservations.delete(request)
+            for (const target of targets ?? []) {
+              const { connectorStatus, delivery, intervalState, publicKeyIncluded } = target
+              const { transactionId } = target.request
+              ;(async () => {
+                const deliveryTurn = delivery?.waitForTurn()
+                if (deliveryTurn != null) await deliveryTurn
+                if (target.cancelled === true) return
+                if (
+                  intervalState != null &&
+                  connectorStatus.transactionId?.toString() === intervalState.transactionId
+                ) {
+                  recordFrozenTransactionIntervalEmission(
+                    connectorStatus,
+                    target.request.meterValue[0],
+                    'default',
+                    chargingStation.getNumberOfPhases(),
+                    resolveInletToOutputEfficiency(
+                      chargingStation.stationInfo?.currentOutType,
+                      chargingStation.stationInfo?.conversionEfficiency
+                    )
+                  )
+                  completeTransactionIntervalState(
+                    intervalState,
+                    'default',
+                    target.request.meterValue
+                  )
+                }
+                const publicKeyDeliveryToken =
+                  transactionId != null
+                    ? claimPublicKeyDelivery(
+                      connectorStatus,
+                      transactionId,
+                      target.request,
+                      publicKeyIncluded
+                    )
+                    : undefined
+                const deliveryState = {
+                  buffered: false,
+                  callError: false,
+                  responseReceived: false,
+                  sent: false,
+                  transportErrorAmbiguous: false,
+                }
+                let deliverySettled = false
+                const markDeliverySettled = (definitivelyRejected = false): void => {
+                  if (deliverySettled) return
+                  deliverySettled = true
+                  this.releaseTriggeredMeterValueTarget(
+                    chargingStation,
+                    target,
+                    definitivelyRejected
+                  )
+                }
+                let restored = false
+                const restoreRejectedDelivery = (): void => {
+                  if (restored) return
+                  restored = true
+                  if (intervalState != null) {
+                    restoreTransactionIntervalState(intervalState, connectorStatus, 'default')
+                  }
+                  releasePublicKeyDelivery(publicKeyDeliveryToken)
+                }
                 chargingStation.ocppRequestService
                   .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
                     chargingStation,
                     OCPP16RequestCommand.METER_VALUES,
+                    target.request,
                     {
-                      connectorId,
-                      meterValue: [meterValue],
-                      transactionId,
-                    },
-                    {
+                      onError: (_error, isCallError) => {
+                        deliveryState.callError ||= isCallError
+                        if (isCallError) {
+                          if (!deliveryState.transportErrorAmbiguous) restoreRejectedDelivery()
+                          markDeliverySettled(!deliveryState.transportErrorAmbiguous)
+                        }
+                      },
+                      onMessageSent: () => {
+                        deliveryState.sent = true
+                      },
+                      onRequestBuffered: () => {
+                        deliveryState.buffered = true
+                        delivery?.markBuffered()
+                      },
+                      onResponseReceived: () => {
+                        deliveryState.responseReceived = true
+                        retainPublicKeyDelivery(publicKeyDeliveryToken)
+                        markDeliverySettled()
+                      },
+                      onTransportError: (_error, deliveryAmbiguous) => {
+                        deliveryState.transportErrorAmbiguous ||= deliveryAmbiguous
+                        if (deliveryAmbiguous) retainPublicKeyDelivery(publicKeyDeliveryToken)
+                      },
                       triggerMessage: true,
                     }
                   )
-                  .catch(errorHandler)
-              }
-            } else {
-              for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(
-                true
-              )) {
-                if (
-                  connectorStatus.transactionStarted === true &&
-                  connectorStatus.transactionId != null
-                ) {
-                  const transactionId = convertToInt(connectorStatus.transactionId)
-                  const meterValue = buildMeterValue(
-                    chargingStation,
-                    transactionId,
-                    0
-                  ) as OCPP16MeterValue
-                  OCPP16ServiceUtils.appendSignedUpdatedReadings(
-                    chargingStation,
-                    connectorId,
-                    transactionId,
-                    meterValue,
-                    OCPP16MeterValueContext.TRIGGER
-                  )
-                  chargingStation.ocppRequestService
-                    .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
-                      chargingStation,
-                      OCPP16RequestCommand.METER_VALUES,
-                      {
-                        connectorId,
-                        meterValue: [meterValue],
-                        transactionId,
-                      },
-                      {
-                        triggerMessage: true,
-                      }
-                    )
-                    .catch(errorHandler)
-                }
-              }
+                  .then(() => {
+                    retainPublicKeyDelivery(publicKeyDeliveryToken)
+                    markDeliverySettled()
+                    return undefined
+                  })
+                  .catch((error: unknown) => {
+                    if (
+                      !deliveryState.buffered &&
+                      !deliveryState.callError &&
+                      !deliveryState.responseReceived &&
+                      !deliveryState.sent &&
+                      !deliveryState.transportErrorAmbiguous
+                    ) {
+                      restoreRejectedDelivery()
+                    } else if (
+                      deliveryState.sent ||
+                      deliveryState.responseReceived ||
+                      deliveryState.transportErrorAmbiguous
+                    ) {
+                      retainPublicKeyDelivery(publicKeyDeliveryToken)
+                    }
+                    if (!deliveryState.buffered) markDeliverySettled()
+                    errorHandler(error)
+                  })
+              })().catch((error: unknown) => {
+                this.releaseTriggeredMeterValueTarget(chargingStation, target, true)
+                errorHandler(error)
+              })
             }
             break
+          }
           case OCPP16MessageTrigger.StatusNotification:
             if (connectorId != null) {
               chargingStation.ocppRequestService
@@ -746,6 +854,25 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   }
 
   /**
+   * Measures exact MeterValues snapshots retained by TriggerMessage delivery callbacks.
+   * @param commandName - Incoming command associated with the response.
+   * @param commandPayload - Exact incoming request payload owning the reservation.
+   * @returns Serialized bytes retained by the reservation.
+   */
+  protected override getResponseDeliveryRetainedBytes (
+    commandName: IncomingRequestCommand,
+    commandPayload: JsonType
+  ): number {
+    if (commandName !== OCPP16IncomingRequestCommand.TRIGGER_MESSAGE) return 0
+    const targets = this.triggerMeterValuesReservations.get(
+      commandPayload as OCPP16TriggerMessageRequest
+    )
+    return targets == null
+      ? 0
+      : Buffer.byteLength(JSON.stringify(targets.map(({ request }) => request)), 'utf8')
+  }
+
+  /**
    * Checks whether the given incoming request command is supported by the charging station.
    * @param chargingStation - Target charging station
    * @param commandName - Incoming request command to check
@@ -756,6 +883,25 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     commandName: IncomingRequestCommand
   ): boolean {
     return isIncomingRequestCommandSupported(chargingStation, commandName)
+  }
+
+  protected override onResponseSendError (
+    chargingStation: ChargingStation,
+    commandName: IncomingRequestCommand,
+    commandPayload: JsonType
+  ): void {
+    if (commandName === OCPP16IncomingRequestCommand.RESET) {
+      this.pendingResetActions.delete(commandPayload as ResetRequest)
+      return
+    }
+    if (commandName !== OCPP16IncomingRequestCommand.TRIGGER_MESSAGE) return
+    const request = commandPayload as OCPP16TriggerMessageRequest
+    const targets = this.triggerMeterValuesReservations.get(request)
+    if (targets == null) return
+    this.triggerMeterValuesReservations.delete(request)
+    for (const target of targets) {
+      this.releaseTriggeredMeterValueTarget(chargingStation, target, true)
+    }
   }
 
   /**
@@ -777,6 +923,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   protected override resetStationState (stationState: OCPP16StationState): void {
     stationState.activeDiagnosticsAbortController?.abort()
     this.cancelDeferredFirmwareUpdate(stationState)
+    for (const target of stationState.triggeredMeterValueTargets ?? []) {
+      this.triggerMeterValuesReservations.delete(target.triggerRequest)
+      target.cancelled = true
+      this.releaseTriggeredMeterValueTarget(undefined, target, true, stationState)
+    }
   }
 
   /**
@@ -885,7 +1036,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       }
       await chargingStation.removeReservation(
         reservation,
-        ReservationTerminationReason.RESERVATION_CANCELED
+        ReservationTerminationReason.RESERVATION_CANCELED,
+        () => this.isIncomingRequestDeliveryCurrent(chargingStation)
       )
       return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED
     } catch (error) {
@@ -925,7 +1077,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           .map(({ connectorId }) => connectorId)
           .toArray(),
         chargePointStatus,
-        type
+        type,
+        () => this.isIncomingRequestDeliveryCurrent(chargingStation)
       )
       return response
     } else if (
@@ -945,10 +1098,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       if (connectorStatus != null) {
         connectorStatus.availability = type
       }
-      await sendAndSetConnectorStatus(chargingStation, {
-        connectorId,
-        status: chargePointStatus,
-      })
+      await sendAndSetConnectorStatus(
+        chargingStation,
+        { connectorId, status: chargePointStatus },
+        {
+          isOperationCurrent: () => this.isIncomingRequestDeliveryCurrent(chargingStation),
+          send: true,
+        }
+      )
       return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
     }
     return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED
@@ -1346,9 +1503,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           ...(isNotEmptyString(uri.username) && { user: uri.username }),
           ...(isNotEmptyString(uri.password) && { password: uri.password }),
         })
+        if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
+          ftpClient.close()
+          return OCPP16Constants.OCPP_RESPONSE_EMPTY
+        }
         let uploadResponse: FTPResponse | undefined
         if (accessResponse.code === 220) {
           ftpClient.trackProgress(info => {
+            if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) return
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: ${(
                 info.bytes / 1024
@@ -1377,6 +1539,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             join(resolve(dirname(fileURLToPath(import.meta.url)), '../'), diagnosticsArchive),
             `${uri.pathname}${diagnosticsArchive}`
           )
+          if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
+            ftpClient.close()
+            return OCPP16Constants.OCPP_RESPONSE_EMPTY
+          }
           if (uploadResponse.code === 226) {
             await chargingStation.ocppRequestService.requestHandler<
               OCPP16DiagnosticsStatusNotificationRequest,
@@ -1403,6 +1569,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           OCPP16IncomingRequestCommand.GET_DIAGNOSTICS
         )
       } catch (error) {
+        if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
+          ftpClient?.close()
+          return OCPP16Constants.OCPP_RESPONSE_EMPTY
+        }
         await chargingStation.ocppRequestService.requestHandler<
           OCPP16DiagnosticsStatusNotificationRequest,
           OCPP16DiagnosticsStatusNotificationResponse
@@ -1441,6 +1611,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
         status: OCPP16DiagnosticsStatus.UploadFailed,
       })
+      if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
+        return OCPP16Constants.OCPP_RESPONSE_EMPTY
+      }
       if (chargingStation.stationInfo != null) {
         chargingStation.stationInfo.diagnosticsStatus = OCPP16DiagnosticsStatus.UploadFailed
       }
@@ -1561,13 +1734,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         idTag
       )
     }
+    if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
+      return OCPP16Constants.OCPP_RESPONSE_REJECTED
+    }
     if (
       chargingProfile != null &&
-      !this.setRemoteStartTransactionChargingProfile(
-        chargingStation,
-        transactionConnectorId,
-        chargingProfile
-      )
+      !this.isRemoteStartTransactionChargingProfileValid(chargingStation, chargingProfile)
     ) {
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
@@ -1631,6 +1803,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     if (!(await isIdTagAuthorized(chargingStation, connectorId, idTag, AuthContext.RESERVATION))) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
+    if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
+      return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
+    }
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus == null) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
@@ -1638,7 +1813,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     resetAuthorizeConnectorStatus(connectorStatus)
     let response: OCPP16ReserveNowResponse
     try {
-      await removeExpiredReservations(chargingStation)
+      await removeExpiredReservations(chargingStation, () =>
+        this.isIncomingRequestDeliveryCurrent(chargingStation)
+      )
+      if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
+        return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
+      }
       switch (connectorStatus.status) {
         case OCPP16ChargePointStatus.Charging:
         case OCPP16ChargePointStatus.Finishing:
@@ -1664,10 +1844,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_OCCUPIED
             break
           }
-          await chargingStation.addReservation({
-            id: commandPayload.reservationId,
-            ...commandPayload,
-          })
+          if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
+            return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
+          }
+          await chargingStation.addReservation(
+            {
+              id: commandPayload.reservationId,
+              ...commandPayload,
+            },
+            () => this.isIncomingRequestDeliveryCurrent(chargingStation)
+          )
           response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_ACCEPTED
           break
       }
@@ -1703,11 +1889,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     const { type } = commandPayload
     const reason = `${type}Reset` as OCPP16StopTransactionReason
     const graceful = reason === OCPP16StopTransactionReason.SOFT_RESET
-    chargingStation.reset(reason, graceful).catch((error: unknown) => {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Reset error:`,
-        error
-      )
+    this.pendingResetActions.set(commandPayload, async lifecycleSignal => {
+      if (chargingStation.lifecycleAbortSignal !== lifecycleSignal || lifecycleSignal.aborted) {
+        return
+      }
+      await chargingStation.reset(reason, graceful)
     })
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: ${type} reset request received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
@@ -1899,9 +2085,133 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       case OCPP16MessageTrigger.DiagnosticsStatusNotification:
       case OCPP16MessageTrigger.FirmwareStatusNotification:
       case OCPP16MessageTrigger.Heartbeat:
-      case OCPP16MessageTrigger.MeterValues:
       case OCPP16MessageTrigger.StatusNotification:
         return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
+      case OCPP16MessageTrigger.MeterValues: {
+        const candidates =
+          connectorId != null
+            ? [{ connectorId, connectorStatus: chargingStation.getConnectorStatus(connectorId) }]
+            : [...chargingStation.iterateConnectors(true)]
+        if (isEmpty(candidates)) return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+
+        const plannedTransactions = new Map<ConnectorStatus, Set<number | undefined>>()
+        const resolvedCandidates: {
+          readonly connectorId: number
+          readonly connectorStatus: ConnectorStatus
+          readonly transactionId?: number
+        }[] = []
+        try {
+          for (const target of candidates) {
+            if (
+              target.connectorStatus == null ||
+              target.connectorStatus.transactionEnding === true
+            ) {
+              return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+            }
+            const transactionId =
+              target.connectorStatus.transactionStarted === true &&
+              target.connectorStatus.transactionId != null
+                ? convertToInt(target.connectorStatus.transactionId)
+                : undefined
+            const plannedForConnector = plannedTransactions.get(target.connectorStatus) ?? new Set()
+            if (
+              this.pendingTriggeredMeterValues.get(target.connectorStatus)?.has(transactionId) ===
+                true ||
+              plannedForConnector.has(transactionId)
+            ) {
+              return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+            }
+            plannedForConnector.add(transactionId)
+            plannedTransactions.set(target.connectorStatus, plannedForConnector)
+            resolvedCandidates.push({
+              connectorId: target.connectorId,
+              connectorStatus: target.connectorStatus,
+              transactionId,
+            })
+          }
+        } catch {
+          return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+        }
+
+        const targets: TriggeredMeterValueTarget[] = []
+        for (const target of resolvedCandidates) {
+          const delivery =
+            target.transactionId != null
+              ? TransactionMeterValueDeliveryBarrier.begin(
+                target.connectorStatus,
+                target.transactionId
+              )
+              : undefined
+          if (target.transactionId != null && delivery == null) {
+            for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
+            return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+          }
+          try {
+            const intervalState =
+              target.transactionId != null
+                ? captureTransactionIntervalState(target.connectorStatus)
+                : undefined
+            const meterValue = buildMeterValue(
+              chargingStation,
+              target.transactionId,
+              0,
+              OCPP16StandardParametersKey.MeterValuesSampledData,
+              OCPP16MeterValueContext.TRIGGER,
+              false,
+              { advanceEnergy: true, connectorId: target.connectorId, snapshot: true }
+            ) as OCPP16MeterValue
+            if (!isNotEmptyArray(meterValue.sampledValue)) {
+              delivery?.settle(true)
+              for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
+              return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+            }
+            const publicKeyIncluded =
+              target.transactionId != null &&
+              OCPP16ServiceUtils.appendSignedUpdatedReadings(
+                chargingStation,
+                target.connectorId,
+                target.transactionId,
+                meterValue,
+                OCPP16MeterValueContext.TRIGGER,
+                false
+              )
+            const request: OCPP16MeterValuesRequest = {
+              connectorId: target.connectorId,
+              meterValue: [meterValue],
+              ...(target.transactionId != null && { transactionId: target.transactionId }),
+            }
+            targets.push({
+              connectorStatus: target.connectorStatus,
+              delivery,
+              intervalState,
+              publicKeyIncluded,
+              request,
+              transactionId: target.transactionId,
+              triggerRequest: commandPayload,
+            })
+          } catch {
+            delivery?.settle(true)
+            for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
+            return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+          }
+        }
+
+        const stationState = this.getOrCreateStationState(chargingStation)
+        if (stationState.stopped === true) {
+          for (const target of targets) target.delivery?.settle(true)
+          return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+        }
+        stationState.triggeredMeterValueTargets ??= new Set()
+        for (const target of targets) {
+          const pendingTransactionIds =
+            this.pendingTriggeredMeterValues.get(target.connectorStatus) ?? new Set()
+          pendingTransactionIds.add(target.transactionId)
+          this.pendingTriggeredMeterValues.set(target.connectorStatus, pendingTransactionIds)
+          stationState.triggeredMeterValueTargets.add(target)
+        }
+        this.triggerMeterValuesReservations.set(commandPayload, targets)
+        return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
+      }
       default:
         return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED
     }
@@ -1925,20 +2235,34 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED
     }
     if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
-      const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
-        chargingStation,
-        connectorId,
-        OCPP16StopTransactionReason.UNLOCK_COMMAND
-      )
-      if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-        return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
+      try {
+        const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
+          chargingStation,
+          connectorId,
+          OCPP16StopTransactionReason.UNLOCK_COMMAND
+        )
+        if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+          return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
+        }
+      } catch (error) {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Error while stopping transaction on connector ${connectorId.toString()}:`,
+          error
+        )
       }
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_FAILED
     }
-    await sendAndSetConnectorStatus(chargingStation, {
-      connectorId,
-      status: OCPP16ChargePointStatus.Available,
-    })
+    await sendAndSetConnectorStatus(
+      chargingStation,
+      { connectorId, status: OCPP16ChargePointStatus.Available },
+      {
+        isOperationCurrent: () => this.isIncomingRequestDeliveryCurrent(chargingStation),
+        send: true,
+      }
+    )
+    if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
+      return OCPP16Constants.OCPP_RESPONSE_UNLOCK_FAILED
+    }
     chargingStation.unlockConnector(connectorId)
     return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
   }
@@ -1960,13 +2284,30 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
     commandPayload.retrieveDate = convertToDate(commandPayload.retrieveDate) ?? new Date()
-    if (this.stationsState.get(chargingStation)?.firmwareUpdateInProgress === true) {
+    if (this.getStationState(chargingStation)?.firmwareUpdateInProgress === true) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: firmware update is already in progress`
       )
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
     return OCPP16Constants.OCPP_RESPONSE_EMPTY
+  }
+
+  private isRemoteStartTransactionChargingProfileValid (
+    chargingStation: ChargingStation,
+    chargingProfile: OCPP16ChargingProfile
+  ): boolean {
+    const valid =
+      chargingProfile.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE &&
+      chargingProfile.transactionId == null
+    if (!valid) {
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.isRemoteStartTransactionChargingProfileValid: Not allowed to set ${
+          chargingProfile.chargingProfilePurpose
+        } charging profile(s)${chargingProfile.transactionId != null ? ' with transactionId set' : ''} at remote start transaction`
+      )
+    }
+    return valid
   }
 
   private notifyRemoteStartTransactionRejected (
@@ -1988,31 +2329,24 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }
 
-  private setRemoteStartTransactionChargingProfile (
-    chargingStation: ChargingStation,
-    connectorId: number,
-    chargingProfile: OCPP16ChargingProfile
-  ): boolean {
-    if (
-      chargingProfile.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE &&
-      chargingProfile.transactionId == null
-    ) {
-      OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, chargingProfile)
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.setRemoteStartTransactionChargingProfile: Charging profile(s) set at remote start transaction on ${
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          chargingStation.stationInfo?.chargingStationId
-        }#${connectorId.toString()}`,
-        chargingProfile
-      )
-      return true
+  private releaseTriggeredMeterValueTarget (
+    chargingStation: ChargingStation | undefined,
+    target: TriggeredMeterValueTarget,
+    definitivelyRejected: boolean,
+    stationState = chargingStation == null ? undefined : this.getStationState(chargingStation)
+  ): void {
+    if (target.reservationReleased === true) return
+    target.reservationReleased = true
+    target.delivery?.settle(definitivelyRejected)
+    const pendingTransactionIds = this.pendingTriggeredMeterValues.get(target.connectorStatus)
+    pendingTransactionIds?.delete(target.transactionId)
+    if (isEmpty(pendingTransactionIds)) {
+      this.pendingTriggeredMeterValues.delete(target.connectorStatus)
     }
-    logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.setRemoteStartTransactionChargingProfile: Not allowed to set ${
-        chargingProfile.chargingProfilePurpose
-      } charging profile(s)${chargingProfile.transactionId != null ? ' with transactionId set' : ''} at remote start transaction`
-    )
-    return false
+    stationState?.triggeredMeterValueTargets?.delete(target)
+    if (stationState?.triggeredMeterValueTargets?.size === 0) {
+      delete stationState.triggeredMeterValueTargets
+    }
   }
 
   private async updateFirmwareSimulation (

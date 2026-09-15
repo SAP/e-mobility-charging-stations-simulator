@@ -15,7 +15,7 @@ import {
   type OCPP16StatusNotificationRequest,
   OCPPVersion,
 } from '../../../types/index.js'
-import { assertIsJsonObject, logger } from '../../../utils/index.js'
+import { assertIsJsonObject, Constants, logger } from '../../../utils/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
 import { createPayloadValidatorMap } from '../OCPPServiceUtils.js'
@@ -86,8 +86,6 @@ export class OCPP16RequestService extends OCPPRequestService {
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType
   ): JsonType {
-    let connectorId: number | undefined
-    let energyActiveImportRegister: number
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building '${commandName}' payload`
     )
@@ -143,59 +141,63 @@ export class OCPP16RequestService extends OCPPRequestService {
           errorCode: ChargePointErrorCode.NO_ERROR,
           ...params,
         } as OCPP16StatusNotificationRequest)
-      case OCPP16RequestCommand.STOP_TRANSACTION:
-        ;(chargingStation.stationInfo?.transactionDataMeterValues === true ||
-          OCPP16ServiceUtils.isSigningEnabled(chargingStation)) &&
-          (connectorId = chargingStation.getConnectorIdByTransactionId(
-            params.transactionId as number
-          ))
-        energyActiveImportRegister = chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          params.transactionId as number,
-          true
-        )
-        {
-          let transactionData: OCPP16MeterValue[] | undefined
-          const transactionDataExplicit =
-            chargingStation.stationInfo?.transactionDataMeterValues === true
-          const signingForcesTransactionData = OCPP16ServiceUtils.isSigningEnabled(chargingStation)
-          if ((transactionDataExplicit || signingForcesTransactionData) && connectorId != null) {
-            if (transactionDataExplicit) {
+      case OCPP16RequestCommand.STOP_TRANSACTION: {
+        const transactionId = params.transactionId as number
+        const hasIdTag = Object.hasOwn(params, 'idTag')
+        const hasMeterStop = Object.hasOwn(params, 'meterStop')
+        const hasTimestamp = Object.hasOwn(params, 'timestamp')
+        const hasTransactionData = Object.hasOwn(params, 'transactionData')
+        const transactionDataEnabled =
+          chargingStation.stationInfo?.transactionDataMeterValues === true
+        const signingForcesTransactionData = OCPP16ServiceUtils.isSigningEnabled(chargingStation)
+        const buildTransactionData =
+          !hasTransactionData && (transactionDataEnabled || signingForcesTransactionData)
+        const connectorId = buildTransactionData
+          ? chargingStation.getConnectorIdByTransactionId(transactionId)
+          : undefined
+        const meterStop = hasMeterStop
+          ? (params.meterStop as number)
+          : chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId, true)
+        let transactionData: OCPP16MeterValue[] | undefined
+
+        if (buildTransactionData && connectorId != null) {
+          if (transactionDataEnabled) {
+            transactionData = OCPP16ServiceUtils.buildTransactionDataMeterValues(
+              chargingStation.getConnectorStatus(connectorId)
+                ?.transactionBeginMeterValue as OCPP16MeterValue,
+              OCPP16ServiceUtils.buildTransactionEndMeterValue(
+                chargingStation,
+                connectorId,
+                meterStop
+              )
+            )
+          } else {
+            try {
               transactionData = OCPP16ServiceUtils.buildTransactionDataMeterValues(
                 chargingStation.getConnectorStatus(connectorId)
                   ?.transactionBeginMeterValue as OCPP16MeterValue,
                 OCPP16ServiceUtils.buildTransactionEndMeterValue(
                   chargingStation,
                   connectorId,
-                  energyActiveImportRegister
+                  meterStop
                 )
               )
-            } else {
-              try {
-                transactionData = OCPP16ServiceUtils.buildTransactionDataMeterValues(
-                  chargingStation.getConnectorStatus(connectorId)
-                    ?.transactionBeginMeterValue as OCPP16MeterValue,
-                  OCPP16ServiceUtils.buildTransactionEndMeterValue(
-                    chargingStation,
-                    connectorId,
-                    energyActiveImportRegister
-                  )
-                )
-              } catch (error) {
-                logger.warn(
-                  `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Failed to build signed transaction data meter values for StopTransaction:`,
-                  error
-                )
-              }
+            } catch (error) {
+              logger.warn(
+                `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Failed to build signed transaction data meter values for StopTransaction:`,
+                error
+              )
             }
           }
-          return {
-            idTag: chargingStation.getTransactionIdTag(params.transactionId as number),
-            meterStop: energyActiveImportRegister,
-            timestamp: new Date(),
-            ...(transactionData != null && { transactionData }),
-            ...params,
-          }
         }
+        return {
+          ...(!hasIdTag && { idTag: chargingStation.getTransactionIdTag(transactionId) }),
+          ...(!hasMeterStop && { meterStop }),
+          ...(!hasTimestamp && { timestamp: new Date() }),
+          ...(transactionData != null && { transactionData }),
+          ...params,
+        }
+      }
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         const errorMsg = `Unsupported OCPP command ${commandName as string} for payload building`
@@ -205,6 +207,10 @@ export class OCPP16RequestService extends OCPPRequestService {
         throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, params)
       }
     }
+  }
+
+  protected getDefaultResponseTimeoutMs (_chargingStation: ChargingStation): number {
+    return Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS * 1000
   }
 
   /**

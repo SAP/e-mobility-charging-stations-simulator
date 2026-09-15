@@ -18,6 +18,7 @@ import {
   type OCPP20CertificateSignedRequest,
   type OCPP20CertificateSignedResponse,
   OCPP20ComponentName,
+  OCPP20IncomingRequestCommand,
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
   OCPPVersion,
@@ -88,6 +89,96 @@ await describe('I04 - CertificateSigned', async () => {
       assert.strictEqual(typeof response.status, 'string')
       assert.strictEqual(response.status, GenericStatus.Accepted)
       assert.strictEqual(closeWSConnectionMock.mock.callCount(), 1)
+    })
+
+    await it('should retain a durable store result without mutating a replacement lifecycle', async () => {
+      const storeStarted = Promise.withResolvers<undefined>()
+      const releaseStore = Promise.withResolvers<undefined>()
+      let storeCompleted = false
+      const certificateManager = createMockCertificateManager({ storeCertificateResult: true })
+      mock.method(certificateManager, 'storeCertificate', async () => {
+        storeStarted.resolve(undefined)
+        await releaseStore.promise
+        storeCompleted = true
+        return true
+      })
+      stationWithCertManager.certificateManager = certificateManager
+      const service = new OCPP20IncomingRequestService()
+      const lifecycle = station as unknown as { lifecycleAbortController: AbortController }
+      lifecycle.lifecycleAbortController = new AbortController()
+      Object.defineProperty(station, 'lifecycleAbortSignal', {
+        configurable: true,
+        get: () => lifecycle.lifecycleAbortController.signal,
+      })
+      station.started = true
+      station.inAcceptedState = () => true
+      station.recordRequestStatistic = () => undefined
+      service.activate(station, station.lifecycleAbortSignal)
+      const sendResponse = mock.method(
+        station.ocppRequestService,
+        'sendResponse',
+        (): Promise<void> => Promise.resolve()
+      )
+      const handlers = service as unknown as {
+        incomingRequestHandlers: Map<
+          OCPP20IncomingRequestCommand,
+          (
+            chargingStation: ChargingStation,
+            request: OCPP20CertificateSignedRequest
+          ) => Promise<OCPP20CertificateSignedResponse>
+        >
+        stationsState: WeakMap<
+          ChargingStation,
+          { certSigningRetryManager?: { cancelRetryTimer: () => void } }
+        >
+      }
+      const originalHandler = handlers.incomingRequestHandlers.get(
+        OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED
+      )
+      assert.ok(originalHandler != null)
+      let handledResponse: OCPP20CertificateSignedResponse | undefined
+      handlers.incomingRequestHandlers.set(
+        OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
+        async (chargingStation, request) => {
+          handledResponse = await originalHandler(chargingStation, request)
+          return handledResponse
+        }
+      )
+      let lifecycleCurrent = true
+      const handling = service.incomingRequestHandler(
+        station,
+        'durable-certificate-store',
+        OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
+        {
+          certificateChain: VALID_PEM_CERTIFICATE,
+          certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+        },
+        station.lifecycleAbortSignal,
+        () => lifecycleCurrent,
+        () => true
+      )
+      const firstSettlement = await Promise.race([
+        storeStarted.promise.then(() => 'store-started'),
+        handling.then(() => 'handling-completed'),
+      ])
+      assert.strictEqual(firstSettlement, 'store-started')
+      lifecycleCurrent = false
+      lifecycle.lifecycleAbortController.abort()
+      lifecycle.lifecycleAbortController = new AbortController()
+      service.activate(station, station.lifecycleAbortSignal)
+      const cancelRetryTimer = mock.fn()
+      const replacementState = handlers.stationsState.get(station)
+      assert.ok(replacementState != null)
+      replacementState.certSigningRetryManager = { cancelRetryTimer }
+
+      releaseStore.resolve(undefined)
+      await handling
+
+      assert.strictEqual(storeCompleted, true)
+      assert.strictEqual(handledResponse?.status, GenericStatus.Accepted)
+      assert.strictEqual(closeWSConnectionMock.mock.callCount(), 0)
+      assert.strictEqual(cancelRetryTimer.mock.callCount(), 0)
+      assert.strictEqual(sendResponse.mock.callCount(), 0)
     })
 
     await it('should accept single certificate (no chain)', async () => {

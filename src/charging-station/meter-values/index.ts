@@ -24,7 +24,10 @@
  *     `deriveSeed`, `createStreamPrng`).
  */
 
-export { buildCoherentMeterValue } from './CoherentMeterValueBuilder.js'
+export {
+  buildCoherentMeterValue,
+  buildCoherentMeterValueSnapshot,
+} from './CoherentMeterValueBuilder.js'
 export type { BuildVersionedSampledValue } from './CoherentMeterValueBuilder.js'
 export { disposeCoherentSessionRuntime } from './CoherentSampleComputer.js'
 export { createCoherentSession, isCoherentModeActive, resolveRootSeed } from './CoherentSession.js'

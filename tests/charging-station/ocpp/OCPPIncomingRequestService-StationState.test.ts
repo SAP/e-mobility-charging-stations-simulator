@@ -32,10 +32,20 @@ interface OCPP16StationStateShape {
 }
 
 interface PlumbingAccess<T extends { stopped?: boolean }> {
+  activate: (chargingStation: ChargingStation, lifecycleSignal: AbortSignal) => void
   createStationState: () => T
   getOrCreateStationState: (chargingStation: ChargingStation) => T
+  incomingRequestHandlers: Map<
+    unknown,
+    (
+      chargingStation: ChargingStation,
+      payload: Record<string, never>
+    ) => Promise<Record<string, never>>
+  >
+  isIncomingRequestCommandSupported: (...args: unknown[]) => boolean
   resetStationState: (state: T) => void
   stationsState: WeakMap<ChargingStation, T>
+  validateIncomingRequestPayload: (...args: unknown[]) => void
 }
 
 const asPlumbing = (
@@ -99,6 +109,53 @@ await describe('OCPPIncomingRequestService — per-station state plumbing', asyn
     assert.strictEqual(afterStop, first)
     assert.strictEqual(afterStop.stopped, true)
     assert.strictEqual(createSpy.mock.callCount(), 0)
+  })
+
+  await it('should install fresh state when the same station starts a new lifecycle', () => {
+    const first = plumbing.getOrCreateStationState(stationA)
+    service.stop(stationA)
+
+    plumbing.activate(stationA, stationA.lifecycleAbortSignal)
+    const restarted = plumbing.getOrCreateStationState(stationA)
+
+    assert.notStrictEqual(restarted, first)
+    assert.strictEqual(first.stopped, true)
+    assert.strictEqual(restarted.stopped, undefined)
+    assert.strictEqual(plumbing.stationsState.get(stationA), restarted)
+  })
+
+  await it('should bind a nested post-restart CALL to the fresh station state', async () => {
+    const oldState = plumbing.getOrCreateStationState(stationA)
+    const outerCommand = 'OuterInheritedCall' as Parameters<
+      OCPP16IncomingRequestService['incomingRequestHandler']
+    >[2]
+    const nestedCommand = 'NestedRestartedCall' as Parameters<
+      OCPP16IncomingRequestService['incomingRequestHandler']
+    >[2]
+    let freshState: OCPP16StationStateShape | undefined
+    let nestedState: OCPP16StationStateShape | undefined
+    mock.method(plumbing, 'isIncomingRequestCommandSupported', () => true)
+    mock.method(plumbing, 'validateIncomingRequestPayload', () => undefined)
+    mock.method(stationA, 'inAcceptedState', () => true)
+    mock.method(stationA.ocppRequestService, 'sendResponse', () => Promise.resolve())
+    plumbing.incomingRequestHandlers.set(nestedCommand, () => {
+      nestedState = plumbing.getOrCreateStationState(stationA)
+      return Promise.resolve({})
+    })
+    plumbing.incomingRequestHandlers.set(outerCommand, async () => {
+      service.stop(stationA)
+      plumbing.activate(stationA, stationA.lifecycleAbortSignal)
+      freshState = plumbing.stationsState.get(stationA)
+      await service.incomingRequestHandler(stationA, 'nested-call', nestedCommand, {})
+      return {}
+    })
+
+    await service.incomingRequestHandler(stationA, 'outer-call', outerCommand, {})
+
+    assert.ok(freshState != null)
+    assert.notStrictEqual(freshState, oldState)
+    assert.strictEqual(oldState.stopped, true)
+    assert.strictEqual(nestedState, freshState)
   })
 
   await it('should invoke resetStationState exactly once with the current state on stop()', () => {

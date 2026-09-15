@@ -17,19 +17,33 @@ import type {
   OCPP16FirmwareStatusNotificationRequest,
   OCPP16TriggerMessageRequest,
   OCPP16TriggerMessageResponse,
+  RequestParams,
 } from '../../../../src/types/index.js'
 
+import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/TransactionMeterValueDeliveryBarrier.js'
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
+import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
+import { OCPPError } from '../../../../src/exception/index.js'
 import {
+  CurrentType,
+  ErrorType,
+  OCPP16AuthorizationStatus,
   OCPP16DiagnosticsStatus,
   OCPP16FirmwareStatus,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
+  OCPP16MeterValueFormat,
+  OCPP16MeterValueLocation,
+  OCPP16MeterValueMeasurand,
+  type OCPP16MeterValuesRequest,
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
   OCPP16StandardParametersKey,
   OCPP16TriggerMessageStatus,
+  OCPP16VendorParametersKey,
   OCPPVersion,
+  PublicKeyWithSignedMeterValueEnumType,
 } from '../../../../src/types/index.js'
 import { Constants, logger } from '../../../../src/utils/index.js'
 import {
@@ -37,9 +51,13 @@ import {
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import {
+  TEST_CHARGING_STATION_BASE_NAME,
+  TEST_PUBLIC_KEY_HEX,
+} from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import {
+  createMeterValuesTemplate,
   createOCPP16EvseBackedContext,
   createOCPP16IncomingRequestTestContext,
   createOCPP16ListenerStation,
@@ -78,9 +96,17 @@ const emitAcceptedTrigger = (
   station: ChargingStation,
   request: OCPP16TriggerMessageRequest
 ): void => {
-  const response: OCPP16TriggerMessageResponse = {
-    status: OCPP16TriggerMessageStatus.ACCEPTED,
+  if (request.requestedMessage === OCPP16MessageTrigger.MeterValues) {
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
   }
+  const response: OCPP16TriggerMessageResponse =
+    request.requestedMessage === OCPP16MessageTrigger.MeterValues
+      ? createTestableIncomingRequestService(service).handleRequestTriggerMessage(station, request)
+      : { status: OCPP16TriggerMessageStatus.ACCEPTED }
   service.emit(OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, station, request, response)
 }
 
@@ -152,6 +178,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
     await it('should return Accepted for MeterValues trigger', () => {
       // Arrange
       const { station, testableService } = context
+      enableConnectorMeterValues(station, 1)
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {
@@ -164,7 +191,841 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
     })
   })
 
+  await it('should keep active transaction interval state unchanged during MeterValues admission', () => {
+    const { station, testableService } = createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.MeterValuesSampledData,
+      OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+    )
+    setupConnectorWithTransaction(station, 1, { energyImport: 150, transactionId: 100 })
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.MeterValues = createMeterValuesTemplate([
+      {
+        measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+        unit: OCPP16MeterValueUnit.WATT_HOUR,
+        value: '0',
+      },
+    ])
+    const lastUpdatedAt = new Date('2026-09-12T12:00:00.000Z')
+    connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = lastUpdatedAt
+    connectorStatus.transactionEnergyActiveImportIntervalBaselines = { default: 120 }
+    connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 7 }
+
+    const response = testableService.handleRequestTriggerMessage(station, {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    })
+
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 150)
+    assert.strictEqual(
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt,
+      lastUpdatedAt
+    )
+    assert.deepStrictEqual(connectorStatus.transactionEnergyActiveImportIntervalBaselines, {
+      default: 120,
+    })
+    assert.deepStrictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry, {
+      default: 7,
+    })
+  })
+
+  await it('should bound pending triggered MeterValues per connector transaction', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    const firstStarted = Promise.withResolvers<undefined>()
+    const releaseFirst = Promise.withResolvers<undefined>()
+    let meterValuesCount = 0
+    ;(
+      station.ocppRequestService as unknown as {
+        requestHandler: (...args: unknown[]) => Promise<unknown>
+      }
+    ).requestHandler = mock.fn(async (...args: unknown[]) => {
+      if (args[1] !== OCPP16RequestCommand.METER_VALUES) return {}
+      meterValuesCount++
+      const params = args[3] as RequestParams
+      params.onMessageSent?.()
+      if (meterValuesCount === 1) {
+        firstStarted.resolve(undefined)
+        await releaseFirst.promise
+      }
+      params.onResponseReceived?.()
+      return {}
+    })
+    const firstRequest: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const firstResponse = testableService.handleRequestTriggerMessage(station, firstRequest)
+    assert.strictEqual(firstResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      firstRequest,
+      firstResponse
+    )
+    await firstStarted.promise
+
+    const secondResponse = testableService.handleRequestTriggerMessage(station, {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    })
+    assert.strictEqual(secondResponse.status, OCPP16TriggerMessageStatus.REJECTED)
+    assert.strictEqual(meterValuesCount, 1)
+
+    releaseFirst.resolve(undefined)
+    await flushMicrotasks()
+    const thirdRequest: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const thirdResponse = testableService.handleRequestTriggerMessage(station, thirdRequest)
+    assert.strictEqual(thirdResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      thirdRequest,
+      thirdResponse
+    )
+    await flushMicrotasks()
+    assert.strictEqual(meterValuesCount, 2)
+  })
+
+  await it('should release a pending trigger when its response cannot be sent', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    ;(
+      station.ocppRequestService as unknown as {
+        sendResponse: (...args: unknown[]) => Promise<unknown>
+      }
+    ).sendResponse = mock.fn(async () => Promise.reject(new Error('response send failed')))
+
+    await assert.rejects(
+      incomingRequestService.incomingRequestHandler<
+        OCPP16TriggerMessageRequest,
+        OCPP16TriggerMessageResponse
+      >(station, 'trigger-response-failure', OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, {
+        connectorId: 1,
+        requestedMessage: OCPP16MessageTrigger.MeterValues,
+      }),
+      /response send failed/u
+    )
+
+    const nextResponse = testableService.handleRequestTriggerMessage(station, {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    })
+    assert.strictEqual(nextResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.stop(station)
+  })
+
+  await it('should cancel a reserved trigger when the station lifecycle stops', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    const requestHandler = setRecordingRequestHandler(station)
+    const request: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const response = testableService.handleRequestTriggerMessage(station, request)
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+
+    incomingRequestService.stop(station)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      request,
+      response
+    )
+    await flushMicrotasks()
+
+    assert.strictEqual(requestHandler.mock.calls.length, 0)
+    assert.deepStrictEqual(
+      await TransactionMeterValueDeliveryBarrier.wait(connectorStatus, 100),
+      []
+    )
+  })
+
+  await it('should roll back a station-wide reservation when one connector is unavailable', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    setupConnectorWithTransaction(station, 2, { transactionId: 200 })
+    enableConnectorMeterValues(station, 1)
+    enableConnectorMeterValues(station, 2)
+
+    const secondConnectorRequest: OCPP16TriggerMessageRequest = {
+      connectorId: 2,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const secondConnectorResponse = testableService.handleRequestTriggerMessage(
+      station,
+      secondConnectorRequest
+    )
+    assert.strictEqual(secondConnectorResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+
+    const stationWideResponse = testableService.handleRequestTriggerMessage(station, {
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    })
+    assert.strictEqual(stationWideResponse.status, OCPP16TriggerMessageStatus.REJECTED)
+
+    const firstConnectorRequest: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const firstConnectorResponse = testableService.handleRequestTriggerMessage(
+      station,
+      firstConnectorRequest
+    )
+    assert.strictEqual(firstConnectorResponse.status, OCPP16TriggerMessageStatus.ACCEPTED)
+
+    setRecordingRequestHandler(station)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      firstConnectorRequest,
+      firstConnectorResponse
+    )
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      secondConnectorRequest,
+      secondConnectorResponse
+    )
+    await flushMicrotasks()
+  })
+
+  await it('should not commit a trigger public key when a later connector rejects admission', () => {
+    const { station, testableService } = createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+    upsertConfigurationKey(
+      station,
+      OCPP16VendorParametersKey.SampledDataSignUpdatedReadings,
+      'true'
+    )
+    upsertConfigurationKey(
+      station,
+      OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
+      PublicKeyWithSignedMeterValueEnumType.OncePerTransaction
+    )
+    upsertConfigurationKey(
+      station,
+      `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+      TEST_PUBLIC_KEY_HEX
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    setupConnectorWithTransaction(station, 2, { transactionId: 200 })
+    enableConnectorMeterValues(station, 1)
+    const firstConnector = station.getConnectorStatus(1)
+    const secondConnector = station.getConnectorStatus(2)
+    assert.ok(firstConnector != null)
+    assert.ok(secondConnector != null)
+    firstConnector.publicKeySentInTransaction = false
+    secondConnector.MeterValues = []
+
+    const response = testableService.handleRequestTriggerMessage(station, {
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    })
+
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.REJECTED)
+    assert.strictEqual(firstConnector.publicKeySentInTransaction, false)
+  })
+
+  await it('should commit a trigger public key only when MeterValues owns delivery', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+    upsertConfigurationKey(
+      station,
+      OCPP16VendorParametersKey.SampledDataSignUpdatedReadings,
+      'true'
+    )
+    upsertConfigurationKey(
+      station,
+      OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
+      PublicKeyWithSignedMeterValueEnumType.OncePerTransaction
+    )
+    upsertConfigurationKey(
+      station,
+      `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+      TEST_PUBLIC_KEY_HEX
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.publicKeySentInTransaction = false
+    setRecordingRequestHandler(station)
+    const request: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+
+    const response = testableService.handleRequestTriggerMessage(station, request)
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      request,
+      response
+    )
+    await flushMicrotasks()
+
+    assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+  })
+
+  await it('should coalesce periodic MeterValues behind an accepted trigger snapshot', async t => {
+    t.mock.timers.enable({ apis: ['setInterval'] })
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    const triggeredStarted = Promise.withResolvers<undefined>()
+    const releaseTriggered = Promise.withResolvers<undefined>()
+    const periodicStarted = Promise.withResolvers<undefined>()
+    const deliveryOrder: string[] = []
+    let meterValuesCount = 0
+    ;(
+      station.ocppRequestService as unknown as {
+        requestHandler: (...args: unknown[]) => Promise<unknown>
+      }
+    ).requestHandler = async (...args: unknown[]) => {
+      if (args[1] !== OCPP16RequestCommand.METER_VALUES) return {}
+      meterValuesCount++
+      const requestParams = args[3] as RequestParams
+      deliveryOrder.push(meterValuesCount === 1 ? 'triggered' : 'periodic')
+      requestParams.onMessageSent?.()
+      if (meterValuesCount === 1) {
+        triggeredStarted.resolve(undefined)
+        await releaseTriggered.promise
+      } else {
+        periodicStarted.resolve(undefined)
+      }
+      requestParams.onResponseReceived?.()
+      return {}
+    }
+    const request: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const response = testableService.handleRequestTriggerMessage(station, request)
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      request,
+      response
+    )
+    await triggeredStarted.promise
+
+    OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 1000)
+    t.mock.timers.tick(1000)
+    await flushMicrotasks()
+    assert.deepStrictEqual(deliveryOrder, ['triggered'])
+
+    releaseTriggered.resolve(undefined)
+    await flushMicrotasks()
+    assert.deepStrictEqual(deliveryOrder, ['triggered'])
+    t.mock.timers.tick(1000)
+    await periodicStarted.promise
+    assert.deepStrictEqual(deliveryOrder, ['triggered', 'periodic'])
+    OCPP16ServiceUtils.stopUpdatedMeterValues(station, 1)
+  })
+
+  await it('should emit one accepted trigger behind a pending periodic MeterValues request', async t => {
+    t.mock.timers.enable({ apis: ['setInterval'] })
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    enableConnectorMeterValues(station, 1)
+    const releasePeriodic = Promise.withResolvers<undefined>()
+    const triggeredStarted = Promise.withResolvers<undefined>()
+    const deliveryOrder: string[] = []
+    let meterValuesCount = 0
+    ;(
+      station.ocppRequestService as unknown as {
+        requestHandler: (...args: unknown[]) => Promise<unknown>
+      }
+    ).requestHandler = async (...args: unknown[]) => {
+      if (args[1] !== OCPP16RequestCommand.METER_VALUES) return {}
+      const requestParams = args[3] as RequestParams
+      meterValuesCount++
+      if (requestParams.triggerMessage === true) {
+        deliveryOrder.push('triggered')
+        triggeredStarted.resolve(undefined)
+      } else {
+        deliveryOrder.push('periodic')
+        await releasePeriodic.promise
+      }
+      requestParams.onResponseReceived?.()
+      return {}
+    }
+
+    OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 1000)
+    t.mock.timers.tick(1000)
+    await flushMicrotasks()
+    assert.deepStrictEqual(deliveryOrder, ['periodic'])
+
+    const request: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const response = testableService.handleRequestTriggerMessage(station, request)
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      request,
+      response
+    )
+    await flushMicrotasks()
+    assert.deepStrictEqual(deliveryOrder, ['periodic'])
+
+    releasePeriodic.resolve(undefined)
+    await triggeredStarted.promise
+    assert.deepStrictEqual(deliveryOrder, ['periodic', 'triggered'])
+    assert.strictEqual(meterValuesCount, 2)
+    OCPP16ServiceUtils.stopUpdatedMeterValues(station, 1)
+  })
+
+  await it('should preserve restored and newly accrued interval energy behind a rejected predecessor', async t => {
+    t.mock.timers.enable({ apis: ['setInterval'] })
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.MeterValuesSampledData,
+      OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.MeterValues = createMeterValuesTemplate([
+      {
+        measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+        unit: OCPP16MeterValueUnit.WATT_HOUR,
+        value: '0',
+      },
+    ])
+    connectorStatus.transactionStart = new Date(Date.now() + 60_000)
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+    connectorStatus.transactionEnergyActiveImportIntervalBaselines = { default: 0 }
+    connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 50 }
+    const predecessorStarted = Promise.withResolvers<undefined>()
+    const releasePredecessor = Promise.withResolvers<undefined>()
+    const triggerStarted = Promise.withResolvers<undefined>()
+    const failure = new OCPPError(ErrorType.GENERIC_ERROR, 'predecessor rejected')
+    let predecessorInterval: string | undefined
+    let triggeredInterval: string | undefined
+    ;(
+      station.ocppRequestService as unknown as {
+        requestHandler: (...args: unknown[]) => Promise<unknown>
+      }
+    ).requestHandler = async (...args: unknown[]) => {
+      if (args[1] !== OCPP16RequestCommand.METER_VALUES) return {}
+      const payload = args[2] as OCPP16MeterValuesRequest
+      const requestParams = args[3] as RequestParams
+      const interval = payload.meterValue[0].sampledValue.find(
+        sample => sample.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+      )?.value
+      if (requestParams.triggerMessage === true) {
+        triggeredInterval = interval
+        requestParams.onMessageSent?.()
+        requestParams.onResponseReceived?.()
+        triggerStarted.resolve(undefined)
+        return {}
+      }
+      predecessorInterval = interval
+      predecessorStarted.resolve(undefined)
+      await releasePredecessor.promise
+      requestParams.onTransportError?.(failure, false)
+      throw failure
+    }
+
+    OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 1000)
+    t.mock.timers.tick(1000)
+    await predecessorStarted.promise
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 20
+    const request: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+    const response = testableService.handleRequestTriggerMessage(station, request)
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      request,
+      response
+    )
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 30
+    await flushMicrotasks()
+    assert.strictEqual(triggeredInterval, undefined)
+
+    releasePredecessor.resolve(undefined)
+    await triggerStarted.promise
+    OCPP16ServiceUtils.stopUpdatedMeterValues(station, 1)
+
+    assert.strictEqual(predecessorInterval, '50')
+    assert.strictEqual(triggeredInterval, '20')
+    assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalBaselines.default, 30)
+    assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry.default, 60)
+  })
+
+  await it('should emit the admitted MeterValues snapshot when its transaction starts ending', async () => {
+    const { incomingRequestService, station, testableService } =
+      createOCPP16IncomingRequestTestContext()
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.SupportedFeatureProfiles,
+      'Core,RemoteTrigger'
+    )
+    upsertConfigurationKey(
+      station,
+      OCPP16StandardParametersKey.MeterValuesSampledData,
+      OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    )
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.MeterValues = createMeterValuesTemplate([
+      {
+        measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+        unit: OCPP16MeterValueUnit.WATT_HOUR,
+        value: '0',
+      },
+    ])
+    connectorStatus.energyActiveImportRegisterValue = 150
+    const requestHandler = setRecordingRequestHandler(station)
+    const request: OCPP16TriggerMessageRequest = {
+      connectorId: 1,
+      requestedMessage: OCPP16MessageTrigger.MeterValues,
+    }
+
+    const response = testableService.handleRequestTriggerMessage(station, request)
+    assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    connectorStatus.transactionEnding = true
+    connectorStatus.energyActiveImportRegisterValue = 999
+    connectorStatus.MeterValues = []
+    incomingRequestService.emit(
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      station,
+      request,
+      response
+    )
+    await flushMicrotasks()
+
+    const meterValuesCall = requestHandler.mock.calls.find(
+      call => call.arguments[1] === OCPP16RequestCommand.METER_VALUES
+    )
+    assert.ok(meterValuesCall != null)
+    const payload = meterValuesCall.arguments[2] as OCPP16MeterValuesRequest
+    assert.strictEqual(payload.transactionId, 100)
+    const energyRegisterSample = payload.meterValue[0].sampledValue.find(
+      sampledValue =>
+        sampledValue.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    )
+    assert.strictEqual(energyRegisterSample?.value, '150')
+  })
+
+  await describe('MeterValues idle snapshots', async () => {
+    await it('should emit the configured current connector snapshot without a transactionId', async () => {
+      const { incomingRequestService, station, testableService } =
+        createOCPP16IncomingRequestTestContext()
+      upsertConfigurationKey(
+        station,
+        OCPP16StandardParametersKey.SupportedFeatureProfiles,
+        'Core,RemoteTrigger'
+      )
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.MeterValues = createMeterValuesTemplate([
+        {
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '37',
+        },
+      ])
+      connectorStatus.energyActiveImportRegisterValue = 37
+      const handler = setRecordingRequestHandler(station)
+      const request: OCPP16TriggerMessageRequest = {
+        connectorId: 1,
+        requestedMessage: OCPP16MessageTrigger.MeterValues,
+      }
+      const response = testableService.handleRequestTriggerMessage(station, request)
+
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+      incomingRequestService.emit(
+        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+        station,
+        request,
+        response
+      )
+      await flushMicrotasks()
+
+      const payload = handler.mock.calls[0].arguments[2] as {
+        meterValue: { sampledValue: { context?: string; measurand?: string; value: string }[] }[]
+        transactionId?: number
+      }
+      assert.strictEqual(payload.transactionId, undefined)
+      assert.deepStrictEqual(payload.meterValue[0].sampledValue, [
+        {
+          context: 'Trigger',
+          location: 'Outlet',
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '37',
+        },
+      ])
+    })
+
+    await it('should reject before Accepted when an idle connector has no configured sample', () => {
+      const { station, testableService } = createOCPP16IncomingRequestTestContext()
+      upsertConfigurationKey(
+        station,
+        OCPP16StandardParametersKey.SupportedFeatureProfiles,
+        'Core,RemoteTrigger'
+      )
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.MeterValues = []
+
+      const response = testableService.handleRequestTriggerMessage(station, {
+        connectorId: 1,
+        requestedMessage: OCPP16MessageTrigger.MeterValues,
+      })
+
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.REJECTED)
+    })
+  })
+
   await describe('MeterValues broadcast (no connectorId, station-wide scan)', async () => {
+    await it('should restore triggered interval energy only when delivery was certainly not sent', async () => {
+      const runFailure = async (
+        configureDelivery: (params: RequestParams, failure: OCPPError) => void
+      ): Promise<{ carry: number; represented: string }> => {
+        const { incomingRequestService, station } = createOCPP16IncomingRequestTestContext()
+        assert.ok(station.stationInfo != null)
+        station.stationInfo.currentOutType = CurrentType.DC
+        station.stationInfo.conversionEfficiency = 0.9
+        setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+        const connectorStatus = station.getConnectorStatus(1)
+        assert.ok(connectorStatus != null)
+        connectorStatus.MeterValues = createMeterValuesTemplate([
+          {
+            location: OCPP16MeterValueLocation.INLET,
+            measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+            unit: OCPP16MeterValueUnit.WATT_HOUR,
+            value: '0',
+          },
+        ])
+        connectorStatus.transactionStart = new Date(Date.now() + 60_000)
+        connectorStatus.transactionEnergyActiveImportIntervalCarry = { default: 90 }
+        upsertConfigurationKey(
+          station,
+          OCPP16StandardParametersKey.MeterValuesSampledData,
+          OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+        )
+        const failure = new OCPPError(ErrorType.GENERIC_ERROR, 'triggered MeterValues failed')
+        let represented: string | undefined
+        ;(
+          station.ocppRequestService as unknown as {
+            requestHandler: (...args: unknown[]) => Promise<unknown>
+          }
+        ).requestHandler = mock.fn((...args: unknown[]) => {
+          const payload = args[2] as OCPP16MeterValuesRequest
+          represented = payload.meterValue[0].sampledValue.find(
+            sample => sample.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+          )?.value
+          configureDelivery(args[3] as RequestParams, failure)
+          return Promise.reject(failure)
+        })
+
+        emitAcceptedTrigger(incomingRequestService, station, {
+          connectorId: 1,
+          requestedMessage: OCPP16MessageTrigger.MeterValues,
+        })
+        await flushMicrotasks()
+        assert.ok(represented != null)
+        return {
+          carry: connectorStatus.transactionEnergyActiveImportIntervalCarry.default,
+          represented,
+        }
+      }
+
+      const preSendFailure = await runFailure((params, failure) =>
+        params.onTransportError?.(failure, false)
+      )
+      assert.deepStrictEqual(preSendFailure, { carry: 90, represented: '100' })
+      const callError = await runFailure((params, failure) => params.onError?.(failure, true))
+      assert.deepStrictEqual(callError, { carry: 90, represented: '100' })
+      const sentFailure = await runFailure(params => params.onMessageSent?.())
+      assert.deepStrictEqual(sentFailure, { carry: 0, represented: '100' })
+      const ambiguousFailure = await runFailure((params, failure) =>
+        params.onTransportError?.(failure, true)
+      )
+      assert.deepStrictEqual(ambiguousFailure, { carry: 0, represented: '100' })
+    })
+
+    await it('should settle signed triggered MeterValues before StopTransaction is built', async () => {
+      const { incomingRequestService, station } = createOCPP16IncomingRequestTestContext()
+      setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.MeterValues = createMeterValuesTemplate([
+        {
+          measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP16MeterValueUnit.WATT_HOUR,
+          value: '0',
+        },
+      ])
+      if (station.stationInfo != null) {
+        station.stationInfo.meterSerialNumber = 'SIM-001'
+        station.stationInfo.transactionDataMeterValues = true
+      }
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+      upsertConfigurationKey(
+        station,
+        OCPP16VendorParametersKey.SampledDataSignUpdatedReadings,
+        'true'
+      )
+      upsertConfigurationKey(
+        station,
+        OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
+        PublicKeyWithSignedMeterValueEnumType.OncePerTransaction
+      )
+      upsertConfigurationKey(
+        station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
+      const triggeredStarted = Promise.withResolvers<undefined>()
+      const releaseTriggered = Promise.withResolvers<undefined>()
+      let stopPublicKey: string | undefined
+      let stopSent = false
+      let triggerPublicKey: string | undefined
+      ;(
+        station.ocppRequestService as unknown as {
+          requestHandler: (...args: unknown[]) => Promise<unknown>
+        }
+      ).requestHandler = mock.fn(async (...args: unknown[]) => {
+        const command = args[1] as OCPP16RequestCommand
+        const params = args[3] as RequestParams
+        if (command === OCPP16RequestCommand.METER_VALUES) {
+          const payload = args[2] as {
+            meterValue: { sampledValue: { context?: string; format?: string; value: string }[] }[]
+          }
+          const signedSample = payload.meterValue[0].sampledValue.find(
+            sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA
+          )
+          const rawSample = payload.meterValue[0].sampledValue.find(
+            sampledValue => sampledValue.format !== OCPP16MeterValueFormat.SIGNED_DATA
+          )
+          assert.strictEqual(rawSample?.context, 'Trigger')
+          if (signedSample != null) {
+            triggerPublicKey = (JSON.parse(signedSample.value) as { publicKey?: string }).publicKey
+          }
+          params.onMessageSent?.()
+          triggeredStarted.resolve(undefined)
+          await releaseTriggered.promise
+          params.onResponseReceived?.()
+          return {}
+        }
+        if (command === OCPP16RequestCommand.STOP_TRANSACTION) {
+          const payload = args[2] as {
+            transactionData?: (undefined | { sampledValue: { format?: string; value: string }[] })[]
+          }
+          const signedSample = payload.transactionData
+            ?.flatMap(meterValue => meterValue?.sampledValue ?? [])
+            .find(sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA)
+          if (signedSample != null) {
+            stopPublicKey = (JSON.parse(signedSample.value) as { publicKey?: string }).publicKey
+          }
+          stopSent = true
+          params.onMessageSent?.()
+          return { idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } }
+        }
+        return {}
+      })
+
+      emitAcceptedTrigger(incomingRequestService, station, {
+        connectorId: 1,
+        requestedMessage: OCPP16MessageTrigger.MeterValues,
+      })
+      await triggeredStarted.promise
+      const stop = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+      await flushMicrotasks()
+
+      assert.strictEqual(typeof triggerPublicKey, 'string')
+      assert.notStrictEqual(triggerPublicKey, '')
+      assert.strictEqual(stopSent, false)
+      releaseTriggered.resolve(undefined)
+      await stop
+      assert.strictEqual(stopSent, true)
+      assert.strictEqual(stopPublicKey, '')
+    })
+
     await it('should broadcast MeterValues for both contiguous transacting connectors', async () => {
       const { incomingRequestService, station } = createOCPP16IncomingRequestTestContext({
         connectorsCount: 2,

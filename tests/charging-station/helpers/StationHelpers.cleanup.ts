@@ -27,6 +27,8 @@ import { MockIdTagsCache, MockSharedLRUCache } from '../mocks/MockCaches.js'
  * ```
  */
 export function cleanupChargingStation (station: ChargingStation): void {
+  if (typeof station.stopAlignedMeterValues === 'function') station.stopAlignedMeterValues()
+
   // Stop heartbeat timer
   if (station.heartbeatSetInterval != null) {
     clearInterval(station.heartbeatSetInterval)

@@ -21,6 +21,9 @@ export interface EvseEntryData {
 export interface EvseStatus {
   availability: AvailabilityType
   connectors: Map<number, ConnectorStatus>
+  energyActiveImportIntervalBaseline?: number // In Wh
+  energyActiveImportRegisterLastUpdatedAt?: Date
+  energyActiveImportRegisterValue?: number // In Wh
   MeterValues?: SampledValueTemplate[]
 }
 

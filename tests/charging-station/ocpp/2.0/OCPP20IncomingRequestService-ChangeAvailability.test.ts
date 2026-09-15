@@ -14,6 +14,7 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   ChangeAvailabilityStatusEnumType,
+  ConnectorStatusEnum,
   OCPP20OperationalStatusEnumType,
   OCPP20RequestCommand,
   ReasonCodeEnumType,
@@ -24,6 +25,7 @@ import {
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createConnectorStatus } from '../../helpers/StationHelpers.js'
 import { createOCPP20ListenerStation } from './OCPP20TestUtils.js'
 
 await describe('G03 - ChangeAvailability', async () => {
@@ -60,6 +62,100 @@ await describe('G03 - ChangeAvailability', async () => {
     )
     const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string]
     assert.strictEqual(args[1], OCPP20RequestCommand.STATUS_NOTIFICATION)
+  })
+
+  await it('should target the exact EVSE when connector identifiers are reused', async () => {
+    const evse1 = station.getEvseStatus(1)
+    const evse2 = station.getEvseStatus(2)
+    assert.ok(evse1 != null)
+    assert.ok(evse2 != null)
+    const evse1Connector = evse1.connectors.get(1)
+    assert.ok(evse1Connector != null)
+    const evse2Connector = createConnectorStatus(1, { status: ConnectorStatusEnum.Available })
+    evse2.connectors.clear()
+    evse2.connectors.set(1, evse2Connector)
+
+    const response = testableService.handleRequestChangeAvailability(station, {
+      evse: { connectorId: 1, id: 2 },
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
+    })
+    await flushMicrotasks()
+
+    assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Accepted)
+    assert.strictEqual(evse1Connector.availability, OCPP20OperationalStatusEnumType.Operative)
+    assert.strictEqual(evse1Connector.status, ConnectorStatusEnum.Available)
+    assert.strictEqual(evse2Connector.availability, OCPP20OperationalStatusEnumType.Inoperative)
+    assert.strictEqual(evse2Connector.status, ConnectorStatusEnum.Unavailable)
+    const statusNotification = requestHandlerMock.mock.calls.find(
+      call => call.arguments[1] === OCPP20RequestCommand.STATUS_NOTIFICATION
+    )
+    assert.deepStrictEqual(statusNotification?.arguments[2], {
+      connectorId: 1,
+      connectorStatus: ConnectorStatusEnum.Unavailable,
+      evseId: 2,
+    })
+  })
+
+  await it('should snapshot only the connector targeted by connector-level changes', async () => {
+    const evse = station.getEvseStatus(1)
+    assert.ok(evse != null)
+    const connector1 = evse.connectors.get(1)
+    assert.ok(connector1 != null)
+    const connector2 = createConnectorStatus(2, { status: ConnectorStatusEnum.Available })
+    evse.connectors.set(2, connector2)
+
+    testableService.handleRequestChangeAvailability(station, {
+      evse: { connectorId: 1, id: 1 },
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
+    })
+    await flushMicrotasks()
+    connector2.status = ConnectorStatusEnum.Faulted
+    testableService.handleRequestChangeAvailability(station, {
+      evse: { connectorId: 2, id: 1 },
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
+    })
+    await flushMicrotasks()
+    testableService.handleRequestChangeAvailability(station, {
+      evse: { connectorId: 2, id: 1 },
+      operationalStatus: OCPP20OperationalStatusEnumType.Operative,
+    })
+    await flushMicrotasks()
+    testableService.handleRequestChangeAvailability(station, {
+      evse: { connectorId: 1, id: 1 },
+      operationalStatus: OCPP20OperationalStatusEnumType.Operative,
+    })
+    await flushMicrotasks()
+
+    assert.strictEqual(connector1.status, ConnectorStatusEnum.Available)
+    assert.strictEqual(connector2.status, ConnectorStatusEnum.Faulted)
+  })
+
+  await it('should restore distinct statuses for reused connector identifiers', async () => {
+    const evse1 = station.getEvseStatus(1)
+    const evse2 = station.getEvseStatus(2)
+    assert.ok(evse1 != null)
+    assert.ok(evse2 != null)
+    const evse1Connector = evse1.connectors.get(1)
+    assert.ok(evse1Connector != null)
+    evse1Connector.status = ConnectorStatusEnum.Faulted
+    const evse2Connector = createConnectorStatus(1, { status: ConnectorStatusEnum.Reserved })
+    evse2.connectors.clear()
+    evse2.connectors.set(1, evse2Connector)
+
+    testableService.handleRequestChangeAvailability(station, {
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
+    })
+    await flushMicrotasks()
+    assert.strictEqual(evse1Connector.status, ConnectorStatusEnum.Unavailable)
+    assert.strictEqual(evse2Connector.status, ConnectorStatusEnum.Unavailable)
+
+    testableService.handleRequestChangeAvailability(station, {
+      operationalStatus: OCPP20OperationalStatusEnumType.Operative,
+    })
+    await flushMicrotasks()
+
+    assert.strictEqual(evse1Connector.status, ConnectorStatusEnum.Faulted)
+    assert.strictEqual(evse2Connector.status, ConnectorStatusEnum.Reserved)
   })
 
   // FR: G03.FR.02

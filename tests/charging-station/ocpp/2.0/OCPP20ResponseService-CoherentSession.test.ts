@@ -21,6 +21,7 @@ import {
   type TestableOCPP20ResponseService,
 } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
+import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20TransactionEventEnumType,
@@ -65,6 +66,8 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     const connectorStatus = station.getConnectorStatus(1)
     if (connectorStatus != null) {
       connectorStatus.transactionId = TEST_TRANSACTION_UUID
+      connectorStatus.transactionStarted = false
+      connectorStatus.transactionPending = true
     }
     createSpy = mock.method(station, 'createCoherentSession', () => undefined)
     const responseService = new OCPP20ResponseService()
@@ -86,6 +89,52 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     assert.strictEqual(createSpy.mock.calls.length, 1, 'createCoherentSession must fire once')
     assert.strictEqual(createSpy.mock.calls[0].arguments[0], TEST_TRANSACTION_UUID)
     assert.strictEqual(createSpy.mock.calls[0].arguments[1], 1)
+    assert.strictEqual(createSpy.mock.calls[0].arguments[2], 1)
+  })
+
+  await it('should bind a Started fallback session to EVSE 2 when connector ids repeat', async () => {
+    const { station: evseStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 2,
+      evseConfiguration: { evsesCount: 2 },
+      stationInfo: {
+        coherentMeterValues: true,
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+    })
+    const firstEvse = evseStation.getEvseStatus(1)
+    const secondEvse = evseStation.getEvseStatus(2)
+    assert.ok(firstEvse != null && secondEvse != null)
+    const firstConnector = firstEvse.connectors.get(1)
+    const secondConnector = secondEvse.connectors.get(2)
+    assert.ok(firstConnector != null && secondConnector != null)
+    secondEvse.connectors.delete(2)
+    secondEvse.connectors.set(1, secondConnector)
+    firstConnector.transactionId = '00000000-0000-4000-8000-000000000001'
+    firstConnector.transactionPending = true
+    secondConnector.transactionId = TEST_TRANSACTION_UUID
+    secondConnector.transactionStarted = false
+    secondConnector.transactionPending = true
+    const evseCreateSpy = mock.method(evseStation, 'createCoherentSession', () => undefined)
+    mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+    const request = buildStartedRequest(TEST_TRANSACTION_UUID)
+    request.evse = { connectorId: 1, id: 2 }
+
+    await testable.handleResponseTransactionEvent(
+      evseStation,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      request
+    )
+
+    assert.strictEqual(firstConnector.transactionPending, true)
+    assert.strictEqual(secondConnector.transactionStarted, true)
+    assert.strictEqual(evseCreateSpy.mock.callCount(), 1)
+    assert.strictEqual(evseCreateSpy.mock.calls[0].arguments[0], TEST_TRANSACTION_UUID)
+    assert.strictEqual(evseCreateSpy.mock.calls[0].arguments[1], 1)
+    assert.strictEqual(evseCreateSpy.mock.calls[0].arguments[2], 2)
   })
 
   await it('should create a coherent session on Started with idTokenInfo omitted (implicit accept)', async () => {
@@ -96,6 +145,29 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     await testable.handleResponseTransactionEvent(station, response, request)
 
     assert.strictEqual(createSpy.mock.calls.length, 1)
+  })
+
+  await it('should defer restored session creation and timers until replay reconciliation', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionRestored = true
+    const startUpdatedSpy = mock.method(
+      OCPP20ServiceUtils,
+      'startUpdatedMeterValues',
+      () => undefined
+    )
+    const startEndedSpy = mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      buildStartedRequest(TEST_TRANSACTION_UUID)
+    )
+
+    assert.strictEqual(createSpy.mock.callCount(), 0)
+    assert.strictEqual(startUpdatedSpy.mock.callCount(), 0)
+    assert.strictEqual(startEndedSpy.mock.callCount(), 0)
+    assert.strictEqual(connectorStatus.transactionRestored, true)
   })
 
   await it('should NOT create a coherent session on rejected idToken without force override', async () => {

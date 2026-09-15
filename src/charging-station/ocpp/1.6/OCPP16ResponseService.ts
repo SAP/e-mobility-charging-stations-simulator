@@ -12,6 +12,7 @@ import {
   resetConnectorStatus,
 } from '../../../charging-station/index.js'
 import {
+  AvailabilityType,
   ChargingStationEvents,
   type ConnectorStatus,
   type JsonType,
@@ -37,6 +38,7 @@ import {
 import {
   Constants,
   convertToInt,
+  interruptibleSleep,
   isNotEmptyArray,
   logger,
   sleep,
@@ -71,8 +73,7 @@ const finalizeTransactionConnectorStatus = (
   chargingStation: ChargingStation,
   connectorStatus: ConnectorStatus | undefined,
   requestPayload: OCPP16StopTransactionRequest
-): string | undefined => {
-  const transactionIdTag = requestPayload.idTag ?? connectorStatus?.transactionIdTag
+): void => {
   // resetConnectorStatus deletes transactionId (Helpers.ts:508). Destroy the
   // coherent session using requestPayload.transactionId, which is always
   // present in the StopTransaction request and unaffected by the reset.
@@ -81,7 +82,6 @@ const finalizeTransactionConnectorStatus = (
   if (connectorStatus != null) {
     connectorStatus.locked = false
   }
-  return transactionIdTag
 }
 
 /**
@@ -544,9 +544,23 @@ export class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16StopTransactionResponse,
     requestPayload: OCPP16StopTransactionRequest
   ): Promise<void> {
+    const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
+      .lifecycleAbortSignal
     const transactionConnectorId = chargingStation.getConnectorIdByTransactionId(
       requestPayload.transactionId
     )
+    const transactionConnectorStatus =
+      transactionConnectorId != null
+        ? chargingStation.getConnectorStatus(transactionConnectorId)
+        : undefined
+    const transactionIdTag = requestPayload.idTag ?? transactionConnectorStatus?.transactionIdTag
+    if (payload.idTagInfo != null && transactionIdTag != null) {
+      OCPP16ServiceUtils.updateAuthorizationCache(
+        chargingStation,
+        transactionIdTag,
+        payload.idTagInfo
+      )
+    }
     if (transactionConnectorId == null) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Trying to stop a non-existent transaction with id ${requestPayload.transactionId.toString()}`
@@ -579,11 +593,26 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
     }
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
-    let transactionIdTag: string | undefined
+    if (chargingStation.isStopping()) {
+      decrementPowerDivider(chargingStation)
+      OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
+      finalizeTransactionConnectorStatus(
+        chargingStation,
+        transactionConnectorStatus,
+        requestPayload
+      )
+      if (transactionConnectorStatus != null) {
+        transactionConnectorStatus.status =
+          chargingStation.isChargingStationAvailable() &&
+          transactionConnectorStatus.availability === AvailabilityType.Operative
+            ? OCPP16ChargePointStatus.Available
+            : OCPP16ChargePointStatus.Unavailable
+      }
+      return
+    }
     if (postTransactionDelay > 0) {
       decrementPowerDivider(chargingStation)
       // Send Finishing status if not already set (idempotency guard)
-      const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
       if (transactionConnectorStatus?.status !== OCPP16ChargePointStatus.Finishing) {
         await sendAndSetConnectorStatus(chargingStation, {
           connectorId: transactionConnectorId,
@@ -599,21 +628,40 @@ export class OCPP16ResponseService extends OCPPResponseService {
       // subsequent call from `finalizeTransactionConnectorStatus` post-sleep
       // is a no-op.
       chargingStation.destroyCoherentSession(requestPayload.transactionId)
-      await sleep(secondsToMilliseconds(postTransactionDelay))
-      if (!chargingStation.started) {
-        return
+      if (!chargingStation.isStopping()) {
+        if (lifecycleAbortSignal == null) {
+          await sleep(secondsToMilliseconds(postTransactionDelay))
+        } else {
+          await interruptibleSleep(
+            secondsToMilliseconds(postTransactionDelay),
+            lifecycleAbortSignal
+          )
+        }
       }
-      transactionIdTag = finalizeTransactionConnectorStatus(
+      finalizeTransactionConnectorStatus(
         chargingStation,
         transactionConnectorStatus,
         requestPayload
       )
+      if (
+        chargingStation.isStopping() ||
+        lifecycleAbortSignal?.aborted === true ||
+        !chargingStation.started
+      ) {
+        if (transactionConnectorStatus != null) {
+          transactionConnectorStatus.status =
+            chargingStation.isChargingStationAvailable() &&
+            transactionConnectorStatus.availability === AvailabilityType.Operative
+              ? OCPP16ChargePointStatus.Available
+              : OCPP16ChargePointStatus.Unavailable
+        }
+        return
+      }
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
     } else {
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
       decrementPowerDivider(chargingStation)
-      const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
-      transactionIdTag = finalizeTransactionConnectorStatus(
+      finalizeTransactionConnectorStatus(
         chargingStation,
         transactionConnectorStatus,
         requestPayload
@@ -632,13 +680,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.info(logMsg)
     } else {
       logger.warn(logMsg)
-    }
-    if (payload.idTagInfo != null && transactionIdTag != null) {
-      OCPP16ServiceUtils.updateAuthorizationCache(
-        chargingStation,
-        transactionIdTag,
-        payload.idTagInfo
-      )
     }
   }
 
