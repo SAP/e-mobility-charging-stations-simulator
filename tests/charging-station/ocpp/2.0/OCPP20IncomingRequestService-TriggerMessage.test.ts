@@ -1565,7 +1565,11 @@ await describe('F06 - TriggerMessage', async () => {
         },
       ] as unknown as NonNullable<EvseStatus['MeterValues']>
       connectorStatus.transactionEnergyActiveImportRegisterValue = 150
-      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date()
+      // Pin the register read ahead of the sample window so the coalesced interval energy
+      // reflects only the register delta, never wall-clock proration (deterministic on any host).
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date(
+        Date.now() + 60_000
+      )
       connectorStatus.transactionEnergyActiveImportIntervalBaselines = {
         [alignedMeasurandsKey]: 120,
         [endedMeasurandsKey]: 120,
@@ -1606,7 +1610,11 @@ await describe('F06 - TriggerMessage', async () => {
       )
       const triggeredRequest = await triggerStarted.promise
       connectorStatus.transactionEnergyActiveImportRegisterValue = 180
-      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date()
+      // Pin the register read ahead of the sample window so the coalesced interval energy
+      // reflects only the register delta, never wall-clock proration (deterministic on any host).
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date(
+        Date.now() + 60_000
+      )
       assert.deepStrictEqual(connectorStatus.transactionEndedMeterValues, [])
 
       releaseTrigger.resolve(undefined)
