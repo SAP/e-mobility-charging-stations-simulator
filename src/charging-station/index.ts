@@ -77,6 +77,11 @@ export {
   restoreTransactionIntervalState,
   truncateTransactionIntervalValue,
 } from './meter-values/TransactionIntervalUtils.js'
+export {
+  type TransactionMeterValueDelivery,
+  TransactionMeterValueDeliveryBarrier,
+  type TransactionMeterValueDependency,
+} from './meter-values/TransactionMeterValueDeliveryBarrier.js'
 export type { CoherentSession } from './meter-values/types.js'
 export { SharedLRUCache } from './SharedLRUCache.js'
 export { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'

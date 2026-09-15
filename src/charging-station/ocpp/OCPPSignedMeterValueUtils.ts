@@ -1,9 +1,8 @@
 import { createPublicKey } from 'node:crypto'
 
-import type { ConnectorStatus } from '../../types/ConnectorStatus.js'
-
 import { BaseError } from '../../exception/index.js'
 import {
+  type ConnectorStatus,
   OCPP16MeterValueFormat,
   type OCPP16SampledValue,
   PublicKeyWithSignedMeterValueEnumType,

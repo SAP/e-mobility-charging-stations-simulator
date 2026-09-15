@@ -1,3 +1,7 @@
+/**
+ * @file Tests for TransactionEventQueueUtils
+ * @description Unit tests for the bounded per-connector OCPP 2.0.1 TransactionEvent queue (FIFO replay, soft/hard byte and length limits, lifecycle-core preservation, hydration and accounting)
+ */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 

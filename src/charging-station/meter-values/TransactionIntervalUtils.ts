@@ -1,4 +1,4 @@
-import { type ConnectorStatus, CurrentType } from '../../types/index.js'
+import { type ConnectorStatus, CurrentType, MeterValueMeasurand } from '../../types/index.js'
 import { isEmpty } from '../../utils/index.js'
 
 export interface TransactionIntervalState {
@@ -105,7 +105,7 @@ export const getRepresentedTransactionIntervalEnergyWh = (
 ): number => {
   let representedEnergyWh = 0
   for (const sampledValue of meterValue.sampledValue) {
-    if (sampledValue.measurand !== 'Energy.Active.Import.Interval') continue
+    if (sampledValue.measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) continue
     const value =
       typeof sampledValue.value === 'number'
         ? sampledValue.value

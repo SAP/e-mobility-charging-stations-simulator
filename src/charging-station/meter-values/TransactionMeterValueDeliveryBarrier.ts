@@ -1,4 +1,4 @@
-import type { ConnectorStatus } from '../../types/ConnectorStatus.js'
+import type { ConnectorStatus } from '../../types/index.js'
 
 export interface TransactionMeterValueDelivery {
   readonly markBuffered: () => void

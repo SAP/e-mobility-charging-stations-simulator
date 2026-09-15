@@ -68,16 +68,14 @@ import {
 } from '../meter-values/TransactionMeterValueDeliveryBarrier.js'
 import {
   buildMeterValue,
-  OCPP16ServiceUtils,
-  OCPP20ServiceUtils,
-  sendAndSetConnectorStatus,
-} from '../ocpp/index.js'
-import {
   claimPublicKeyDelivery,
   getOCPP16SignedMeterValuePublicKey,
+  OCPP16ServiceUtils,
+  OCPP20ServiceUtils,
   releasePublicKeyDelivery,
   retainPublicKeyDelivery,
-} from '../ocpp/OCPPSignedMeterValueUtils.js'
+  sendAndSetConnectorStatus,
+} from '../ocpp/index.js'
 import { getRawSignedMeterValuePublicKey } from '../TransactionEventQueueUtils.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 

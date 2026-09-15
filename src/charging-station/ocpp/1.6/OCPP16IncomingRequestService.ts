@@ -31,6 +31,8 @@ import {
   resolveInletToOutputEfficiency,
   restoreTransactionIntervalState,
   setConfigurationKeyValue,
+  type TransactionMeterValueDelivery,
+  TransactionMeterValueDeliveryBarrier,
 } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
@@ -128,10 +130,6 @@ import {
   sleep,
   truncateId,
 } from '../../../utils/index.js'
-import {
-  type TransactionMeterValueDelivery,
-  TransactionMeterValueDeliveryBarrier,
-} from '../../meter-values/TransactionMeterValueDeliveryBarrier.js'
 import { AuthContext, type DifferentialAuthEntry, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPConstants } from '../OCPPConstants.js'

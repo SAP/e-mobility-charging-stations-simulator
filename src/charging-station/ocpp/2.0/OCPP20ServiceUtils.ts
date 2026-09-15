@@ -36,6 +36,9 @@ import {
   setTransactionEventQueueInFlight,
   setTransactionEventQueueStaged,
   shiftBoundedTransactionEvent,
+  type TransactionMeterValueDelivery,
+  TransactionMeterValueDeliveryBarrier,
+  type TransactionMeterValueDependency,
   transferDiscardedTransactionEventIntervalEnergy,
   truncateTransactionIntervalValue,
 } from '../../../charging-station/index.js'
@@ -111,11 +114,6 @@ import {
   sleep,
   validateIdentifierString,
 } from '../../../utils/index.js'
-import {
-  type TransactionMeterValueDelivery,
-  TransactionMeterValueDeliveryBarrier,
-  type TransactionMeterValueDependency,
-} from '../../meter-values/TransactionMeterValueDeliveryBarrier.js'
 import {
   mapOCPP20AuthorizationStatus,
   mapOCPP20TokenType,
@@ -5301,7 +5299,7 @@ export class OCPP20ServiceUtils {
   }
 
   private static isChargingStationStopping (chargingStation: ChargingStation): boolean {
-    return (chargingStation as unknown as { isStopping?: () => boolean }).isStopping?.() === true
+    return chargingStation.isStopping()
   }
 
   private static isLifecycleGenerationCurrent (

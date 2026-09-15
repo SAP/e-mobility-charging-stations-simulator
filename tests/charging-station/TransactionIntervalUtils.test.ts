@@ -1,3 +1,7 @@
+/**
+ * @file Tests for TransactionIntervalUtils
+ * @description Unit tests for transaction interval energy capture/restore/carry helpers and inlet-to-output efficiency resolution
+ */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
