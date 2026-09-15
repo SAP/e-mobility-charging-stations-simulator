@@ -2538,6 +2538,7 @@ await describe('ChargingStation Lifecycle', async () => {
         sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
         started: true,
         stationInfo: { enableStatistics: false },
+        stopAlignedMeterValues: () => undefined,
         stopMessageSequence: () => Promise.resolve(),
       }
       installBufferedMessageCallbackState(stationLike)
@@ -2592,6 +2593,7 @@ await describe('ChargingStation Lifecycle', async () => {
         sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
         started: true,
         stationInfo: { enableStatistics: false },
+        stopAlignedMeterValues: () => undefined,
         stopMessageSequence: () => stopSequence,
       }
       installBufferedMessageCallbackState(stationLike)
@@ -2616,6 +2618,50 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.deepStrictEqual(closeCalls, [{ byRequest: true }])
       assert.strictEqual(lifecycleAbortController.signal.aborted, true)
       assert.strictEqual(stoppedEvents, 1)
+    })
+
+    await it('tears down the clock-aligned timer when the stop sequence times out before completing', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
+      const stopSequence = new Promise<undefined>(() => {
+        // Never settles: finalizeShutdown times out before stopMessageSequence,
+        // the nominal clock-aligned timer teardown path, ever runs.
+      })
+      let alignedStopCalls = 0
+      const lifecycleAbortController = new AbortController()
+      const stationLike = {
+        closeWSConnection: () => undefined,
+        configurationFileHash: 'aligned-timer-teardown',
+        emitChargingStationEvent: () => undefined,
+        iterateConnectors: () => [],
+        lifecycleAbortController,
+        logPrefix: () => '',
+        ocppIncomingRequestService: { stop: () => undefined },
+        ocppRequestService: { cancelPendingRequests: () => undefined },
+        saveConfiguration: () => undefined,
+        sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
+        started: true,
+        stationInfo: { enableStatistics: false },
+        stopAlignedMeterValues: () => {
+          alignedStopCalls++
+        },
+        stopMessageSequence: () => stopSequence,
+      }
+      installBufferedMessageCallbackState(stationLike)
+      const stopPromise = (
+        ChargingStation.prototype as unknown as {
+          performStop: (reason?: unknown, stopTransactions?: boolean) => Promise<void>
+        }
+      ).performStop.call(stationLike)
+      await Promise.resolve()
+      t.mock.timers.tick(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS)
+      for (let index = 0; index < 10; index++) {
+        await Promise.resolve()
+      }
+      await stopPromise
+      // finalizeTransport must tear down the autonomous clock-aligned timer even
+      // when the stop sequence never reached stopMessageSequence, otherwise the
+      // timer re-arms indefinitely and keeps emitting after the station stopped.
+      assert.strictEqual(alignedStopCalls, 1)
     })
 
     await it('should cancel a never-settling termination at the shutdown deadline and allow retry', async t => {
@@ -2845,6 +2891,7 @@ await describe('ChargingStation Lifecycle', async () => {
         sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
         started: true,
         stationInfo: { enableStatistics: false },
+        stopAlignedMeterValues: () => undefined,
         stopMessageSequence: () => Promise.resolve(),
       }
       installBufferedMessageCallbackState(stationLike)
@@ -2888,6 +2935,7 @@ await describe('ChargingStation Lifecycle', async () => {
         sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
         started: true,
         stationInfo: { enableStatistics: false },
+        stopAlignedMeterValues: () => undefined,
         stopMessageSequence: () => Promise.resolve(),
         transactionEventQueueSavePromise: new Promise<void>(() => undefined),
       }
@@ -3101,6 +3149,7 @@ await describe('ChargingStation Lifecycle', async () => {
         sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
         started: true,
         stationInfo: { enableStatistics: false },
+        stopAlignedMeterValues: () => undefined,
         stopMessageSequence: () => {
           assert.deepStrictEqual(savedQueueLengths, [2])
           return Promise.resolve()

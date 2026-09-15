@@ -1,6 +1,8 @@
 /**
- * @file Tests for OCPP20RequestService Heartbeat
- * @description Unit tests for OCPP 2.0 Heartbeat request building (G02)
+ * @file Tests for OCPP20RequestService Heartbeat and outgoing CALL serialization
+ * @description Unit tests for OCPP 2.0 Heartbeat request building (G02) and the
+ *   station-wide outgoing CALL serialization gate (FIFO ordering, waiter bounds,
+ *   buffered replay, and cancellation on WebSocket close).
  */
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
@@ -47,7 +49,7 @@ import {
   type TestableOCPP20RequestService,
 } from './OCPP20TestUtils.js'
 
-await describe('G02 - Heartbeat', async () => {
+await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
   let testableRequestService: TestableOCPP20RequestService
   let station: ChargingStation
 

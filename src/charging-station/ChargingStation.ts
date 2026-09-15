@@ -3847,6 +3847,11 @@ export class ChargingStation extends EventEmitter {
       for (const { connectorStatus } of this.iterateConnectors()) {
         resetTransactionEventQueueRuntimeState(connectorStatus)
       }
+      // Tear down the autonomous clock-aligned timer here too: the stop sequence
+      // may be short-circuited by a persistence error or timeout before reaching
+      // stopMessageSequence, otherwise the timer re-arms indefinitely and keeps
+      // emitting after the station has stopped.
+      this.stopAlignedMeterValues()
       this.started = false
     }
     const shutdownGenerationIsCurrent = (): boolean =>

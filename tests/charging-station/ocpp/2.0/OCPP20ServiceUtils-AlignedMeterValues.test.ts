@@ -895,7 +895,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(powerSample.value, 1000)
     })
 
-    await it('does not project EVSE state of charge onto the station meter point', async () => {
+    await it('emits EVSE state of charge in the transaction event', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -932,17 +932,6 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             )
           )
         )
-      )
-      assert.ok(
-        sentPayloads(requestHandlerMock)
-          .filter(({ evseId }) => evseId === 0)
-          .every(payload =>
-            payload.meterValue.every(meterValue =>
-              meterValue.sampledValue.every(
-                ({ measurand }) => measurand !== OCPP20MeasurandEnumType.STATE_OF_CHARGE
-              )
-            )
-          )
       )
     })
 

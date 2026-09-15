@@ -829,6 +829,10 @@ export function createMockChargingStation (
       }
     },
 
+    stopAlignedMeterValues (): void {
+      // Mock no-op: the autonomous clock-aligned timer is not armed in unit tests.
+    },
+
     stopHeartbeat (): void {
       if (this.heartbeatSetInterval != null) {
         clearInterval(this.heartbeatSetInterval)
