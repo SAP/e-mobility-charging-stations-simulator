@@ -155,7 +155,7 @@ export const getCoherentSampleSnapshot = (
   return buildZeroSample(
     session.socPercent,
     context.getVoltageOut(),
-    Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0)
+    Math.max(0, connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
   )
 }
 

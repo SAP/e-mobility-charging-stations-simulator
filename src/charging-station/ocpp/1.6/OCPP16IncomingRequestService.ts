@@ -1739,7 +1739,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
     if (
       chargingProfile != null &&
-      !this.isRemoteStartTransactionChargingProfileValid(chargingProfile)
+      !this.isRemoteStartTransactionChargingProfileValid(chargingStation, chargingProfile)
     ) {
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
@@ -2294,6 +2294,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   }
 
   private isRemoteStartTransactionChargingProfileValid (
+    chargingStation: ChargingStation,
     chargingProfile: OCPP16ChargingProfile
   ): boolean {
     const valid =
@@ -2301,7 +2302,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       chargingProfile.transactionId == null
     if (!valid) {
       logger.debug(
-        `${moduleName}.isRemoteStartTransactionChargingProfileValid: Not allowed to set ${
+        `${chargingStation.logPrefix()} ${moduleName}.isRemoteStartTransactionChargingProfileValid: Not allowed to set ${
           chargingProfile.chargingProfilePurpose
         } charging profile(s)${chargingProfile.transactionId != null ? ' with transactionId set' : ''} at remote start transaction`
       )
