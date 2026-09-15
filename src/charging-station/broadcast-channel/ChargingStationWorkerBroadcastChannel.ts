@@ -514,6 +514,18 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
     const requestedMeterValues = requestedMeterValuesPayload as
       OCPP16MeterValue[] | OCPP20MeterValue[] | undefined
+    if (
+      requestedMeterValues?.some(
+        meterValue =>
+          !Array.isArray(
+            (meterValue as null | undefined | { sampledValue?: unknown })?.sampledValue
+          )
+      ) === true
+    ) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: meterValue.sampledValue must be an array`
+      )
+    }
     const requestedPublicKeyIncluded =
       requestedMeterValues?.some(meterValue =>
         isOcpp2

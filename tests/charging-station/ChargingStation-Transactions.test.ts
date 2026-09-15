@@ -361,6 +361,31 @@ await describe('ChargingStation Transaction Management', async () => {
       assert.strictEqual(station.getEnergyActiveImportRegisterByTransactionId(501), 18000)
     })
 
+    await it('should resolve energy for the exact EVSE-local connector owning the transaction', () => {
+      // Two EVSEs share connector id 1; the transaction lives on EVSE 2's connector,
+      // while EVSE 1's connector 1 (iterated first) carries a different register value.
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 2 },
+        ocppVersion: OCPPVersion.VERSION_201,
+      })
+      station = result.station
+      const evse1Connector = station.getEvseStatus(1)?.connectors.get(1)
+      const evse2 = station.getEvseStatus(2)
+      assert.ok(evse1Connector != null)
+      assert.ok(evse2 != null)
+      const evse2Connector = evse2.connectors.get(2)
+      assert.ok(evse2Connector != null)
+      evse2.connectors.clear()
+      evse2.connectors.set(1, evse2Connector)
+      evse1Connector.transactionEnergyActiveImportRegisterValue = 11000
+      evse2Connector.transactionStarted = true
+      evse2Connector.transactionId = 777
+      evse2Connector.transactionEnergyActiveImportRegisterValue = 33000
+
+      assert.strictEqual(station.getEnergyActiveImportRegisterByTransactionId(777), 33000)
+    })
+
     await it('should correctly count transactions only on connectors > 0', () => {
       // Arrange
       const result = createMockChargingStation({ connectorsCount: 2 })

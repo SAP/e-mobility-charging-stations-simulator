@@ -1439,6 +1439,23 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       }
     }
 
+    await it('should reject a malformed meterValue entry with a typed error', async () => {
+      const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
+      setupConnectorWithTransaction(station, 1, { transactionId: 707 })
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      await assert.rejects(
+        testable.commandHandler(BroadcastChannelProcedureName.METER_VALUES, {
+          connectorId: 1,
+          meterValue: [{}],
+        }),
+        (error: unknown) =>
+          error instanceof BaseError &&
+          error.message.includes('meterValue.sampledValue must be an array')
+      )
+    })
+
     await it('should restore generated interval energy after a certain pre-send failure', async () => {
       const result = await runGeneratedMeterValuesFailure(
         (params, failure) => params.onTransportError?.(failure, false),

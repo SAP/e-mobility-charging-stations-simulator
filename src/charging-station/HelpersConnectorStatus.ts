@@ -217,7 +217,6 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   connectorStatus.transactionStarted = false
   delete connectorStatus.transactionEnding
   delete connectorStatus.transactionStarting
-  delete connectorStatus.transactionEnding
   delete connectorStatus.transactionRestored
   delete connectorStatus.transactionStart
   delete connectorStatus.transactionId

@@ -1008,9 +1008,12 @@ export class ChargingStation extends EventEmitter {
     transactionId: number | string | undefined,
     rounded = false
   ): number {
-    const connectorId = this.getConnectorIdByTransactionId(transactionId)
     return this.getEnergyActiveImportRegister(
-      connectorId != null ? this.getConnectorStatus(connectorId) : undefined,
+      transactionId != null
+        ? this.iterateConnectors().find(
+          ({ connectorStatus }) => connectorStatus.transactionId === transactionId
+        )?.connectorStatus
+        : undefined,
       rounded
     )
   }

@@ -373,11 +373,20 @@ export function createMockChargingStation (
       transactionId: number | string | undefined,
       rounded = false
     ): number {
-      const connectorId = this.getConnectorIdByTransactionId(transactionId)
-      if (connectorId == null) {
+      const entry =
+        transactionId != null
+          ? this.iterateConnectors().find(
+            ({ connectorStatus }) => connectorStatus.transactionId === transactionId
+          )
+          : undefined
+      if (entry == null) {
         return 0
       }
-      return this.getEnergyActiveImportRegisterByConnectorId(connectorId, rounded)
+      return this.getEnergyActiveImportRegisterByConnectorId(
+        entry.connectorId,
+        rounded,
+        entry.evseId
+      )
     },
     getEvseIdByConnectorId (connectorId: number): number | undefined {
       return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)?.evseId
