@@ -5125,7 +5125,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           sentRequests.map(request => request.payload.seqNo),
           [0, 1, 2]
         )
-        assert.deepStrictEqual(mockStation.getConnectorStatus(connectorId)?.transactionEventQueue, [])
+        assert.deepStrictEqual(
+          mockStation.getConnectorStatus(connectorId)?.transactionEventQueue,
+          []
+        )
       })
 
       await it('should not let a later aligned event overtake a serialized live event', async () => {
@@ -8056,7 +8059,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           undefined
         )
         assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 123)
-        assert.deepStrictEqual(connectorStatus.transactionBeginMeterValue, replacementBeginMeterValue)
+        assert.deepStrictEqual(
+          connectorStatus.transactionBeginMeterValue,
+          replacementBeginMeterValue
+        )
         assert.deepStrictEqual(
           destroySessionSpy.mock.calls.map(call => call.arguments[0]),
           [failedTransactionId]

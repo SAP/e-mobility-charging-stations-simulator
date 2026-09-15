@@ -317,9 +317,12 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.deepStrictEqual(connectorsStatus[0][1].energyActiveImportIntervalBaselines, {
         'station:AlignedDataCtrlr.Measurands': 15,
       })
-      assert.deepStrictEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalBaselines, {
-        'SampledDataCtrlr.TxUpdatedMeasurands': 20,
-      })
+      assert.deepStrictEqual(
+        connectorsStatus[0][1].transactionEnergyActiveImportIntervalBaselines,
+        {
+          'SampledDataCtrlr.TxUpdatedMeasurands': 20,
+        }
+      )
       assert.deepStrictEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalCarry, {
         'SampledDataCtrlr.TxUpdatedMeasurands': 2,
       })

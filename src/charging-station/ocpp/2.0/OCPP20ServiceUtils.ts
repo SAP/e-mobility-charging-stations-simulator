@@ -6829,9 +6829,7 @@ export class OCPP20ServiceUtils {
       if (checkpoint.transactionEndedMeterValues == null) {
         delete connectorStatus.transactionEndedMeterValues
       } else {
-        connectorStatus.transactionEndedMeterValues = clone(
-          checkpoint.transactionEndedMeterValues
-        )
+        connectorStatus.transactionEndedMeterValues = clone(checkpoint.transactionEndedMeterValues)
       }
       if (checkpoint.transactionEnergyActiveImportIntervalBaselines == null) {
         delete connectorStatus.transactionEnergyActiveImportIntervalBaselines
@@ -7131,10 +7129,9 @@ export function buildTransactionEvent (
         ),
       ]
       if (matchingEvseIds.length !== 1) {
-        const errorMsg =
-          isEmpty(matchingEvseIds)
-            ? `Cannot find EVSE ID for connector ${suppliedConnectorId.toString()}`
-            : `Connector ${suppliedConnectorId.toString()} is ambiguous without an EVSE ID`
+        const errorMsg = isEmpty(matchingEvseIds)
+          ? `Cannot find EVSE ID for connector ${suppliedConnectorId.toString()}`
+          : `Connector ${suppliedConnectorId.toString()} is ambiguous without an EVSE ID`
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`
         )
