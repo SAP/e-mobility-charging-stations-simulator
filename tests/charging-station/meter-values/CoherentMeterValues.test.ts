@@ -601,7 +601,7 @@ await describe('CoherentMeterValues', async () => {
         Number(sample.value),
       ])
 
-      assert.deepEqual(values, [
+      assert.deepStrictEqual(values, [
         [MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueLocation.INLET, 1000],
         [MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueLocation.OUTLET, 800],
         [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, MeterValueLocation.INLET, 1000],
@@ -845,7 +845,7 @@ await describe('CoherentMeterValues', async () => {
         2
       )
 
-      assert.deepEqual(requestedIdentity, [1, 2])
+      assert.deepStrictEqual(requestedIdentity, [1, 2])
     })
 
     await it('should preserve enabled fixed non-physical measurands in coherent snapshots', () => {
@@ -1954,7 +1954,7 @@ await describe('CoherentMeterValues', async () => {
         sample => sample.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       ) as OCPP20SampledValue[]
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         energySamples.map(sample => [
           sample.context,
           sample.location,

@@ -1422,7 +1422,7 @@ export class ChargingStation extends EventEmitter {
     waiters.add(waiter)
     if ((persistenceState.transactionEventQueueCommittedVersion ?? 0) >= targetVersion) {
       waiters.delete(waiter)
-      if (waiters.size === 0) waitersByVersion.delete(targetVersion)
+      if (isEmpty(waiters)) waitersByVersion.delete(targetVersion)
       resolve(undefined)
     }
     await promise
@@ -4002,7 +4002,7 @@ export class ChargingStation extends EventEmitter {
         waiters.delete(waiter)
         waiter.reject(error)
       }
-      if (waiters.size === 0) waitersByVersion.delete(version)
+      if (isEmpty(waiters)) waitersByVersion.delete(version)
     }
   }
 

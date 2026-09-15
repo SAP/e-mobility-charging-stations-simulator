@@ -3,7 +3,7 @@
  * @description Unit tests for the bounded per-connector OCPP 2.0.1 TransactionEvent queue (FIFO replay, soft/hard byte and length limits, lifecycle-core preservation, hydration and accounting)
  */
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import type {
   ConnectorStatus,
@@ -42,6 +42,7 @@ import {
   OCPP20UnitEnumType,
 } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/index.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 const validateTransactionEvent = createAjv().compile(transactionEventRequestSchema)
 
@@ -118,7 +119,11 @@ const oversizedLifecycleMeterValues = (timestamp: Date): OCPP20MeterValue[] => [
 ]
 
 await describe('TransactionEventQueueUtils', async () => {
-  await it('preserves additive interval energy while decimating queued updates', () => {
+  afterEach(() => {
+    standardCleanup()
+  })
+
+  await it('should preserve additive interval energy while decimating queued updates', () => {
     const transactionId = '00000000-0000-4000-8000-000000000200'
     const eventCount = Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1
     const transactionEventQueue = Array.from({ length: eventCount }, (_, seqNo) => {
@@ -180,7 +185,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(result.bytes, getTransactionEventQueueBytes(queue))
   })
 
-  await it('conserves unsigned interval energy while compacting an Ended history', () => {
+  await it('should conserve unsigned interval energy while compacting an Ended history', () => {
     const transactionId = '00000000-0000-4000-8000-000000000206'
     const sampleCount = 425
     const meterValue = Array.from({ length: sampleCount }, (_, index) => ({
@@ -403,7 +408,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(JSON.stringify(request), originalBytes)
   })
 
-  await it('retains unsigned customData channel endpoints from the middle of an oversized event', () => {
+  await it('should retain unsigned customData channel endpoints from the middle of an oversized event', () => {
     const transactionId = '00000000-0000-4000-8000-000000000203'
     const billingSample = (
       context: OCPP20ReadingContextEnumType,
@@ -473,11 +478,11 @@ await describe('TransactionEventQueueUtils', async () => {
       values.push(sample.value)
       retainedFrequencyValues.set(channel, values)
     }
-    assert.deepEqual(retainedFrequencyValues.get('channel-a'), [0, 498])
-    assert.deepEqual(retainedFrequencyValues.get('channel-b'), [1, 499])
+    assert.deepStrictEqual(retainedFrequencyValues.get('channel-a'), [0, 498])
+    assert.deepStrictEqual(retainedFrequencyValues.get('channel-b'), [1, 499])
   })
 
-  await it('rejects an oversized lifecycle event without mutating it or exceeding the cap', () => {
+  await it('should reject an oversized lifecycle event without mutating it or exceeding the cap', () => {
     for (const [index, eventType] of [
       OCPP20TransactionEventEnumType.Started,
       OCPP20TransactionEventEnumType.Ended,
@@ -514,7 +519,7 @@ await describe('TransactionEventQueueUtils', async () => {
     }
   })
 
-  await it('preserves the public-key reservation when another queued frame retains the key', () => {
+  await it('should preserve the public-key reservation when another queued frame retains the key', () => {
     const transactionId = '00000000-0000-4000-8000-000000000212'
     const retainedTimestamp = new Date(8_000_000)
     const retainedEvent = toQueuedEvent({
@@ -573,7 +578,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(result.bytes, getTransactionEventQueueBytes(queue))
   })
 
-  await it('retains a non-quantile signed Updated during the first compaction pass', () => {
+  await it('should retain a non-quantile signed Updated during the first compaction pass', () => {
     const transactionId = '00000000-0000-4000-8000-000000000221'
     const eventCount = Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1
     const transactionEventQueue = Array.from({ length: eventCount }, (_, seqNo) => {
@@ -619,7 +624,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(queuedTransactionEventHasPublicKey(signedEvent, transactionId), true)
   })
 
-  await it('does not transfer a public key into malformed persisted signed metadata', () => {
+  await it('should not transfer a public key into malformed persisted signed metadata', () => {
     const transactionId = '00000000-0000-4000-8000-000000000222'
     const eventCount = Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1
     const transactionEventQueue = Array.from({ length: eventCount }, (_, seqNo) => {
@@ -690,7 +695,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
   })
 
-  await it('retains malformed signed evidence and its active key reservation', () => {
+  await it('should retain malformed signed evidence and its active key reservation', () => {
     const transactionId = '00000000-0000-4000-8000-000000000224'
     const eventCount = Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1
     const malformedKeySeqNo = Math.floor(eventCount / 2) + 1
@@ -734,7 +739,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
   })
 
-  await it('retains every signed Updated event even when they exceed the cap', () => {
+  await it('should retain every signed Updated event even when they exceed the cap', () => {
     const firstTransactionId = '00000000-0000-4000-8000-000000000213'
     const secondTransactionId = '00000000-0000-4000-8000-000000000214'
     const eventCount = Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 4
@@ -783,7 +788,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(boundedQueue.includes(secondTransactionFinalSignedEvent), true)
   })
 
-  await it('retains Started and Ended cores while compacting permitted Ended meter data', () => {
+  await it('should retain Started and Ended cores while compacting permitted Ended meter data', () => {
     const transactionId = '00000000-0000-4000-8000-000000000202'
     const startedRequest: OCPP20TransactionEventRequest = {
       eventType: OCPP20TransactionEventEnumType.Started,
@@ -826,7 +831,7 @@ await describe('TransactionEventQueueUtils', async () => {
     const queue = connectorStatus.transactionEventQueue
     assert.ok(queue != null)
     assert.deepStrictEqual(queue, [startedEvent, endedEvent])
-    assert.deepEqual(endedResult.removedEvents, [])
+    assert.deepStrictEqual(endedResult.removedEvents, [])
     assert.strictEqual(endedRequest.evse, undefined)
     assert.strictEqual(endedRequest.idToken, undefined)
     assert.strictEqual(endedRequest.transactionInfo.remoteStartId, undefined)
@@ -896,7 +901,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.strictEqual(hasQueuedEndedTransactionEvent(connectorStatus, transactionId), true)
   })
 
-  await it('disposes the exact update and carries derivable active-transaction energy', () => {
+  await it('should dispose the exact update and carries derivable active-transaction energy', () => {
     const transactionId = '00000000-0000-4000-8000-000000000206'
     const intervalEvent = (seqNo: number, value: number): QueuedTransactionEvent =>
       toQueuedEvent({
@@ -1439,7 +1444,7 @@ await describe('TransactionEventQueueUtils', async () => {
     assert.ok(admitted.bytes <= Math.floor(Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES * 0.75))
   })
 
-  await it('rejects a newest update that cannot fit within the byte cap', () => {
+  await it('should reject a newest update that cannot fit within the byte cap', () => {
     const transactionId = '00000000-0000-4000-8000-000000000207'
     const baselineKey = 'AlignedDataCtrlr.Measurands'
     const request: OCPP20TransactionEventRequest = {

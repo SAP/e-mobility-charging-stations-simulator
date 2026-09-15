@@ -291,7 +291,7 @@ await describe('StrategyDispatch', async () => {
         2,
         'phase suppression must preserve distinct customData register families'
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         energySamples.map(sample => [
           (sample as { customData?: { vendorId?: string } }).customData?.vendorId,
           sample.phase,

@@ -147,7 +147,7 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     assert.strictEqual(createSpy.mock.calls.length, 1)
   })
 
-  await it('defers restored session creation and timers until replay reconciliation', async () => {
+  await it('should defer restored session creation and timers until replay reconciliation', async () => {
     const connectorStatus = station.getConnectorStatus(1, 1)
     assert.ok(connectorStatus != null)
     connectorStatus.transactionRestored = true

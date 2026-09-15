@@ -1374,6 +1374,6 @@ export abstract class OCPPRequestService {
     const calls = this.preSendBufferedCalls.get(chargingStation)
     if (calls == null) return
     calls.delete(messageId)
-    if (calls.size === 0) this.preSendBufferedCalls.delete(chargingStation)
+    if (isEmpty(calls)) this.preSendBufferedCalls.delete(chargingStation)
   }
 }

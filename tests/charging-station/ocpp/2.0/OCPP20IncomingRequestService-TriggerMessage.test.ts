@@ -2195,7 +2195,7 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(restoredResponse.statusInfo?.reasonCode, ReasonCodeEnumType.TxNotFound)
     })
 
-    await it('does not emit Updated after an Ended event is committed', async () => {
+    await it('should not emit Updated after an Ended event is committed', async () => {
       const transactionId = 'txn-ending'
       seedActiveTransaction(1, transactionId)
       const endedStarted = Promise.withResolvers<undefined>()
@@ -2238,7 +2238,7 @@ await describe('F06 - TriggerMessage', async () => {
         const transactionEvents = requestHandlerMock.mock.calls
           .filter(call => call.arguments[1] === OCPP20RequestCommand.TRANSACTION_EVENT)
           .map(call => call.arguments[2] as OCPP20TransactionEventRequest)
-        assert.deepEqual(
+        assert.deepStrictEqual(
           transactionEvents.map(({ eventType }) => eventType),
           [OCPP20TransactionEventEnumType.Ended]
         )
@@ -2248,7 +2248,7 @@ await describe('F06 - TriggerMessage', async () => {
       }
     })
 
-    await it('rejects a restored transaction with a matching queued Ended event', async () => {
+    await it('should reject a restored transaction with a matching queued Ended event', async () => {
       const transactionId = 'txn-restored-ended'
       seedActiveTransaction(1, transactionId)
       mock.method(mockStation, 'isWebSocketConnectionOpened', () => false)
@@ -2406,7 +2406,7 @@ await describe('F06 - TriggerMessage', async () => {
       assert.ok(samples.every(sample => sample.signedMeterValue != null))
     })
 
-    await it('preserves EVSE identity when connector ids are local to each EVSE', async () => {
+    await it('should preserve EVSE identity when connector ids are local to each EVSE', async () => {
       const evseStatus = mockStation.getEvseStatus(2)
       const connectorStatus = evseStatus?.connectors.get(2)
       assert.ok(evseStatus != null && connectorStatus != null)
@@ -2431,7 +2431,7 @@ await describe('F06 - TriggerMessage', async () => {
 
       assert.strictEqual(payloads.length, 1)
       assert.strictEqual(payloads[0].transactionInfo.transactionId, 'txn-evse-2-local-connector')
-      assert.deepEqual(payloads[0].evse, { connectorId: 1, id: 2 })
+      assert.deepStrictEqual(payloads[0].evse, { connectorId: 1, id: 2 })
     })
 
     await it('should still emit a TransactionEvent carrying chargingState when no TxUpdated sample is produced (F06.FR.10)', async () => {

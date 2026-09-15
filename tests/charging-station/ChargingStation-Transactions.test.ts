@@ -685,7 +685,7 @@ await describe('ChargingStation Transaction Management', async () => {
         OCPP20ServiceUtils.startEndedMeterValues(station, 1, 5000)
         OCPP20ServiceUtils.startEndedMeterValues(station, 1, 5000)
 
-        assert.deepEqual(connectorStatus.transactionEndedMeterValues, [collectedMeterValue])
+        assert.deepStrictEqual(connectorStatus.transactionEndedMeterValues, [collectedMeterValue])
       })
     })
 

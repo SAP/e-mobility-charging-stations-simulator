@@ -11,6 +11,7 @@ import {
   type QueuedTransactionEvent,
 } from '../types/index.js'
 import {
+  clone,
   Constants,
   isEmpty,
   isJsonObject,
@@ -396,7 +397,7 @@ const compactLifecycleMeterValueEndpoints = (
     const terminalMeterValue = retainedMeterValues.at(-1)
     if (terminalMeterValue == null) continue
     terminalMeterValue.sampledValue.push({
-      ...structuredClone(sample),
+      ...clone(sample),
       context: OCPP20ReadingContextEnumType.TRANSACTION_END,
       value: missingEnergy,
     })
@@ -548,7 +549,7 @@ const transferRemovedIntervalEnergy = (
         if (replacementSample != null && sampledValue.signedMeterValue == null) {
           replacementSample.value += sampledValue.value
         } else {
-          replacementMeterValue.sampledValue.push(structuredClone(sampledValue))
+          replacementMeterValue.sampledValue.push(clone(sampledValue))
         }
         changed = true
       }
@@ -602,7 +603,7 @@ const decrementEndedEventCounts = (
  * @returns Candidates in deterministic distributed-removal order.
  */
 const distributeRemovalCandidates = <T>(candidates: readonly T[]): T[] => {
-  if (candidates.length === 0) return []
+  if (isEmpty(candidates)) return []
   const orderedCandidates: T[] = []
   const ranges: { end: number; start: number }[] = [{ end: candidates.length - 1, start: 0 }]
   for (const { end, start } of ranges) {
@@ -1012,13 +1013,13 @@ export const enqueueBoundedTransactionEvent = (
       : queuedEvent
   const queuedEventBytes = getQueuedTransactionEventBytes(queuedEventWithMetadata)
   const candidateExceedsByteLimit = queuedEventBytes + 2 > maxBytes
-  const projectedBytes = accounting.bytes + queuedEventBytes + (queue.length === 0 ? 0 : 1)
+  const projectedBytes = accounting.bytes + queuedEventBytes + (isEmpty(queue) ? 0 : 1)
   let rollbackQueueSnapshot:
     readonly { queuedEvent: QueuedTransactionEvent; value: QueuedTransactionEvent }[] | undefined
   let rollbackIntervalCarry: Record<string, number> | undefined
   if (queue.length + 1 > maxLength || projectedBytes > maxBytes) {
-    const simulatedQueue = queue.map(event => structuredClone(event))
-    const simulatedQueuedEvent = structuredClone(queuedEventWithMetadata)
+    const simulatedQueue = queue.map(event => clone(event))
+    const simulatedQueuedEvent = clone(queuedEventWithMetadata)
     simulatedQueue.splice(insertionIndex, 0, simulatedQueuedEvent)
     const simulatedConnectorStatus = {
       ...connectorStatus,
@@ -1099,7 +1100,7 @@ export const enqueueBoundedTransactionEvent = (
     if (!isLifecycleEvent || candidateExceedsByteLimit) {
       rollbackQueueSnapshot = queue.map(existingEvent => ({
         queuedEvent: existingEvent,
-        value: structuredClone(existingEvent),
+        value: clone(existingEvent),
       }))
       rollbackIntervalCarry =
         connectorStatus.transactionEnergyActiveImportIntervalCarry == null
@@ -1148,7 +1149,7 @@ export const enqueueBoundedTransactionEvent = (
       if (candidateIndex >= 0) queue.splice(candidateIndex, 1)
     }
     const restoredAccounting = buildTransactionEventQueueAccounting(connectorStatus, queue)
-    if (!hadQueue && queue.length === 0) {
+    if (!hadQueue && isEmpty(queue)) {
       delete connectorStatus.transactionEventQueue
       transactionEventQueueAccounting.delete(connectorStatus)
     }

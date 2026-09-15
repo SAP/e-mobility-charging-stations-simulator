@@ -314,13 +314,13 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(connectorsStatus[0][0], 1)
       assert.strictEqual(connectorsStatus[0][1].locked, false)
       assert.strictEqual(connectorsStatus[0][1].status, OCPP20ConnectorStatusEnumType.Unavailable)
-      assert.deepEqual(connectorsStatus[0][1].energyActiveImportIntervalBaselines, {
+      assert.deepStrictEqual(connectorsStatus[0][1].energyActiveImportIntervalBaselines, {
         'station:AlignedDataCtrlr.Measurands': 15,
       })
-      assert.deepEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalBaselines, {
+      assert.deepStrictEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalBaselines, {
         'SampledDataCtrlr.TxUpdatedMeasurands': 20,
       })
-      assert.deepEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalCarry, {
+      assert.deepStrictEqual(connectorsStatus[0][1].transactionEnergyActiveImportIntervalCarry, {
         'SampledDataCtrlr.TxUpdatedMeasurands': 2,
       })
       assert.strictEqual('postTransactionDelayTransactionId' in connectorsStatus[0][1], false)
@@ -401,7 +401,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         connectorStatus.transactionStartedExhaustedTransactionId,
         '00000000-0000-4000-8000-000000000001'
       )
-      assert.deepEqual(connectorStatus.transactionEventQueue, [
+      assert.deepStrictEqual(connectorStatus.transactionEventQueue, [
         {
           request: {
             eventType: OCPP20TransactionEventEnumType.Updated,
@@ -1299,7 +1299,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
 
       const restoredConnectorStatus = prepareTestConnectorStatus(connectorStatus)
 
-      assert.deepEqual(restoredConnectorStatus.transactionEventQueue, [])
+      assert.deepStrictEqual(restoredConnectorStatus.transactionEventQueue, [])
       assert.strictEqual(restoredConnectorStatus.publicKeySentInTransaction, false)
     })
 

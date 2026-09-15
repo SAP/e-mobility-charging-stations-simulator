@@ -96,6 +96,7 @@ import {
 import {
   buildPersistentTransactionEnergyIntervalState,
   clampToSafeTimerValue,
+  clone,
   computeExponentialBackOffDelay,
   Constants,
   convertToBoolean,
@@ -181,7 +182,7 @@ const captureTransactionEventQueueSnapshot = (
     queue,
     queuedEvents: (queue ?? []).map(queuedEvent => ({
       queuedEvent,
-      value: structuredClone(queuedEvent),
+      value: clone(queuedEvent),
     })),
     transactionEnergyActiveImportIntervalCarry:
       connectorStatus.transactionEnergyActiveImportIntervalCarry == null
@@ -670,7 +671,7 @@ const clockAlignedRequestRequiresExactDelivery = (
   >
 ): boolean =>
   pending.triggerMessage === true ||
-  pending.publicKeyDeliveryTokens.length > 0 ||
+  isNotEmptyArray(pending.publicKeyDeliveryTokens) ||
   pending.request.meterValue.some(meterValue =>
     meterValue.sampledValue.some(sampledValue => sampledValue.signedMeterValue != null)
   )
@@ -887,7 +888,7 @@ const coalesceClockAlignedMeterValuesRequests = (
     const signedSamples: OCPP20SampledValue[] = []
     for (const previousSample of meterValue.sampledValue) {
       if (previousSample.signedMeterValue != null) {
-        signedSamples.push(structuredClone(previousSample))
+        signedSamples.push(clone(previousSample))
         continue
       }
       if (!isClockAlignedIntervalSample(previousSample)) continue
@@ -956,7 +957,7 @@ const appendBoundedCollectedEndedMeterValue = (
     }
   }
   const serializedMeterValueBytes = Buffer.byteLength(JSON.stringify(meterValue), 'utf8')
-  accounting.bytes += serializedMeterValueBytes + (meterValues.length === 0 ? 0 : 1)
+  accounting.bytes += serializedMeterValueBytes + (isEmpty(meterValues) ? 0 : 1)
   meterValues.push(meterValue)
   accounting.last = meterValue
   accounting.length = meterValues.length
@@ -1027,7 +1028,7 @@ const appendBoundedCollectedEndedMeterValue = (
         retainedSample.value += missingEnergy
         continue
       }
-      const aggregateSample = structuredClone(sample)
+      const aggregateSample = clone(sample)
       delete aggregateSample.signedMeterValue
       aggregateSample.value = missingEnergy
       latestMeterValue.sampledValue.push(aggregateSample)
@@ -3127,14 +3128,14 @@ export class OCPP20ServiceUtils {
       ) ?? Constants.DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS.toString()
     if (!/^[0-9]+$/.test(value)) {
       logger.warn(
-        `${moduleName}.readAlignedDataIntervalSeconds: Invalid integer '${value}' for AlignedDataCtrlr.Interval`
+        `${chargingStation.logPrefix()} ${moduleName}.readAlignedDataIntervalSeconds: Invalid integer '${value}' for AlignedDataCtrlr.Interval`
       )
       return
     }
     const intervalSeconds = Number(value)
     if (!Number.isSafeInteger(intervalSeconds) || intervalSeconds > Constants.SECONDS_PER_DAY) {
       logger.warn(
-        `${moduleName}.readAlignedDataIntervalSeconds: Out-of-range value '${value}' for AlignedDataCtrlr.Interval`
+        `${chargingStation.logPrefix()} ${moduleName}.readAlignedDataIntervalSeconds: Out-of-range value '${value}' for AlignedDataCtrlr.Interval`
       )
       return
     }
@@ -3543,7 +3544,7 @@ export class OCPP20ServiceUtils {
           OCPP20ServiceUtils.stopTransactionOperations.delete(activeTransaction.connectorStatus)
         }
         stationOperations.delete(operation)
-        if (stationOperations.size === 0) {
+        if (isEmpty(stationOperations)) {
           OCPP20ServiceUtils.stopTransactionOperationsByStation.delete(chargingStation)
         }
       })
@@ -4600,7 +4601,7 @@ export class OCPP20ServiceUtils {
           pending.push(promise)
         }
       }
-      if (pending.length === 0) return
+      if (isEmpty(pending)) return
       await Promise.allSettled(pending)
     }
   }
@@ -6130,7 +6131,7 @@ export class OCPP20ServiceUtils {
         const blockUntilPredecessorsSettle = (
           queuedEvent: QueuedTransactionEvent
         ): Promise<void> | undefined => {
-          if (endedPredecessors == null || endedPredecessors.dependencies.length === 0) return
+          if (endedPredecessors == null || isEmpty(endedPredecessors.dependencies)) return
           predecessorReconciliationReady = false
           setTransactionEventQueueBlocked(queuedEvent, true)
           queuedEvent.meterValuePredecessorsPending = true
@@ -6215,7 +6216,7 @@ export class OCPP20ServiceUtils {
             publicKeyDeliveryToken,
             connectorId,
             evseId ?? connectorId,
-            endedPredecessors != null && endedPredecessors.dependencies.length > 0
+            endedPredecessors != null && isNotEmptyArray(endedPredecessors.dependencies)
           )
           if (queuedEvent != null) predecessorSettlement = blockUntilPredecessorsSettle(queuedEvent)
           retainPublicKeyDelivery(publicKeyDeliveryToken)
@@ -6273,7 +6274,7 @@ export class OCPP20ServiceUtils {
             publicKeyDeliveryToken,
             connectorId,
             evseId ?? connectorId,
-            endedPredecessors != null && endedPredecessors.dependencies.length > 0
+            endedPredecessors != null && isNotEmptyArray(endedPredecessors.dependencies)
           )
           if (stagedEvent != null) {
             setTransactionEventQueueStaged(connectorStatus, stagedEvent, true)
@@ -6795,7 +6796,7 @@ export class OCPP20ServiceUtils {
       transactionEndedMeterValues:
         connectorStatus.transactionEndedMeterValues == null
           ? undefined
-          : structuredClone(connectorStatus.transactionEndedMeterValues),
+          : clone(connectorStatus.transactionEndedMeterValues),
       transactionEndedSamplerRunning:
         connectorStatus.transactionEndedMeterValuesSetInterval != null,
       transactionEnding: transactionEndingAtEntry,
@@ -6828,7 +6829,7 @@ export class OCPP20ServiceUtils {
       if (checkpoint.transactionEndedMeterValues == null) {
         delete connectorStatus.transactionEndedMeterValues
       } else {
-        connectorStatus.transactionEndedMeterValues = structuredClone(
+        connectorStatus.transactionEndedMeterValues = clone(
           checkpoint.transactionEndedMeterValues
         )
       }
@@ -6982,7 +6983,7 @@ export class OCPP20ServiceUtils {
     }
 
     if (
-      meterValueDependencies.length > 0 &&
+      isNotEmptyArray(meterValueDependencies) &&
       hasQueuedEndedTransactionEvent(connectorStatus, transactionId)
     ) {
       return response
@@ -7131,7 +7132,7 @@ export function buildTransactionEvent (
       ]
       if (matchingEvseIds.length !== 1) {
         const errorMsg =
-          matchingEvseIds.length === 0
+          isEmpty(matchingEvseIds)
             ? `Cannot find EVSE ID for connector ${suppliedConnectorId.toString()}`
             : `Connector ${suppliedConnectorId.toString()} is ambiguous without an EVSE ID`
         logger.error(

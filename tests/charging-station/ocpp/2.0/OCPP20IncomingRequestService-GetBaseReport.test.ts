@@ -166,7 +166,7 @@ await describe('B07 - Get Base Report', async () => {
         item.variable.name === (OCPP20OptionalVariableName.SendDuringIdle as string)
     )
 
-    assert.deepEqual(
+    assert.deepStrictEqual(
       entries.map(entry => [entry.component.evse?.id, entry.variableAttribute[0]?.value]),
       [
         [undefined, 'false'],

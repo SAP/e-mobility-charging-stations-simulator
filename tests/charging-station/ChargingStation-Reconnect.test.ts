@@ -91,7 +91,7 @@ await describe('ChargingStation reconnect decision on WebSocket close', async ()
     assert.strictEqual(station.wsConnection, null)
   })
 
-  await it('restores acknowledged buffered calls when their socket closes', () => {
+  await it('should restore acknowledged buffered calls when their socket closes', () => {
     const { socket, station } = makeStation()
     const internals = station as unknown as StationInternals
     const message = '[2,"replay-after-close","Heartbeat",{}]'

@@ -169,7 +169,7 @@ await describe('D14 - GetTransactionStatus', async () => {
     assert.strictEqual(response.messagesInQueue, false)
   })
 
-  await it('stops reporting a direct delivery after its wire response arrives', async () => {
+  await it('should stop reporting a direct delivery after its wire response arrives', async () => {
     const requestSent = Promise.withResolvers<undefined>()
     const deliverWireResponse = Promise.withResolvers<undefined>()
     const wireResponseReceived = Promise.withResolvers<undefined>()
@@ -201,7 +201,7 @@ await describe('D14 - GetTransactionStatus', async () => {
     )
     await requestSent.promise
 
-    assert.deepEqual(
+    assert.deepStrictEqual(
       testableService.handleRequestGetTransactionStatus(station, {
         transactionId: TEST_TRANSACTION_UUID,
       }),
@@ -211,13 +211,13 @@ await describe('D14 - GetTransactionStatus', async () => {
     deliverWireResponse.resolve(undefined)
     await wireResponseReceived.promise
 
-    assert.deepEqual(
+    assert.deepStrictEqual(
       testableService.handleRequestGetTransactionStatus(station, {
         transactionId: TEST_TRANSACTION_UUID,
       }),
       { messagesInQueue: false, ongoingIndicator: false }
     )
-    assert.deepEqual(testableService.handleRequestGetTransactionStatus(station, {}), {
+    assert.deepStrictEqual(testableService.handleRequestGetTransactionStatus(station, {}), {
       messagesInQueue: false,
     })
 
@@ -226,7 +226,7 @@ await describe('D14 - GetTransactionStatus', async () => {
     assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
   })
 
-  await it('reports a direct Ended delivery during its E13 retry delay', async t => {
+  await it('should report a direct Ended delivery during its E13 retry delay', async t => {
     await withMockTimers(t, ['setTimeout'], async () => {
       let attempts = 0
       const firstAttemptFailed = Promise.withResolvers<undefined>()
@@ -274,13 +274,13 @@ await describe('D14 - GetTransactionStatus', async () => {
       })
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         testableService.handleRequestGetTransactionStatus(station, {
           transactionId: TEST_TRANSACTION_UUID,
         }),
         { messagesInQueue: true, ongoingIndicator: false }
       )
-      assert.deepEqual(testableService.handleRequestGetTransactionStatus(station, {}), {
+      assert.deepStrictEqual(testableService.handleRequestGetTransactionStatus(station, {}), {
         messagesInQueue: true,
       })
       assert.deepStrictEqual(
@@ -300,7 +300,7 @@ await describe('D14 - GetTransactionStatus', async () => {
       await assert.rejects(delivery, /final attempt failed/)
       assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         testableService.handleRequestGetTransactionStatus(station, {
           transactionId: TEST_TRANSACTION_UUID,
         }),

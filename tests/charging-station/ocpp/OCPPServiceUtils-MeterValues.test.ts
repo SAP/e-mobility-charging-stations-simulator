@@ -327,7 +327,7 @@ await describe('buildMeterValue', async () => {
             !('format' in sample)
         )
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         meterValue.sampledValue
           .map(sample =>
             [sample.customData?.vendorId, sample.location, sample.unitOfMeasure?.unit].join('|')

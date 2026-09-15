@@ -485,7 +485,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(typeof response, 'object')
       })
 
-      await it('retains a pre-send failure for later replay without retrying immediately', async () => {
+      await it('should retain a pre-send failure for later replay without retrying immediately', async () => {
         const preSendFailure = new OCPPError(
           ErrorType.GENERIC_ERROR,
           'TransactionEvent failed before transport send',
@@ -635,7 +635,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         })
       })
 
-      await it('retains locally rejected interval evidence for explicit replay', async () => {
+      await it('should retain locally rejected interval evidence for explicit replay', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const intervalBaselineKey = `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxUpdatedMeasurands}`
@@ -751,7 +751,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(replayedIntervalEnergy, 10)
       })
 
-      await it('does not create an Updated event after transaction ending starts', async () => {
+      await it('should not create an Updated event after transaction ending starts', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         setupConnectorWithTransaction(mockStation, connectorId, { transactionId })
@@ -2036,7 +2036,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.transactionEventQueue[0].request.offline, true)
       })
 
-      await it('does not backdate a queued event after disconnect', async () => {
+      await it('should not backdate a queued event after disconnect', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         setOnline(true)
@@ -2105,7 +2105,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepStrictEqual(persistedAttempts, [[true, false], [true]])
       })
 
-      await it('returns after its initial replay generation while later events drain separately', async () => {
+      await it('should return after its initial replay generation while later events drain separately', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -2167,18 +2167,18 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await secondStarted.promise
         const connectorStatus = station.getConnectorStatus(connectorId)
         assert.ok(connectorStatus != null)
-        assert.deepEqual(
+        assert.deepStrictEqual(
           connectorStatus.transactionEventQueue?.map(event => event.seqNo),
           [1]
         )
 
         releaseSecond.resolve(undefined)
         await OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
-        assert.deepEqual(connectorStatus.transactionEventQueue, [])
-        assert.deepEqual(sentSeqNos, [0, 1])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(sentSeqNos, [0, 1])
       })
 
-      await it('keeps a later Ended event visible while replaying Started', async () => {
+      await it('should keep a later Ended event visible while replaying Started', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -2275,7 +2275,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.locked, false)
       })
 
-      await it('keeps every persisted replayed Ended snapshot consistent during post-transaction delay', async t => {
+      await it('should keep every persisted replayed Ended snapshot consistent during post-transaction delay', async t => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -2342,7 +2342,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const replay = OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
           for (let index = 0; index < 10; index++) await flushMicrotasks()
 
-          assert.deepEqual(connectorStatus.transactionEventQueue, [])
+          assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
           assert.strictEqual(connectorStatus.transactionStarted, false)
           assert.strictEqual(connectorStatus.transactionId, undefined)
           assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Occupied)
@@ -2364,7 +2364,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             true
           )
         }
-        assert.deepEqual(
+        assert.deepStrictEqual(
           {
             eventTypes: snapshots[0].eventTypes,
             status: snapshots[0].status,
@@ -2379,7 +2379,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           }
         )
         const finalSnapshot = snapshots.at(-1)
-        assert.deepEqual(
+        assert.deepStrictEqual(
           finalSnapshot == null
             ? undefined
             : {
@@ -2397,7 +2397,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
         const restoredConnectorStatus = prepareConnectorStatus(snapshots[0].connectorStatus)
         assert.strictEqual(restoredConnectorStatus.transactionRestored, false)
-        assert.deepEqual(restoredConnectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(restoredConnectorStatus.transactionEventQueue, [])
         const evseStatus = station.getEvseStatus(1)
         assert.ok(evseStatus != null)
         evseStatus.connectors.set(1, restoredConnectorStatus)
@@ -2546,7 +2546,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       })
     })
 
-    await it('keeps identical sequence numbers from successive offline transactions', async () => {
+    await it('should keep identical sequence numbers from successive offline transactions', async () => {
       const connectorId = 1
       const firstTransactionId = generateUUID()
       const secondTransactionId = generateUUID()
@@ -2572,7 +2572,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       const queue = mockStation.getConnectorStatus(connectorId)?.transactionEventQueue
       assert.ok(queue != null)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         queue.map(event => [event.request.transactionInfo.transactionId, event.seqNo]),
         [
           [firstTransactionId, 0],
@@ -2753,7 +2753,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(errorStation, connectorId)
 
         assert.strictEqual(callCount, 2)
-        assert.deepEqual(
+        assert.deepStrictEqual(
           connectorStatus.transactionEventQueue?.map(event => event.request.eventType),
           [OCPP20TransactionEventEnumType.Updated, OCPP20TransactionEventEnumType.Ended]
         )
@@ -2762,10 +2762,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(errorStation, connectorId)
 
         assert.strictEqual(callCount, 4)
-        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       })
 
-      await it('retries an ambiguous open-socket send timeout reported before confirmation', async () => {
+      await it('should retry an ambiguous open-socket send timeout reported before confirmation', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const transportError = new OCPPError(
@@ -2838,7 +2838,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.transactionEventQueue, undefined)
       })
 
-      await it('retains an event when a reported transport send failure closes the socket', async () => {
+      await it('should retain an event when a reported transport send failure closes the socket', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = true
@@ -2889,7 +2889,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
       })
 
-      await it('queues and replays a definitely not sent live event while the socket stays open', async () => {
+      await it('should queue and replays a definitely not sent live event while the socket stays open', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const transportError = new OCPPError(
@@ -2949,10 +2949,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
 
         assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
-        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       })
 
-      await it('retains a definitely-unsent direct Ended until explicit replay finalizes it', async () => {
+      await it('should retain a definitely-unsent direct Ended until explicit replay finalizes it', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const preSendFailure = new OCPPError(
@@ -3017,7 +3017,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.transactionId, undefined)
       })
 
-      await it('discards a malformed queued head and sends the following event', async () => {
+      await it('should discard a malformed queued head and sends the following event', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -3096,7 +3096,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
 
-        assert.deepEqual(attemptedSequenceNumbers, [0, 1])
+        assert.deepStrictEqual(attemptedSequenceNumbers, [0, 1])
         assert.ok(successorPayload != null)
         const successorIntervalEnergy =
           successorPayload.meterValue
@@ -3107,10 +3107,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             )
             .reduce((total, sampledValue) => total + sampledValue.value, 0) ?? 0
         assert.strictEqual(successorIntervalEnergy, 10)
-        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       })
 
-      await it('disposes a definitely not sent queued head after retries and sends the next event', async () => {
+      await it('should dispose a definitely not sent queued head after retries and sends the next event', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -3217,14 +3217,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
 
-        assert.deepEqual(attemptedSequenceNumbers, [0, 0, 1])
+        assert.deepStrictEqual(attemptedSequenceNumbers, [0, 0, 1])
         assert.ok(successorPayload != null)
         const successorPublicKeys =
           successorPayload.meterValue
             ?.flatMap(meterValue => meterValue.sampledValue)
             .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
             .filter(publicKey => (publicKey?.length ?? 0) > 0) ?? []
-        assert.deepEqual(successorPublicKeys, ['public-key'])
+        assert.deepStrictEqual(successorPublicKeys, ['public-key'])
         const successorIntervalEnergy =
           successorPayload.meterValue
             ?.flatMap(meterValue => meterValue.sampledValue)
@@ -3234,10 +3234,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             )
             .reduce((total, sampledValue) => total + sampledValue.value, 0) ?? 0
         assert.strictEqual(successorIntervalEnergy, 10)
-        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       })
 
-      await it('does not transfer a queued public key or energy after an ambiguous attempt precedes a definite local retry failure', async () => {
+      await it('should not transfer a queued public key or energy after an ambiguous attempt precedes a definite local retry failure', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -3357,7 +3357,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
 
-        assert.deepEqual(attemptedSequenceNumbers, [0, 0])
+        assert.deepStrictEqual(attemptedSequenceNumbers, [0, 0])
         assert.strictEqual(successorPayload, undefined)
         assert.strictEqual(connectorStatus.transactionEventQueue?.length, 2)
         assert.strictEqual(connectorStatus.transactionEventQueue[0].deliveryAttempted, true)
@@ -3485,7 +3485,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       })
 
-      await it('keeps a fresh Ended queued behind an ambiguous old lifecycle request', async () => {
+      await it('should keep a fresh Ended queued behind an ambiguous old lifecycle request', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const oldLifecycle = new AbortController()
@@ -3544,13 +3544,13 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
         await Promise.resolve()
-        assert.deepEqual(sentEventTypes, [OCPP20TransactionEventEnumType.Started])
+        assert.deepStrictEqual(sentEventTypes, [OCPP20TransactionEventEnumType.Started])
 
         oldRequest.reject(new Error('old request cancelled'))
         assert.match(String(await oldDeliveryResult), /old request cancelled/)
         await stopDelivery
 
-        assert.deepEqual(sentEventTypes, [OCPP20TransactionEventEnumType.Started])
+        assert.deepStrictEqual(sentEventTypes, [OCPP20TransactionEventEnumType.Started])
         assert.deepStrictEqual(
           station
             .getConnectorStatus(connectorId)
@@ -3559,7 +3559,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
       })
 
-      await it('queues an Ended waiter blocked behind a CALL when disconnect aborts delivery', async () => {
+      await it('should queue an Ended waiter blocked behind a CALL when disconnect aborts delivery', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const oldLifecycle = new AbortController()
@@ -3618,13 +3618,13 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorStatus = mockStation.getConnectorStatus(connectorId)
         assert.ok(connectorStatus != null)
         assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-        assert.deepEqual(
+        assert.deepStrictEqual(
           connectorStatus.transactionEventQueue?.map(event => event.request.eventType),
           [OCPP20TransactionEventEnumType.Started, OCPP20TransactionEventEnumType.Ended]
         )
       })
 
-      await it('serializes old replay drains and a fresh Ended without duplicate or reordered sends', async () => {
+      await it('should serialize old replay drains and a fresh Ended without duplicate or reordered sends', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const oldLifecycle = new AbortController()
@@ -3706,14 +3706,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.ok(connectorStatus != null)
         assert.strictEqual(maximumActiveHandlers, 1)
         assert.strictEqual(handlerCallCount, 3)
-        assert.deepEqual(sentEventTypes, [
+        assert.deepStrictEqual(sentEventTypes, [
           OCPP20TransactionEventEnumType.Started,
           OCPP20TransactionEventEnumType.Ended,
         ])
-        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       })
 
-      await it('does not let a local start seize a pending remote-start reservation', async () => {
+      await it('should not let a local start seize a pending remote-start reservation', async () => {
         const transactionId = generateUUID()
         const requestHandlerMock = mock.fn(() => Promise.resolve({}))
         const { station } = createMockChargingStation({
@@ -3746,7 +3746,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.notStrictEqual(connectorStatus.transactionStarting, true)
       })
 
-      await it('delivers a local Authorized start while transactionStarting owns the connector', async () => {
+      await it('should deliver a local Authorized start while transactionStarting owns the connector', async () => {
         const sentRequests: OCPP20TransactionEventRequest[] = []
         const requestHandlerMock = mock.fn((...args: unknown[]): Promise<EmptyObject> => {
           const request = args[2] as OCPP20TransactionEventRequest
@@ -3780,7 +3780,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         OCPP20ServiceUtils.stopEndedMeterValues(station, 1, 1)
       })
 
-      await it('rolls back a local start that loses ownership behind the delivery chain', async () => {
+      await it('should roll back a local start that loses ownership behind the delivery chain', async () => {
         const transactionId = generateUUID()
         const firstRequestStarted = Promise.withResolvers<undefined>()
         const releaseFirstRequest = Promise.withResolvers<EmptyObject>()
@@ -3830,7 +3830,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.transactionEnding, true)
       })
 
-      await it('drops a queued Started after Ended seizes its pending transaction', async () => {
+      await it('should drop a queued Started after Ended seizes its pending transaction', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const firstRequestStarted = Promise.withResolvers<undefined>()
@@ -3904,7 +3904,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         ])
       })
 
-      await it('recomputes connectivity after waiting for the connector delivery chain', async () => {
+      await it('should recompute connectivity after waiting for the connector delivery chain', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const firstRequestStarted = Promise.withResolvers<undefined>()
@@ -3967,7 +3967,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.transactionEventQueue?.length ?? 0, 0)
       })
 
-      await it('does not remove a replacement queue head after the delivered object was replaced', async () => {
+      await it('should not remove a replacement queue head after the delivered object was replaced', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -4015,7 +4015,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.transactionEventQueue[0], replacement)
       })
 
-      await it('queues a sent event when station shutdown interrupts delivery', async () => {
+      await it('should queue a sent event when station shutdown interrupts delivery', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let attemptedStatePersisted = false
@@ -4063,14 +4063,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         const connectorStatus = station.getConnectorStatus(connectorId)
         assert.ok(connectorStatus != null)
-        assert.deepEqual(
+        assert.deepStrictEqual(
           connectorStatus.transactionEventQueue?.map(event => event.seqNo),
           [0]
         )
         assert.strictEqual(connectorStatus.transactionEventQueue[0].deliveryAttempted, true)
       })
 
-      await it('preserves replayed events when station shutdown aborts delivery', async () => {
+      await it('should preserve replayed events when station shutdown aborts delivery', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -4113,14 +4113,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         const connectorStatus = station.getConnectorStatus(connectorId)
         assert.ok(connectorStatus != null)
-        assert.deepEqual(
+        assert.deepStrictEqual(
           connectorStatus.transactionEventQueue?.map(event => event.seqNo),
           [0]
         )
         assert.strictEqual(connectorStatus.transactionEventQueue[0].deliveryAttempted, true)
       })
 
-      await it('does not reschedule a preserved queue head after stopping begins', async () => {
+      await it('should not reschedule a preserved queue head after stopping begins', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = true
@@ -4190,13 +4190,13 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorStatus = station.getConnectorStatus(connectorId)
         assert.ok(connectorStatus != null)
         assert.strictEqual(callCount, 2)
-        assert.deepEqual(
+        assert.deepStrictEqual(
           connectorStatus.transactionEventQueue?.map(event => event.seqNo),
           [1]
         )
       })
 
-      await it('retries a staged Ended after an earlier coalesced persistence failure', async () => {
+      await it('should retry a staged Ended after an earlier coalesced persistence failure', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const priorSave = Promise.withResolvers<undefined>()
@@ -4265,7 +4265,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.transactionStarted, false)
       })
 
-      await it('waits for staged Ended retry persistence before sending', async () => {
+      await it('should wait for staged Ended retry persistence before sending', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const writeFailure = Object.assign(
@@ -4609,7 +4609,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         })
       })
 
-      await it('retains direct Ended until response handling completes before persisting cleanup', async () => {
+      await it('should retain direct Ended until response handling completes before persisting cleanup', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const responseReceived = Promise.withResolvers<undefined>()
@@ -4690,7 +4690,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
       })
 
-      await it('commits an acknowledged direct Ended before observing a sealed lifecycle', async () => {
+      await it('should commit an acknowledged direct Ended before observing a sealed lifecycle', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const oldLifecycle = new AbortController()
@@ -4835,7 +4835,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
       })
 
-      await it('retains an ambiguous older Ended without cleaning up the current transaction', async () => {
+      await it('should retain an ambiguous older Ended without cleaning up the current transaction', async () => {
         const connectorId = 1
         const firstTransactionId = generateUUID()
         const currentTransactionId = generateUUID()
@@ -4940,11 +4940,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         firstAttempt.reject(new Error('connection lost'))
         await inFlight
 
-        assert.deepEqual(
+        assert.deepStrictEqual(
           station.getConnectorStatus(connectorId)?.transactionEventQueue?.map(event => event.seqNo),
           [0, 1]
         )
-        assert.deepEqual(
+        assert.deepStrictEqual(
           station
             .getConnectorStatus(connectorId)
             ?.transactionEventQueue?.map(event => event.request.offline),
@@ -4952,7 +4952,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
       })
 
-      await it('preserves cross-transaction FIFO when replay is interrupted', async () => {
+      await it('should preserve cross-transaction FIFO when replay is interrupted', async () => {
         const connectorId = 1
         const firstTransactionId = generateUUID()
         const secondTransactionId = generateUUID()
@@ -5017,7 +5017,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await replay
 
         const queue = station.getConnectorStatus(connectorId)?.transactionEventQueue
-        assert.deepEqual(
+        assert.deepStrictEqual(
           queue?.map(event => [event.request.transactionInfo.transactionId, event.seqNo]),
           [
             [firstTransactionId, 0],
@@ -5088,10 +5088,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         releaseFirstReplay.resolve(undefined)
         await Promise.all([replay, live])
 
-        assert.deepEqual(sentSequenceNumbers, [0, 1, 2])
+        assert.deepStrictEqual(sentSequenceNumbers, [0, 1, 2])
       })
 
-      await it('drains an existing queue before sending a later live event', async () => {
+      await it('should drain an existing queue before sending a later live event', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         setOnline(false)
@@ -5121,14 +5121,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
-        assert.deepEqual(
+        assert.deepStrictEqual(
           sentRequests.map(request => request.payload.seqNo),
           [0, 1, 2]
         )
-        assert.deepEqual(mockStation.getConnectorStatus(connectorId)?.transactionEventQueue, [])
+        assert.deepStrictEqual(mockStation.getConnectorStatus(connectorId)?.transactionEventQueue, [])
       })
 
-      await it('does not let a later aligned event overtake a serialized live event', async () => {
+      await it('should not let a later aligned event overtake a serialized live event', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const firstDeliveryStarted = Promise.withResolvers<undefined>()
@@ -5186,7 +5186,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.ok(connectorStatus != null)
         await OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
 
-        assert.deepEqual(sentSequenceNumbers, [0, 1, 2])
+        assert.deepStrictEqual(sentSequenceNumbers, [0, 1, 2])
       })
 
       await it('should complete an Updated retry before a concurrent Ended event', async () => {
@@ -5262,7 +5262,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         releaseFirstAttempt.resolve(undefined)
         await Promise.all([updated, ended])
 
-        assert.deepEqual(sentSequenceNumbers, [0, 0, 1])
+        assert.deepStrictEqual(sentSequenceNumbers, [0, 0, 1])
       })
 
       for (const callError of [false, true]) {
@@ -5352,7 +5352,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         })
       }
 
-      await it('retains a pre-send-failed public-key event ahead of later queued work', async () => {
+      await it('should retain a pre-send-failed public-key event ahead of later queued work', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const successfulPayloads: OCPP20TransactionEventRequest[] = []
@@ -5472,7 +5472,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepStrictEqual(connectorStatus.transactionEventQueue ?? [], [])
       })
 
-      await it('keeps public-key ownership and drops energy after an ambiguous attempt precedes a definite local retry failure', async () => {
+      await it('should keep public-key ownership and drops energy after an ambiguous attempt precedes a definite local retry failure', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const intervalBaselineKey = `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxUpdatedMeasurands}`
@@ -5641,7 +5641,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(successorIntervalEnergy, 0)
       })
 
-      await it('does not carry interval energy when a timeout precedes exhausted CALLERROR retries', async () => {
+      await it('should not carry interval energy when a timeout precedes exhausted CALLERROR retries', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let attempt = 0
@@ -5713,7 +5713,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
       })
 
-      await it('keeps a prior CALLERROR classification when the final retry is definitely unsent', async () => {
+      await it('should keep a prior CALLERROR classification when the final retry is definitely unsent', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const intervalBaselineKey = `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxUpdatedMeasurands}`
@@ -5871,7 +5871,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         })
       }
 
-      await it('counts same-transaction direct deliveries across the serialization wait', async () => {
+      await it('should count same-transaction direct deliveries across the serialization wait', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const firstDeliveryStarted = Promise.withResolvers<undefined>()
@@ -5945,14 +5945,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           OCPP20ServiceUtils.hasPendingTransactionEventDelivery(connectorStatus, transactionId),
           false
         )
-        assert.deepEqual(sentEventTypes, [
+        assert.deepStrictEqual(sentEventTypes, [
           OCPP20TransactionEventEnumType.Started,
           OCPP20TransactionEventEnumType.Ended,
         ])
-        assert.deepEqual(connectorStatus.transactionEventQueue ?? [], [])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue ?? [], [])
       })
 
-      await it('scopes parallel Updated deliveries by connector and transaction', async () => {
+      await it('should scope parallel Updated deliveries by connector and transaction', async () => {
         const firstTransactionId = generateUUID()
         const secondTransactionId = generateUUID()
         const firstDeliveryStarted = Promise.withResolvers<undefined>()
@@ -6129,12 +6129,12 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             releaseFirstAttempt.resolve(undefined)
             await Promise.all([preceding, ended])
 
-            assert.deepEqual(deliveryTrace, [
+            assert.deepStrictEqual(deliveryTrace, [
               [eventType, 0],
               [eventType, 0],
               [OCPP20TransactionEventEnumType.Ended, 1],
             ])
-            assert.deepEqual(
+            assert.deepStrictEqual(
               station.getConnectorStatus(connectorId)?.transactionEventQueue ?? [],
               []
             )
@@ -6142,7 +6142,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
       }
 
-      await it('does not replay a later queued Updated before a waiting Ended event', async () => {
+      await it('should not replay a later queued Updated before a waiting Ended event', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const firstAttemptStarted = Promise.withResolvers<undefined>()
@@ -6218,11 +6218,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.ok(connectorStatus != null)
         await OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
 
-        assert.deepEqual(sentSequenceNumbers, [0, 0, 1, 2])
-        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(sentSequenceNumbers, [0, 0, 1, 2])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       })
 
-      await it('queues periodic updates without stacking delivery promises', async () => {
+      await it('should queue periodic updates without stacking delivery promises', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const firstDeliveryStarted = Promise.withResolvers<undefined>()
@@ -6283,11 +6283,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.ok(connectorStatus != null)
         await OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
 
-        assert.deepEqual(sentSequenceNumbers, [0, 1])
-        assert.deepEqual(station.getConnectorStatus(connectorId)?.transactionEventQueue, [])
+        assert.deepStrictEqual(sentSequenceNumbers, [0, 1])
+        assert.deepStrictEqual(station.getConnectorStatus(connectorId)?.transactionEventQueue, [])
       })
 
-      await it('replays a retained public-key event only after an explicit wake', async () => {
+      await it('should replay a retained public-key event only after an explicit wake', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const firstDeliveryStarted = Promise.withResolvers<undefined>()
@@ -6406,7 +6406,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       })
 
-      await it('retains a reserved public key when queued delivery fails before send', async () => {
+      await it('should retain a reserved public key when queued delivery fails before send', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -6473,7 +6473,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
       })
 
-      await it('moves a rejected public key past malformed persisted signing metadata', async () => {
+      await it('should move a rejected public key past malformed persisted signing metadata', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -6574,7 +6574,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       })
 
-      await it('reopens a public key reservation after rejecting malformed signed metadata', async () => {
+      await it('should reopen a public key reservation after rejecting malformed signed metadata', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -6696,7 +6696,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
       })
 
-      await it('retains a historical public-key event after a pre-send failure', async () => {
+      await it('should retain a historical public-key event after a pre-send failure', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -6787,7 +6787,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
       })
 
-      await it('moves a CALLERROR-rejected live public key to a later queued event', async () => {
+      await it('should move a CALLERROR-rejected live public key to a later queued event', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const stationHolder: { station?: ChargingStation } = {}
@@ -6875,7 +6875,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
       })
 
-      await it('carries signed interval energy without duplicating its public key after queued CALLERROR', async () => {
+      await it('should carry signed interval energy without duplicating its public key after queued CALLERROR', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -7061,7 +7061,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           requestHandlerMock.mock.calls[0].arguments[2],
           requestHandlerMock.mock.calls[1].arguments[2]
         )
-        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
         assert.strictEqual(connectorStatus.transactionStarted, true)
         assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry, undefined)
       })
@@ -7475,7 +7475,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS * 1000)
     })
-    await it('clamps persisted retry settings to their registry bounds', () => {
+    await it('should clamp persisted retry settings to their registry bounds', () => {
       addConfigurationKey(
         station,
         `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.${OCPP20RequestCommand.TRANSACTION_EVENT}`,
@@ -7763,7 +7763,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       standardCleanup()
     })
 
-    await it('restores coherent SoC on EVSE 2 when connector ids repeat before arming timers', () => {
+    await it('should restore coherent SoC on EVSE 2 when connector ids repeat before arming timers', () => {
       mock.timers.enable({ apis: ['setInterval'] })
       const { station } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -7851,7 +7851,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(endedTimerSpy.mock.calls[0].arguments[3], 2)
     })
 
-    await it('applies restored energy once to an existing coherent session and clamps SoC', () => {
+    await it('should apply restored energy once to an existing coherent session and clamps SoC', () => {
       const { station } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
@@ -8005,7 +8005,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             },
           }
         )
-        assert.deepEqual(
+        assert.deepStrictEqual(
           connectorStatus.transactionEventQueue?.at(-1)
             ?.transactionEnergyActiveImportIntervalBaselines,
           { test: 23 }
@@ -8033,7 +8033,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             call =>
               (call.arguments[2] as OCPP20TransactionEventRequest).transactionInfo.transactionId
           )
-        assert.deepEqual(attemptedTransactionIds, [
+        assert.deepStrictEqual(attemptedTransactionIds, [
           failedTransactionId,
           failedTransactionId,
           failedTransactionId,
@@ -8044,7 +8044,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           replacementTransactionId,
           replacementTransactionId,
         ])
-        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
         assert.strictEqual(connectorStatus.transactionId, replacementTransactionId)
         assert.strictEqual(connectorStatus.transactionIdTag, replacementIdToken)
         assert.strictEqual(connectorStatus.transactionStarted, false)
@@ -8056,8 +8056,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           undefined
         )
         assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 123)
-        assert.deepEqual(connectorStatus.transactionBeginMeterValue, replacementBeginMeterValue)
-        assert.deepEqual(
+        assert.deepStrictEqual(connectorStatus.transactionBeginMeterValue, replacementBeginMeterValue)
+        assert.deepStrictEqual(
           destroySessionSpy.mock.calls.map(call => call.arguments[0]),
           [failedTransactionId]
         )
@@ -8137,7 +8137,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       })
     }
 
-    await it('does not clear a replacement transaction installed during CALLERROR handling', async () => {
+    await it('should not clear a replacement transaction installed during CALLERROR handling', async () => {
       const connectorId = 1
       const failedTransactionId = generateUUID()
       const replacementTransactionId = generateUUID()
@@ -8195,17 +8195,17 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 3)
-      assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       assert.strictEqual(connectorStatus.transactionId, replacementTransactionId)
       assert.strictEqual(connectorStatus.transactionStarted, true)
       assert.strictEqual(connectorStatus.transactionRestored, undefined)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         destroySessionSpy.mock.calls.map(call => call.arguments[0]),
         [failedTransactionId]
       )
     })
 
-    await it('does not clear a replacement transaction after a stale Ended response', async () => {
+    await it('should not clear a replacement transaction after a stale Ended response', async () => {
       const connectorId = 1
       const endedTransactionId = generateUUID()
       const replacementTransactionId = generateUUID()
@@ -8261,7 +8261,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(connectorStatus.transactionIdTag, 'REPLACEMENT')
     })
 
-    await it('restores Ended ownership after exhausted Started and drains remaining events', async () => {
+    await it('should restore Ended ownership after exhausted Started and drains remaining events', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       let online = false
@@ -8380,7 +8380,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       )
     })
 
-    await it('restores an Ended-only transaction and clears its ownership after replay', async () => {
+    await it('should restore an Ended-only transaction and clears its ownership after replay', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const eventTimestamp = new Date('2026-09-01T12:00:00.000Z')
@@ -8540,7 +8540,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       })
     }
 
-    await it('keeps a restored owning Started event recoverable across disconnects', async () => {
+    await it('should keep a restored owning Started event recoverable across disconnects', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       let online = false
@@ -8612,7 +8612,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
       assert.strictEqual(connectorStatus.transactionEventQueue[0], queuedEvent)
-      assert.deepEqual(connectorStatus.transactionEventQueue[0].request, originalPayload)
+      assert.deepStrictEqual(connectorStatus.transactionEventQueue[0].request, originalPayload)
       assert.strictEqual(connectorStatus.transactionId, transactionId)
       assert.strictEqual(connectorStatus.transactionStarting, true)
       assert.strictEqual(connectorStatus.transactionRestored, true)
@@ -8627,7 +8627,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
       assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
       assert.strictEqual(connectorStatus.transactionEventQueue[0], queuedEvent)
-      assert.deepEqual(connectorStatus.transactionEventQueue[0].request, originalPayload)
+      assert.deepStrictEqual(connectorStatus.transactionEventQueue[0].request, originalPayload)
       assert.strictEqual(connectorStatus.transactionId, transactionId)
       assert.strictEqual(connectorStatus.transactionStarting, true)
       assert.strictEqual(connectorStatus.transactionRestored, true)
@@ -8642,7 +8642,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(replayedRequests.length, 3)
       assert.strictEqual(replayedRequests[0], replayedRequests[1])
       assert.strictEqual(replayedRequests[1], replayedRequests[2])
-      assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       assert.strictEqual(connectorStatus.transactionStarted, true)
       assert.strictEqual(connectorStatus.transactionStarting, false)
       assert.strictEqual(connectorStatus.transactionId, transactionId)
@@ -8651,7 +8651,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       OCPP20ServiceUtils.stopEndedMeterValues(station, connectorId)
     })
 
-    await it('commits an interrupted Started on same-instance restart without arming timers early', async () => {
+    await it('should commit an interrupted Started on same-instance restart without arming timers early', async () => {
       let stopping = false
       const requestHandlerMock = mock.fn((...args: unknown[]): Promise<unknown> => {
         const requestParams = args[3] as RequestParams | undefined
@@ -8711,7 +8711,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       await flushQueuedTransactionMessages(station)
 
-      assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       assert.strictEqual(connectorStatus.transactionStarted, true)
       assert.strictEqual(connectorStatus.transactionStarting, false)
       assert.strictEqual(connectorStatus.transactionId, transactionId)
@@ -8721,7 +8721,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       OCPP20ServiceUtils.stopEndedMeterValues(station, 1)
     })
 
-    await it('reconstructs a durable Started after lifecycle sealing for same-instance replay', async () => {
+    await it('should reconstruct a durable Started after lifecycle sealing for same-instance replay', async () => {
       const lifecycleAbortController = new AbortController()
       const responseService = createTestableResponseService(new OCPP20ResponseService())
       const requestHandlerMock = mock.fn((...args: unknown[]): Promise<unknown> => {
@@ -8792,7 +8792,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       OCPP20ServiceUtils.stopEndedMeterValues(station, 1, 1)
     })
 
-    await it('queues Ended when a restored Started is stopped again before replay', async () => {
+    await it('should queue Ended when a restored Started is stopped again before replay', async () => {
       let stopping = false
       let online = true
       const sentEventTypes: OCPP20TransactionEventEnumType[] = []
@@ -8874,7 +8874,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(connectorStatus.transactionStarted, false)
     })
 
-    await it('queues Ended behind an interrupted Started and does not resurrect on replay', async () => {
+    await it('should queue Ended behind an interrupted Started and does not resurrect on replay', async () => {
       const startedDelivery = Promise.withResolvers<OCPP20TransactionEventResponse>()
       const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<unknown> => {
         const requestParams = args[3] as RequestParams | undefined
@@ -8912,7 +8912,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       startedDelivery.reject(new Error('shutdown interrupted Started'))
       await Promise.all([startPromise, stopPromise])
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         connectorStatus.transactionEventQueue?.map(({ request }) => request.eventType),
         [OCPP20TransactionEventEnumType.Started, OCPP20TransactionEventEnumType.Ended]
       )
@@ -8931,7 +8931,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, 1, 1)
 
-      assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
       assert.strictEqual(connectorStatus.transactionStarted, false)
       assert.strictEqual(connectorStatus.transactionId, undefined)
     })
@@ -9023,7 +9023,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
     assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
   })
 
-  await it('preserves transaction ownership for a direct Ended behind exhausted Started replay', async () => {
+  await it('should preserve transaction ownership for a direct Ended behind exhausted Started replay', async () => {
     const connectorId = 1
     const transactionId = generateUUID()
     let online = false
@@ -9666,7 +9666,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(transactionInfo.stoppedReason, customStoppedReason)
     })
 
-    await it('delivers rejected TxUpdated interval energy in an immediate Ended event', async () => {
+    await it('should deliver rejected TxUpdated interval energy in an immediate Ended event', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const intervalBaselineKey = `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxUpdatedMeasurands}`
@@ -9951,7 +9951,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.deepStrictEqual(connectorStatus.transactionEventQueue, [])
     })
 
-    await it('bounds collected TxEnded samples while preserving interval energy and signing evidence', t => {
+    await it('should bound collected TxEnded samples while preserving interval energy and signing evidence', t => {
       t.mock.timers.enable({ apis: ['setInterval'] })
       const connectorId = 1
       const transactionId = generateUUID()
@@ -10013,7 +10013,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       )
     })
 
-    await it('preserves consumed signed interval carry through Ended queue compaction', async () => {
+    await it('should preserve consumed signed interval carry through Ended queue compaction', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const intervalBaselineKey = `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxEndedMeasurands}`
@@ -10464,7 +10464,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       )
     })
 
-    await it('keeps historical TxEnded coverage separate from a later carry suffix', async () => {
+    await it('should keep historical TxEnded coverage separate from a later carry suffix', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const endedBaselineKey = `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxEndedMeasurands}`
@@ -10587,7 +10587,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       )
     })
 
-    await it('sums successive terminal meter values before recovering overlapping carries', async () => {
+    await it('should sum successive terminal meter values before recovering overlapping carries', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
@@ -10628,7 +10628,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry, undefined)
     })
 
-    await it('recovers only unrepresented carry and ignores Transaction.Begin samples', async () => {
+    await it('should recover only unrepresented carry and ignores Transaction.Begin samples', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
@@ -10683,7 +10683,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry, undefined)
     })
 
-    await it('consumes each carry with a baseline only where suffix and recovery intervals overlap', async () => {
+    await it('should consume each carry with a baseline only where suffix and recovery intervals overlap', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const deliveryStarted = Promise.withResolvers<OCPP20TransactionEventRequest>()
@@ -10820,7 +10820,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       })
     }
 
-    await it('does not apply historical interval energy without a position to known debts', async () => {
+    await it('should not apply historical interval energy without a position to known debts', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       setupConnectorWithTransaction(mockTracking.station, connectorId, {
@@ -10870,7 +10870,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry, undefined)
     })
 
-    await it('recovers disjoint interval debts after connector state persistence restore', async () => {
+    await it('should recover disjoint interval debts after connector state persistence restore', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       setupConnectorWithTransaction(mockTracking.station, connectorId, {

@@ -3,7 +3,7 @@
  * @description Unit tests for transaction interval energy capture/restore/carry helpers and inlet-to-output efficiency resolution
  */
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import type { ConnectorStatus } from '../../src/types/index.js'
 
@@ -15,9 +15,14 @@ import {
   restoreTransactionIntervalState,
   truncateTransactionIntervalValue,
 } from '../../src/charging-station/meter-values/TransactionIntervalUtils.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('TransactionIntervalUtils', async () => {
-  await it('preserves every failed concurrent interval consumption', () => {
+  afterEach(() => {
+    standardCleanup()
+  })
+
+  await it('should preserve every failed concurrent interval consumption', () => {
     const baselineKey = 'TxCtrlr.Measurands'
     const connectorStatus = { transactionId: 'transaction-1' } as ConnectorStatus
     const firstMeterValue = {}
@@ -38,7 +43,7 @@ await describe('TransactionIntervalUtils', async () => {
     )
   })
 
-  await it('accounts for only the interval energy represented on the wire', () => {
+  await it('should account for only the interval energy represented on the wire', () => {
     assert.strictEqual(truncateTransactionIntervalValue(0.009), 0)
     assert.strictEqual(truncateTransactionIntervalValue(0.019), 0.01)
     assert.strictEqual(
@@ -109,7 +114,7 @@ await describe('TransactionIntervalUtils', async () => {
     )
   })
 
-  await it('does not carry a failed interval into a replacement transaction', () => {
+  await it('should not carry a failed interval into a replacement transaction', () => {
     const baselineKey = 'TxCtrlr.Measurands'
     const connectorStatus = { transactionId: 'transaction-1' } as ConnectorStatus
     const meterValue = {}

@@ -1,5 +1,7 @@
 import type { ConnectorStatus } from '../../types/index.js'
 
+import { isEmpty } from '../../utils/index.js'
+
 export interface TransactionMeterValueDelivery {
   readonly markBuffered: () => void
   readonly settle: (definitivelyRejected?: boolean) => void
@@ -60,7 +62,7 @@ export class TransactionMeterValueDeliveryBarrier {
     const barrier = TransactionMeterValueDeliveryBarrier.barriers.get(connectorStatus)
     if (barrier == null) return []
     const dependencies = await barrier.wait(transactionId.toString())
-    if (barrier.pendingByTransaction.size === 0) {
+    if (isEmpty(barrier.pendingByTransaction)) {
       TransactionMeterValueDeliveryBarrier.barriers.delete(connectorStatus)
     }
     return dependencies
@@ -138,7 +140,7 @@ export class TransactionMeterValueDeliveryBarrier {
         rejectionCallbacks.clear()
         settlement.resolve(definitivelyRejected)
         pending.delete(pendingDelivery)
-        if (pending.size === 0) this.pendingByTransaction.delete(transactionId)
+        if (isEmpty(pending)) this.pendingByTransaction.delete(transactionId)
         markReady()
       },
       waitForSettlement: () => settlement.promise,
@@ -150,7 +152,7 @@ export class TransactionMeterValueDeliveryBarrier {
     const dependencies = new Set<TransactionMeterValueDependency>()
     for (;;) {
       const pending = this.pendingByTransaction.get(transactionId)
-      if (pending == null || pending.size === 0) return [...dependencies]
+      if (pending == null || isEmpty(pending)) return [...dependencies]
       const snapshot = [...pending]
       await Promise.all(snapshot.map(delivery => delivery.readyPromise))
       for (const delivery of snapshot) {

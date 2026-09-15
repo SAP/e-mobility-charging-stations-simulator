@@ -2092,7 +2092,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           connectorId != null
             ? [{ connectorId, connectorStatus: chargingStation.getConnectorStatus(connectorId) }]
             : [...chargingStation.iterateConnectors(true)]
-        if (candidates.length === 0) return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
+        if (isEmpty(candidates)) return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
 
         const plannedTransactions = new Map<ConnectorStatus, Set<number | undefined>>()
         const resolvedCandidates: {
@@ -2339,7 +2339,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     target.delivery?.settle(definitivelyRejected)
     const pendingTransactionIds = this.pendingTriggeredMeterValues.get(target.connectorStatus)
     pendingTransactionIds?.delete(target.transactionId)
-    if (pendingTransactionIds?.size === 0) {
+    if (isEmpty(pendingTransactionIds)) {
       this.pendingTriggeredMeterValues.delete(target.connectorStatus)
     }
     stationState?.triggeredMeterValueTargets?.delete(target)

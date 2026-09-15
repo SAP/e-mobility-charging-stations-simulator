@@ -230,7 +230,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     )
   })
 
-  await it('serializes concurrent outgoing CALLs and releases before response handlers', async t => {
+  await it('should serialize concurrent outgoing CALLs and releases before response handlers', async t => {
     const workerChannelSubscriber = new BroadcastChannel('worker')
     workerChannelSubscriber.onmessage = () => undefined
     t.after(() => {
@@ -281,7 +281,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await Promise.all([first, second])
   })
 
-  await it('rejects a CALL whose station state becomes pending while it waits for the gate', async () => {
+  await it('should reject a CALL whose station state becomes pending while it waits for the gate', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -360,7 +360,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('cancels an immediately acquired CALL before its request is cached', async () => {
+  await it('should cancel an immediately acquired CALL before its request is cached', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -404,7 +404,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('does not overwrite an immediate destructive cancellation with a later retained one', async () => {
+  await it('should not overwrite an immediate destructive cancellation with a later retained one', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -443,7 +443,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.deepStrictEqual(bufferedStation.messageQueue, [])
   })
 
-  await it('rejects a CALL created by a callback while permanent cancellation completes', async () => {
+  await it('should reject a CALL created by a callback while permanent cancellation completes', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -492,7 +492,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.deepStrictEqual(bufferedStation.messageQueue, [])
   })
 
-  await it('lets an incoming CALL response bypass a blocked outgoing CALL', async () => {
+  await it('should let an incoming CALL response bypass a blocked outgoing CALL', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -527,7 +527,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await outgoing
   })
 
-  await it('rejects a CALL suspended in its pre-request hook after station stop cancellation', async () => {
+  await it('should reject a CALL suspended in its pre-request hook after station stop cancellation', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -590,7 +590,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await shutdownRequest
   })
 
-  await it('bounds stalled outgoing CALL waiters and clears them on cancellation', async () => {
+  await it('should bound stalled outgoing CALL waiters and clears them on cancellation', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -796,7 +796,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     )
   })
 
-  await it('cancels FIFO waiters without leaving the station CALL gate locked', async () => {
+  await it('should cancel FIFO waiters without leaving the station CALL gate locked', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -839,7 +839,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await third
   })
 
-  await it('expires a FIFO waiter without disturbing the active CALL or the next caller', async t => {
+  await it('should expire a FIFO waiter without disturbing the active CALL or the next caller', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const activeMessageId = 'active'
@@ -862,7 +862,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     context.requestService.releaseOutgoingCall(context.station, 'next')
   })
 
-  await it('uses the active CALL deadline when a short-budget waiter joins the gate', async t => {
+  await it('should use the active CALL deadline when a short-budget waiter joins the gate', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -915,7 +915,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await waiter
   })
 
-  await it('budgets both WebSocket send and response phases for an active CALL slot', async t => {
+  await it('should budget both WebSocket send and response phases for an active CALL slot', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -976,7 +976,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(waiterSettled, true)
   })
 
-  await it('budgets one timeout window for every CALL ahead in the FIFO', async t => {
+  await it('should budget one timeout window for every CALL ahead in the FIFO', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const activeMessageId = 'fifo-active'
@@ -1013,7 +1013,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     context.requestService.releaseOutgoingCall(context.station, thirdWaiterId)
   })
 
-  await it('buffers a gate waiter retained by ordinary pending-request cancellation', async () => {
+  await it('should buffer a gate waiter retained by ordinary pending-request cancellation', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1058,7 +1058,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('does not retain an ordinary buffered waiter during station stop', async () => {
+  await it('should not retain an ordinary buffered waiter during station stop', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1098,7 +1098,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('keeps a graceful-stop CALL active until its response timeout', async t => {
+  await it('should keep a graceful-stop CALL active until its response timeout', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -1133,7 +1133,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('settles a transport-started graceful-stop CALL during final cancellation', async () => {
+  await it('should settle a transport-started graceful-stop CALL during final cancellation', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1166,7 +1166,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('evaluates stop-only waiter retention when cancellation begins', async () => {
+  await it('should evaluate stop-only waiter retention when cancellation begins', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1213,7 +1213,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     context.requestService.cancelPendingRequests(context.station, undefined, true)
   })
 
-  await it('discards a buffered gate waiter during permanent deletion cancellation', async () => {
+  await it('should discard a buffered gate waiter during permanent deletion cancellation', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1250,7 +1250,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('defers saturated buffered replay until a later interval without a busy loop', async () => {
+  await it('should defer saturated buffered replay until a later interval without a busy loop', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1363,7 +1363,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     bufferedStation.clearIntervalFlushMessageBuffer()
   })
 
-  await it('serializes buffered replay with live CALL traffic', async () => {
+  await it('should serialize buffered replay with live CALL traffic', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1418,7 +1418,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await live
   })
 
-  await it('budgets a buffered replay slot through its cached response timeout', async t => {
+  await it('should budget a buffered replay slot through its cached response timeout', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -1498,7 +1498,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await waiter
   })
 
-  await it('retains a replayed CALL when registration becomes pending during gate handoff', async () => {
+  await it('should retain a replayed CALL when registration becomes pending during gate handoff', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1562,7 +1562,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('keeps a TransactionEvent waiter alive for the active WebSocket send budget', async t => {
+  await it('should keep a TransactionEvent waiter alive for the active WebSocket send budget', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -1624,7 +1624,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await transactionEvent
   })
 
-  await it('persists an Ended event while the global CALL gate blocks its first send', async () => {
+  await it('should persist an Ended event while the global CALL gate blocks its first send', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1689,7 +1689,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.deepStrictEqual(durableSnapshots.at(-1), [])
   })
 
-  await it('retries and retains a TransactionEvent that expires behind the CALL gate', async t => {
+  await it('should retry and retains a TransactionEvent that expires behind the CALL gate', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     context.station.recordRequestStatistic = () => undefined
@@ -1753,7 +1753,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await flushMicrotasks()
   })
 
-  await it('uses the configured OCPP 2.0 MessageTimeout to release the CALL gate', async t => {
+  await it('should use the configured OCPP 2.0 MessageTimeout to release the CALL gate', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -1820,7 +1820,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(Number.isFinite(timeoutMs), true)
   })
 
-  await it('cancels active and waiting CALLs when the WebSocket closes', async () => {
+  await it('should cancel active and waiting CALLs when the WebSocket closes', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1888,7 +1888,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await next
   })
 
-  await it('buffers a retainable CALL waiting behind the active request when the connection closes', async () => {
+  await it('should buffer a retainable CALL waiting behind the active request when the connection closes', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -1956,7 +1956,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     context.requestService.cancelPendingRequests(context.station, undefined, true)
   })
 
-  await it('buffers an in-flight WebSocket send exactly once when the connection closes', async () => {
+  await it('should buffer an in-flight WebSocket send exactly once when the connection closes', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2020,7 +2020,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('keeps an interrupted TransactionEvent out of the raw message buffer', async () => {
+  await it('should keep an interrupted TransactionEvent out of the raw message buffer', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2086,7 +2086,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('retracts a replay promoted during CALL gate handoff so a buffered CALLRESULT passes first', async t => {
+  await it('should retract a replay promoted during CALL gate handoff so a buffered CALLRESULT passes first', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -2152,7 +2152,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('prioritizes a buffered CALLRESULT over a replay CALL waiting for the gate', async t => {
+  await it('should prioritize a buffered CALLRESULT over a replay CALL waiting for the gate', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -2231,7 +2231,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     context.station.requests.get(bufferedMessageId)?.[0]({ currentTime: new Date() }, {})
   })
 
-  await it('expires a sent request that receives no OCPP response', async () => {
+  await it('should expire a sent request that receives no OCPP response', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2267,7 +2267,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(messageSentCount, 1)
   })
 
-  await it('reports an asynchronous WebSocket send failure as delivery-ambiguous', async () => {
+  await it('should report an asynchronous WebSocket send failure as delivery-ambiguous', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2305,7 +2305,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('does not resurrect a request discarded by its transport-error hook', async () => {
+  await it('should not resurrect a request discarded by its transport-error hook', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2360,7 +2360,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.deepStrictEqual(bufferedStation.messageQueue, [])
   })
 
-  await it('does not duplicate a request retained by its transport-error hook', async () => {
+  await it('should not duplicate a request retained by its transport-error hook', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2431,7 +2431,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(wireMessages.length, 2)
   })
 
-  await it('releases the CALL gate before a transport-error hook starts a nested CALL', async () => {
+  await it('should release the CALL gate before a transport-error hook starts a nested CALL', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2490,7 +2490,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('marks a stalled WebSocket send callback as delivery-ambiguous', async t => {
+  await it('should mark a stalled WebSocket send callback as delivery-ambiguous', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -2521,7 +2521,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('reports a synchronous WebSocket send throw as definitely not sent', async () => {
+  await it('should report a synchronous WebSocket send throw as definitely not sent', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2553,7 +2553,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('cancels pending response timers when deleting the station', async () => {
+  await it('should cancel pending response timers when deleting the station', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2590,7 +2590,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('does not cancel an answered request while its response handler is running', async () => {
+  await it('should not cancel an answered request while its response handler is running', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2623,7 +2623,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     await pendingRequest
   })
 
-  await it('cancels a request while WebSocket.send is still pending', async () => {
+  await it('should cancel a request while WebSocket.send is still pending', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2654,7 +2654,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('buffers an unacknowledged station-stop request exactly once before cancellation', async () => {
+  await it('should buffer an unacknowledged station-stop request exactly once before cancellation', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2698,7 +2698,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 1)
   })
 
-  await it('force-buffers an acknowledged station-stop request exactly once before cancellation', async () => {
+  await it('should force-buffer an acknowledged station-stop request exactly once before cancellation', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2738,7 +2738,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 1)
   })
 
-  await it('does not buffer an acknowledged ordinary request during station stop', async () => {
+  await it('should not buffer an acknowledged ordinary request during station stop', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2771,7 +2771,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('retracts an acknowledged force-buffered request during an unrelated flush', async t => {
+  await it('should retract an acknowledged force-buffered request during an unrelated flush', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -2853,7 +2853,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.deepStrictEqual(wireMessages, [serializedRequest, unrelatedMessage])
   })
 
-  await it('retracts a force-buffered request when CALLERROR terminates it', async () => {
+  await it('should retract a force-buffered request when CALLERROR terminates it', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -2891,7 +2891,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('does not remove the next frame when an in-flight buffered frame is retracted', async t => {
+  await it('should not remove the next frame when an in-flight buffered frame is retracted', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -2937,7 +2937,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.deepStrictEqual(stationBuffer.messageQueue, [])
   })
 
-  await it('releases the CALL gate when a buffered replay send callback times out', async t => {
+  await it('should release the CALL gate when a buffered replay send callback times out', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -2989,7 +2989,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(wireMessages.length, 2)
   })
 
-  await it('does not resurrect a buffered request after cancellation', async t => {
+  await it('should not resurrect a buffered request after cancellation', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
@@ -3020,7 +3020,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(bufferedStation.messageQueue.length, 0)
   })
 
-  await it('cancels requests created by the stop sequence during deletion', async () => {
+  await it('should cancel requests created by the stop sequence during deletion', async () => {
     const context = createOCPP20RequestTestContext()
     const pendingStopRequest = Promise.withResolvers<never>()
     context.station.started = true
@@ -3046,7 +3046,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
-  await it('preserves buffered requests during a restart cancellation', () => {
+  await it('should preserve buffered requests during a restart cancellation', () => {
     const context = createOCPP20RequestTestContext()
     const errorCallback = mock.fn()
     const bufferedStation = context.station as unknown as { messageQueue: string[] }
@@ -3074,7 +3074,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(transientErrorCallback.mock.callCount(), 1)
   })
 
-  await it('discards buffered frames when pending requests are cancelled', () => {
+  await it('should discard buffered frames when pending requests are cancelled', () => {
     const context = createOCPP20RequestTestContext()
     const bufferedStation = context.station as unknown as { messageQueue: string[] }
     context.station.bufferMessage('[2,"buffered","Heartbeat",{}]')
@@ -3085,7 +3085,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.strictEqual(bufferedStation.messageQueue.length, 0)
   })
 
-  await it('replays a response behind a blocked CALL while registration is pending', () => {
+  await it('should replay a response behind a blocked CALL while registration is pending', () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -3117,7 +3117,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.deepStrictEqual(bufferedStation.messageQueue, [blockedCall])
   })
 
-  await it('discards only a selected non-array frame behind a pending CALL', () => {
+  await it('should discard only a selected non-array frame behind a pending CALL', () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)
@@ -3150,7 +3150,7 @@ await describe('G02 - Heartbeat and outgoing CALL serialization', async () => {
     assert.deepStrictEqual(bufferedStation.messageQueue, [blockedCall])
   })
 
-  await it('notifies when a CALLRESULT arrives before response handling completes', async () => {
+  await it('should notify when a CALLRESULT arrives before response handling completes', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection
     assert.ok(wsConnection != null)

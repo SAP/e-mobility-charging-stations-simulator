@@ -284,7 +284,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       alignedStation = createAlignedStation()
     })
 
-    await it('emits one aggregated SAMPLE.CLOCK MeterValuesRequest per idle EVSE when enabled (J01.FR.14)', async () => {
+    await it('should emit one aggregated SAMPLE.CLOCK MeterValuesRequest per idle EVSE when enabled (J01.FR.14)', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -305,7 +305,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         })
       )
       const payloads = sentPayloads(requestHandlerMock)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         payloads.map(payload => payload.evseId).sort((a, b) => a - b),
         [0, 1, 2]
       )
@@ -322,7 +322,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       }
     })
 
-    await it('aggregates every connector of one EVSE into a single request', () => {
+    await it('should aggregate every connector of one EVSE into a single request', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -343,7 +343,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(contexts.every(context => context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK))
     })
 
-    await it('preserves heterogeneous connector-local templates in an EVSE aggregate', () => {
+    await it('should preserve heterogeneous connector-local templates in an EVSE aggregate', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -387,7 +387,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('preserves identity-distinct energy register families in an EVSE aggregate', () => {
+    await it('should preserve identity-distinct energy register families in an EVSE aggregate', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -430,7 +430,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const energySamples = payload.meterValue[0].sampledValue.filter(
         sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         energySamples.map(sample => [sample.customData?.vendorId, sample.value]),
         [
           ['sensor-a', 100],
@@ -439,7 +439,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('chooses the lowest connector id for colliding connector-local templates', async () => {
+    await it('should choose the lowest connector id for colliding connector-local templates', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -496,10 +496,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         requestHandlerMock.mock.resetCalls()
       }
 
-      assert.deepEqual(observedVoltages, [210, 210])
+      assert.deepStrictEqual(observedVoltages, [210, 210])
     })
 
-    await it('includes idle sibling connectors in the station aggregate', async () => {
+    await it('should include idle sibling connectors in the station aggregate', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -561,7 +561,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(sentTransactionEvents(requestHandlerMock).length, 1)
     })
 
-    await it('normalizes compatible power units before station aggregation', () => {
+    await it('should normalize compatible power units before station aggregation', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 2,
@@ -609,7 +609,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(powerSample.value, 2000)
     })
 
-    await it('normalizes mixed physical locations to station Inlet without changing EVSE payloads', async () => {
+    await it('should normalize mixed physical locations to station Inlet without changing EVSE payloads', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 2,
@@ -677,7 +677,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         ?.meterValue?.flatMap(({ sampledValue }) => sampledValue)
         .filter(({ measurand }) => measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT)
         .map(({ location }) => location)
-      assert.deepEqual(evse1Locations, [
+      assert.deepStrictEqual(evse1Locations, [
         OCPP20LocationEnumType.Inlet,
         OCPP20LocationEnumType.Outlet,
       ])
@@ -692,7 +692,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(stationPower()?.value, 3750)
     })
 
-    await it('matches DC current, reactive power, and voltage samples by their explicit location', async () => {
+    await it('should match DC current, reactive power, and voltage samples by their explicit location', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -753,7 +753,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       }
     })
 
-    await it('converts DC active export and omits unsupported Outlet families at EVSE 0', async () => {
+    await it('should convert DC active export and omits unsupported Outlet families at EVSE 0', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -840,7 +840,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('deduplicates equivalent units from one physical meter before aggregation', () => {
+    await it('should deduplicate equivalent units from one physical meter before aggregation', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -895,7 +895,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(powerSample.value, 1000)
     })
 
-    await it('emits EVSE state of charge in the transaction event', async () => {
+    await it('should emit EVSE state of charge in the transaction event', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -935,7 +935,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('normalizes reactive power units before station aggregation', () => {
+    await it('should normalize reactive power units before station aggregation', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 2,
@@ -976,7 +976,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(reactivePowerSample.value, 2000)
     })
 
-    await it('normalizes reactive energy units into the aggregate output unit', () => {
+    await it('should normalize reactive energy units into the aggregate output unit', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -1019,7 +1019,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(reactiveEnergySample.value, 2)
     })
 
-    await it('stops ALL emissions while a transaction is ongoing and SendDuringIdle=true (J01.FR.20 station scope)', () => {
+    await it('should stop ALL emissions while a transaction is ongoing and SendDuringIdle=true (J01.FR.20 station scope)', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -1031,7 +1031,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
-    await it('suppresses station-scoped emission while a Started event is in flight', () => {
+    await it('should suppress station-scoped emission while a Started event is in flight', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -1083,7 +1083,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
     })
 
-    await it('suppresses only the targeted EVSE output while retaining its EVSE 0 contribution', async () => {
+    await it('should suppress only the targeted EVSE output while retaining its EVSE 0 contribution', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -1127,7 +1127,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         sentPayloads(requestHandlerMock).map(payload => payload.evseId),
         [0, 2]
       )
@@ -1152,7 +1152,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(registerSample?.value, 2000)
     })
 
-    await it('carries interval energy across a suppressed EVSE aligned sample', async () => {
+    await it('should carry interval energy across a suppressed EVSE aligned sample', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -1255,7 +1255,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.deepStrictEqual(stationIntervals, [60, 60])
     })
 
-    await it('keeps aligned and periodic transaction interval cadences independent', () => {
+    await it('should keep aligned and periodic transaction interval cadences independent', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = true
@@ -1433,7 +1433,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       })
     }
 
-    await it('does not advance a shared physical baseline when the built meter value has no interval sample', async () => {
+    await it('should not advance a shared physical baseline when the built meter value has no interval sample', async () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -1468,7 +1468,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('does not recount shared EVSE energy across active and idle transitions', async () => {
+    await it('should not recount shared EVSE energy across active and idle transitions', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -1525,7 +1525,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.deepStrictEqual(stationIntervals, [40, 0, 0])
     })
 
-    await it('migrates one legacy shared EVSE baseline across all physical connectors', async () => {
+    await it('should migrate one legacy shared EVSE baseline across all physical connectors', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -1581,7 +1581,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(evseStatus.energyActiveImportIntervalBaseline, 100)
     })
 
-    await it('aggregates idle shared EVSE interval energy and advances every physical baseline', async () => {
+    await it('should aggregate idle shared EVSE interval energy and advances every physical baseline', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -1637,7 +1637,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(evseStatus.energyActiveImportIntervalBaseline, 40)
     })
 
-    await it('isolates idle EVSE and station interval rollback', async () => {
+    await it('should isolate idle EVSE and station interval rollback', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -1728,7 +1728,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(evseStatus.energyActiveImportIntervalBaseline, 40)
     })
 
-    await it('restores shared connector baselines when only the station request fails', async () => {
+    await it('should restore shared connector baselines when only the station request fails', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -1851,7 +1851,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       })
     }
 
-    await it('persists a restored baseline after an in-flight provisional snapshot', async () => {
+    await it('should persist a restored baseline after an in-flight provisional snapshot', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -1922,7 +1922,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(persistedBaseline, 5)
     })
 
-    await it('does not restore a station interval baseline after an ambiguous sent failure', async () => {
+    await it('should not restore a station interval baseline after an ambiguous sent failure', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -1963,7 +1963,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('does not restore a station interval baseline after an ambiguous transport callback before send confirmation', async () => {
+    await it('should not restore a station interval baseline after an ambiguous transport callback before send confirmation', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -2034,7 +2034,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.deepStrictEqual(stationIntervals, [35, 10])
     })
 
-    await it('restores a graceful pre-send failure classified as definitely unsent', async () => {
+    await it('should restore a graceful pre-send failure classified as definitely unsent', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -2079,7 +2079,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.energyActiveImportIntervalBaselines[baselineKey], 5)
     })
 
-    await it('does not restore an in-flight aligned baseline when graceful stop cancels its pending send', async () => {
+    await it('should not restore an in-flight aligned baseline when graceful stop cancels its pending send', async () => {
       const context = createOCPP20RequestTestContext()
       const station = context.station
       const wsConnection = station.wsConnection
@@ -2166,7 +2166,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(station.requests.size, 0)
     })
 
-    await it('preserves physical interval energy when a transaction ends between aligned slots', async () => {
+    await it('should preserve physical interval energy when a transaction ends between aligned slots', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -2217,7 +2217,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       })
     })
 
-    await it('retains only the latest aligned boundary while one request per EVSE is stalled', async () => {
+    await it('should retain only the latest aligned boundary while one request per EVSE is stalled', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -2248,7 +2248,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       await firstSweep
       assert.strictEqual(requestHandlerMock.mock.callCount(), firstRequestCount * 2)
       for (const payload of sentPayloads(requestHandlerMock).slice(firstRequestCount)) {
-        assert.deepEqual(
+        assert.deepStrictEqual(
           payload.meterValue.map(meterValue => meterValue.timestamp.getTime()),
           [3601 * 60_000]
         )
@@ -2286,7 +2286,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('settles a cancelled pending trigger exactly once and releases its barrier', async () => {
+    await it('should settle a cancelled pending trigger exactly once and releases its barrier', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -2703,7 +2703,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('preserves interval energy while aligned requests are coalesced', async () => {
+    await it('should preserve interval energy while aligned requests are coalesced', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -2831,7 +2831,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('retries failed aligned interval energy on the next boundary', async () => {
+    await it('should retry failed aligned interval energy on the next boundary', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -2893,7 +2893,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(retriedInterval, firstInterval * 2)
     })
 
-    await it('keeps an absent EVSE SendDuringIdle override linked to the station value', () => {
+    await it('should keep an absent EVSE SendDuringIdle override linked to the station value', () => {
       const { mockStation } = alignedStation
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
       const manager = OCPP20VariableManager.getInstance()
@@ -2911,7 +2911,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(manager.getVariables(mockStation, [request])[0].attributeValue, 'false')
     })
 
-    await it('rejects connector-tier SendDuringIdle overrides', () => {
+    await it('should reject connector-tier SendDuringIdle overrides', () => {
       const { mockStation } = alignedStation
       const [result] = OCPP20VariableManager.getInstance().setVariables(mockStation, [
         {
@@ -2927,7 +2927,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(result.attributeStatus, SetVariableStatusEnumType.UnknownVariable)
     })
 
-    await it('rejects EVSE 0 for EVSE-scoped variables', () => {
+    await it('should reject EVSE 0 for EVSE-scoped variables', () => {
       const { mockStation } = alignedStation
       const [result] = OCPP20VariableManager.getInstance().setVariables(mockStation, [
         {
@@ -2944,7 +2944,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('rejects EVSE qualifiers on station-scoped aligned variables', () => {
+    await it('should reject EVSE qualifiers on station-scoped aligned variables', () => {
       const { mockStation } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'false')
       const [result] = OCPP20VariableManager.getInstance().setVariables(mockStation, [
@@ -2962,7 +2962,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(getConfigurationKey(mockStation, ALIGNED_ENABLED_KEY)?.value, 'false')
     })
 
-    await it('emits for idle EVSEs with SendDuringIdle=true when no transaction is ongoing', () => {
+    await it('should emit for idle EVSEs with SendDuringIdle=true when no transaction is ongoing', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -2973,7 +2973,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 3)
     })
 
-    await it('keeps emitting for an in-transaction EVSE when SendDuringIdle=false', async () => {
+    await it('should keep emitting for an in-transaction EVSE when SendDuringIdle=false', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -2983,7 +2983,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 3)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         sentPayloads(requestHandlerMock).map(payload => payload.evseId),
         [0, 2]
       )
@@ -3009,7 +3009,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestParams.throwError, true)
     })
 
-    await it('treats a pending transaction as idle until Started is accepted', () => {
+    await it('should treat a pending transaction as idle until Started is accepted', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -3018,13 +3018,13 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         sentPayloads(requestHandlerMock).map(payload => payload.evseId),
         [0, 1, 2]
       )
     })
 
-    await it('does not emit Updated after Ended delivery has started', async () => {
+    await it('should not emit Updated after Ended delivery has started', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -3056,10 +3056,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       releaseEndedRequest()
       await Promise.all([stopPromise, secondStopPromise])
 
-      assert.deepEqual(eventTypesWhileEnding, [OCPP20TransactionEventEnumType.Ended])
+      assert.deepStrictEqual(eventTypesWhileEnding, [OCPP20TransactionEventEnumType.Ended])
     })
 
-    await it('does not emit Updated after an Ended event has been persisted', async () => {
+    await it('should not emit Updated after an Ended event has been persisted', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -3085,10 +3085,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
-      assert.deepEqual(sentTransactionEvents(requestHandlerMock), [])
+      assert.deepStrictEqual(sentTransactionEvents(requestHandlerMock), [])
     })
 
-    await it('isolates a connector build failure from the remaining EVSEs', () => {
+    await it('should isolate a connector build failure from the remaining EVSEs', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -3116,7 +3116,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         sentPayloads(requestHandlerMock).map(payload => payload.evseId),
         [0, 2]
       )
@@ -3127,7 +3127,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('uses the transactional Sample.Clock pipeline and aligned signing for an active connector', async () => {
+    await it('should use the transactional Sample.Clock pipeline and aligned signing for an active connector', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -3213,7 +3213,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(samples.every(sample => sample.signedMeterValue == null))
     })
 
-    await it('signs idle aligned samples when SignReadings is enabled', () => {
+    await it('should sign idle aligned samples when SignReadings is enabled', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -3234,7 +3234,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(samples.every(sample => sample.signedMeterValue != null))
     })
 
-    await it('finalizes signing state and timestamp on a coherent aligned sample', async () => {
+    await it('should finalize signing state and timestamp on a coherent aligned sample', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -3307,7 +3307,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const transactionRegister = Number(
         (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0).toFixed(2)
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         energySamples.map(sample => sample.value),
         [transactionRegister, transactionRegister]
       )
@@ -3333,7 +3333,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(signedMeterData.includes(`"TM":"${timestamp.toISOString()}"`))
     })
 
-    await it('retains OncePerTransaction public-key state when transport buffers the event', async () => {
+    await it('should retain OncePerTransaction public-key state when transport buffers the event', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -3397,7 +3397,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
     })
 
-    await it('retries and disposes a rejected live interval update without losing its energy', async () => {
+    await it('should retry and disposes a rejected live interval update without losing its energy', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -3472,7 +3472,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('releases a builder-owned key after final CALLERROR', async () => {
+    await it('should release a builder-owned key after final CALLERROR', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -3526,7 +3526,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.deepStrictEqual(transactionEvents.map(publicKeyCount), [1, 1])
     })
 
-    await it('advances coherent state once across interleaved aligned samples', async () => {
+    await it('should advance coherent state once across interleaved aligned samples', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       const { mockStation: controlStation } = createAlignedStation({
         connectorsCount: 1,
@@ -3564,7 +3564,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(connectorStatus != null)
       assert.ok(controlConnectorStatus != null)
       const firstOptions = { intervalMs: 60_000, nowMs: 60_000, rootSeed: 42 }
-      assert.deepEqual(
+      assert.deepStrictEqual(
         computeCoherentSample(mockStation, connectorStatus, session, firstOptions),
         computeCoherentSample(controlStation, controlConnectorStatus, controlSession, firstOptions)
       )
@@ -3604,7 +3604,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       })
       assert.ok(Math.abs(session.socPercent - controlSession.socPercent) < Number.EPSILON * 32)
     })
-    await it('prorates fixed energy across interleaved aligned and periodic samples', async () => {
+    await it('should prorate fixed energy across interleaved aligned and periodic samples', async () => {
       mock.timers.enable({ apis: ['Date'], now: 60_000 })
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
@@ -3684,7 +3684,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('advances the default aligned energy measurand when its configuration key is absent', async () => {
+    await it('should advance the default aligned energy measurand when its configuration key is absent', async () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const transactionId = 'tx-default-energy'
       const evseStatus = mockStation.getEvseStatus(1)
@@ -3721,7 +3721,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('advances random aligned energy by timestamp without double-counting at t60', async () => {
+    await it('should advance random aligned energy by timestamp without double-counting at t60', async () => {
       mock.timers.enable({ apis: ['Date'], now: 60_000 })
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const transactionId = 'tx-random-energy'
@@ -3777,7 +3777,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('does not advance energy when aligned measurands exclude energy', async () => {
+    await it('should not advance energy when aligned measurands exclude energy', async () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const evseStatus = mockStation.getEvseStatus(1)
       assert.ok(evseStatus != null)
@@ -3809,7 +3809,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         0
       )
     })
-    await it('preserves coherent energy when aligned payloads exclude energy', async () => {
+    await it('should preserve coherent energy when aligned payloads exclude energy', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -3868,7 +3868,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(session.socPercent > 30)
     })
 
-    await it('does not advance a restored transaction before its baseline is reconciled', async () => {
+    await it('should not advance a restored transaction before its baseline is reconciled', async () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const alignedAt = new Date('2026-09-01T12:01:00.000Z')
       const evseStatus = mockStation.getEvseStatus(1)
@@ -3903,7 +3903,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.transactionRestored, true)
     })
 
-    await it('integrates only elapsed energy after restoring the sampling baseline', async () => {
+    await it('should integrate only elapsed energy after restoring the sampling baseline', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -3977,7 +3977,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
       const alignedEvents = sentTransactionEvents(requestHandlerMock)
       assert.strictEqual(alignedEvents.length, 1)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         alignedEvents.map(
           event =>
             event.meterValue
@@ -3990,7 +3990,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('sanitizes malformed restored energy before coherent reconciliation', () => {
+    await it('should sanitize malformed restored energy before coherent reconciliation', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const transactionId = '00000000-0000-4000-8000-000000000013'
       setupConnectorWithTransaction(mockStation, 1, { transactionId })
@@ -4032,7 +4032,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       }
     })
 
-    await it('emits nothing when AlignedDataInterval=0 (spec §2.2)', () => {
+    await it('should emit nothing when AlignedDataInterval=0 (spec §2.2)', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '0')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -4042,7 +4042,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
-    await it('emits nothing by default (AlignedDataCtrlr.Enabled=false)', () => {
+    await it('should emit nothing by default (AlignedDataCtrlr.Enabled=false)', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
 
@@ -4051,7 +4051,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
-    await it('emits nothing while the WebSocket connection is closed', () => {
+    await it('should emit nothing while the WebSocket connection is closed', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -4062,7 +4062,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
-    await it('serializes a multi-EVSE aligned sweep with one common timestamp', async () => {
+    await it('should serialize a multi-EVSE aligned sweep with one common timestamp', async () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 2 })
       const { requestService } = createOCPP20RequestTestContext()
       mockStation.ocppRequestService = requestService
@@ -4115,7 +4115,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.deepStrictEqual(new Set(timestamps), new Set([timestamp.toISOString()]))
     })
 
-    await it('queues active clock-aligned events while the WebSocket is closed', async () => {
+    await it('should queue active clock-aligned events while the WebSocket is closed', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -4139,7 +4139,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(queue[0].request.timestamp.getTime(), timestamp.getTime())
     })
 
-    await it('queues active aligned events until registration is accepted', async () => {
+    await it('should queue active aligned events until registration is accepted', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -4159,7 +4159,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(queue[0].request.offline, undefined)
     })
 
-    await it('rejects a protected Ended event that cannot fit the byte cap', () => {
+    await it('should reject a protected Ended event that cannot fit the byte cap', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const transactionId = '00000000-0000-4000-8000-000000000101'
       setupConnectorWithTransaction(mockStation, 1, { transactionId })
@@ -4215,7 +4215,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
     })
 
-    await it('compacts older Ended meter data before touching a protected Ended event', () => {
+    await it('should compact older Ended meter data before touching a protected Ended event', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -4298,7 +4298,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('preserves every identity endpoint while pruning lifecycle intermediates', () => {
+    await it('should preserve every identity endpoint while pruning lifecycle intermediates', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const transactionId = '00000000-0000-4000-8000-000000000105'
       setupConnectorWithTransaction(mockStation, 1, { transactionId })
@@ -4353,7 +4353,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       enqueueTransactionEvent.enqueueTransactionEvent(mockStation, connectorStatus, request)
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         connectorStatus.transactionEventQueue?.[0].request.meterValue?.map(meterValue => ({
           timestamp: meterValue.timestamp.getTime(),
           value: meterValue.sampledValue[0].value,
@@ -4371,7 +4371,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('retains newest updates and lifecycle events with amortized saturated accounting', () => {
+    await it('should retain newest updates and lifecycle events with amortized saturated accounting', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const transactionId = '00000000-0000-4000-8000-000000000099'
       setupConnectorWithTransaction(mockStation, 1, { transactionId })
@@ -4475,7 +4475,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
       assert.strictEqual(saveSpy.mock.callCount(), 102)
     })
-    await it('keeps cached bytes exact across compaction, drain, and enqueue mutations', () => {
+    await it('should keep cached bytes exact across compaction, drain, and enqueue mutations', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const transactionId = '00000000-0000-4000-8000-000000000104'
       setupConnectorWithTransaction(mockStation, 1, { transactionId })
@@ -4505,13 +4505,13 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         bounded.bytes,
         Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue), 'utf8')
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         connectorStatus.transactionEventQueue?.map(({ seqNo }) => seqNo),
         [1, 2]
       )
     })
 
-    await it('preserves a historical transaction public key when byte normalization evicts its event', () => {
+    await it('should preserve a historical transaction public key when byte normalization evicts its event', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const activeTransactionId = '00000000-0000-4000-8000-000000000100'
       const historicalTransactionId = '00000000-0000-4000-8000-000000000099'
@@ -4580,7 +4580,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('keeps a locally started offline transaction active for aligned ticks', async () => {
+    await it('should keep a locally started offline transaction active for aligned ticks', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -4599,17 +4599,17 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
       const queue = connectorStatus.transactionEventQueue
       assert.ok(queue != null)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         queue.map(event => event.request.eventType),
         [OCPP20TransactionEventEnumType.Started, OCPP20TransactionEventEnumType.Updated]
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         queue.map(event => event.seqNo),
         [0, 1]
       )
     })
 
-    await it('queues the public key only once across offline aligned ticks', async () => {
+    await it('should queue the public key only once across offline aligned ticks', async () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -4641,7 +4641,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         .filter(sample => (sample.signedMeterValue?.publicKey.length ?? 0) > 0).length
       assert.strictEqual(publicKeyCount, 1)
     })
-    await it('queues a clock-aligned event when the connection closes during a sweep', () => {
+    await it('should queue a clock-aligned event when the connection closes during a sweep', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -4658,7 +4658,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(mockStation.getConnectorStatus(1, 1)?.transactionEventQueue?.length, 1)
     })
 
-    await it('never mutates connector energy bookkeeping nor public-key flag on idle ticks', () => {
+    await it('should never mutates connector energy bookkeeping nor public-key flag on idle ticks', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -4692,7 +4692,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, 54321)
     })
 
-    await it('defaults omitted EVSE 0 electrical locations to Inlet and preserves explicit locations', () => {
+    await it('should default omitted EVSE 0 electrical locations to Inlet and preserves explicit locations', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -4721,7 +4721,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         .filter(
           sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
         )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         energySamples.map(sample => [sample.location, sample.value]),
         [
           [OCPP20LocationEnumType.Inlet, 7],
@@ -4731,7 +4731,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(stationConnectorStatus.energyActiveImportRegisterValue, 7)
     })
 
-    await it('projects DC output power to each physical meter side exactly once', async () => {
+    await it('should project DC output power to each physical meter side exactly once', async () => {
       const collectStationPower = async (location: OCPP20LocationEnumType): Promise<number> => {
         const { mockStation, requestHandlerMock } = createAlignedStation({
           connectorsCount: 1,
@@ -4787,7 +4787,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(await collectStationPower(OCPP20LocationEnumType.Outlet), 1000)
     })
 
-    await it('projects a DC station Outlet template from the normalized Inlet aggregate', async () => {
+    await it('should project a DC station Outlet template from the normalized Inlet aggregate', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -4836,7 +4836,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(powerSample.value, 800)
     })
 
-    await it('converts DC Outlet interval energy once before station Inlet aggregation', async () => {
+    await it('should convert DC Outlet interval energy once before station Inlet aggregation', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -4916,7 +4916,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(sourceEnergy.value, 800)
     })
 
-    await it('does not relabel Outlet DC current or voltage as station Inlet values', async () => {
+    await it('should not relabel Outlet DC current or voltage as station Inlet values', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -4978,7 +4978,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       const stationPayload = sentPayloads(requestHandlerMock).find(({ evseId }) => evseId === 0)
       assert.ok(stationPayload != null)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         stationPayload.meterValue[0].sampledValue.map(({ location, measurand, value }) => [
           measurand,
           location,
@@ -4988,7 +4988,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
       const evseEvent = sentTransactionEvents(requestHandlerMock).find(({ evse }) => evse?.id === 1)
       assert.ok(evseEvent != null)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         evseEvent.meterValue?.[0].sampledValue.map(({ location, measurand, value }) => [
           measurand,
           location,
@@ -5002,7 +5002,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('does not relabel Inlet DC current or voltage as station Outlet values', async () => {
+    await it('should not relabel Inlet DC current or voltage as station Outlet values', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -5058,7 +5058,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('derives aggregate power from phase-only baseline samples', () => {
+    await it('should derive aggregate power from phase-only baseline samples', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -5096,7 +5096,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(power?.value, 3000)
     })
 
-    await it('does not promote an incomplete phase set to aggregate power', () => {
+    await it('should not promote an incomplete phase set to aggregate power', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -5137,7 +5137,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(power?.value, 9000)
     })
 
-    await it('samples an EVSE-level meter template once across multiple connectors', () => {
+    await it('should sample an EVSE-level meter template once across multiple connectors', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -5171,7 +5171,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(reactiveEnergy?.value, 1000)
     })
 
-    await it('averages phase currents for a phase-less aggregate sample', () => {
+    await it('should average phase currents for a phase-less aggregate sample', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -5209,7 +5209,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(current?.value, 5)
     })
 
-    await it('synthesizes a station current aggregate after merging phases from different EVSEs', () => {
+    await it('should synthesize a station current aggregate after merging phases from different EVSEs', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 3,
         evsesCount: 3,
@@ -5264,7 +5264,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(current?.value, 20)
     })
 
-    await it('counts each physical line once per meter when phase aliases coexist', () => {
+    await it('should count each physical line once per meter when phase aliases coexist', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -5328,7 +5328,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(aggregates.get(OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT), 80)
     })
 
-    await it('combines aggregate and phase-only power from different EVSEs', () => {
+    await it('should combine aggregate and phase-only power from different EVSEs', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -5377,7 +5377,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(power?.value, 6000)
     })
 
-    await it('preserves customData that distinguishes aggregate sampled values', () => {
+    await it('should preserve customData that distinguishes aggregate sampled values', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -5414,7 +5414,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const powerSamples = stationPayload?.meterValue
         .flatMap(meterValue => meterValue.sampledValue)
         .filter(sample => sample.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         powerSamples?.map(sample => [sample.customData?.vendorId, sample.value]),
         [
           ['sensor-a', 1000],
@@ -5422,7 +5422,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         ]
       )
     })
-    await it('aggregates recursively reordered customData as one identity', () => {
+    await it('should aggregate recursively reordered customData as one identity', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -5488,7 +5488,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         .filter(sample => sample.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT)
       assert.strictEqual(powerSamples.length, 1)
       assert.strictEqual(powerSamples[0].value, 3000)
-      assert.deepEqual(powerSamples[0].customData, {
+      assert.deepStrictEqual(powerSamples[0].customData, {
         details: { a: 1, b: 2 },
         vendorId: 'acme',
       })
@@ -5496,7 +5496,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
   })
 
   await describe('buildClockAlignedConnectorMeterValue (transaction-less builder)', async () => {
-    await it('builds a SAMPLE.CLOCK meter value from a directly identified idle connector', () => {
+    await it('should build a SAMPLE.CLOCK meter value from a directly identified idle connector', () => {
       const { mockStation } = createAlignedStation()
       upsertConfigurationKey(
         mockStation,
@@ -5528,7 +5528,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(energySample.value > 0)
     })
 
-    await it('projects an idle DC register snapshot to each configured meter side', () => {
+    await it('should project an idle DC register snapshot to each configured meter side', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.conversionEfficiency = 0.8
@@ -5559,7 +5559,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         meterValue.sampledValue.map(sample => [sample.location, sample.value]),
         [
           [OCPP20LocationEnumType.Inlet, 1000],
@@ -5568,7 +5568,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('advances the EVSE 0 main register when physical energy is committed', () => {
+    await it('should advance the EVSE 0 main register when physical energy is committed', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       if (mockStation.stationInfo != null) {
         mockStation.stationInfo.conversionEfficiency = 0.8
@@ -5632,7 +5632,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(mainConnector.energyActiveImportRegisterValue, mainBefore + 1000)
     })
 
-    await it('emits a physically coherent idle snapshot', () => {
+    await it('should emit a physically coherent idle snapshot', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const evseStatus = mockStation.getEvseStatus(1)
       assert.ok(evseStatus != null)
@@ -5699,7 +5699,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('reads the persistent connector register while idle with meteringPerTransaction enabled', () => {
+    await it('should read the persistent connector register while idle with meteringPerTransaction enabled', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       if (mockStation.stationInfo != null) {
         mockStation.stationInfo.meteringPerTransaction = true
@@ -5724,7 +5724,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(energySample.value, 54321)
     })
 
-    await it('uses the station cumulative register during a physical transaction', async () => {
+    await it('should use the station cumulative register during a physical transaction', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -5750,7 +5750,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(Number(findEnergySample(stationPayload)?.value), 7777)
     })
 
-    await it('keeps an EVSE cumulative register aggregated during a transaction', async () => {
+    await it('should keep an EVSE cumulative register aggregated during a transaction', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -5789,7 +5789,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(energySample?.value, 300)
     })
 
-    await it('serializes the final shared EVSE register for every active transaction', async () => {
+    await it('should serialize the final shared EVSE register for every active transaction', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -5868,7 +5868,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('uses the EVSE clock when a newer transaction owns a shared observation', () => {
+    await it('should use the EVSE clock when a newer transaction owns a shared observation', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = false
@@ -5922,7 +5922,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connector2.transactionEnergyActiveImportRegisterValue, 60)
     })
 
-    await it('does not integrate an idle gap before a new shared transaction', () => {
+    await it('should not integrate an idle gap before a new shared transaction', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = false
@@ -5966,7 +5966,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 30)
     })
 
-    await it('keeps shared EVSE transaction registers monotonic across periodic builders', () => {
+    await it('should keep shared EVSE transaction registers monotonic across periodic builders', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       const evseStatus = mockStation.getEvseStatus(1)
       assert.ok(evseStatus != null)
@@ -6065,7 +6065,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('settles elapsed energy without consuming signing delivery state', () => {
+    await it('should settle elapsed energy without consuming signing delivery state', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = true
@@ -6154,7 +6154,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('retains the first legacy interval omitted by a register-only sample', () => {
+    await it('should retain the first legacy interval omitted by a register-only sample', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = true
@@ -6229,7 +6229,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('derives missing interval templates per sampled-value identity', () => {
+    await it('should derive missing interval templates per sampled-value identity', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = true
@@ -6280,11 +6280,11 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const intervalSamples = meterValue.sampledValue.filter(
         sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
       )
-      assert.deepEqual(intervalSamples.map(sample => sample.customData?.channel).sort(), [
+      assert.deepStrictEqual(intervalSamples.map(sample => sample.customData?.channel).sort(), [
         'explicit',
         'fallback',
       ])
-      assert.deepEqual(intervalSamples.map(sample => sample.unitOfMeasure?.unit).sort(), [
+      assert.deepStrictEqual(intervalSamples.map(sample => sample.unitOfMeasure?.unit).sort(), [
         'Wh',
         'kWh',
       ])
@@ -6320,7 +6320,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         new Date(120_000),
         60_000
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         coherentMeterValue.sampledValue
           .filter(
             sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
@@ -6331,7 +6331,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('matches interval fallbacks by the emitted reading context', () => {
+    await it('should match interval fallbacks by the emitted reading context', () => {
       const buildIntervalCount = (
         context: OCPP20ReadingContextEnumType | undefined,
         coherent: boolean
@@ -6408,7 +6408,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(buildIntervalCount(undefined, true), 2)
     })
 
-    await it('carries a coherent settlement interval into the next delivered sample', () => {
+    await it('should carry a coherent settlement interval into the next delivered sample', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = true
@@ -6491,7 +6491,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('retains the first coherent interval omitted by a register-only sample', () => {
+    await it('should retain the first coherent interval omitted by a register-only sample', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = true
@@ -6583,7 +6583,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('accounts and emits phase-only transaction interval templates', () => {
+    await it('should account and emits phase-only transaction interval templates', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = true
@@ -6638,7 +6638,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 90)
     })
 
-    await it('lets the first legacy observation own one shared EVSE register update', () => {
+    await it('should let the first legacy observation own one shared EVSE register update', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = false
@@ -6681,7 +6681,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok((connector2.energyActiveImportRegisterValue ?? 0) > 200)
     })
 
-    await it('sums coherent intervals once while deduplicating legacy shared-meter copies', async () => {
+    await it('should sum coherent intervals once while deduplicating legacy shared-meter copies', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 3,
         evsesCount: 1,
@@ -6819,7 +6819,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('defers a legacy peer interval precomputed by a coherent owner', () => {
+    await it('should defer a legacy peer interval precomputed by a coherent owner', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = false
@@ -6914,7 +6914,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(getPendingTransactionInterval(peer, TX_UPDATED_MEASURANDS_KEY), 0)
     })
 
-    await it('commits a targeted legacy terminal observation in a mixed shared EVSE', () => {
+    await it('should commit a targeted legacy terminal observation in a mixed shared EVSE', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 3, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = false
@@ -7005,7 +7005,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(coherentSession.socPercent > 30)
     })
 
-    await it('aggregates every per-transaction legacy interval at the station meter', async () => {
+    await it('should aggregate every per-transaction legacy interval at the station meter', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -7073,7 +7073,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('advances every legacy transaction while committing one aligned shared register', async () => {
+    await it('should advance every legacy transaction while committing one aligned shared register', async () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = false
@@ -7136,7 +7136,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('prorates a shared owner interval to its active transaction window', () => {
+    await it('should prorate a shared owner interval to its active transaction window', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = false
@@ -7194,7 +7194,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(owner.transactionEnergyActiveImportRegisterValue, 5)
     })
 
-    await it('uses the full shared observation in the station interval aggregate', async () => {
+    await it('should use the full shared observation in the station interval aggregate', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -7272,7 +7272,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       ])
     })
 
-    await it('preserves interval energy in every aligned shared transaction payload', async () => {
+    await it('should preserve interval energy in every aligned shared transaction payload', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -7357,7 +7357,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('does not re-integrate a shared legacy interval after a paused peer terminal sample', () => {
+    await it('should not re-integrate a shared legacy interval after a paused peer terminal sample', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = false
@@ -7436,7 +7436,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('sums first aligned intervals for all coherent sessions on a shared EVSE', async () => {
+    await it('should sum first aligned intervals for all coherent sessions on a shared EVSE', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -7529,7 +7529,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(physicalRegisterAfter - physicalRegisterBefore, 120)
     })
 
-    await it('preserves peer energy when the shared coherent owner is full', async () => {
+    await it('should preserve peer energy when the shared coherent owner is full', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -7641,7 +7641,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(stationPower != null && stationPower.value > 0)
     })
 
-    await it('advances every coherent session while committing one shared EVSE register', () => {
+    await it('should advance every coherent session while committing one shared EVSE register', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = false
@@ -7777,7 +7777,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('counts a shared EVSE register once in the station aggregate', async () => {
+    await it('should count a shared EVSE register once in the station aggregate', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 1,
@@ -7819,7 +7819,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
               sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_REGISTER
             )?.value
       )
-      assert.deepEqual(transactionRegisterValues, [1000, 1000])
+      assert.deepStrictEqual(transactionRegisterValues, [1000, 1000])
       const stationPayload = sentPayloads(requestHandlerMock).find(({ evseId }) => evseId === 0)
       assert.ok(stationPayload != null)
       const stationRegister = stationPayload.meterValue
@@ -7830,7 +7830,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(stationRegister?.value, 1000)
     })
 
-    await it('emits every configured location variant for an aligned measurand', () => {
+    await it('should emit every configured location variant for an aligned measurand', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const evseStatus = mockStation.getEvseStatus(1)
       assert.ok(evseStatus != null)
@@ -7864,13 +7864,13 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         meterValue.sampledValue.map(sample => sample.location),
         [OCPP20LocationEnumType.Inlet, OCPP20LocationEnumType.Outlet]
       )
     })
 
-    await it('projects an active DC inlet interval exactly once', () => {
+    await it('should project an active DC inlet interval exactly once', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.conversionEfficiency = 0.8
@@ -7919,7 +7919,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(meterValue.sampledValue[0]?.value, 100)
     })
 
-    await it('honors each location variant configured value', () => {
+    await it('should honor each location variant configured value', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       mock.method(mockStation, 'getNumberOfPhases', () => 1)
       const evseStatus = mockStation.getEvseStatus(1)
@@ -7964,18 +7964,18 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const variants = meterValue.sampledValue.map(
         sample => [sample.location, sample.value] as const
       )
-      assert.deepEqual(variants.slice(0, 2), [
+      assert.deepStrictEqual(variants.slice(0, 2), [
         [OCPP20LocationEnumType.Inlet, 180],
         [OCPP20LocationEnumType.Outlet, 240],
       ])
-      assert.deepEqual(
+      assert.deepStrictEqual(
         variants.slice(2).map(([location]) => location),
         [OCPP20LocationEnumType.Body, OCPP20LocationEnumType.Outlet]
       )
       assert.ok(variants.slice(2).every(([, value]) => value > 200 && value < 260))
     })
 
-    await it('emits accepted fixed-value aligned measurands', () => {
+    await it('should emit accepted fixed-value aligned measurands', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const evseStatus = mockStation.getEvseStatus(1)
       assert.ok(evseStatus != null)
@@ -8001,13 +8001,13 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         meterValue.sampledValue.map(sample => [sample.measurand, sample.value]),
         [[OCPP20MeasurandEnumType.FREQUENCY, 50]]
       )
     })
 
-    await it('distributes a station aggregate interval across phase-only templates', () => {
+    await it('should distribute a station aggregate interval across phase-only templates', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.currentOutType = CurrentType.AC
@@ -8051,7 +8051,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('matches equivalent line-phase labels before interval aggregation', () => {
+    await it('should match equivalent line-phase labels before interval aggregation', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.currentOutType = CurrentType.AC
@@ -8093,7 +8093,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('emits zero phase-only interval samples for an idle snapshot', () => {
+    await it('should emit zero phase-only interval samples for an idle snapshot', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.currentOutType = CurrentType.AC
@@ -8139,7 +8139,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('accounts phase-only interval templates in an advancing aligned snapshot', () => {
+    await it('should account phase-only interval templates in an advancing aligned snapshot', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       assert.ok(mockStation.stationInfo != null)
       mockStation.stationInfo.meteringPerTransaction = true
@@ -8202,7 +8202,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 90)
     })
 
-    await it('emits phase-only current and power templates for an active snapshot', () => {
+    await it('should emit phase-only current and power templates for an active snapshot', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       if (mockStation.stationInfo != null) {
         mockStation.stationInfo.currentOutType = CurrentType.AC
@@ -8251,7 +8251,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         meterValue.sampledValue.map(sample => [sample.measurand, sample.phase, sample.value]),
         [
           [OCPP20MeasurandEnumType.CURRENT_IMPORT, MeterValuePhase.L1, 5],
@@ -8260,7 +8260,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('suppresses phased register templates when RegisterValuesWithoutPhases=true', () => {
+    await it('should suppress phased register templates when RegisterValuesWithoutPhases=true', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       if (mockStation.stationInfo != null) mockStation.stationInfo.numberOfPhases = 3
       const evseStatus = mockStation.getEvseStatus(1)
@@ -8301,7 +8301,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(meterValue.sampledValue[0].value, 54321)
     })
 
-    await it('keeps distinct customData register families when phases are suppressed', () => {
+    await it('should keep distinct customData register families when phases are suppressed', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       const evseStatus = mockStation.getEvseStatus(1)
       assert.ok(evseStatus != null)
@@ -8339,7 +8339,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         meterValue.sampledValue.map(sample => [sample.customData?.vendorId, sample.phase]),
         [
           ['sensor-a', undefined],
@@ -8348,7 +8348,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('uses connector-local templates when EVSE templates are empty', () => {
+    await it('should use connector-local templates when EVSE templates are empty', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       const evseStatus = mockStation.getEvseStatus(1)
       assert.ok(evseStatus != null)
@@ -8398,7 +8398,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(meterValue.sampledValue[0].value < 2100)
     })
 
-    await it('uses the energy-owning connector template independent of connector order', () => {
+    await it('should use the energy-owning connector template independent of connector order', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
       const evseStatus = mockStation.getEvseStatus(1)
       const connector1 = mockStation.getConnectorStatus(1, 1)
@@ -8475,7 +8475,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       }
     })
 
-    await it('keeps duplicate connector ids scoped to their EVSE', async () => {
+    await it('should keep duplicate connector ids scoped to their EVSE', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
         evsesCount: 2,
@@ -8620,7 +8620,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(replayParams.responseTimeoutMs, 30_000)
     })
 
-    await it('cleans up the EVSE-qualified connector after replaying an Ended event', async () => {
+    await it('should clean up the EVSE-qualified connector after replaying an Ended event', async () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 2 })
       const evse1 = mockStation.getEvseStatus(1)
       const evse2 = mockStation.getEvseStatus(2)
@@ -8657,7 +8657,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connector2.transactionStarted, false)
     })
 
-    await it('binds transaction timers to the EVSE-qualified connector', () => {
+    await it('should bind transaction timers to the EVSE-qualified connector', () => {
       mock.timers.enable({ apis: ['setInterval'] })
       const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 2 })
       const evse1 = mockStation.getEvseStatus(1)
@@ -8684,7 +8684,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       OCPP20ServiceUtils.stopEndedMeterValues(mockStation, 1, 2)
     })
 
-    await it('deduplicates register families by effective OCPP 2.0 identity during phase suppression', () => {
+    await it('should deduplicate register families by effective OCPP 2.0 identity during phase suppression', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       if (mockStation.stationInfo != null) mockStation.stationInfo.numberOfPhases = 3
       const evseStatus = mockStation.getEvseStatus(1)
@@ -8735,7 +8735,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           sample => sample.context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
         )
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         meterValue.sampledValue.map(sample => [sample.location, sample.unitOfMeasure?.unit]),
         [
           [OCPP20LocationEnumType.Inlet, 'Wh'],
@@ -8745,7 +8745,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('skips unsupported phases and emits physical neutral and line voltages', () => {
+    await it('should skip unsupported phases and emits physical neutral and line voltages', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       if (mockStation.stationInfo != null) mockStation.stationInfo.numberOfPhases = 3
       const evseStatus = mockStation.getEvseStatus(1)
@@ -8833,7 +8833,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         meterValue.sampledValue.map(sample => [sample.measurand, sample.phase, sample.value]),
         [
           [OCPP20MeasurandEnumType.CURRENT_IMPORT, MeterValuePhase.N, 0],
@@ -8908,7 +8908,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         measurandsKey,
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         invalidSinglePhaseMeterValue.sampledValue.map(sample => sample.phase),
         [undefined]
       )
@@ -8950,13 +8950,13 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         measurandsKey,
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         dcMeterValue.sampledValue.map(sample => sample.phase),
         [undefined]
       )
     })
 
-    await it('preserves automatic voltage phases and main-voltage suppression', () => {
+    await it('should preserve automatic voltage phases and main-voltage suppression', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       mock.method(mockStation, 'getNumberOfPhases', () => 3)
       if (mockStation.stationInfo != null) {
@@ -8998,7 +8998,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         sample => sample.measurand === OCPP20MeasurandEnumType.VOLTAGE
       )
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         voltageSamples.map(sample => sample.phase),
         [
           MeterValuePhase.L1_N,
@@ -9037,7 +9037,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         measurandsKey,
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
-      assert.deepEqual(
+      assert.deepStrictEqual(
         coherentMeterValue.sampledValue
           .filter(sample => sample.measurand === OCPP20MeasurandEnumType.VOLTAGE)
           .map(sample => sample.phase)
@@ -9064,7 +9064,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         false
       )
     })
-    await it('does not suppress automatic voltage phases across customData identities', () => {
+    await it('should not suppress automatic voltage phases across customData identities', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       mock.method(mockStation, 'getNumberOfPhases', () => 3)
       if (mockStation.stationInfo != null) {
@@ -9109,7 +9109,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           sample.phase === MeterValuePhase.L1_N
       )
 
-      assert.deepEqual(
+      assert.deepStrictEqual(
         l1Voltages.map(sample => [sample.customData?.vendorId, sample.value]),
         [
           ['sensor-b', 231],
@@ -9119,7 +9119,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
     })
   })
 
-  await it('defers transaction timer restarts while restored replay is pending', () => {
+  await it('should defer transaction timer restarts while restored replay is pending', () => {
     const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
     setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-restored-interval' })
     const connectorStatus = mockStation.getConnectorStatus(1, 1)
@@ -9157,7 +9157,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       testableService = createTestableIncomingRequestService(incomingRequestService)
     })
 
-    await it('restarts the aligned timer when AlignedDataInterval is set via SetVariables', () => {
+    await it('should restart the aligned timer when AlignedDataInterval is set via SetVariables', () => {
       const response = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
           {
@@ -9176,7 +9176,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(restartSpy.mock.callCount(), 1)
     })
 
-    await it('restarts active transaction timers when their intervals change', () => {
+    await it('should restart active transaction timers when their intervals change', () => {
       const response = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
           {
@@ -9210,7 +9210,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       ])
     })
 
-    await it('restarts the aligned timer for case-insensitive SetVariables names', () => {
+    await it('should restart the aligned timer for case-insensitive SetVariables names', () => {
       const response = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
           {
@@ -9229,7 +9229,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(restartSpy.mock.callCount(), 1)
     })
 
-    await it('accepts interval 0 and restarts through the settling path', () => {
+    await it('should accept interval 0 and restarts through the settling path', () => {
       const response = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
           {
@@ -9249,7 +9249,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(stopSpy.mock.callCount(), 0)
     })
 
-    await it('rejects intervals longer than one UTC day', () => {
+    await it('should reject intervals longer than one UTC day', () => {
       const response = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
           {
@@ -9270,7 +9270,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(stopSpy.mock.callCount(), 0)
     })
 
-    await it('accepts intervals that do not partition the UTC day evenly', () => {
+    await it('should accept intervals that do not partition the UTC day evenly', () => {
       const response = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
           {
@@ -9289,7 +9289,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(restartSpy.mock.callCount(), 1)
       assert.strictEqual(stopSpy.mock.callCount(), 0)
     })
-    await it('settles with the previous energy measurands before replacing them', () => {
+    await it('should settle with the previous energy measurands before replacing them', () => {
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -9330,7 +9330,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('settles before disabling and restarts when AlignedDataCtrlr.Enabled changes', () => {
+    await it('should settle before disabling and restarts when AlignedDataCtrlr.Enabled changes', () => {
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       const disableResponse = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
@@ -9408,8 +9408,8 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       cleanupStationTemplates()
     })
 
-    await it('loads EVSE-level MeterValues from the station template', () => {
-      assert.deepEqual(station.getEvseStatus(1)?.MeterValues, [
+    await it('should load EVSE-level MeterValues from the station template', () => {
+      assert.deepStrictEqual(station.getEvseStatus(1)?.MeterValues, [
         {
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
@@ -9417,7 +9417,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       ])
     })
 
-    await it('does not arm aligned sampling before initial registration', () => {
+    await it('should not arm aligned sampling before initial registration', () => {
       const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
       const testableStation = station as unknown as {
         openWSConnection: () => void
@@ -9431,7 +9431,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(startSpy.mock.callCount(), 0)
       testableStation.templateFileWatcher?.close()
     })
-    await it('arms exactly one timer and guards double start', async () => {
+    await it('should arm exactly one timer and guards double start', async () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
         Promise.resolve()
@@ -9447,7 +9447,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
-    await it('captures every boundary while prior delivery remains in flight', async () => {
+    await it('should capture every boundary while prior delivery remains in flight', async () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       let releaseSweep: (() => void) | undefined
@@ -9470,7 +9470,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 12)
     })
 
-    await it('aligns the first emission to the next wall-clock boundary', async () => {
+    await it('should align the first emission to the next wall-clock boundary', async () => {
       // now = 300 s into a 900 s interval → first emission 600 s later (at the
       // next boundary), not a full interval after start.
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 300_000 })
@@ -9489,7 +9489,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
-    await it('supports intervals that do not partition the UTC day evenly', async () => {
+    await it('should support intervals that do not partition the UTC day evenly', async () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '7')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
@@ -9502,7 +9502,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       assert.strictEqual(emitSpy.mock.callCount(), 1)
     })
-    await it('does not arm the scheduler while AlignedDataCtrlr.Enabled is false', () => {
+    await it('should not arm the scheduler while AlignedDataCtrlr.Enabled is false', () => {
       upsertConfigurationKey(station, ALIGNED_ENABLED_KEY, 'false')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
@@ -9515,7 +9515,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 0)
     })
 
-    await it('does not backdate samples after a delayed callback', async () => {
+    await it('should not backdate samples after a delayed callback', async () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
 
@@ -9539,7 +9539,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(nextTimestamp instanceof Date)
       assert.strictEqual(nextTimestamp.getTime(), 180_000)
     })
-    await it('restarts the interval while prior boundary delivery remains in flight', async () => {
+    await it('should restart the interval while prior boundary delivery remains in flight', async () => {
       station.started = true
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
@@ -9564,7 +9564,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 12)
     })
 
-    await it('stops cleanly and survives repeated online cycles without leaks', () => {
+    await it('should stop cleanly and survives repeated online cycles without leaks', () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
         Promise.resolve()
@@ -9583,7 +9583,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 1)
     })
 
-    await it('starts every boundary while prior delivery remains in flight', async () => {
+    await it('should start every boundary while prior delivery remains in flight', async () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       let releaseFirstSweep: () => void = noop
       const firstSweepBlocked = new Promise<void>(resolve => {
@@ -9611,7 +9611,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 3)
     })
 
-    await it('keeps the cadence running while queued TransactionEvents replay', async () => {
+    await it('should keep the cadence running while queued TransactionEvents replay', async () => {
       const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
       const stopSpy = mock.method(station, 'stopAlignedMeterValues')
       const testableStation = station as unknown as {
@@ -9651,7 +9651,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(startSpy.mock.callCount(), 1)
     })
 
-    await it('arms after an Accepted transition outside onOpen', async () => {
+    await it('should arm after an Accepted transition outside onOpen', async () => {
       station.started = true
       mock.method(station, 'inAcceptedState', () => true)
       mock.method(station, 'isWebSocketConnectionOpened', () => true)
@@ -9668,7 +9668,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(startSpy.mock.callCount(), 1)
     })
 
-    await it('replays once after accepted-state startup notifications fail', async () => {
+    await it('should replay once after accepted-state startup notifications fail', async () => {
       station.started = true
       mock.method(station, 'inAcceptedState', () => true)
       mock.method(station, 'isWebSocketConnectionOpened', () => true)
@@ -9693,7 +9693,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(replaySpy.mock.callCount(), 1)
     })
 
-    await it('does not re-arm after disconnecting during queued event replay', async () => {
+    await it('should not re-arm after disconnecting during queued event replay', async () => {
       station.started = true
       let connected = true
       const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
@@ -9727,7 +9727,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(startSpy.mock.callCount(), 0)
     })
 
-    await it('does not re-arm after stop begins during queued event replay', async () => {
+    await it('should not re-arm after stop begins during queued event replay', async () => {
       station.started = true
       const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
       mock.method(station, 'inAcceptedState', () => true)
@@ -9757,7 +9757,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       testableStation.stopping = false
     })
 
-    await it('re-arms after an interval change during queued event replay', async () => {
+    await it('should re-arm after an interval change during queued event replay', async () => {
       station.started = true
       const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
       mock.method(station, 'inAcceptedState', () => true)
@@ -9781,7 +9781,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(startSpy.mock.callCount(), 1)
     })
 
-    await it('does not restart aligned sampling while station shutdown is in progress', () => {
+    await it('should not restart aligned sampling while station shutdown is in progress', () => {
       station.started = true
       const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
       const testableStation = station as unknown as { stopping: boolean }
@@ -9793,7 +9793,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       testableStation.stopping = false
     })
 
-    await it('keeps the aligned clock running while the station is disconnected', () => {
+    await it('should keep the aligned clock running while the station is disconnected', () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
         Promise.resolve()
@@ -9806,7 +9806,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 1)
     })
 
-    await it('re-arms with the new cadence after an interval change and restart', async () => {
+    await it('should re-arm with the new cadence after an interval change and restart', async () => {
       station.started = true
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
@@ -9825,7 +9825,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
-    await it('does not arm for OCPP 1.6 stations', () => {
+    await it('should not arm for OCPP 1.6 stations', () => {
       station.stationInfo = {
         ocppVersion: OCPPVersion.VERSION_16,
       } as ChargingStationInfo
@@ -9840,7 +9840,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 0)
     })
 
-    await it('does not arm when the configured interval is 0', () => {
+    await it('should not arm when the configured interval is 0', () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '0')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
@@ -9853,7 +9853,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 0)
     })
 
-    await it('does not arm for invalid persisted intervals', () => {
+    await it('should not arm for invalid persisted intervals', () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
         Promise.resolve()

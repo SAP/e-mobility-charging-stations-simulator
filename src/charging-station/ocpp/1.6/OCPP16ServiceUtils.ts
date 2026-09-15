@@ -1362,7 +1362,7 @@ export class OCPP16ServiceUtils {
           connectorStatus,
           rawTransactionId
         )
-        bufferStopTransactionWithoutSending = meterValueDependencies.length > 0
+        bufferStopTransactionWithoutSending = isNotEmptyArray(meterValueDependencies)
         const timestamp = new Date((normalizedTimestamp ?? new Date()).getTime())
         const transactionId = convertToInt(rawTransactionId)
         let strictEndMeterValueIsSolePublicKeyCarrier = false

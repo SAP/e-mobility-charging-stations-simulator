@@ -138,7 +138,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(startEnded.mock.callCount(), 0)
   })
 
-  await it('does not commit a delayed Occupied status after the transaction has ended', async () => {
+  await it('should not commit a delayed Occupied status after the transaction has ended', async () => {
     const connectorStatus = station.getConnectorStatus(1, 1)
     assert.ok(connectorStatus != null)
     connectorStatus.transactionStarted = false
@@ -231,7 +231,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(startEnded.mock.callCount(), 0)
   })
 
-  await it('routes a replay response to its canonical EVSE when connector ids overlap', async () => {
+  await it('should route a replay response to its canonical EVSE when connector ids overlap', async () => {
     const { station: multiEvseStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
@@ -301,7 +301,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(wrongOwner.transactionPending, true)
   })
 
-  await it('commits the exact restored queued Started event after transient owner state is cleared', async () => {
+  await it('should commit the exact restored queued Started event after transient owner state is cleared', async () => {
     const connectorStatus = station.getConnectorStatus(1, 1)
     const evseStatus = station.getEvseStatus(1)
     assert.ok(connectorStatus != null)
@@ -365,10 +365,10 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(restoredConnectorStatus.transactionStarting, false)
     assert.strictEqual(restoredConnectorStatus.locked, true)
     assert.strictEqual(restoredConnectorStatus.transactionRestored, true)
-    assert.deepEqual(restoredConnectorStatus.transactionEventQueue, [])
+    assert.deepStrictEqual(restoredConnectorStatus.transactionEventQueue, [])
   })
 
-  await it('does not commit a stale Started response after its restored queue entry was replaced', async () => {
+  await it('should not commit a stale Started response after its restored queue entry was replaced', async () => {
     const connectorStatus = station.getConnectorStatus(1, 1)
     assert.ok(connectorStatus != null)
     connectorStatus.transactionStarted = false

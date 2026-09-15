@@ -240,7 +240,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(stationLike.stopping, false)
     })
 
-    await it('publishes the stop single-flight before cancellation invokes onError', async () => {
+    await it('should publish the stop single-flight before cancellation invokes onError', async () => {
       const stopGate = Promise.withResolvers<undefined>()
       const requestSequence: string[] = []
       let cancelCalls = 0
@@ -285,7 +285,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(reentrantStopSettled, true)
     })
 
-    await it('retracts an in-flight OCPP 1.6 CALL when shutdown begins', async () => {
+    await it('should retract an in-flight OCPP 1.6 CALL when shutdown begins', async () => {
       const inFlight = {
         isRequest: true,
         message: '[2,"terminal","StopTransaction",{}]',
@@ -309,7 +309,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(inFlight.stopDrain, true)
     })
 
-    await it('cancels old non-buffered requests before installing the shutdown lifecycle', async () => {
+    await it('should cancel old non-buffered requests before installing the shutdown lifecycle', async () => {
       const oldLifecycle = new AbortController()
       const stopGate = Promise.withResolvers<undefined>()
       const order: string[] = []
@@ -342,13 +342,13 @@ await describe('ChargingStation Lifecycle', async () => {
 
       const stopPromise = ChargingStation.prototype.stop.call(stationLike)
 
-      assert.deepEqual(order, ['cancel', 'performStop'])
+      assert.deepStrictEqual(order, ['cancel', 'performStop'])
       stopGate.resolve(undefined)
       await stopPromise
       assert.strictEqual(stationLike.stopping, false)
     })
 
-    await it('sends an OCPP 1.6 StopTransaction after cancelling an unrelated pending CALL', async () => {
+    await it('should send an OCPP 1.6 StopTransaction after cancelling an unrelated pending CALL', async () => {
       const context = createOCPP16RequestTestContext({
         stationInfo: { beginEndMeterValues: false },
       })
@@ -423,7 +423,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(activeStation.getConnectorStatus(1)?.transactionId, undefined)
     })
 
-    await it('waits for an in-flight OCPP 1.6 StartTransaction before shutdown StopTransaction', async () => {
+    await it('should wait for an in-flight OCPP 1.6 StartTransaction before shutdown StopTransaction', async () => {
       const context = createOCPP16RequestTestContext({
         stationInfo: { beginEndMeterValues: false },
       })
@@ -617,7 +617,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(cancelCalls, 2)
     })
 
-    await it('buffers StopTransaction behind cached terminal MeterValues when shutdown interrupts replay', async () => {
+    await it('should buffer StopTransaction behind cached terminal MeterValues when shutdown interrupts replay', async () => {
       const transportFailure = new Error('terminal MeterValues transport failure')
       const firstSendFailed = Promise.withResolvers<undefined>()
       const unavailableConnectorIds: number[] = []
@@ -1397,7 +1397,7 @@ await describe('ChargingStation Lifecycle', async () => {
       await resumedResponse
     })
 
-    await it('releases a buffered-message drain when the connection closes', () => {
+    await it('should release a buffered-message drain when the connection closes', () => {
       const { station: activeStation } = createOCPP16RequestTestContext()
       station = activeStation
       installBufferedMessageCallbackState(activeStation)
@@ -1431,7 +1431,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.deepStrictEqual(stationInternals.messageQueue, [bufferedMessage])
     })
 
-    await it('schedules buffered response replay while registration is pending', t => {
+    await it('should schedule buffered response replay while registration is pending', t => {
       t.mock.timers.enable({ apis: ['setInterval'] })
       const { station: activeStation } = createOCPP16RequestTestContext()
       station = activeStation
@@ -1462,7 +1462,7 @@ await describe('ChargingStation Lifecycle', async () => {
       }
     })
 
-    await it('buffers an unacknowledged StopTransaction once when station stop times out', async t => {
+    await it('should buffer an unacknowledged StopTransaction once when station stop times out', async t => {
       t.mock.timers.enable({ apis: ['setTimeout'] })
       const responseService = new OCPP16ResponseService()
       const requestService = new OCPP16RequestService(responseService)
@@ -1636,7 +1636,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(connectorStatus.transactionId, undefined)
     })
 
-    await it('persists a reverted snapshot queued behind a stale pending save', async () => {
+    await it('should persist a reverted snapshot queued behind a stale pending save', async () => {
       const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       const configurationDirectory = mkdtempSync(join(tmpdir(), 'configuration-save-race-'))
@@ -1703,7 +1703,7 @@ await describe('ChargingStation Lifecycle', async () => {
       }
     })
 
-    await it('coalesces transaction queue persistence to one dirty follow-up save', async () => {
+    await it('should coalesce transaction queue persistence to one dirty follow-up save', async () => {
       const firstSave = Promise.withResolvers<undefined>()
       const saveConfiguration = mock.fn()
       const stationLike = {
@@ -1725,7 +1725,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(saveConfiguration.mock.callCount(), 2)
     })
 
-    await it('acknowledges a saved queue snapshot before a later dirty save fails', async () => {
+    await it('should acknowledge a saved queue snapshot before a later dirty save fails', async () => {
       const firstSave = Promise.withResolvers<undefined>()
       const secondSave = Promise.withResolvers<undefined>()
       const secondFailure = new Error('later persistence failure')
@@ -1766,7 +1766,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(outcome.error, secondFailure)
     })
 
-    await it('acknowledges a saved queue snapshot while a later dirty save remains pending', async () => {
+    await it('should acknowledge a saved queue snapshot while a later dirty save remains pending', async () => {
       const firstSave = Promise.withResolvers<undefined>()
       const hangingSave = Promise.withResolvers<undefined>()
       let saveAttempts = 0
@@ -1802,7 +1802,7 @@ await describe('ChargingStation Lifecycle', async () => {
         .transactionEventQueueSavePromise
     })
 
-    await it('retries a failed transaction queue checkpoint without another mutation', async () => {
+    await it('should retry a failed transaction queue checkpoint without another mutation', async () => {
       const firstSave = Promise.withResolvers<undefined>()
       const secondSave = Promise.withResolvers<undefined>()
       const saveFailure = new Error('transient persistence failure')
@@ -1852,7 +1852,7 @@ await describe('ChargingStation Lifecycle', async () => {
         .transactionEventQueueSavePromise
     })
 
-    await it('surfaces a persistent queue checkpoint failure without hot-looping', async t => {
+    await it('should surface a persistent queue checkpoint failure without hot-looping', async t => {
       t.mock.timers.enable({ apis: ['setTimeout'] })
       const saveFailure = new Error('persistent storage failure')
       let saveAttempts = 0
@@ -2045,7 +2045,7 @@ await describe('ChargingStation Lifecycle', async () => {
       })
     }
 
-    await it('rejects RequestStopTransaction after the shutdown termination fixed point', async () => {
+    await it('should reject RequestStopTransaction after the shutdown termination fixed point', async () => {
       const transactionId = '00000000-0000-4000-8000-000000000026'
       const persistenceStarted = Promise.withResolvers<undefined>()
       const releasePersistence = Promise.withResolvers<undefined>()
@@ -2119,7 +2119,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(closeConnection.mock.callCount(), 1)
     })
 
-    await it('drops a late CALL at the websocket boundary without buffering and accepts it after restart', async () => {
+    await it('should drop a late CALL at the websocket boundary without buffering and accepts it after restart', async () => {
       const transactionId = '00000000-0000-4000-8000-000000000027'
       const requestHandler = mock.fn((...args: unknown[]): Promise<Record<string, never>> => {
         const requestParams = args[3] as RequestParams | undefined
@@ -2200,7 +2200,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(requestHandler.mock.callCount(), 0)
     })
 
-    await it('routes a terminal CALL_RESULT received while stopping', async () => {
+    await it('should route a terminal CALL_RESULT received while stopping', async () => {
       const result = createMockChargingStation({
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
@@ -2251,7 +2251,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(activeStation.requests.has(messageId), false)
     })
 
-    await it('drops an admitted CALL result when its async handler finishes during stop', async () => {
+    await it('should drop an admitted CALL result when its async handler finishes during stop', async () => {
       const transactionId = '00000000-0000-4000-8000-000000000029'
       const handlerStarted = Promise.withResolvers<undefined>()
       const releaseHandler = Promise.withResolvers<undefined>()
@@ -2340,7 +2340,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(stationLifecycle.bufferedMessageCallbackCount, 0)
     })
 
-    await it('drops an admitted CALL error when its async handler fails during stop', async () => {
+    await it('should drop an admitted CALL error when its async handler fails during stop', async () => {
       const transactionId = '00000000-0000-4000-8000-000000000030'
       const handlerStarted = Promise.withResolvers<undefined>()
       const releaseHandler = Promise.withResolvers<undefined>()
@@ -2429,7 +2429,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(stationLifecycle.bufferedMessageCallbackCount, 0)
     })
 
-    await it('drops a CALLERROR when its async handler rejects after reconnect', async () => {
+    await it('should drop a CALLERROR when its async handler rejects after reconnect', async () => {
       const transactionId = '00000000-0000-4000-8000-000000000031'
       const handlerStarted = Promise.withResolvers<undefined>()
       const releaseHandler = Promise.withResolvers<undefined>()
@@ -2502,7 +2502,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(sendError.mock.callCount(), 0)
     })
 
-    await it('persists events queued while transaction delivery settles during stop', async () => {
+    await it('should persist events queued while transaction delivery settles during stop', async () => {
       const transactionEventQueue: unknown[] = []
       const connectorStatus = { transactionEventQueue } as unknown as ConnectorStatus
       let savedQueueLength = -1
@@ -2620,7 +2620,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(stoppedEvents, 1)
     })
 
-    await it('tears down the clock-aligned timer when the stop sequence times out before completing', async t => {
+    await it('should tear down the clock-aligned timer when the stop sequence times out before completing', async t => {
       t.mock.timers.enable({ apis: ['setTimeout'] })
       const stopSequence = new Promise<undefined>(() => {
         // Never settles: finalizeShutdown times out before stopMessageSequence,
@@ -3005,7 +3005,7 @@ await describe('ChargingStation Lifecycle', async () => {
       // (mock implementation doesn't fully replicate guard, but state is verified)
     })
 
-    await it('defers paced transaction queue checkpoints to one save per minute', async t => {
+    await it('should defer paced transaction queue checkpoints to one save per minute', async t => {
       t.mock.timers.enable({ apis: ['setTimeout'] })
       const saveConfiguration = mock.fn()
       const stationLike = {
@@ -3031,7 +3031,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(saveConfiguration.mock.callCount(), 1)
     })
 
-    await it('flushes the latest deferred queue state when an immediate checkpoint is requested', async t => {
+    await it('should flush the latest deferred queue state when an immediate checkpoint is requested', async t => {
       t.mock.timers.enable({ apis: ['setTimeout'] })
       let queueLength = 1
       const savedQueueLengths: number[] = []
@@ -3080,7 +3080,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.deepStrictEqual(savedGenerations, [currentLifecycle.signal])
     })
 
-    await it('persists a queue save superseded by shutdown with the current generation', async () => {
+    await it('should persist a queue save superseded by shutdown with the current generation', async () => {
       const staleLifecycle = new AbortController()
       const shutdownLifecycle = new AbortController()
       const staleSave = Promise.withResolvers<undefined>()
@@ -3128,7 +3128,7 @@ await describe('ChargingStation Lifecycle', async () => {
       ])
     })
 
-    await it('forces a deferred transaction queue checkpoint before stop completes', async t => {
+    await it('should force a deferred transaction queue checkpoint before stop completes', async t => {
       t.mock.timers.enable({ apis: ['setTimeout'] })
       const transactionEventQueue: unknown[] = [{}]
       const savedQueueLengths: number[] = []
@@ -3507,7 +3507,7 @@ await describe('ChargingStation Lifecycle', async () => {
 
       await ChargingStation.prototype.delete.call(station, false)
 
-      assert.deepEqual(cleanupOrder, ['stop', 'cancel'])
+      assert.deepStrictEqual(cleanupOrder, ['stop', 'cancel'])
     })
 
     await it('should join an active OCPP 1.6 StopTransaction before delete cleanup', async () => {
@@ -3591,7 +3591,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(cancellationDuringLifecycleRequest, false)
       assert.strictEqual(cancelCalls, 1)
       assert.strictEqual(stopMock.mock.callCount(), 1)
-      assert.deepEqual(
+      assert.deepStrictEqual(
         requestHandler.mock.calls.map(call => call.arguments[1]),
         ['StatusNotification', 'StopTransaction']
       )
@@ -3843,7 +3843,7 @@ await describe('ChargingStation Lifecycle', async () => {
         { Evses: { 1: {} } }
       )
 
-      assert.deepEqual(station.getEvseStatus(1)?.MeterValues, [])
+      assert.deepStrictEqual(station.getEvseStatus(1)?.MeterValues, [])
     })
 
     await it('should handle delete operation with pending transactions', async () => {

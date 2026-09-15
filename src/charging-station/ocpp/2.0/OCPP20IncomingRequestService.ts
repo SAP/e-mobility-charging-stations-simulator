@@ -1826,7 +1826,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     const activeConnectors = connectors.filter(([, connectorStatus]) =>
       this.isTriggeredTransactionActive(connectorStatus)
     )
-    if (activeConnectors.length === 0) {
+    if (isEmpty(activeConnectors)) {
       if (connectors.some(([, status]) => this.hasTriggeredTransactionState(status))) {
         return
       }
@@ -5176,7 +5176,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           const deliveryTurn = delivery.waitForTurn()
           return deliveryTurn == null ? [] : [deliveryTurn]
         })
-        if (deliveryTurns.length > 0) await Promise.all(deliveryTurns)
+        if (isNotEmptyArray(deliveryTurns)) await Promise.all(deliveryTurns)
         this.emitEvseMeterValues(chargingStation, target, errorHandler, settleDeliveries)
       })().catch((error: unknown) => {
         OCPP20ServiceUtils.releaseTriggeredMeterValuesRequests(chargingStation, [target.evseId])
