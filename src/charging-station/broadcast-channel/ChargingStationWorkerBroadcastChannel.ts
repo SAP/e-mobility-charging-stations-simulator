@@ -85,7 +85,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private static readonly acceptedStatusCommands = new Map<
     BroadcastChannelProcedureName,
     (response: CommandResponse) => boolean
-      >([
+  >([
     [
       BroadcastChannelProcedureName.BOOT_NOTIFICATION,
       r => r.status === RegistrationStatusEnumType.ACCEPTED,
