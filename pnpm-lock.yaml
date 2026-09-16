@@ -285,7 +285,7 @@ importers:
         specifier: ^17.5.1
         version: 17.5.1
       neostandard:
-        specifier: 0.14.0-next.1
+        specifier: ^0.14.0-next.1
         version: 0.14.0-next.1(eslint@10.10.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(ts-declaration-location@1.0.7(typescript@6.0.3))(typescript@6.0.3)
       prettier:
         specifier: ^3.9.6
