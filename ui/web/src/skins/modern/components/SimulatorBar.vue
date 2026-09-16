@@ -100,7 +100,7 @@ import StatePill from './StatePill.vue'
  * @param e - The DOM change event
  * @returns The selected option's index
  */
-function getSelectIndex (e: Event): number {
+function getSelectIndex(e: Event): number {
   return (e.target as HTMLSelectElement).selectedIndex
 }
 

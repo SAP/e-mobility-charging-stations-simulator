@@ -3365,7 +3365,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
 
     if (groupIdToken != null) {
-      let isGroupAuthorized = false
+      let isGroupAuthorized: boolean
       try {
         isGroupAuthorized = await this.authorizeToken(
           chargingStation,
@@ -3416,7 +3416,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           'ChargingProfile transactionId must not be set'
         )
       }
-      let isValidProfile = false
+      let isValidProfile: boolean
       try {
         isValidProfile = this.validateChargingProfile(
           chargingStation,

@@ -103,34 +103,34 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private static readonly acceptedStatusCommands = new Map<
     BroadcastChannelProcedureName,
     (response: CommandResponse) => boolean
-      >([
-        [
-          BroadcastChannelProcedureName.BOOT_NOTIFICATION,
-          r => r.status === RegistrationStatusEnumType.ACCEPTED,
-        ],
-        [
-          BroadcastChannelProcedureName.CHANGE_CONFIGURATION,
-          r =>
-            r.status === ConfigurationStatus.ACCEPTED ||
+  >([
+    [
+      BroadcastChannelProcedureName.BOOT_NOTIFICATION,
+      r => r.status === RegistrationStatusEnumType.ACCEPTED,
+    ],
+    [
+      BroadcastChannelProcedureName.CHANGE_CONFIGURATION,
+      r =>
+        r.status === ConfigurationStatus.ACCEPTED ||
         r.status === ConfigurationStatus.REBOOT_REQUIRED,
-        ],
-        [BroadcastChannelProcedureName.DATA_TRANSFER, r => r.status === DataTransferStatus.ACCEPTED],
-        [
-          BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
-          r =>
-            (r as OCPP20Get15118EVCertificateResponse).status ===
+    ],
+    [BroadcastChannelProcedureName.DATA_TRANSFER, r => r.status === DataTransferStatus.ACCEPTED],
+    [
+      BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
+      r =>
+        (r as OCPP20Get15118EVCertificateResponse).status ===
         Iso15118EVCertificateStatusEnumType.Accepted,
-        ],
-        [
-          BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
-          r =>
-            (r as OCPP20GetCertificateStatusResponse).status === GetCertificateStatusEnumType.Accepted,
-        ],
-        [
-          BroadcastChannelProcedureName.SIGN_CERTIFICATE,
-          r => (r as OCPP20SignCertificateResponse).status === GenericStatus.Accepted,
-        ],
-      ])
+    ],
+    [
+      BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
+      r =>
+        (r as OCPP20GetCertificateStatusResponse).status === GetCertificateStatusEnumType.Accepted,
+    ],
+    [
+      BroadcastChannelProcedureName.SIGN_CERTIFICATE,
+      r => (r as OCPP20SignCertificateResponse).status === GenericStatus.Accepted,
+    ],
+  ])
 
   private static readonly emptyResponseCommands = new Set<BroadcastChannelProcedureName>([
     BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,

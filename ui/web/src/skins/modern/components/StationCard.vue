@@ -209,7 +209,7 @@ const emit = defineEmits<{
       evseId?: number
       hashId: string
       ocppVersion?: OCPPVersion
-    }
+    },
   ]
 }>()
 

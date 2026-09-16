@@ -54,9 +54,9 @@ export function buildStartTransactionPayload (
   ocppVersion: OCPPVersion | undefined,
   options?: { evseId?: number; idTag?: string }
 ): {
-    payload: RequestPayload
-    procedureName: ProcedureName.START_TRANSACTION | ProcedureName.TRANSACTION_EVENT
-  } {
+  payload: RequestPayload
+  procedureName: ProcedureName.START_TRANSACTION | ProcedureName.TRANSACTION_EVENT
+} {
   if (isOCPP20x(ocppVersion)) {
     return {
       payload: {
@@ -121,9 +121,9 @@ export function buildStopTransactionPayload (
   ocppVersion: OCPPVersion | undefined,
   connectorId?: number
 ): {
-    payload: RequestPayload
-    procedureName: ProcedureName.STOP_TRANSACTION | ProcedureName.TRANSACTION_EVENT
-  } {
+  payload: RequestPayload
+  procedureName: ProcedureName.STOP_TRANSACTION | ProcedureName.TRANSACTION_EVENT
+} {
   if (isOCPP20x(ocppVersion)) {
     return {
       payload: {

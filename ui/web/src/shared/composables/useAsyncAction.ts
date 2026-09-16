@@ -18,17 +18,17 @@ export function useAsyncAction<T extends Record<string, boolean>> (
   initialPending: T,
   onRefresh?: () => void
 ): {
-    pending: Readonly<T>
-    run: (
-      key: keyof T,
-      options: {
-        action: () => Promise<unknown>
-        errorMsg: string
-        onSuccess?: () => void
-        successMsg: string
-      }
-    ) => void
-  } {
+  pending: Readonly<T>
+  run: (
+    key: keyof T,
+    options: {
+      action: () => Promise<unknown>
+      errorMsg: string
+      onSuccess?: () => void
+      successMsg: string
+    }
+  ) => void
+} {
   const $toast = useToast()
   /**
    * Reactive pending-state map. Access properties directly (e.g. `pending.connection`)

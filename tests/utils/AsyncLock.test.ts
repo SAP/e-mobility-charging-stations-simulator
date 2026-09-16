@@ -27,7 +27,7 @@ await describe('AsyncLock', async () => {
     await Promise.all(promises)
     assert.deepStrictEqual(
       executed,
-      new Array(runs).fill(0).map((_, i) => ++i)
+      new Array(runs).fill(0).map((_, i) => i + 1)
     )
   })
 
@@ -50,7 +50,7 @@ await describe('AsyncLock', async () => {
     await Promise.all(promises)
     assert.deepStrictEqual(
       executed,
-      new Array(runs).fill(0).map((_, i) => ++i)
+      new Array(runs).fill(0).map((_, i) => i + 1)
     )
   })
 

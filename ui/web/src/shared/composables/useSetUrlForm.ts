@@ -19,12 +19,12 @@ export function useSetUrlForm (
   hashId: string,
   chargingStationId: string
 ): {
-    chargingStationId: string
-    formState: Ref<SetUrlFormState>
-    pending: Readonly<Ref<boolean>>
-    resetForm: () => void
-    submitForm: () => Promise<boolean>
-  } {
+  chargingStationId: string
+  formState: Ref<SetUrlFormState>
+  pending: Readonly<Ref<boolean>>
+  resetForm: () => void
+  submitForm: () => Promise<boolean>
+} {
   const $uiClient = useUIClient()
   const $toast = useToast()
 
