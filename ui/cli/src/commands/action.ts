@@ -59,7 +59,9 @@ const fetchStationList = async (
       silent: true,
     })
   } catch (error: unknown) {
-    throw new Error(`Failed to fetch charging station list: ${extractErrorMessage(error)}`)
+    throw new Error(`Failed to fetch charging station list: ${extractErrorMessage(error)}`, {
+      cause: error,
+    })
   }
 
   if (response.status !== ResponseStatus.SUCCESS || !Array.isArray(response.chargingStations)) {

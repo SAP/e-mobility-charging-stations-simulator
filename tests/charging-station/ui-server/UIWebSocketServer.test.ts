@@ -1019,8 +1019,8 @@ await describe('UIWebSocketServer', async () => {
         const handleUpgradeSpy = t.mock.method(
           wss,
           'handleUpgrade',
-          (_req: unknown, _socket: unknown, _head: unknown, cb: (ws: unknown) => void) => {
-            cb({})
+          (_req: unknown, _socket: unknown, _head: unknown, onWebSocket: (ws: unknown) => void) => {
+            onWebSocket({})
           }
         )
 
