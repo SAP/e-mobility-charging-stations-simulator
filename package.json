@@ -92,7 +92,7 @@
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.21.3",
-    "zod": "^4.6.2"
+    "zod": "^4.6.4"
   },
   "optionalDependencies": {
     "bufferutil": "^4.1.0",
@@ -112,7 +112,7 @@
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.39.5",
-    "eslint-plugin-jsdoc": "^64.3.9",
+    "eslint-plugin-jsdoc": "^64.3.10",
     "eslint-plugin-perfectionist": "^5.11.0",
     "eslint-plugin-vue": "^10.11.0",
     "husky": "^9.1.7",
