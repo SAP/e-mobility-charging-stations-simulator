@@ -3967,7 +3967,7 @@ export class OCPP20ServiceUtils {
             settlePendingClockAlignedRequest(chargingStation, sendState, pending, false)
           }
           logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.METER_VALUES}':`,
+            `${chargingStation.logPrefix()} ${moduleName}.sendClockAlignedMeterValuesRequest: Error sending clock-aligned '${OCPP20RequestCommand.METER_VALUES}':`,
             error
           )
           if (hasLaterPending) continue

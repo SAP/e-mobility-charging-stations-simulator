@@ -18,7 +18,7 @@ import {
   isNotEmptyArray,
   isNotEmptyString,
 } from '../utils/index.js'
-import { canonicalizeCustomData } from './meter-values/MeterValueUtils.js'
+import { canonicalizeCustomData } from './meter-values/index.js'
 
 export interface BoundedTransactionEventQueue {
   bytes: number

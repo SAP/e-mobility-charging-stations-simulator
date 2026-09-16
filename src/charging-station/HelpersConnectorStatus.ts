@@ -38,7 +38,7 @@ import {
 import { buildConfigKey } from './ConfigurationKeyUtils.js'
 import { getSingleChargingSchedule } from './HelpersChargingProfile.js'
 import { getMaxNumberOfConnectors } from './HelpersConfig.js'
-import { getRepresentedTransactionIntervalEnergyWh } from './meter-values/TransactionIntervalUtils.js'
+import { getRepresentedTransactionIntervalEnergyWh } from './meter-values/index.js'
 import {
   boundTransactionEventQueue,
   getMutableSignedMeterValue,
