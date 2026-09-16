@@ -61,11 +61,9 @@ import {
   captureTransactionIntervalState,
   completeTransactionIntervalState,
   restoreTransactionIntervalState,
-} from '../meter-values/TransactionIntervalUtils.js'
-import {
   type TransactionMeterValueDelivery,
   TransactionMeterValueDeliveryBarrier,
-} from '../meter-values/TransactionMeterValueDeliveryBarrier.js'
+} from '../meter-values/index.js'
 import {
   buildMeterValue,
   claimPublicKeyDelivery,

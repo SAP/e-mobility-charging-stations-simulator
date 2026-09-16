@@ -17,23 +17,25 @@ import { create } from 'tar'
 
 import {
   canProceedChargingProfile,
-  captureTransactionIntervalState,
   type ChargingStation,
   checkChargingStationState,
-  completeTransactionIntervalState,
   getConfigurationKey,
   getConnectorChargingProfiles,
   getIdTagsFile,
   prepareChargingProfileKind,
-  recordFrozenTransactionIntervalEmission,
   removeExpiredReservations,
   resetAuthorizeConnectorStatus,
+  setConfigurationKeyValue,
+} from '../../../charging-station/index.js'
+import {
+  captureTransactionIntervalState,
+  completeTransactionIntervalState,
+  recordFrozenTransactionIntervalEmission,
   resolveInletToOutputEfficiency,
   restoreTransactionIntervalState,
-  setConfigurationKeyValue,
   type TransactionMeterValueDelivery,
   TransactionMeterValueDeliveryBarrier,
-} from '../../../charging-station/index.js'
+} from '../../../charging-station/meter-values/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   type ChangeConfigurationRequest,

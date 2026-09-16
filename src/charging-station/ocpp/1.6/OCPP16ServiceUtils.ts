@@ -11,19 +11,21 @@ import {
 import type { SigningMethodEnumType } from '../../../types/index.js'
 
 import {
-  captureTransactionIntervalState,
   type ChargingStation,
-  completeTransactionIntervalState,
   getConfigurationKey,
   hasFeatureProfile,
   hasReservationExpired,
+} from '../../../charging-station/index.js'
+import {
+  captureTransactionIntervalState,
+  completeTransactionIntervalState,
   isCoherentModeActive,
   recordTransactionIntervalEmission,
   resolveInletToOutputEfficiency,
   restoreTransactionIntervalState,
   type TransactionMeterValueDelivery,
   TransactionMeterValueDeliveryBarrier,
-} from '../../../charging-station/index.js'
+} from '../../../charging-station/meter-values/index.js'
 import { BaseError, OCPPError } from '../../../exception/index.js'
 import {
   type ConfigurationKey,

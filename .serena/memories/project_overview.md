@@ -56,6 +56,7 @@ src/
 ## Component Boundaries
 
 - `charging-station/` and `ocpp/` are SEPARATE components with their own barrels (files under `src/charging-station/ocpp/` belong to `ocpp/`)
+- `meter-values/` is a SEPARATE component with its own barrel (`meter-values/index.js`): physics-based coherent MeterValues generation plus the shared transaction MeterValue delivery/interval-accounting helpers. Consumers (`ocpp/`, `broadcast-channel/`, the `charging-station/` root) import via the barrel, never deep-import its sub-modules
 - `ocpp/1.6/` and `ocpp/2.0/` are separate sub-components of ocpp
 - `ocpp/auth/` is an independent subsystem with its own barrel, interfaces, and strategy pattern
 - `worker/` is **fully standalone** — zero imports from other local modules. Has its own `sleep()`, `secureRandom()`, `mergeDeepRight()`. Uses `new Error()` (not `BaseError`). Portable to other projects

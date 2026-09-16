@@ -14,10 +14,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { ChargingStation, CoherentSession } from '../../../src/charging-station/index.js'
+import type { ChargingStation } from '../../../src/charging-station/index.js'
 import type { SampledValueTemplate } from '../../../src/types/index.js'
 
 import { addConfigurationKey, buildConfigKey } from '../../../src/charging-station/index.js'
+import { type CoherentSession } from '../../../src/charging-station/meter-values/index.js'
 import { buildMeterValue } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   CurrentType,

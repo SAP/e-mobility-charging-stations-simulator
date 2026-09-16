@@ -12,7 +12,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation, CoherentSession } from '../../../../src/charging-station/index.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import type {
   MeterValue,
@@ -24,6 +24,7 @@ import type {
 } from '../../../../src/types/index.js'
 
 import { addConfigurationKey } from '../../../../src/charging-station/index.js'
+import { type CoherentSession } from '../../../../src/charging-station/meter-values/index.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { buildMeterValue } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {

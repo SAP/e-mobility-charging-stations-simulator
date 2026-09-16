@@ -6,10 +6,6 @@ import { secondsToMilliseconds } from 'date-fns'
 
 import type { OCPP20IdTokenEnumType } from '../../../types/index.js'
 
-import {
-  type TransactionMeterValueDelivery,
-  TransactionMeterValueDeliveryBarrier,
-} from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   AttributeEnumType,
@@ -157,20 +153,24 @@ import {
 import {
   addConfigurationKey,
   buildConfigKey,
-  captureTransactionIntervalState,
   type ChargingStation,
-  completeTransactionIntervalState,
   getConfigurationKey,
   getRawSignedMeterValuePublicKey,
   hasPendingReservation,
   hasPendingReservations,
   hasQueuedEndedTransactionEvent,
   isTransactionEventQueueStaged,
-  recordFrozenTransactionIntervalEmission,
   resetConnectorStatus,
+} from '../../index.js'
+import {
+  captureTransactionIntervalState,
+  completeTransactionIntervalState,
+  recordFrozenTransactionIntervalEmission,
   resolveInletToOutputEfficiency,
   restoreTransactionIntervalState,
-} from '../../index.js'
+  type TransactionMeterValueDelivery,
+  TransactionMeterValueDeliveryBarrier,
+} from '../../meter-values/index.js'
 import {
   AuthContext,
   AuthResultStatus,

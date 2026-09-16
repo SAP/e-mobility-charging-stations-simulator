@@ -2,7 +2,7 @@
  * @file Factory to construct a mock ChargingStation instance for tests.
  */
 
-import type { ChargingStation, CoherentSession } from '../../../src/charging-station/index.js'
+import type { ChargingStation } from '../../../src/charging-station/index.js'
 import type {
   CachedRequest,
   ConnectorEntry,
@@ -21,6 +21,7 @@ import type {
 } from './StationHelpers.types.js'
 
 import { getConfigurationKey } from '../../../src/charging-station/index.js'
+import { type CoherentSession } from '../../../src/charging-station/meter-values/index.js'
 import { OCPPError } from '../../../src/exception/index.js'
 import {
   AvailabilityType,

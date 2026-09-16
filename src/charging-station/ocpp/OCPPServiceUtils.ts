@@ -14,16 +14,18 @@ import type {
 } from '../../types/index.js'
 
 import {
+  buildConfigKey,
+  type ChargingStation,
+  getConfigurationKey,
+} from '../../charging-station/index.js'
+import {
   advanceStationEnergyRegister,
   areMeterValueUnitsCompatible,
   buildCoherentMeterValue,
   buildCoherentMeterValueSnapshot,
-  buildConfigKey,
   buildSampledValueFamilyKey,
   type BuildVersionedSampledValue,
   canonicalizeCustomData,
-  type ChargingStation,
-  getConfigurationKey,
   isCoherentModeActive,
   recordTransactionIntervalEmission,
   resolveInletToOutputEfficiency,
@@ -31,7 +33,7 @@ import {
   resolveMeterValueUnitDivider,
   resolveRootSeed,
   truncateTransactionIntervalValue,
-} from '../../charging-station/index.js'
+} from '../../charging-station/meter-values/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
 import {
   type BootNotificationRequest,

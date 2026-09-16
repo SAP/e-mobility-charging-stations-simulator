@@ -8,9 +8,10 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation, CoherentSession } from '../../../../src/charging-station/index.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ConnectorStatus } from '../../../../src/types/index.js'
 
+import { type CoherentSession } from '../../../../src/charging-station/meter-values/index.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   ConnectorStatusEnum,
