@@ -140,12 +140,14 @@ export class CoherentMeterValuesManager {
    * disabled or no valid EV profile file is loaded.
    * @param transactionId - Transaction identifier from the CSMS.
    * @param connectorId - Connector on which the transaction is running.
+   * @param evseId - EVSE containing the connector when connector ids are EVSE-local.
    * @returns The active or newly-created session, or `undefined` when
    *   coherent mode is not usable.
    */
   public createSession (
     transactionId: number | string,
-    connectorId: number
+    connectorId: number,
+    evseId?: number
   ): CoherentSession | undefined {
     const existing = this.sessions.get(transactionId)
     if (existing != null) {
@@ -159,6 +161,7 @@ export class CoherentMeterValuesManager {
     }
     const session = createCoherentSession(this.chargingStation, {
       connectorId,
+      ...(evseId != null && { evseId }),
       profiles: this.evProfiles.profiles,
       rootSeed: resolveRootSeed(this.chargingStation.stationInfo),
       transactionId,

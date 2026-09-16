@@ -42,8 +42,29 @@ export {
 } from './Helpers.js'
 export type { IBootstrap } from './IBootstrap.js'
 export { IdTagsCache } from './IdTagsCache.js'
-export type { CoherentSession } from './meter-values/index.js'
 export { SharedLRUCache } from './SharedLRUCache.js'
 export { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 export { TemplateSchema } from './TemplateSchema.js'
 export { TemplateValidationError, validateTemplate } from './TemplateValidation.js'
+export {
+  boundTransactionEventQueue,
+  clearTransactionEventQueueInFlight,
+  enqueueBoundedTransactionEvent,
+  getMutableSignedMeterValue,
+  getRawSignedMeterValuePublicKey,
+  getTransactionEventQueueBytes,
+  hasQueuedEndedTransactionEvent,
+  invalidateTransactionEventQueueAccounting,
+  isTransactionEventQueueBlocked,
+  isTransactionEventQueueStaged,
+  markTransactionEventQueueDeliveryAttempted,
+  queuedTransactionEventHasPublicKey,
+  removeBoundedTransactionEvent,
+  resetTransactionEventQueueRuntimeState,
+  restoreRejectedTransactionEventIntervalCarry,
+  setTransactionEventQueueBlocked,
+  setTransactionEventQueueInFlight,
+  setTransactionEventQueueStaged,
+  shiftBoundedTransactionEvent,
+  transferDiscardedTransactionEventIntervalEnergy,
+} from './TransactionEventQueueUtils.js'

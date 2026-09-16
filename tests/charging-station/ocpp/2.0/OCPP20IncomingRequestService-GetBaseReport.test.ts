@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { RequestParams } from '../../../../src/types/index.js'
 
 import {
   addConfigurationKey,
@@ -43,6 +44,7 @@ import {
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
+import { createOCPP20RequestTestContext } from './OCPP20TestUtils.js'
 
 await describe('B07 - Get Base Report', async () => {
   let station: ChargingStation
@@ -144,6 +146,62 @@ await describe('B07 - Get Base Report', async () => {
       )
       assert.deepStrictEqual(types, [AttributeEnumType.Actual])
     }
+  })
+
+  await it('should report station and physical EVSE scopes for SendDuringIdle', () => {
+    const manager = OCPP20VariableManager.getInstance()
+    const [setResult] = manager.setVariables(station, [
+      {
+        attributeValue: 'true',
+        component: { evse: { id: 2 }, name: OCPP20ComponentName.AlignedDataCtrlr },
+        variable: { name: OCPP20OptionalVariableName.SendDuringIdle },
+      },
+    ])
+    assert.strictEqual(setResult.attributeStatus, SetVariableStatusEnumType.Accepted)
+
+    const reportData = testableService.buildReportData(station, ReportBaseEnumType.FullInventory)
+    const entries = reportData.filter(
+      (item: ReportDataType) =>
+        item.component.name === (OCPP20ComponentName.AlignedDataCtrlr as string) &&
+        item.variable.name === (OCPP20OptionalVariableName.SendDuringIdle as string)
+    )
+
+    assert.deepStrictEqual(
+      entries.map(entry => [entry.component.evse?.id, entry.variableAttribute[0]?.value]),
+      [
+        [undefined, 'false'],
+        [1, 'false'],
+        [2, 'true'],
+        [3, 'false'],
+      ]
+    )
+    assert.strictEqual(
+      reportData.some(
+        entry =>
+          entry.component.name === (OCPP20ComponentName.OCPPCommCtrlr as string) &&
+          entry.variable.name.endsWith('.EVSE.2')
+      ),
+      false
+    )
+    const configurationReport = testableService.buildReportData(
+      station,
+      ReportBaseEnumType.ConfigurationInventory
+    )
+    const scopedEntry = configurationReport.find(
+      entry =>
+        entry.component.name === (OCPP20ComponentName.AlignedDataCtrlr as string) &&
+        entry.component.evse?.id === 2 &&
+        entry.variable.name === (OCPP20OptionalVariableName.SendDuringIdle as string)
+    )
+    assert.strictEqual(scopedEntry?.variableAttribute[0]?.value, 'true')
+    assert.strictEqual(
+      configurationReport.some(
+        entry =>
+          entry.component.name === (OCPP20ComponentName.OCPPCommCtrlr as string) &&
+          entry.variable.name.endsWith('.EVSE.2')
+      ),
+      false
+    )
   })
 
   // FR: B08.FR.03
@@ -359,6 +417,210 @@ await describe('B07 - Get Base Report', async () => {
 
     assert.ok(Array.isArray(reportData))
     assert.strictEqual(reportData.length, 0)
+  })
+
+  await it('should remove only a GetBaseReport cache rejected before response send', async () => {
+    const { requestService } = createOCPP20RequestTestContext()
+    const responseStation = station
+    responseStation.ocppRequestService = requestService
+    responseStation.recordRequestStatistic = () => undefined
+    const responseService = new OCPP20IncomingRequestService()
+    const responseTestable = createTestableIncomingRequestService(responseService)
+    const retainedRequest: OCPP20GetBaseReportRequest = {
+      reportBase: ReportBaseEnumType.ConfigurationInventory,
+      requestId: 1001,
+    }
+    assert.strictEqual(
+      responseTestable.handleRequestGetBaseReport(responseStation, retainedRequest).status,
+      GenericDeviceModelStatusEnumType.Accepted
+    )
+    const oversizedRequest: OCPP20GetBaseReportRequest = {
+      reportBase: ReportBaseEnumType.ConfigurationInventory,
+      requestId: 1002,
+    }
+    const oversizedReport = responseTestable.buildReportData(
+      responseStation,
+      ReportBaseEnumType.ConfigurationInventory
+    )
+    oversizedReport[0].variableAttribute[0].value = 'x'.repeat(1024 * 1024)
+    mock.method(
+      responseService as unknown as {
+        buildReportData: (
+          chargingStation: ChargingStation,
+          reportBase: ReportBaseEnumType
+        ) => ReportDataType[]
+      },
+      'buildReportData',
+      () => oversizedReport
+    )
+
+    await assert.rejects(
+      responseService.incomingRequestHandler(
+        responseStation,
+        'oversized-get-base-report-response',
+        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+        oversizedRequest
+      ),
+      /callback capacity exceeded/
+    )
+
+    const stationState = (
+      responseService as unknown as {
+        stationsState: WeakMap<ChargingStation, { reportDataCache: Map<number, ReportDataType[]> }>
+      }
+    ).stationsState.get(responseStation)
+    assert.ok(stationState != null)
+    assert.strictEqual(stationState.reportDataCache.has(retainedRequest.requestId), true)
+    assert.strictEqual(stationState.reportDataCache.has(oversizedRequest.requestId), false)
+  })
+
+  await it('should hold report bytes until NotifyReport settles and then restore capacity', async () => {
+    const { requestService } = createOCPP20RequestTestContext()
+    station.ocppRequestService = requestService
+    station.recordRequestStatistic = () => undefined
+    const responseService = new OCPP20IncomingRequestService()
+    const responseTestable = createTestableIncomingRequestService(responseService)
+    const reportData = responseTestable.buildReportData(
+      station,
+      ReportBaseEnumType.ConfigurationInventory
+    )
+    reportData[0].variableAttribute[0].value = 'x'.repeat(600 * 1024)
+    mock.method(
+      responseService as unknown as {
+        buildReportData: (
+          chargingStation: ChargingStation,
+          reportBase: ReportBaseEnumType
+        ) => ReportDataType[]
+      },
+      'buildReportData',
+      () => reportData
+    )
+    const sentResponses: OCPP20GetBaseReportResponse[] = []
+    mock.method(requestService, 'sendResponse', (...args: unknown[]) => {
+      sentResponses.push(args[2] as OCPP20GetBaseReportResponse)
+      const requestParams = args[4] as RequestParams
+      requestParams.onMessageSent?.()
+      return Promise.resolve()
+    })
+    const firstNotifyStarted = Promise.withResolvers<undefined>()
+    const releaseFirstNotify = Promise.withResolvers<Record<string, never>>()
+    let notifyCalls = 0
+    mock.method(requestService, 'requestHandler', (): Promise<Record<string, never>> => {
+      ++notifyCalls
+      if (notifyCalls === 1) {
+        firstNotifyStarted.resolve(undefined)
+        return releaseFirstNotify.promise
+      }
+      return Promise.resolve({})
+    })
+    const firstRequest: OCPP20GetBaseReportRequest = {
+      reportBase: ReportBaseEnumType.ConfigurationInventory,
+      requestId: 1101,
+    }
+    const duplicateRequest: OCPP20GetBaseReportRequest = {
+      reportBase: ReportBaseEnumType.ConfigurationInventory,
+      requestId: firstRequest.requestId,
+    }
+    const blockedRequest: OCPP20GetBaseReportRequest = {
+      reportBase: ReportBaseEnumType.ConfigurationInventory,
+      requestId: 1102,
+    }
+    const retryRequest: OCPP20GetBaseReportRequest = {
+      reportBase: ReportBaseEnumType.ConfigurationInventory,
+      requestId: firstRequest.requestId,
+    }
+
+    await responseService.incomingRequestHandler(
+      station,
+      'first-large-report',
+      OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+      firstRequest
+    )
+    await firstNotifyStarted.promise
+    await assert.rejects(
+      responseService.incomingRequestHandler(
+        station,
+        'duplicate-active-report',
+        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+        duplicateRequest
+      ),
+      /GetBaseReport requestId 1101 is already active/
+    )
+    assert.strictEqual(sentResponses.length, 1)
+    assert.strictEqual(notifyCalls, 1)
+    await assert.rejects(
+      responseService.incomingRequestHandler(
+        station,
+        'blocked-large-report',
+        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+        blockedRequest
+      ),
+      /Report callback capacity exceeded/
+    )
+
+    releaseFirstNotify.resolve({})
+    await flushMicrotasks()
+    await flushMicrotasks()
+    await responseService.incomingRequestHandler(
+      station,
+      'retried-large-report',
+      OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+      retryRequest
+    )
+    await flushMicrotasks()
+
+    assert.strictEqual(notifyCalls, 2)
+    assert.strictEqual(sentResponses[1]?.status, GenericDeviceModelStatusEnumType.Accepted)
+    const stationState = (
+      responseService as unknown as {
+        stationsState: WeakMap<ChargingStation, { reportDataCache: Map<number, ReportDataType[]> }>
+      }
+    ).stationsState.get(station)
+    assert.ok(stationState != null)
+    assert.strictEqual(stationState.reportDataCache.size, 0)
+  })
+
+  await it('should retain GetBaseReport data until NotifyReport completes', async () => {
+    const notifyReportStarted = Promise.withResolvers<undefined>()
+    const notifyReportCompletion = Promise.withResolvers<Record<string, never>>()
+    station.recordRequestStatistic = () => undefined
+    mock.method(
+      station.ocppRequestService,
+      'sendResponse',
+      (...args: unknown[]): Promise<Record<string, never>> => {
+        const requestParams = args[4] as RequestParams
+        requestParams.onMessageSent?.()
+        return Promise.resolve({})
+      }
+    )
+    mock.method(station.ocppRequestService, 'requestHandler', () => {
+      notifyReportStarted.resolve(undefined)
+      return notifyReportCompletion.promise
+    })
+    const request: OCPP20GetBaseReportRequest = {
+      reportBase: ReportBaseEnumType.ConfigurationInventory,
+      requestId: 1003,
+    }
+
+    await incomingRequestService.incomingRequestHandler(
+      station,
+      'successful-get-base-report-response',
+      OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+      request
+    )
+    await notifyReportStarted.promise
+
+    const stationState = (
+      incomingRequestService as unknown as {
+        stationsState: WeakMap<ChargingStation, { reportDataCache: Map<number, ReportDataType[]> }>
+      }
+    ).stationsState.get(station)
+    assert.ok(stationState != null)
+    assert.strictEqual(stationState.reportDataCache.has(request.requestId), true)
+
+    notifyReportCompletion.resolve({})
+    await flushMicrotasks()
+    assert.strictEqual(stationState.reportDataCache.has(request.requestId), false)
   })
 
   await describe('GET_BASE_REPORT event listener', async () => {

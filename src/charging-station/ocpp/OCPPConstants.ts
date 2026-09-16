@@ -79,6 +79,7 @@ export class OCPPConstants {
   })
 
   static readonly OCPP_MEASURANDS_SUPPORTED = Object.freeze([
+    MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
     MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
     MeterValueMeasurand.POWER_ACTIVE_IMPORT,
     MeterValueMeasurand.CURRENT_IMPORT,

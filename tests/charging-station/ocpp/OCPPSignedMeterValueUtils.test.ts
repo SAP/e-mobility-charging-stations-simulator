@@ -1,16 +1,20 @@
 /**
  * @file Tests for OCPPSignedMeterValueUtils
- * @description Unit tests for PublicKeyWithSignedMeterValueEnumType and shouldIncludePublicKey helper
+ * @description Unit tests for signed meter-value configuration and public-key delivery ownership
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import {
+  claimPublicKeyDelivery,
   deriveSigningMethodFromPublicKeyHex,
+  releasePublicKeyDelivery,
+  retainPublicKeyDelivery,
   shouldIncludePublicKey,
   validateSigningPrerequisites,
 } from '../../../src/charging-station/ocpp/OCPPSignedMeterValueUtils.js'
 import {
+  type ConnectorStatus,
   PublicKeyWithSignedMeterValueEnumType,
   SigningMethodEnumType,
 } from '../../../src/types/index.js'
@@ -81,6 +85,43 @@ await describe('SignedMeterValueUtils', async () => {
         false
       )
     })
+  })
+
+  await it('should ignore stale delivery owners and changed transactions', () => {
+    const connectorStatus = {
+      availability: 'Operative',
+      MeterValues: [],
+      publicKeySentInTransaction: false,
+      transactionId: 'transaction-a',
+    } as unknown as ConnectorStatus
+    const firstOwner = claimPublicKeyDelivery(
+      connectorStatus,
+      'transaction-a',
+      { generation: 1 },
+      true
+    )
+    const secondOwner = claimPublicKeyDelivery(
+      connectorStatus,
+      'transaction-a',
+      { generation: 2 },
+      true
+    )
+
+    assert.strictEqual(releasePublicKeyDelivery(firstOwner), false)
+    assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+    retainPublicKeyDelivery(secondOwner)
+    assert.strictEqual(releasePublicKeyDelivery(firstOwner), false)
+    assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+
+    const replacementOwner = claimPublicKeyDelivery(
+      connectorStatus,
+      'transaction-a',
+      { generation: 3 },
+      true
+    )
+    connectorStatus.transactionId = 'transaction-b'
+    assert.strictEqual(releasePublicKeyDelivery(replacementOwner), false)
+    assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
   })
 
   await describe('deriveSigningMethodFromPublicKeyHex', async () => {

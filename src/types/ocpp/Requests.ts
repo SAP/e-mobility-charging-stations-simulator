@@ -44,7 +44,11 @@ export type CachedRequest = [
   ResponseCallback,
   ErrorCallback,
   IncomingRequestCommand | RequestCommand,
-  JsonType
+  JsonType,
+  PendingRequestCancellationCallback?,
+  (() => void)?,
+  (() => void)?,
+  number?
 ]
 
 export type DataTransferRequest = OCPP16DataTransferRequest | OCPP20DataTransferRequest
@@ -62,6 +66,23 @@ export type HeartbeatRequest = OCPP16HeartbeatRequest | OCPP20HeartbeatRequest
 export type IncomingRequest = [MessageType.CALL_MESSAGE, string, IncomingRequestCommand, JsonType]
 
 export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand, JsonType]
+
+/**
+ * Cancels a pending request while retaining its serialized CALL for replay when requested.
+ * @param ocppError - Cancellation reported to the pending caller
+ * @param options - Transport-aware cancellation policy
+ * @returns Whether cancellation was handled without invoking the cached error callback
+ */
+export type PendingRequestCancellationCallback = (
+  ocppError: OCPPError,
+  options?: PendingRequestCancellationOptions
+) => boolean
+
+export interface PendingRequestCancellationOptions {
+  bufferInFlightSend?: boolean
+  handleTransportStartedSend?: boolean
+  preserveRetainableWaiter?: boolean
+}
 
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand,
@@ -83,10 +104,32 @@ export const RequestCommand = {
 export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand
 
 export interface RequestParams {
+  /** Bytes retained exclusively for a buffered response's delivery callbacks. */
+  bufferedResponseRetainedBytes?: number
+  /** Preserve a pending CALL for reconnect replay when station shutdown is in progress. */
+  bufferOnErrorDuringStationStop?: boolean
+  /** Internal CALL-only path: cache the built frame without attempting a transport send. */
+  bufferWithoutSending?: boolean
+  /** Materialize this shutdown-critical CALL if cancellation occurs before transport setup. */
+  materializeOnCancellationBeforeSend?: boolean
+  /** Called when a CALL ends with CALLERROR or a local cancellation/timeout. */
+  onError?: (error: OCPPError, isCallError: boolean) => void
+  onMessageSent?: () => void
+  /** Called when the serialized CALL is retained for reconnect replay. */
+  onRequestBuffered?: () => void
+  onResponseReceived?: () => void
+  /**
+   * Called when the transport reports a CALL send failure or timeout.
+   * `deliveryAmbiguous` is true when the transport cannot prove that no bytes were sent.
+   */
+  onTransportError?: (error: OCPPError, deliveryAmbiguous: boolean) => void
   rawPayload?: boolean
+  responseTimeoutMs?: number
   skipBufferingOnError?: boolean
   throwError?: boolean
   triggerMessage?: boolean
+  /** Keep a pending CALL alive during graceful stop until its response or timeout settles. */
+  waitForResponseOnStationStop?: boolean
 }
 
 export const MessageTrigger = {

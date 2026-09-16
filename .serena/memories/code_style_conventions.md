@@ -48,7 +48,7 @@
 - **Enumeration naming**: OCPP spec names exactly (e.g., `ConnectorStatusEnumType`); prefix with `OCPP16`/`OCPP20` for version-specific enums
 - **Version handling**: OCPP 1.6 and 2.0.x in separate directories/namespaces
 - **Message format**: SRPC format: `[messageTypeId, messageId, action, payload]`
-- **Per-station state**: Instance-based (each `ChargingStation` owns its own Maps/state). `WeakMap` used only in `OCPP20IncomingRequestService.stationsState` for handler-scoped state keyed by station reference
+- **Per-station state**: Durable per-station state is instance-based (each `ChargingStation` owns its own Maps/state) or lives on the persisted `ConnectorStatus`. Transient, process-local runtime state (delivery/barrier ownership, in-flight/staged/blocked markers, send chains, saturation flags) is held in module-level or `static` `WeakMap`/`WeakSet` keyed by a live object reference (`ChargingStation`, `ConnectorStatus`, queued `TransactionEvent`) so it stays out of persisted/serialized types and is garbage-collected with its key. Never persist such runtime markers on `ConnectorStatus`. `OCPP20IncomingRequestService.stationsState` is one instance of this pattern
 
 ### Request Architecture
 

@@ -44,7 +44,7 @@ export {
   type UIServerConfiguration,
   type WorkerConfiguration,
 } from './ConfigurationData.js'
-export type { ConnectorEntry, ConnectorStatus } from './ConnectorStatus.js'
+export type { ConnectorEntry, ConnectorStatus, QueuedTransactionEvent } from './ConnectorStatus.js'
 export type { EmptyObject } from './EmptyObject.js'
 export type { HandleErrorParams } from './Error.js'
 export type { EvseEntry, EvseEntryData, EvseStatus, EvseStatusData, EvseTemplate } from './Evse.js'
@@ -391,6 +391,8 @@ export {
   MessageTrigger,
   type MeterValuesRequest,
   type OutgoingRequest,
+  type PendingRequestCancellationCallback,
+  type PendingRequestCancellationOptions,
   RequestCommand,
   type RequestParams,
   type ResponseCallback,

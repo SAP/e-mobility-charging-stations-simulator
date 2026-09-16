@@ -5,24 +5,26 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   OCPP16CancelReservationRequest,
   OCPP16ReserveNowRequest,
 } from '../../../../src/types/index.js'
 
+import { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import {
   GenericStatus,
   OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
+  OCPP16IncomingRequestCommand,
   OCPP16ReservationStatus,
   OCPP16StandardParametersKey,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_ID_TAG, TEST_RESERVATION_EXPIRY_MS } from '../../ChargingStationTestConstants.js'
 import {
+  createCommandsSupport,
   createOCPP16IncomingRequestTestContext,
   type OCPP16IncomingRequestTestContext,
   ReservationFixtures,
@@ -65,7 +67,13 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
   let context: OCPP16IncomingRequestTestContext
 
   beforeEach(() => {
-    context = createOCPP16IncomingRequestTestContext()
+    context = createOCPP16IncomingRequestTestContext({
+      stationInfo: {
+        commandsSupport: createCommandsSupport({
+          incomingCommands: { [OCPP16IncomingRequestCommand.CANCEL_RESERVATION]: true },
+        }),
+      },
+    })
   })
 
   afterEach(() => {
@@ -226,6 +234,105 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
 
       // Assert
       assert.strictEqual(response.status, GenericStatus.Accepted)
+    })
+
+    await it('should commit a cancellation when its request source reconnects in the same lifecycle', async () => {
+      const { incomingRequestService, station } = context
+      enableReservationProfile(context)
+      const reservation = ReservationFixtures.createReservation(1, 43, TEST_ID_TAG)
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.reservation = reservation
+      connectorStatus.status = OCPP16ChargePointStatus.Reserved
+      station.removeReservation = ChargingStation.prototype.removeReservation.bind(station)
+      const statusNotificationStarted = Promise.withResolvers<undefined>()
+      const releaseStatusNotification = Promise.withResolvers<undefined>()
+      mock.method(station.ocppRequestService, 'requestHandler', async () => {
+        statusNotificationStarted.resolve(undefined)
+        await releaseStatusNotification.promise
+        return {}
+      })
+      const sendResponse = mock.fn((): Promise<void> => Promise.resolve())
+      Object.assign(station.ocppRequestService, { sendResponse })
+      station.started = true
+      station.inAcceptedState = () => true
+      station.recordRequestStatistic = () => undefined
+      let sourceCurrent = true
+
+      const handling = incomingRequestService.incomingRequestHandler(
+        station,
+        'cancel-reconnected-source',
+        OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
+        { reservationId: reservation.reservationId },
+        station.lifecycleAbortSignal,
+        () => true,
+        () => sourceCurrent
+      )
+      const firstSettlement = await Promise.race([
+        statusNotificationStarted.promise.then(() => 'status-notification'),
+        handling.then(() => 'handling'),
+      ])
+      assert.strictEqual(firstSettlement, 'status-notification')
+      sourceCurrent = false
+      releaseStatusNotification.resolve(undefined)
+      await handling
+
+      assert.strictEqual(connectorStatus.reservation, undefined)
+      assert.strictEqual(sendResponse.mock.callCount(), 0)
+    })
+
+    await it('should preserve a reservation when cancellation resumes in a replacement lifecycle', async () => {
+      const { incomingRequestService, station } = context
+      enableReservationProfile(context)
+      const reservation = ReservationFixtures.createReservation(1, 44, TEST_ID_TAG)
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.reservation = reservation
+      connectorStatus.status = OCPP16ChargePointStatus.Reserved
+      station.removeReservation = ChargingStation.prototype.removeReservation.bind(station)
+      const statusNotificationStarted = Promise.withResolvers<undefined>()
+      const releaseStatusNotification = Promise.withResolvers<undefined>()
+      mock.method(station.ocppRequestService, 'requestHandler', async () => {
+        statusNotificationStarted.resolve(undefined)
+        await releaseStatusNotification.promise
+        return {}
+      })
+      const sendResponse = mock.fn((): Promise<void> => Promise.resolve())
+      Object.assign(station.ocppRequestService, { sendResponse })
+      const lifecycle = station as unknown as { lifecycleAbortController: AbortController }
+      lifecycle.lifecycleAbortController = new AbortController()
+      Object.defineProperty(station, 'lifecycleAbortSignal', {
+        configurable: true,
+        get: () => lifecycle.lifecycleAbortController.signal,
+      })
+      station.started = true
+      station.inAcceptedState = () => true
+      station.recordRequestStatistic = () => undefined
+      let lifecycleCurrent = true
+
+      const handling = incomingRequestService.incomingRequestHandler(
+        station,
+        'cancel-replacement-lifecycle',
+        OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
+        { reservationId: reservation.reservationId },
+        station.lifecycleAbortSignal,
+        () => lifecycleCurrent,
+        () => true
+      )
+      const firstSettlement = await Promise.race([
+        statusNotificationStarted.promise.then(() => 'status-notification'),
+        handling.then(() => 'handling'),
+      ])
+      assert.strictEqual(firstSettlement, 'status-notification')
+      lifecycleCurrent = false
+      lifecycle.lifecycleAbortController.abort()
+      lifecycle.lifecycleAbortController = new AbortController()
+      incomingRequestService.activate(station, station.lifecycleAbortSignal)
+      releaseStatusNotification.resolve(undefined)
+      await handling
+
+      assert.strictEqual(connectorStatus.reservation, reservation)
+      assert.strictEqual(sendResponse.mock.callCount(), 0)
     })
 
     await it('should reject cancellation for non-existent reservation', async () => {

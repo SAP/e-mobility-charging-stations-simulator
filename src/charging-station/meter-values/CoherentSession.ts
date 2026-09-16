@@ -48,6 +48,8 @@ export const isCoherentModeActive = (
 export interface CreateSessionOptions {
   /** Target connector id. */
   connectorId: number
+  /** EVSE containing the connector when connector ids are EVSE-local. */
+  evseId?: number
   /** Session start timestamp in milliseconds. Defaults to `Date.now()`. */
   now?: number
   /** Non-empty EV profile pool; one profile is picked via seeded weighted random selection. */
@@ -107,6 +109,7 @@ export const createCoherentSession = (
   return {
     connectorId: options.connectorId,
     currentType,
+    ...(options.evseId != null && { evseId: options.evseId }),
     numberOfPhases: currentType === CurrentType.AC ? context.getNumberOfPhases() : 1,
     profile,
     rampUpDurationMs: options.rampUpDurationMs ?? Constants.DEFAULT_COHERENT_RAMP_UP_DURATION_MS,

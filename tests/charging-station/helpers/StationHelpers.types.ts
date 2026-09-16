@@ -146,7 +146,10 @@ export interface MockOCPPIncomingRequestService {
  * Provides typed access to mock handlers without eslint-disable comments
  */
 export interface MockOCPPRequestService {
+  acquireOutgoingCall: (chargingStation: ChargingStation, messageId: string) => Promise<void>
+  releaseOutgoingCall: (chargingStation: ChargingStation, messageId: string) => void
   requestHandler: (...args: unknown[]) => Promise<unknown>
   sendError: (...args: unknown[]) => Promise<unknown>
   sendResponse: (...args: unknown[]) => Promise<unknown>
+  validateRequestPayload: (...args: unknown[]) => boolean
 }

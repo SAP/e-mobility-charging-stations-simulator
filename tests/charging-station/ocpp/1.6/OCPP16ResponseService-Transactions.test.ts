@@ -37,6 +37,7 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
   beforeEach(() => {
     const ctx = createOCPP16ResponseTestContext()
     station = ctx.station
+    station.isStopping = () => false
     responseService = ctx.responseService
 
     // Mock requestHandler so OCPP requests (StatusNotification, MeterValues) resolve

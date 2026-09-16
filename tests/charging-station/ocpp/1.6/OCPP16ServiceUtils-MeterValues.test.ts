@@ -10,8 +10,10 @@ import { afterEach, describe, it } from 'node:test'
 
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
+  CurrentType,
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
+  OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
   OCPPVersion,
@@ -105,6 +107,84 @@ await describe('OCPP16ServiceUtils — MeterValues', async () => {
 
       // Assert — kWh divider is 1000, so value = 5000 / 1000 = 5
       assert.strictEqual(meterValue.sampledValue[0].value, '5')
+    })
+
+    await it('should project a DC output meter start to an Inlet transaction begin sample', () => {
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          conversionEfficiency: 0.8,
+          currentOutType: CurrentType.DC,
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = createMeterValuesTemplate([
+          {
+            location: OCPP16MeterValueLocation.INLET,
+            measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: OCPP16MeterValueUnit.WATT_HOUR,
+            value: '0',
+          },
+        ])
+      }
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 800)
+
+      assert.strictEqual(meterValue.sampledValue[0].value, '1000')
+    })
+
+    await it('should preserve a DC output meter start for an Outlet transaction begin sample', () => {
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          conversionEfficiency: 0.8,
+          currentOutType: CurrentType.DC,
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = createMeterValuesTemplate([
+          {
+            location: OCPP16MeterValueLocation.OUTLET,
+            measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: OCPP16MeterValueUnit.WATT_HOUR,
+            value: '0',
+          },
+        ])
+      }
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 800)
+
+      assert.strictEqual(meterValue.sampledValue[0].value, '800')
+    })
+
+    await it('should preserve an AC meter start for an Inlet transaction begin sample', () => {
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          conversionEfficiency: 0.8,
+          currentOutType: CurrentType.AC,
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = createMeterValuesTemplate([
+          {
+            location: OCPP16MeterValueLocation.INLET,
+            measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: OCPP16MeterValueUnit.WATT_HOUR,
+            value: '0',
+          },
+        ])
+      }
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 800)
+
+      assert.strictEqual(meterValue.sampledValue[0].value, '800')
     })
 
     await it('should use meterStart 0 when undefined', () => {
@@ -251,6 +331,84 @@ await describe('OCPP16ServiceUtils — MeterValues', async () => {
 
       // Assert — kWh divider: 3000 / 1000 = 3
       assert.strictEqual(meterValue.sampledValue[0].value, '3')
+    })
+
+    await it('should project a DC output meter stop to an Inlet transaction end sample', () => {
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          conversionEfficiency: 0.8,
+          currentOutType: CurrentType.DC,
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = createMeterValuesTemplate([
+          {
+            location: OCPP16MeterValueLocation.INLET,
+            measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: OCPP16MeterValueUnit.WATT_HOUR,
+            value: '0',
+          },
+        ])
+      }
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 800)
+
+      assert.strictEqual(meterValue.sampledValue[0].value, '1000')
+    })
+
+    await it('should preserve a DC output meter stop for an Outlet transaction end sample', () => {
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          conversionEfficiency: 0.8,
+          currentOutType: CurrentType.DC,
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = createMeterValuesTemplate([
+          {
+            location: OCPP16MeterValueLocation.OUTLET,
+            measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: OCPP16MeterValueUnit.WATT_HOUR,
+            value: '0',
+          },
+        ])
+      }
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 800)
+
+      assert.strictEqual(meterValue.sampledValue[0].value, '800')
+    })
+
+    await it('should preserve an AC meter stop for an Inlet transaction end sample', () => {
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          conversionEfficiency: 0.8,
+          currentOutType: CurrentType.AC,
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = createMeterValuesTemplate([
+          {
+            location: OCPP16MeterValueLocation.INLET,
+            measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: OCPP16MeterValueUnit.WATT_HOUR,
+            value: '0',
+          },
+        ])
+      }
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 800)
+
+      assert.strictEqual(meterValue.sampledValue[0].value, '800')
     })
   })
 })

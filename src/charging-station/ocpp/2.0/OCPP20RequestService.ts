@@ -149,4 +149,8 @@ export class OCPP20RequestService extends OCPPRequestService {
       }
     }
   }
+
+  protected getDefaultResponseTimeoutMs (chargingStation: ChargingStation): number {
+    return OCPP20ServiceUtils.getMessageTimeout(chargingStation)
+  }
 }

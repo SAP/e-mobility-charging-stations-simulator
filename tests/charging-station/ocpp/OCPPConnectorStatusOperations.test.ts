@@ -22,6 +22,7 @@ import {
   standardCleanup,
 } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_ID_TAG } from '../ChargingStationTestConstants.js'
+import { createConnectorStatus } from '../helpers/StationHelpers.js'
 
 await describe('OCPPConnectorStatusOperations', async () => {
   afterEach(() => {
@@ -168,6 +169,33 @@ await describe('OCPPConnectorStatusOperations', async () => {
 
       assert.strictEqual(requestHandler.mock.calls.length, 0)
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Available)
+    })
+
+    await it('should restore only the specified EVSE when connector IDs repeat', async () => {
+      const { requestHandler, station } = createStationWithRequestHandler({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 2 },
+        ocppVersion: OCPPVersion.VERSION_201,
+      })
+      const evse1Connector = station.getEvseStatus(1)?.connectors.get(1)
+      const evse2 = station.getEvseStatus(2)
+      assert.ok(evse1Connector != null)
+      assert.ok(evse2 != null)
+      const evse2Connector = createConnectorStatus(1, { status: ConnectorStatusEnum.Occupied })
+      evse2.connectors.clear()
+      evse2.connectors.set(1, evse2Connector)
+      evse1Connector.status = ConnectorStatusEnum.Unavailable
+
+      await restoreConnectorStatus(station, 1, evse2Connector, 2)
+
+      assert.strictEqual(evse1Connector.status, ConnectorStatusEnum.Unavailable)
+      assert.strictEqual(evse2Connector.status, ConnectorStatusEnum.Available)
+      assert.strictEqual(requestHandler.mock.calls.length, 1)
+      assert.deepStrictEqual(requestHandler.mock.calls[0].arguments[2], {
+        connectorId: 1,
+        evseId: 2,
+        status: ConnectorStatusEnum.Available,
+      })
     })
   })
 })

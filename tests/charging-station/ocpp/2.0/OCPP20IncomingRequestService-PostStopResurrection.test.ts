@@ -17,7 +17,12 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { GenericStatus, OCPPVersion, ReportBaseEnumType } from '../../../../src/types/index.js'
+import {
+  GenericStatus,
+  OCPP20IncomingRequestCommand,
+  OCPPVersion,
+  ReportBaseEnumType,
+} from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
@@ -41,6 +46,7 @@ interface OCPP20StationStateShape {
 }
 
 interface PlumbingAccess {
+  activate: (chargingStation: ChargingStation, lifecycleSignal: AbortSignal) => void
   createStationState: () => OCPP20StationStateShape
   getOrCreateStationState: (chargingStation: ChargingStation) => OCPP20StationStateShape
   sendNotifyReportRequest: (
@@ -177,6 +183,129 @@ await describe('OCPP20IncomingRequestService — post-stop resurrection guard', 
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
       assert.strictEqual(plumbing.stationsState.has(station), false)
+    })
+
+    await it('should isolate a restarted NotifyReport cache from a late prior response callback', async () => {
+      const station = createStation('nr-restart-generation')
+      const lifecycle = station as unknown as { lifecycleAbortController: AbortController }
+      lifecycle.lifecycleAbortController = new AbortController()
+      Object.defineProperty(station, 'lifecycleAbortSignal', {
+        configurable: true,
+        get: () => lifecycle.lifecycleAbortController.signal,
+      })
+      station.started = true
+      station.inAcceptedState = () => true
+      station.recordRequestStatistic = () => undefined
+      service.activate(station, lifecycle.lifecycleAbortController.signal)
+
+      const notifyStarted = Promise.withResolvers<undefined>()
+      const releaseNotify = Promise.withResolvers<unknown>()
+      const requestHandlerMock = mock.fn((): Promise<unknown> => {
+        notifyStarted.resolve(undefined)
+        return releaseNotify.promise
+      })
+      setRequestHandler(station, requestHandlerMock)
+      let lateOldResponse: (() => void) | undefined
+      ;(
+        station.ocppRequestService as unknown as {
+          sendResponse: (...args: unknown[]) => Promise<void>
+        }
+      ).sendResponse = (...args: unknown[]): Promise<void> => {
+        const messageId = args[1]
+        const requestParams = args[4] as
+          undefined | { onMessageSent?: () => void; onRequestBuffered?: () => void }
+        if (messageId === 'old-report') {
+          requestParams?.onRequestBuffered?.()
+          lateOldResponse = requestParams?.onMessageSent
+          return Promise.reject(new Error('buffered response transport closed'))
+        }
+        requestParams?.onMessageSent?.()
+        return Promise.resolve()
+      }
+
+      await service.incomingRequestHandler(
+        station,
+        'old-report',
+        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+        { reportBase: ReportBaseEnumType.FullInventory, requestId: 101 }
+      )
+      const oldState = plumbing.stationsState.get(station)
+      assert.strictEqual(oldState?.reportDataCache.has(101), true)
+
+      service.stop(station)
+      lifecycle.lifecycleAbortController.abort()
+      lifecycle.lifecycleAbortController = new AbortController()
+      service.activate(station, lifecycle.lifecycleAbortController.signal)
+      const freshState = plumbing.stationsState.get(station)
+      if (freshState == null) assert.fail('Expected fresh lifecycle state')
+      assert.notStrictEqual(freshState, oldState)
+
+      await service.incomingRequestHandler(
+        station,
+        'fresh-report',
+        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+        { reportBase: ReportBaseEnumType.FullInventory, requestId: 202 }
+      )
+      await notifyStarted.promise
+      assert.strictEqual(freshState.reportDataCache.has(202), true)
+
+      lateOldResponse?.()
+      await flushMicrotasks()
+      assert.strictEqual(freshState.reportDataCache.has(202), true)
+
+      releaseNotify.resolve({})
+      await flushMicrotasks()
+      await flushMicrotasks()
+      assert.strictEqual(requestHandlerMock.mock.callCount() > 0, true)
+      assert.strictEqual(freshState.reportDataCache.has(202), false)
+    })
+
+    await it('should stop a multi-chunk report without touching restarted state', async () => {
+      const station = createStation('nr-stop-between-chunks')
+      const lifecycle = station as unknown as { lifecycleAbortController: AbortController }
+      lifecycle.lifecycleAbortController = new AbortController()
+      Object.defineProperty(station, 'lifecycleAbortSignal', {
+        configurable: true,
+        get: () => lifecycle.lifecycleAbortController.signal,
+      })
+      service.activate(station, lifecycle.lifecycleAbortController.signal)
+      const oldState = plumbing.getOrCreateStationState(station)
+      const requestId = 303
+      oldState.reportDataCache.set(
+        requestId,
+        Array.from({ length: 101 }, (_, index) => ({ index }))
+      )
+      const firstChunkStarted = Promise.withResolvers<undefined>()
+      const releaseFirstChunk = Promise.withResolvers<unknown>()
+      const requestHandlerMock = mock.fn((): Promise<unknown> => {
+        firstChunkStarted.resolve(undefined)
+        return releaseFirstChunk.promise
+      })
+      setRequestHandler(station, requestHandlerMock)
+
+      const report = plumbing.sendNotifyReportRequest(
+        station,
+        { reportBase: ReportBaseEnumType.FullInventory, requestId },
+        { status: GenericStatus.Accepted }
+      )
+      await firstChunkStarted.promise
+      service.stop(station)
+      lifecycle.lifecycleAbortController.abort()
+      lifecycle.lifecycleAbortController = new AbortController()
+      service.activate(station, lifecycle.lifecycleAbortController.signal)
+      const freshState = plumbing.stationsState.get(station)
+      if (freshState == null) assert.fail('Expected restarted lifecycle state')
+      const freshCacheEntry = [{ fresh: true }]
+      freshState.reportDataCache.set(requestId, freshCacheEntry)
+
+      releaseFirstChunk.resolve({})
+      await report
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      assert.strictEqual(oldState.stopped, true)
+      assert.strictEqual(oldState.reportDataCache.has(requestId), false)
+      assert.strictEqual(plumbing.stationsState.get(station), freshState)
+      assert.strictEqual(freshState.reportDataCache.get(requestId), freshCacheEntry)
     })
 
     await it('should silent-drop after stop() without resurrecting the entry', async () => {

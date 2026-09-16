@@ -644,15 +644,15 @@ export class AutomaticTransactionGenerator {
     signal: AbortSignal
   ): Promise<void> {
     let logged = false
-    while (
-      this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true &&
-      !signal.aborted
-    ) {
+    while (!signal.aborted) {
+      const transactionStatus = this.chargingStation.getConnectorStatus(connectorId)
+      const remoteStartReserved =
+        transactionStatus?.transactionPending === true && transactionStatus.remoteStartId != null
+      if (transactionStatus?.transactionStarted !== true && !remoteStartReserved) return
       if (!logged) {
-        const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
         logger.info(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${this.logPrefix(connectorId)} ${moduleName}.waitRunningTransactionStopped: Transaction loop waiting for started transaction ${transactionId?.toString()} on connector ${connectorId.toString()} to be stopped`
+          `${this.logPrefix(connectorId)} ${moduleName}.waitRunningTransactionStopped: Transaction loop waiting for transaction ${transactionStatus.transactionId?.toString()} on connector ${connectorId.toString()} to be released`
         )
         logged = true
       }

@@ -49,6 +49,7 @@ export {
   getBootConnectorStatus,
   initializeConnectorsMapStatus,
   prepareConnectorStatus,
+  preparePersistedTransactionEventQueue,
   resetAuthorizeConnectorStatus,
   resetConnectorStatus,
 } from './HelpersConnectorStatus.js'

@@ -297,5 +297,40 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       assert.notStrictEqual(payload.transactionData, undefined)
       assert.strictEqual(Array.isArray(payload.transactionData), true)
     })
+
+    await it('should preserve an explicit stop snapshot without reading replacement transaction state', () => {
+      if (station.stationInfo != null) {
+        station.stationInfo.transactionDataMeterValues = true
+      }
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionId = 200
+      connectorStatus.transactionIdTag = 'REPLACEMENT-TAG'
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 9000
+      Reflect.deleteProperty(connectorStatus, 'MeterValues')
+
+      const timestamp = new Date('2026-09-08T10:00:00.000Z')
+      const transactionData = [
+        { sampledValue: [{ value: '10' }], timestamp },
+        { sampledValue: [{ value: '1234' }], timestamp },
+      ]
+      const payload = testableRequestService.buildRequestPayload(
+        station,
+        OCPP16RequestCommand.STOP_TRANSACTION,
+        {
+          idTag: 'ORIGINAL-TAG',
+          meterStop: 1234,
+          timestamp,
+          transactionData,
+          transactionId: 100,
+        }
+      ) as OCPP16StopTransactionRequest
+
+      assert.strictEqual(payload.idTag, 'ORIGINAL-TAG')
+      assert.strictEqual(payload.meterStop, 1234)
+      assert.strictEqual(payload.timestamp, timestamp)
+      assert.strictEqual(payload.transactionData, transactionData)
+      assert.strictEqual(payload.transactionId, 100)
+    })
   })
 })

@@ -4,13 +4,12 @@ import { type ChargingStation } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
-  ConnectorStatusEnum,
   ErrorType,
   OCPPVersion,
   type StartTransactionResult,
   type StopTransactionResult,
 } from '../../types/index.js'
-import { logger, truncateId } from '../../utils/index.js'
+import { ensureError, logger, truncateId } from '../../utils/index.js'
 import { OCPP16ServiceUtils } from './1.6/OCPP16ServiceUtils.js'
 import { mapStopReasonToOCPP20 } from './2.0/OCPP20RequestBuilders.js'
 import { OCPP20ServiceUtils } from './2.0/OCPP20ServiceUtils.js'
@@ -92,6 +91,7 @@ export const stopTransactionOnConnector = async (
 
 /**
  * Stops all running transactions on all connectors of a charging station.
+ * OCPP 1.6 starts already in flight settle before the active-transaction check.
  * @param chargingStation - Target charging station
  * @param reason - Optional reason for stopping the transactions
  */
@@ -101,14 +101,35 @@ export const stopRunningTransactions = async (
 ): Promise<void> => {
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
+      const stopTransactionPromises: Promise<void>[] = []
       for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
         if (
-          connectorStatus.transactionStarted === true &&
-          connectorStatus.status !== ConnectorStatusEnum.Finishing
+          connectorStatus.transactionStarted === true ||
+          connectorStatus.transactionStarting === true
         ) {
-          await OCPP16ServiceUtils.stopTransactionOnConnector(chargingStation, connectorId, reason)
+          stopTransactionPromises.push(
+            (async (): Promise<void> => {
+              const pendingStart = OCPP16ServiceUtils.getPendingStartTransaction(connectorStatus)
+              if (pendingStart != null) await pendingStart.catch(() => undefined)
+              if (connectorStatus.transactionStarted !== true) return
+              const transactionId = connectorStatus.transactionId
+              try {
+                await OCPP16ServiceUtils.stopTransactionOnConnector(
+                  chargingStation,
+                  connectorId,
+                  reason
+                )
+              } catch (error) {
+                logger.error(
+                  `${chargingStation.logPrefix()} ${moduleName}.stopRunningTransactions: Failed to stop transaction ${transactionId?.toString() ?? 'unknown'} on connector ${connectorId.toString()}:`,
+                  ensureError(error)
+                )
+              }
+            })()
+          )
         }
       }
+      await Promise.all(stopTransactionPromises)
       break
     }
     case OCPPVersion.VERSION_20:
@@ -186,17 +207,22 @@ export const flushQueuedTransactionMessages = async (
       break
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
-      for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors()) {
+      for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors()) {
         if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
-          await OCPP20ServiceUtils.sendQueuedTransactionEvents(chargingStation, connectorId).catch(
-            (error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
-                error
-              )
-            }
-          )
+          await OCPP20ServiceUtils.sendQueuedTransactionEvents(
+            chargingStation,
+            connectorId,
+            evseId
+          ).catch((error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
+              error
+            )
+          })
         }
+      }
+      if (chargingStation.started && !chargingStation.isStopping()) {
+        OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(chargingStation)
       }
       break
     default:
