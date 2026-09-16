@@ -57,7 +57,7 @@ const activeSkinLayout = computed(
 )
 
 /** Reloads the page when skin layout fails to load. */
-function reloadPage (): void {
+function reloadPage(): void {
   window.location.reload()
 }
 </script>

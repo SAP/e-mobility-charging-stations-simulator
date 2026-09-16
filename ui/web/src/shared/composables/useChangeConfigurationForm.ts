@@ -18,10 +18,10 @@ export function useChangeConfigurationForm (
   hashId: string,
   visibleConfigurationKeys: Readonly<Ref<ConfigurationKey[]>>
 ): {
-    draftValues: Record<string, string>
-    pending: DeepReadonly<Set<string>>
-    save: (configurationKey: ConfigurationKey) => Promise<boolean>
-  } {
+  draftValues: Record<string, string>
+  pending: DeepReadonly<Set<string>>
+  save: (configurationKey: ConfigurationKey) => Promise<boolean>
+} {
   const $uiClient = useUIClient()
   const $toast = useToast()
 

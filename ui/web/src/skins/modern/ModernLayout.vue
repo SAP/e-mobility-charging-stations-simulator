@@ -121,7 +121,7 @@ interface StartTxDialogPayload {
  * @param loader - Dynamic import function for the dialog component
  * @returns An async component definition with standardized loading and error states
  */
-function defineAsyncDialog (loader: () => Promise<{ default: Component }>) {
+function defineAsyncDialog(loader: () => Promise<{ default: Component }>) {
   return defineAsyncComponent({
     delay: ASYNC_COMPONENT_DELAY_MS,
     errorComponent: SkinLoadError as Component,
