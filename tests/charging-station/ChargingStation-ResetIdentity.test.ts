@@ -8,12 +8,12 @@ import assert from 'node:assert/strict'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
-import { setTimeout as sleep } from 'node:timers/promises'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import type { ChargingStationOptions } from '../../src/types/index.js'
 
 import { SharedLRUCache } from '../../src/charging-station/SharedLRUCache.js'
+import { sleep } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   cleanupStationTemplates,

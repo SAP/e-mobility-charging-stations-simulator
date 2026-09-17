@@ -7,6 +7,8 @@
  *   live in `OCPPSpecRequirements.md`.
  */
 
+import { Constants } from '../../src/utils/index.js'
+
 /**
  * Test Station Identifiers
  * Base identifiers used for creating test charging station instances
@@ -26,7 +28,7 @@ export const TEST_HEARTBEAT_INTERVAL_MS = 30000
 export const TEST_AUTHORIZATION_TIMEOUT_MS = 30000
 export const TEST_METER_VALUES_INTERVAL_MS = 30_000
 export const TEST_ONE_HOUR_SECONDS = 3600
-export const TEST_ONE_HOUR_MS = TEST_ONE_HOUR_SECONDS * 1000
+export const TEST_ONE_HOUR_MS = Constants.MS_PER_HOUR
 
 /**
  * Charging Station Information

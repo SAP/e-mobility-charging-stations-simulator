@@ -10,7 +10,7 @@ import type { Mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { CoherentSession } from '../../../../src/charging-station/meter-values/types.js'
+import type { CoherentSession } from '../../../../src/charging-station/meter-values/index.js'
 import type {
   ChargingStationInfo,
   ConnectorStatus,
@@ -36,8 +36,10 @@ import {
   getConfigurationKey,
 } from '../../../../src/charging-station/index.js'
 import { computeCoherentSample } from '../../../../src/charging-station/meter-values/CoherentSampleComputer.js'
-import { recordTransactionIntervalConsumption } from '../../../../src/charging-station/meter-values/TransactionIntervalUtils.js'
-import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/TransactionMeterValueDeliveryBarrier.js'
+import {
+  recordTransactionIntervalConsumption,
+  TransactionMeterValueDeliveryBarrier,
+} from '../../../../src/charging-station/meter-values/index.js'
 import {
   createTestableIncomingRequestService,
   type TestableOCPP20IncomingRequestService,
@@ -83,7 +85,7 @@ import {
   SigningMethodEnumType,
   Voltage,
 } from '../../../../src/types/index.js'
-import { Constants } from '../../../../src/utils/index.js'
+import { clone, Constants } from '../../../../src/utils/index.js'
 import {
   setupConnectorWithTransaction,
   standardCleanup,
@@ -7460,7 +7462,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
         },
       ] as unknown as EvseStatus['MeterValues']
-      stationEvse.MeterValues = structuredClone(sharedMeterValues)
+      stationEvse.MeterValues = clone(sharedMeterValues)
       evseStatus.MeterValues = sharedMeterValues
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')

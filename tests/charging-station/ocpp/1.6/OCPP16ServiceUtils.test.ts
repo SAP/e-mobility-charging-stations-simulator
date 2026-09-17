@@ -51,6 +51,7 @@ import {
   OCPPVersion,
   type RequestParams,
 } from '../../../../src/types/index.js'
+import { clone } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
   setupConnectorWithTransaction,
@@ -1514,7 +1515,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
           timestamp: new Date('2026-09-08T12:34:56.000Z'),
         },
       ]
-      const expectedTransactionData = structuredClone(transactionData)
+      const expectedTransactionData = clone(transactionData)
 
       const stop = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1, undefined, {
         transactionData,

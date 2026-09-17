@@ -10,7 +10,7 @@ import { ZodError } from 'zod'
 import { CURRENT_SCHEMA_VERSION } from '../../src/charging-station/index.js'
 import { TemplateValidationError, validateTemplate } from '../../src/charging-station/index.js'
 import { BaseError } from '../../src/exception/index.js'
-import { logger } from '../../src/utils/index.js'
+import { clone, logger } from '../../src/utils/index.js'
 import { mockLoggerWarnDebug, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_SUPERVISION_URL } from '../utils/TestNetworkConstants.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
@@ -54,7 +54,7 @@ await describe('TemplateValidation', async () => {
         Connectors: { 0: {}, 1: {} },
         supervisionUrl: TEST_SUPERVISION_URL,
       })
-      const before = structuredClone(parsed)
+      const before = clone(parsed)
 
       validateTemplate(parsed, 'immutable.json')
 

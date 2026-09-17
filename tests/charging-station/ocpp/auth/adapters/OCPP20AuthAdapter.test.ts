@@ -15,7 +15,7 @@ import {
   AuthenticationMethod,
   AuthResultStatus,
   IdentifierType,
-} from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+} from '../../../../../src/charging-station/ocpp/auth/index.js'
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,

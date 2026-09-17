@@ -21,7 +21,7 @@ import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
 import { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import { addConfigurationKey, buildConfigKey } from '../../../../src/charging-station/index.js'
-import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/TransactionMeterValueDeliveryBarrier.js'
+import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'

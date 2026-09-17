@@ -17,6 +17,7 @@ import {
   AuthResultStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+import { Constants } from '../../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import {
   createMockAuthCache,
@@ -104,7 +105,7 @@ await describe('LocalAuthStrategy', async () => {
 
     await it('should authenticate using local auth list', () => {
       mockLocalAuthListManager.getEntry = () => ({
-        expiryDate: new Date(Date.now() + 86400000),
+        expiryDate: new Date(Date.now() + Constants.MS_PER_DAY),
         identifier: 'LOCAL_TAG',
         metadata: { source: 'local' },
         status: 'accepted',

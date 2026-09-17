@@ -5,13 +5,13 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { AuthorizationResult } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+import type { AuthorizationResult } from '../../../../../src/charging-station/ocpp/auth/index.js'
 
 import { InMemoryAuthCache } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
 import {
   AuthenticationMethod,
   AuthResultStatus,
-} from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+} from '../../../../../src/charging-station/ocpp/auth/index.js'
 import { standardCleanup, withMockTimers } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult } from '../helpers/MockFactories.js'
 

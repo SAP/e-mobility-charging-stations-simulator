@@ -2,7 +2,7 @@
  * @file Shared test utilities for Vue.js web UI unit tests
  * @description MockWebSocket, withSetup composable helper, mock factories.
  */
-import { ResponseStatus } from 'ui-common'
+import { ResponseStatus, WebSocketReadyState } from 'ui-common'
 import { vi } from 'vitest'
 import { type App, createApp } from 'vue'
 
@@ -73,23 +73,21 @@ export const ToggleButtonStub = {
 // ── MockWebSocket ─────────────────────────────────────────────────────────────
 
 export class MockWebSocket {
-  static readonly CLOSED = 3
-  static readonly CLOSING = 2
-  static readonly CONNECTING = 0
+  static readonly CLOSED = WebSocketReadyState.CLOSED
+  static readonly CLOSING = WebSocketReadyState.CLOSING
   static lastInstance: MockWebSocket | null = null
-  static readonly OPEN = 1
+  static readonly OPEN = WebSocketReadyState.OPEN
 
   addEventListener: ReturnType<typeof vi.fn>
   close: ReturnType<typeof vi.fn>
-  readonly CLOSED = 3
-  readonly CLOSING = 2
-  readonly CONNECTING = 0
+  readonly CLOSED = WebSocketReadyState.CLOSED
+  readonly CLOSING = WebSocketReadyState.CLOSING
   onclose: ((event: CloseEvent) => void) | null = null
   onerror: ((event: Event) => void) | null = null
   onmessage: ((event: MessageEvent) => void) | null = null
   onopen: (() => void) | null = null
-  readonly OPEN = 1
-  readyState: number = MockWebSocket.CONNECTING
+  readonly OPEN = WebSocketReadyState.OPEN
+  readyState: number = WebSocketReadyState.CONNECTING
   removeEventListener: ReturnType<typeof vi.fn>
   send: ReturnType<typeof vi.fn>
   sentMessages: string[] = []
