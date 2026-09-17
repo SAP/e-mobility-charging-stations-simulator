@@ -31,6 +31,7 @@ import {
   MeterValueUnit,
   OCPP20ComponentName,
   OCPP20OptionalVariableName,
+  OCPP20RequiredVariableName,
   OCPPVersion,
   type SampledValueTemplate,
   StandardParametersKey,
@@ -243,6 +244,50 @@ await describe('buildMeterValue', async () => {
 
       assert.strictEqual(advanceAtLocation(MeterValueLocation.INLET), 1250)
       assert.strictEqual(advanceAtLocation(MeterValueLocation.OUTLET), 1250)
+    })
+
+    await it('should not re-emit DC inlet interval energy without new consumption', () => {
+      assert.ok(station.stationInfo != null)
+      station.stationInfo.currentOutType = CurrentType.DC
+      station.stationInfo.conversionEfficiency = 0.8
+      const connector = station.getConnectorStatus(1)
+      assert.ok(connector != null)
+      connector.energyActiveImportRegisterValue = 100
+      connector.transactionEnergyActiveImportRegisterValue = 100
+      connector.MeterValues = [
+        {
+          location: MeterValueLocation.INLET,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          unit: MeterValueUnit.WATT_HOUR,
+          value: '0',
+        },
+      ] as unknown as SampledValueTemplate[]
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20RequiredVariableName.Measurands),
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+        undefined,
+        { overwrite: true }
+      )
+      const values = [1000, 2000].map(timestamp => {
+        const meterValue = buildClockAlignedConnectorMeterValue(
+          station,
+          {
+            connectorId: 1,
+            evseId: 1,
+            timestamp: new Date(timestamp),
+            transactionId: TEST_TRANSACTION_ID_STRING,
+          },
+          0,
+          buildConfigKey(
+            OCPP20ComponentName.AlignedDataCtrlr,
+            OCPP20RequiredVariableName.Measurands
+          ),
+          MeterValueContext.SAMPLE_CLOCK
+        )
+        return meterValue.sampledValue.map(sample => sample.value)
+      })
+      assert.deepStrictEqual(values, [[125], [0]])
     })
 
     await it('should suppress register phases by effective OCPP 2.0 output identity', () => {

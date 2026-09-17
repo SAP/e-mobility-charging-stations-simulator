@@ -3136,23 +3136,23 @@ export class ChargingStation extends EventEmitter {
         }
         const templateMeterValues = templateEvse.MeterValues
         const liveEvseStatus = this.evses.get(evseId)
+        if (!restorePersistedTransactions && liveEvseStatus != null) {
+          // Preserve live baselines and pending delivery ownership across hot reloads.
+          liveEvseStatus.MeterValues = clone(templateMeterValues ?? [])
+          continue
+        }
         this.evses.set(evseId, {
           ...(evseStatus as EvseStatus),
           connectors: new Map<number, ConnectorStatus>(
-            connEntries.map(([connectorId, connectorStatus]) => {
-              const liveConnectorStatus = liveEvseStatus?.connectors.get(connectorId)
-              return [
-                connectorId,
-                !restorePersistedTransactions && liveConnectorStatus != null
-                  ? liveConnectorStatus
-                  : prepareConnectorStatus(
-                    connectorStatus,
-                    normalizationPhaseCount,
-                    inletToOutputEfficiency,
-                    restorePersistedTransactions
-                  ),
-              ]
-            })
+            connEntries.map(([connectorId, connectorStatus]) => [
+              connectorId,
+              prepareConnectorStatus(
+                connectorStatus,
+                normalizationPhaseCount,
+                inletToOutputEfficiency,
+                restorePersistedTransactions
+              ),
+            ])
           ),
           MeterValues: clone(templateMeterValues ?? []),
         })

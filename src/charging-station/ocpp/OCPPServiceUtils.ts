@@ -1857,10 +1857,12 @@ const expandClockAlignedSnapshotSamples = (
       rawValue,
       preferBaseline
     )
-    const value = roundTo(
-      physicalValue / resolveMeterValueUnitDivider(measurand, template.unit as string | undefined),
-      2
-    )
+    const unitValue =
+      physicalValue / resolveMeterValueUnitDivider(measurand, template.unit as string | undefined)
+    const value =
+      measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+        ? truncateTransactionIntervalValue(unitValue)
+        : roundTo(unitValue, 2)
     expanded.push(buildVersionedSampledValue(template, value, context))
   }
   return applyClockAlignedVoltageControls(
@@ -2476,6 +2478,7 @@ const buildIdentifiedMeterValue = (
     energyValueTimeScale,
     true
   )
+  let emittedIntervalEnergyWh: number | undefined
   if (energyMeasurand != null) {
     const transactionEnergyBeforeBuild =
       connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0
@@ -2613,24 +2616,8 @@ const buildIdentifiedMeterValue = (
         )
       }
     }
-    if (connectorStatus != null && identity.transactionId != null) {
-      const emitsIntervalEnergy = meterValue.sampledValue.some(
-        sampledValue => sampledValue.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
-      )
-      if (commitState && emitsIntervalEnergy && !deferEnergyInterval) {
-        recordTransactionIntervalEmission(
-          connectorStatus,
-          meterValue,
-          intervalBaselineKey,
-          intervalEnergyValue,
-          chargingStation.getNumberOfPhases(),
-          resolveInletToOutputEfficiency(
-            chargingStation.stationInfo?.currentOutType,
-            chargingStation.stationInfo?.conversionEfficiency,
-            evseId
-          )
-        )
-      }
+    if (commitState && identity.transactionId != null && !deferEnergyInterval) {
+      emittedIntervalEnergyWh = intervalEnergyValue
     }
     const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
       connectorId,
@@ -2679,6 +2666,26 @@ const buildIdentifiedMeterValue = (
       idle,
       identity.transactionId != null,
       snapshotEnergyRegisterWhOverride
+    )
+  }
+  if (
+    connectorStatus != null &&
+    emittedIntervalEnergyWh != null &&
+    meterValue.sampledValue.some(
+      sample => sample.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+    )
+  ) {
+    recordTransactionIntervalEmission(
+      connectorStatus,
+      meterValue,
+      intervalBaselineKey,
+      emittedIntervalEnergyWh,
+      chargingStation.getNumberOfPhases(),
+      resolveInletToOutputEfficiency(
+        chargingStation.stationInfo?.currentOutType,
+        chargingStation.stationInfo?.conversionEfficiency,
+        evseId
+      )
     )
   }
   // Transactional snapshots defer this flag until their request is delivered.

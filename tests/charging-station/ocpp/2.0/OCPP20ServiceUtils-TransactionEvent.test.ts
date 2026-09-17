@@ -546,6 +546,73 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
       })
 
+      await it(
+        'should replay a retained eager Updated before completing Ended',
+        { timeout: 2000 },
+        async () => {
+          // Arrange
+          const transactionId = generateUUID()
+          const deliveredEvents: OCPP20TransactionEventEnumType[] = []
+          let failBeforeSend = true
+          const requestHandler = mock.fn((...args: unknown[]): Promise<EmptyObject> => {
+            if (args[1] !== OCPP20RequestCommand.TRANSACTION_EVENT) return Promise.resolve({})
+            if (failBeforeSend) {
+              return Promise.reject(
+                new OCPPError(ErrorType.GENERIC_ERROR, 'Local pre-send failure')
+              )
+            }
+            const request = args[2] as OCPP20TransactionEventRequest
+            const params = args[3] as RequestParams
+            deliveredEvents.push(request.eventType)
+            params.onMessageSent?.()
+            params.onResponseReceived?.()
+            return Promise.resolve({})
+          })
+          const { station } = createMockChargingStation({
+            connectorsCount: 1,
+            evseConfiguration: { evsesCount: 1 },
+            ocppRequestService: { requestHandler },
+            stationInfo: { ocppStrictCompliance: true, ocppVersion: OCPPVersion.VERSION_201 },
+          })
+          station.isWebSocketConnectionOpened = () => true
+          station.inAcceptedState = () => true
+          station.started = true
+          setupConnectorWithTransaction(station, 1, { transactionId })
+
+          // Act: retaining the event must release its immediate delivery waiter.
+          await OCPP20ServiceUtils.sendTransactionEvent(
+            station,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.MeterValueClock,
+            1,
+            transactionId,
+            {
+              meterValue: [
+                {
+                  sampledValue: [
+                    { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, value: 10 },
+                  ],
+                  timestamp: new Date(1000),
+                },
+              ],
+            },
+            undefined,
+            undefined,
+            undefined,
+            true
+          )
+          failBeforeSend = false
+          await OCPP20ServiceUtils.requestStopTransaction(station, 1)
+
+          // Assert: the retained predecessor and terminal event can both progress.
+          assert.deepStrictEqual(deliveredEvents, [
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TransactionEventEnumType.Ended,
+          ])
+          assert.strictEqual(station.getConnectorStatus(1)?.transactionEventQueue?.length ?? 0, 0)
+        }
+      )
+
       await it('should preserve rejected signed interval energy without mutating its evidence', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
@@ -3242,6 +3309,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
         let online = false
         let attempt = 0
+        let replayOutcome: 'accepted' | 'local' | 'rejected' = 'local'
         const attemptedSequenceNumbers: number[] = []
         let successorPayload: OCPP20TransactionEventRequest | undefined
         const ambiguousFailure = new OCPPError(
@@ -3265,8 +3333,13 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
               throw ambiguousFailure
             })
           }
-          if (payload.seqNo === 0) {
-            requestParams.onTransportError?.(localFailure, false)
+          if (payload.seqNo === 0 && replayOutcome !== 'accepted') {
+            if (replayOutcome === 'rejected') {
+              requestParams.onMessageSent?.()
+              requestParams.onError?.(localFailure, true)
+            } else {
+              requestParams.onTransportError?.(localFailure, false)
+            }
             return Promise.reject(localFailure)
           }
           successorPayload = payload
@@ -3368,6 +3441,23 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
         assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry, undefined)
         assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+
+        const retainedRequest = JSON.stringify(connectorStatus.transactionEventQueue[0].request)
+        for (const outcome of ['local', 'rejected'] as const) {
+          replayOutcome = outcome
+          await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+          assert.strictEqual(successorPayload, undefined)
+          assert.strictEqual(connectorStatus.transactionEventQueue.length, 2)
+          assert.strictEqual(
+            JSON.stringify(connectorStatus.transactionEventQueue[0].request),
+            retainedRequest
+          )
+          assert.strictEqual(connectorStatus.transactionEnergyActiveImportIntervalCarry, undefined)
+        }
+        replayOutcome = 'accepted'
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+        assert.deepStrictEqual(attemptedSequenceNumbers, [0, 0, 0, 0, 0, 0, 0, 1])
+        assert.strictEqual(connectorStatus.transactionEventQueue.length, 0)
       })
 
       await it('should scale TransactionEvent retry delays by preceding transmissions', async () => {

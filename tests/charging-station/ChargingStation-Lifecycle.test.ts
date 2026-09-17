@@ -3811,6 +3811,55 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(liveConnector.transactionRestored, undefined)
     })
 
+    await it('should preserve the live EVSE baseline during same-template reload', () => {
+      const result = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      station = result.station
+      const liveConnector = station.getConnectorStatus(1)
+      const liveEvse = station.getEvseStatus(1)
+      assert.ok(liveConnector != null && liveEvse != null)
+      liveConnector.energyActiveImportRegisterValue = 120
+      liveEvse.energyActiveImportIntervalBaseline = 100
+      const initializeFromFile = (
+        ChargingStation.prototype as unknown as {
+          initializeConnectorsOrEvsesFromFile: (
+            configuration: unknown,
+            stationTemplate: unknown,
+            persistentConfiguration?: boolean,
+            restorePersistedTransactions?: boolean
+          ) => void
+        }
+      ).initializeConnectorsOrEvsesFromFile
+
+      initializeFromFile.call(
+        station,
+        {
+          evsesStatus: [
+            [
+              1,
+              {
+                availability: 'Operative',
+                connectorsStatus: [
+                  [1, { availability: 'Operative', energyActiveImportRegisterValue: 80 }],
+                ],
+                energyActiveImportIntervalBaseline: 80,
+              },
+            ],
+          ],
+        },
+        { Evses: { 1: {} } },
+        undefined,
+        false
+      )
+
+      assert.strictEqual(station.getEvseStatus(1), liveEvse)
+      assert.strictEqual(station.getEvseStatus(1)?.energyActiveImportIntervalBaseline, 100)
+      assert.strictEqual(station.getConnectorStatus(1), liveConnector)
+      assert.strictEqual(liveConnector.energyActiveImportRegisterValue, 120)
+    })
+
     await it('should remove persisted EVSE meter templates absent from the current template', () => {
       const result = createMockChargingStation({
         connectorsCount: 1,

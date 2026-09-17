@@ -4949,7 +4949,9 @@ export class OCPP20ServiceUtils {
               responseTimeoutMs,
               skipBufferingOnError: true,
             },
-            lifecycleAbortSignal
+            lifecycleAbortSignal,
+            undefined,
+            !deliveryAttemptedByThisInvocation && queuedEvent.deliveryAttempted === true
           )
         } finally {
           if (
@@ -5023,17 +5025,13 @@ export class OCPP20ServiceUtils {
           if (!rollbackPersisted) break
           retainPublicKeyDelivery(publicKeyDeliveryToken)
           if (error.outcome === 'write-ahead-failed') continue
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Local pre-send failure for queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()}; retaining it for a later replay:`,
-            error
-          )
-          break
         }
         const preserveForReplay =
           error instanceof TransactionEventDeliveryError
             ? error.outcome === 'aborted' ||
               error.outcome === 'offline' ||
               error.outcome === 'response-handling-failed' ||
+              error.outcome === 'pre-send-failed' ||
               (error.outcome === 'exhausted' && !error.confirmedRejected && !error.definitelyUnsent)
             : true
         if (preserveForReplay) {
@@ -5694,6 +5692,7 @@ export class OCPP20ServiceUtils {
    * @param requestParams - Transport behavior overrides
    * @param lifecycleAbortSignal - Lifecycle generation governing this delivery
    * @param deliveryIsCurrent - Whether the delivery still owns its transaction context
+   * @param initiallyAmbiguousSentAttempt - Whether a previous replay generation already attempted this request ambiguously
    * @returns The TransactionEvent response
    */
   private static async sendBuiltTransactionEvent (
@@ -5701,7 +5700,8 @@ export class OCPP20ServiceUtils {
     request: OCPP20TransactionEventRequest,
     requestParams: RequestParams = {},
     lifecycleAbortSignal?: AbortSignal,
-    deliveryIsCurrent?: () => boolean
+    deliveryIsCurrent?: () => boolean,
+    initiallyAmbiguousSentAttempt?: boolean
   ): Promise<OCPP20TransactionEventResponse> {
     const maximumAttempts = OCPP20ServiceUtils.readBoundedVariableAsInteger(
       chargingStation,
@@ -5730,7 +5730,7 @@ export class OCPP20ServiceUtils {
           'Default'
         )
       )
-    let hadAmbiguousSentAttempt = false
+    let hadAmbiguousSentAttempt = initiallyAmbiguousSentAttempt === true
     let hadConfirmedRejectedAttempt = false
     for (let attempt = 1; attempt <= maximumAttempts; attempt++) {
       if (isAbortSignalAborted(lifecycleAbortSignal) || deliveryIsCurrent?.() === false) {
