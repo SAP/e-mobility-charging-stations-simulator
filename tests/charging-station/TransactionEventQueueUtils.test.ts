@@ -41,7 +41,7 @@ import {
   OCPP20TriggerReasonEnumType,
   OCPP20UnitEnumType,
 } from '../../src/types/index.js'
-import { Constants } from '../../src/utils/index.js'
+import { clone, Constants } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 const validateTransactionEvent = createAjv().compile(transactionEventRequestSchema)
@@ -1219,7 +1219,7 @@ await describe('TransactionEventQueueUtils', async () => {
       transactionEventQueue: existingEvents,
       transactionId,
     } as unknown as ConnectorStatus
-    const queueSnapshot = structuredClone(existingEvents)
+    const queueSnapshot = clone(existingEvents)
     const candidate = toQueuedEvent({
       customData: { payload: 'x'.repeat(400_000), vendorId: 'test' },
       eventType: OCPP20TransactionEventEnumType.Updated,

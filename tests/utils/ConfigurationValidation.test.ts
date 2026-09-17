@@ -15,7 +15,7 @@ import {
   DEPRECATED_KEY_REMAPPINGS,
 } from '../../src/utils/index.js'
 import { ConfigurationValidationError, validateConfiguration } from '../../src/utils/index.js'
-import { logger } from '../../src/utils/index.js'
+import { clone, logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   buildLegacyConfiguration,
@@ -276,7 +276,7 @@ await describe('ConfigurationValidation', async () => {
     await it('should not mutate the caller-supplied parsed object', t => {
       t.mock.method(console, 'warn', () => undefined)
       const parsed = buildLegacyConfiguration()
-      const before = structuredClone(parsed)
+      const before = clone(parsed)
 
       validateConfiguration(parsed, 'immutable.json')
 

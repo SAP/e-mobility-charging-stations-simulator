@@ -8,7 +8,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { AuthCache } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
+import type { AuthCache } from '../../../../src/charging-station/ocpp/auth/index.js'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {

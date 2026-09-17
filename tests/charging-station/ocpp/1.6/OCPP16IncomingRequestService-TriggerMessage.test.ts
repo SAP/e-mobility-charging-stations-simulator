@@ -20,7 +20,7 @@ import type {
   RequestParams,
 } from '../../../../src/types/index.js'
 
-import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/TransactionMeterValueDeliveryBarrier.js'
+import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'

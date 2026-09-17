@@ -12,10 +12,9 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
-import { setTimeout as sleep } from 'node:timers/promises'
 
 import { Bootstrap, STATE_FILE_VERSION } from '../../src/charging-station/index.js'
-import { logger } from '../../src/utils/index.js'
+import { logger, sleep } from '../../src/utils/index.js'
 import { resetSingleton, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 interface Barrier {

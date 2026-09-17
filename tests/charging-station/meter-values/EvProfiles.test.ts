@@ -12,7 +12,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { EvProfile } from '../../../src/charging-station/meter-values/types.js'
+import type { EvProfile } from '../../../src/charging-station/meter-values/index.js'
 
 import {
   interpolateChargingCurve,

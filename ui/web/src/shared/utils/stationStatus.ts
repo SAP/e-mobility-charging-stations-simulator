@@ -4,7 +4,12 @@
  * These are not Vue composables (no reactive state) — they are pure utility functions
  * consumed exclusively by skin components via the shared layer.
  */
-import type { ChargingStationData, ConnectorEntry, Status } from 'ui-common'
+import {
+  type ChargingStationData,
+  type ConnectorEntry,
+  type Status,
+  WebSocketReadyState,
+} from 'ui-common'
 
 /**
  * Status variant type for UI display.
@@ -82,11 +87,6 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
   return CONNECTOR_STATUS_VARIANT[status.toLowerCase()] ?? 'idle'
 }
 
-const WS_STATE_CLOSED = 3
-const WS_STATE_CLOSING = 2
-const WS_STATE_CONNECTING = 0
-const WS_STATE_OPEN = 1
-
 /**
  * Maps a WebSocket ready state to a display variant.
  * @param wsState - The WebSocket readyState value
@@ -94,13 +94,13 @@ const WS_STATE_OPEN = 1
  */
 export function getWebSocketStateVariant (wsState?: number): StatusVariant {
   switch (wsState) {
-    case WS_STATE_CLOSED:
+    case WebSocketReadyState.CLOSED:
       return 'err'
-    case WS_STATE_CLOSING:
+    case WebSocketReadyState.CLOSING:
       return 'warn'
-    case WS_STATE_CONNECTING:
+    case WebSocketReadyState.CONNECTING:
       return 'warn'
-    case WS_STATE_OPEN:
+    case WebSocketReadyState.OPEN:
       return 'ok'
     default:
       return 'idle'

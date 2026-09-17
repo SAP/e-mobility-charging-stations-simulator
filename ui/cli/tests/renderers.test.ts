@@ -1,6 +1,11 @@
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
-import { OCPP16AvailabilityType, OCPP16ChargePointStatus, ResponseStatus } from 'ui-common'
+import {
+  OCPP16AvailabilityType,
+  OCPP16ChargePointStatus,
+  ResponseStatus,
+  WebSocketReadyState,
+} from 'ui-common'
 
 import { tryRenderPayload } from '../src/output/renderers.js'
 import { captureStream } from './helpers.js'
@@ -25,7 +30,7 @@ const stationListPayload = {
         ocppVersion: '2.0.1',
         templateName: 'test.station-template',
       },
-      wsState: 1,
+      wsState: WebSocketReadyState.OPEN,
     },
   ],
   status: ResponseStatus.SUCCESS,

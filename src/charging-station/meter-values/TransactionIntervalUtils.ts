@@ -1,5 +1,5 @@
 import { type ConnectorStatus, CurrentType, MeterValueMeasurand } from '../../types/index.js'
-import { isEmpty } from '../../utils/index.js'
+import { Constants, isEmpty } from '../../utils/index.js'
 
 export interface TransactionIntervalState {
   consumed: number
@@ -112,7 +112,8 @@ export const getRepresentedTransactionIntervalEnergyWh = (
         : Number.parseFloat(sampledValue.value)
     if (!Number.isFinite(value)) continue
     const unit = sampledValue.unitOfMeasure?.unit ?? sampledValue.unit
-    const unitMultiplier = unit === 'kWh' ? 1000 : unit === 'MWh' ? 1_000_000 : 1
+    const unitMultiplier =
+      unit === 'kWh' ? Constants.UNIT_DIVIDER_KILO : unit === 'MWh' ? 1_000_000 : 1
     const decimalMultiplier = 10 ** (sampledValue.unitOfMeasure?.multiplier ?? 0)
     const phaseMultiplier = /^L[123](?:-N)?$/.test(sampledValue.phase ?? '') ? numberOfPhases : 1
     const locationMultiplier =

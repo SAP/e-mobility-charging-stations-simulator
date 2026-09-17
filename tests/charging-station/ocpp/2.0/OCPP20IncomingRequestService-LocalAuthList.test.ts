@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { LocalAuthListManager } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
+import type { LocalAuthListManager } from '../../../../src/charging-station/ocpp/auth/index.js'
 
 import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'

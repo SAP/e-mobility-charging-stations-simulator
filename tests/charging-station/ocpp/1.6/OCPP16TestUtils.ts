@@ -459,7 +459,7 @@ export const ReservationFixtures = {
     connectorId = 1,
     reservationId = 1,
     idTag = TEST_ID_TAG,
-    expiryDate = new Date(Date.now() + 3600000)
+    expiryDate = new Date(Date.now() + Constants.MS_PER_HOUR)
   ) => ({
     connectorId,
     expiryDate,

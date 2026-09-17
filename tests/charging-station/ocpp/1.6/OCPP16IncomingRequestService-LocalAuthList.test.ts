@@ -11,11 +11,13 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   LocalAuthListManager,
   OCPPAuthService,
-} from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
+} from '../../../../src/charging-station/ocpp/auth/index.js'
 import type { OCPP16SendLocalListRequest } from '../../../../src/types/index.js'
 
-import { InMemoryLocalAuthListManager } from '../../../../src/charging-station/ocpp/auth/cache/InMemoryLocalAuthListManager.js'
-import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
+import {
+  InMemoryLocalAuthListManager,
+  OCPPAuthServiceFactory,
+} from '../../../../src/charging-station/ocpp/auth/index.js'
 import {
   OCPP16AuthorizationStatus,
   OCPP16StandardParametersKey,

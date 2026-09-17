@@ -36,7 +36,7 @@ import {
   OCPP20TransactionEventEnumType,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import { Constants } from '../../../../src/utils/index.js'
+import { clone, Constants } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
   setupConnectorWithTransaction,
@@ -381,7 +381,7 @@ await describe('D01 - TransactionEvent Response', async () => {
       OCPP20TransactionEventEnumType.Started
     )
     staleRequest.seqNo = 0
-    const replacementRequest = structuredClone(staleRequest)
+    const replacementRequest = clone(staleRequest)
     connectorStatus.transactionEventQueue = [
       { request: replacementRequest, seqNo: 0, timestamp: replacementRequest.timestamp },
     ]

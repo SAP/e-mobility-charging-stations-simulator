@@ -15,8 +15,9 @@ import {
   AuthenticationMethod,
   AuthResultStatus,
   IdentifierType,
-} from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+} from '../../../../../src/charging-station/ocpp/auth/index.js'
 import { OCPP16AuthorizationStatus, OCPPVersion } from '../../../../../src/types/index.js'
+import { Constants } from '../../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { TEST_ID_TAG_VALID } from '../../../ChargingStationTestConstants.js'
 import { createMockAuthorizationResult, createMockIdentifier } from '../helpers/MockFactories.js'
@@ -39,7 +40,7 @@ await describe('OCPP16AuthAdapter', async () => {
           new Promise<OCPP16AuthorizeResponse>(resolve => {
             resolve({
               idTagInfo: {
-                expiryDate: new Date(Date.now() + 86400000),
+                expiryDate: new Date(Date.now() + Constants.MS_PER_DAY),
                 parentIdTag: undefined,
                 status: OCPP16AuthorizationStatus.ACCEPTED,
               },

@@ -2346,7 +2346,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       this.pendingTriggeredMeterValues.delete(target.connectorStatus)
     }
     stationState?.triggeredMeterValueTargets?.delete(target)
-    if (stationState?.triggeredMeterValueTargets?.size === 0) {
+    if (stationState != null && isEmpty(stationState.triggeredMeterValueTargets)) {
       delete stationState.triggeredMeterValueTargets
     }
   }

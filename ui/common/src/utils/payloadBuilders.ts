@@ -20,7 +20,7 @@ export function buildAuthorizePayload (
 ): RequestPayload {
   if (isOCPP20x(ocppVersion)) {
     return {
-      idToken: { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 },
+      idToken: buildIdToken(idTag),
     }
   }
   assertOCPP16OrUndefined(ocppVersion)
@@ -63,9 +63,7 @@ export function buildStartTransactionPayload (
         connectorId,
         eventType: OCPP20TransactionEventEnumType.STARTED,
         ...(options?.evseId != null && { evseId: options.evseId }),
-        ...(options?.idTag != null && {
-          idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
-        }),
+        ...(options?.idTag != null && { idToken: buildIdToken(options.idTag) }),
       },
       procedureName: ProcedureName.TRANSACTION_EVENT,
     }

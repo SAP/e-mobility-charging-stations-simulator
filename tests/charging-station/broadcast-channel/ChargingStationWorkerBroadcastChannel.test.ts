@@ -6,7 +6,6 @@
  */
 
 import assert from 'node:assert/strict'
-import { randomUUID } from 'node:crypto'
 import { afterEach, describe, it, mock } from 'node:test'
 
 import { ChargingStationWorkerBroadcastChannel } from '../../../src/charging-station/broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
@@ -51,7 +50,7 @@ import {
   StandardParametersKey,
   VendorParametersKey,
 } from '../../../src/types/index.js'
-import { Constants } from '../../../src/utils/index.js'
+import { Constants, generateUUID } from '../../../src/utils/index.js'
 import {
   flushMicrotasks,
   setupConnectorWithTransaction,
@@ -2005,7 +2004,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       testable.requestHandler({
         data: [
-          randomUUID(),
+          generateUUID(),
           BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
           { hashIds: [station.stationInfo?.hashId] },
         ],
@@ -2025,7 +2024,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       testable.requestHandler({
         data: [
-          randomUUID(),
+          generateUUID(),
           BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
           { hashIds: [station.stationInfo?.hashId] },
         ],
@@ -2045,7 +2044,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       testable.requestHandler({
         data: [
-          randomUUID(),
+          generateUUID(),
           BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
           { hashIds: [station.stationInfo?.hashId] },
         ],
@@ -2065,7 +2064,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       testable.requestHandler({
         data: [
-          randomUUID(),
+          generateUUID(),
           BroadcastChannelProcedureName.NOTIFY_REPORT,
           { hashIds: [station.stationInfo?.hashId] },
         ],
@@ -2085,7 +2084,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       testable.requestHandler({
         data: [
-          randomUUID(),
+          generateUUID(),
           BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
           { hashIds: [station.stationInfo?.hashId] },
         ],
@@ -2119,7 +2118,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       testable.requestHandler({
         data: [
-          randomUUID(),
+          generateUUID(),
           BroadcastChannelProcedureName.METER_VALUES,
           { connectorId: 1, hashIds: [station.stationInfo?.hashId] },
         ],
@@ -2243,7 +2242,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       testable.requestHandler({
         data: [
-          randomUUID(),
+          generateUUID(),
           BroadcastChannelProcedureName.METER_VALUES,
           { evseId: 1, hashIds: [station.stationInfo?.hashId] },
         ],
@@ -2285,7 +2284,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       testable.requestHandler({
         data: [
-          randomUUID(),
+          generateUUID(),
           BroadcastChannelProcedureName.METER_VALUES,
           {
             connectorId: 1,

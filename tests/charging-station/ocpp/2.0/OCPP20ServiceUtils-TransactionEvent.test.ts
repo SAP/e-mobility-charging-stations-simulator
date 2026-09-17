@@ -13,7 +13,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { CoherentSession } from '../../../../src/charging-station/meter-values/types.js'
+import type { CoherentSession } from '../../../../src/charging-station/meter-values/index.js'
 import type { ConnectorStatus, EmptyObject, EvseStatus } from '../../../../src/types/index.js'
 
 import { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -22,8 +22,10 @@ import {
   preparePersistedTransactionEventQueue,
 } from '../../../../src/charging-station/HelpersConnectorStatus.js'
 import { addConfigurationKey, buildConfigKey } from '../../../../src/charging-station/index.js'
-import { recordTransactionIntervalConsumption } from '../../../../src/charging-station/meter-values/TransactionIntervalUtils.js'
-import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/TransactionMeterValueDeliveryBarrier.js'
+import {
+  recordTransactionIntervalConsumption,
+  TransactionMeterValueDeliveryBarrier,
+} from '../../../../src/charging-station/meter-values/index.js'
 import { createTestableResponseService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { buildOCPP20SampledValue } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestBuilders.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
@@ -72,7 +74,7 @@ import {
   SigningMethodEnumType,
   Voltage,
 } from '../../../../src/types/index.js'
-import { Constants, generateUUID } from '../../../../src/utils/index.js'
+import { clone, Constants, generateUUID } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
   setupConnectorWithTransaction,
@@ -4451,7 +4453,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             requestParams.onTransportError?.(replayFailure, false)
             throw replayFailure
           }
-          transportedRequests.push(structuredClone(request))
+          transportedRequests.push(clone(request))
           requestParams.onMessageSent?.()
           requestParams.onResponseReceived?.()
           return {}
@@ -8698,7 +8700,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       connectorStatus.transactionStarting = true
       connectorStatus.transactionRestored = true
       const queuedEvent = connectorStatus.transactionEventQueue[0]
-      const originalPayload = structuredClone(queuedEvent.request)
+      const originalPayload = clone(queuedEvent.request)
       const saveQueueSpy = mock.method(station, 'saveTransactionEventQueues')
       online = true
 
@@ -9491,7 +9493,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           64
       )
       const originalQueue = [queuedUpdated]
-      const originalEvent = structuredClone(queuedUpdated)
+      const originalEvent = clone(queuedUpdated)
       connectorStatus.transactionEventQueue = originalQueue
       mock.method(mockTracking.station, 'persistTransactionEventQueues', () => {
         persistenceStarted.resolve(undefined)
@@ -9499,7 +9501,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       })
       const savedQueues: unknown[][] = []
       mock.method(mockTracking.station, 'saveTransactionEventQueues', () => {
-        savedQueues.push(structuredClone(connectorStatus.transactionEventQueue ?? []))
+        savedQueues.push(clone(connectorStatus.transactionEventQueue ?? []))
       })
 
       const stopped = OCPP20ServiceUtils.requestStopTransaction(
@@ -10353,7 +10355,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             64
         )
         const originalQueue = [queuedUpdated]
-        const originalEvent = structuredClone(queuedUpdated)
+        const originalEvent = clone(queuedUpdated)
         connectorStatus.transactionEventQueue = originalQueue
         let persistenceCalls = 0
         mock.method(mockTracking.station, 'persistTransactionEventQueues', () => {
@@ -10524,7 +10526,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           timestamp: new Date(10_000),
         },
       ]
-      const originalEndedMeterValues = structuredClone(connectorStatus.transactionEndedMeterValues)
+      const originalEndedMeterValues = clone(connectorStatus.transactionEndedMeterValues)
       OCPP20ServiceUtils.startEndedMeterValues(mockTracking.station, connectorId, 60_000, 1)
 
       await assert.rejects(

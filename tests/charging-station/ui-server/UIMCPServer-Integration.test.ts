@@ -5,6 +5,7 @@
 
 import type { AddressInfo } from 'node:net'
 
+import { format } from 'date-fns'
 import assert from 'node:assert/strict'
 import { request as httpRequest, type Server } from 'node:http'
 import { join } from 'node:path'
@@ -200,7 +201,7 @@ await describe('UIMCPServer HTTP Integration', async () => {
     await it('should return log content with default date (current local date)', async () => {
       // Arrange
       const now = new Date()
-      const todayDate = `${now.getFullYear().toString()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`
+      const todayDate = format(now, 'yyyy-MM-dd')
       writeTempFile(
         logTmpDir,
         `combined-${todayDate}.log`,

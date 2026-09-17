@@ -17,7 +17,7 @@ import { afterEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { OCPPProtocol } from '../../src/types/index.js'
-import { buildAddedMessage } from '../../src/utils/MessageChannelUtils.js'
+import { buildAddedMessage } from '../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   cleanupStationTemplates,

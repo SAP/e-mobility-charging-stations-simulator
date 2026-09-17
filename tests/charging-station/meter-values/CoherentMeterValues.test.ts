@@ -11,12 +11,12 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { BuildVersionedSampledValue } from '../../../src/charging-station/meter-values/CoherentMeterValueBuilder.js'
 import type {
+  BuildVersionedSampledValue,
   CoherentSession,
   EvProfile,
   ICoherentContext,
-} from '../../../src/charging-station/meter-values/types.js'
+} from '../../../src/charging-station/meter-values/index.js'
 import type {
   ChargingStationInfo,
   ConnectorStatus,
@@ -26,17 +26,15 @@ import type {
 } from '../../../src/types/index.js'
 
 import {
-  buildCoherentMeterValue,
-  buildCoherentMeterValueSnapshot,
-} from '../../../src/charging-station/meter-values/CoherentMeterValueBuilder.js'
-import {
   computeCoherentSample,
   disposeCoherentSessionRuntime,
 } from '../../../src/charging-station/meter-values/CoherentSampleComputer.js'
 import {
+  buildCoherentMeterValue,
+  buildCoherentMeterValueSnapshot,
   createCoherentSession,
   resolveRootSeed,
-} from '../../../src/charging-station/meter-values/CoherentSession.js'
+} from '../../../src/charging-station/meter-values/index.js'
 import { hashLabel } from '../../../src/charging-station/meter-values/PRNG.js'
 import { buildOCPP20SampledValue } from '../../../src/charging-station/ocpp/2.0/OCPP20RequestBuilders.js'
 import {

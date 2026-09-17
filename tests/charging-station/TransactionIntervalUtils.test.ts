@@ -14,7 +14,7 @@ import {
   recordTransactionIntervalConsumption,
   restoreTransactionIntervalState,
   truncateTransactionIntervalValue,
-} from '../../src/charging-station/meter-values/TransactionIntervalUtils.js'
+} from '../../src/charging-station/meter-values/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('TransactionIntervalUtils', async () => {

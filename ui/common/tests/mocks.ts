@@ -1,6 +1,6 @@
 /** @file Shared mock factories for WebSocket-based tests */
 
-import type { WebSocketLike } from '../src/client/types.js'
+import { type WebSocketLike, WebSocketReadyState } from '../src/client/types.js'
 
 export interface MockWebSocketLike extends WebSocketLike {
   sentMessages: string[]
@@ -19,11 +19,11 @@ export function createMockWebSocketLike (): MockWebSocketLike {
   let onmessageFn: ((event: { data: string }) => void) | null = null
   let onopenFn: (() => void) | null = null
   const sentMessages: string[] = []
-  let readyState: 0 | 1 | 2 | 3 = 1
+  let readyState: WebSocketReadyState = WebSocketReadyState.OPEN
 
   return {
     close (code?: number, reason?: string) {
-      readyState = 3
+      readyState = WebSocketReadyState.CLOSED
       oncloseFn?.({ code: code ?? 1000, reason: reason ?? '' })
     },
     get onclose () {
@@ -58,7 +58,7 @@ export function createMockWebSocketLike (): MockWebSocketLike {
     },
     sentMessages,
     triggerClose (code?: number, reason?: string) {
-      readyState = 3
+      readyState = WebSocketReadyState.CLOSED
       oncloseFn?.({ code: code ?? 1000, reason: reason ?? '' })
     },
     triggerError (message) {

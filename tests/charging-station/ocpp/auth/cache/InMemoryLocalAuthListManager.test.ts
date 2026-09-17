@@ -5,10 +5,12 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { DifferentialAuthEntry } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
-import type { LocalAuthEntry } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
+import type {
+  DifferentialAuthEntry,
+  LocalAuthEntry,
+} from '../../../../../src/charging-station/ocpp/auth/index.js'
 
-import { InMemoryLocalAuthListManager } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryLocalAuthListManager.js'
+import { InMemoryLocalAuthListManager } from '../../../../../src/charging-station/ocpp/auth/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 const createEntry = (
