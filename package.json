@@ -92,7 +92,7 @@
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.21.3",
-    "zod": "^4.6.4"
+    "zod": "^4.6.5"
   },
   "optionalDependencies": {
     "bufferutil": "^4.1.0",
@@ -101,7 +101,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
-    "@cspell/eslint-plugin": "^10.3.0",
+    "@cspell/eslint-plugin": "^10.3.1",
     "@eslint/js": "^10.0.1",
     "@mikro-orm/cli": "^6.6.16",
     "@types/node": "^24.13.4",
