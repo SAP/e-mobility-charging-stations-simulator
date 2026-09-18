@@ -9,9 +9,9 @@
   },
   "volta": {
     "node": "24.21.0",
-    "pnpm": "12.4.1"
+    "pnpm": "12.4.2"
   },
-  "packageManager": "pnpm@12.4.1",
+  "packageManager": "pnpm@12.4.2",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -38,14 +38,14 @@
   "devDependencies": {
     "@tsconfig/node24": "^24.0.5",
     "@types/jsdom": "^30.0.0",
-    "@vitejs/plugin-vue": "^6.0.8",
+    "@vitejs/plugin-vue": "^6.0.9",
     "@vitejs/plugin-vue-jsx": "^5.1.6",
-    "@vitest/coverage-v8": "^5.0.0",
+    "@vitest/coverage-v8": "^5.0.1",
     "@vue/test-utils": "^2.5.0",
     "@vue/tsconfig": "^0.9.1",
     "jsdom": "^30.0.1",
     "vite": "^8.3.0",
-    "vitest": "^5.0.0",
+    "vitest": "^5.0.1",
     "vue-tsc": "^3.3.11"
   }
 }
