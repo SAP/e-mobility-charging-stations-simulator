@@ -376,7 +376,7 @@ Figure 12. Parallel control by CSMS and EMS
 
 In the next paragraph, the UML schemes of the OCPP Information Model are shown. The model is based on the Common Information Model (CIM) and to some extent to the CEFACT naming standards (only part of the standard). The objects in the model are named BusinessComponents and inherit properties from the CIM IdentifiedObject, such as MRID and Name. In the UML diagrams the attributes that are inherited from IdentifiedObject are shown under the IdentifiedObject stereotype (between $< < >$ ).
 
-Other attributes are listed under the stereotype $<  <$ Content $>$
+Other attributes are listed under the stereotype $< <$ Content $>$
 
 The messages in OCPP are derived from the model represented in the next paragraph, in a 3 step process:
 
