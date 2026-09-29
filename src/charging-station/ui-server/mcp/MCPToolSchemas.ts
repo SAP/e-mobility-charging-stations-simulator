@@ -1,21 +1,17 @@
 import { z } from 'zod'
 
 import { ProcedureName } from '../../../types/index.js'
+import {
+  chargingStationOptionsSchema,
+  connectorIdField,
+  connectorIdsField as connectorIds,
+  hashIdsField as hashIds,
+} from '../ui-services/UIServiceRequestPayloadSchemas.js'
 
 export interface MCPToolSchema {
   description: string
   inputSchema: z.ZodObject
 }
-
-const hashIds = z
-  .array(z.string())
-  .optional()
-  .describe('Target station hash IDs (omit for all stations)')
-
-const connectorIds = z
-  .array(z.number().int().positive())
-  .optional()
-  .describe('Target connector IDs')
 
 const broadcastInputSchema = z.object({
   connectorIds,
@@ -23,56 +19,11 @@ const broadcastInputSchema = z.object({
 })
 
 const connectorInputSchema = z.object({
-  connectorId: z.number().int().positive().describe('Target connector ID'),
+  connectorId: connectorIdField,
   hashIds,
 })
 
 const emptyInputSchema = z.object({})
-
-const chargingStationOptionsSchema = z.object({
-  autoRegister: z.boolean().optional().describe('Set stations as registered at boot notification'),
-  autoStart: z.boolean().optional().describe('Enable automatic start of added charging station'),
-  baseName: z
-    .string()
-    .optional()
-    .describe('Override the template base name used to derive the charging station id'),
-  enableStatistics: z.boolean().optional().describe('Enable charging station statistics'),
-  fixedName: z
-    .boolean()
-    .optional()
-    .describe('Use base name verbatim as charging station id instead of appending index/suffix'),
-  nameSuffix: z
-    .string()
-    .optional()
-    .describe(
-      'Suffix appended to the derived charging station id (ignored when fixed name is true)'
-    ),
-  ocppStrictCompliance: z
-    .boolean()
-    .optional()
-    .describe('Enable strict OCPP specifications adherence'),
-  persistentConfiguration: z
-    .boolean()
-    .optional()
-    .describe('Enable persistent OCPP parameters storage'),
-  stopTransactionsOnStopped: z
-    .boolean()
-    .optional()
-    .describe('Enable stop transactions on station stop'),
-  supervisionPassword: z
-    .string()
-    .optional()
-    .describe('CSMS basic auth password used on the supervision WebSocket'),
-  supervisionUrls: z
-    .union([z.url(), z.array(z.url())])
-    .optional()
-    .describe('OCPP server supervision URL(s)'),
-  supervisionUser: z
-    .string()
-    .regex(/^[^:]*$/, 'must not contain ":"')
-    .optional()
-    .describe('CSMS basic auth user used on the supervision WebSocket'),
-})
 
 /** Maps ProcedureName to OCPP JSON Schema file base names per version */
 export const ocppSchemaMapping = new Map<ProcedureName, { ocpp16?: string; ocpp20?: string }>([

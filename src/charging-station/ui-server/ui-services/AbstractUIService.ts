@@ -34,6 +34,7 @@ import {
 } from '../../../utils/index.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import { DEFAULT_MAX_STATIONS, isValidNumberOfStations } from '../UIServerSecurity.js'
+import { getRequestPayloadValidationError } from './UIServiceRequestPayloadSchemas.js'
 
 const moduleName = 'AbstractUIService'
 
@@ -234,6 +235,16 @@ export abstract class AbstractUIService {
         )
       }
 
+      // Transport-independent payload gate. WebSocket, HTTP and MCP requests all
+      // reach this dispatch point, so the canonical schema of the procedure is the
+      // single validation source: the transports only guarantee the frame shape,
+      // never the payload fields. A violation is a client error and must be
+      // reported as such, not dispatched to the stations.
+      const validationError = getRequestPayloadValidationError(command, requestPayload)
+      if (validationError != null) {
+        throw new BaseError(`'${command}' request payload is invalid: ${validationError}`)
+      }
+
       // Call the request handler to build the response payload
       const requestHandler = this.requestHandlers.get(command)
       if (requestHandler == null) {
@@ -340,17 +351,6 @@ export abstract class AbstractUIService {
       return {
         errorMessage:
           'Cannot add charging station(s) while the charging stations simulator is not started',
-        status: ResponseStatus.FAILURE,
-      } satisfies ResponsePayload
-    }
-    if (
-      typeof template !== 'string' ||
-      typeof numberOfStations !== 'number' ||
-      !Number.isInteger(numberOfStations) ||
-      numberOfStations <= 0
-    ) {
-      return {
-        errorMessage: 'Invalid request payload',
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
     }
