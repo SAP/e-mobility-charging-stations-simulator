@@ -109,6 +109,7 @@ export {
   type OCPP16ReserveNowRequest,
   type OCPP16SendLocalListRequest,
   type OCPP16StatusNotificationRequest,
+  type OCPP16StatusNotificationRequestParams,
   type OCPP16TriggerMessageRequest,
   type OCPP16UpdateFirmwareRequest,
   OCPP16UpdateType,

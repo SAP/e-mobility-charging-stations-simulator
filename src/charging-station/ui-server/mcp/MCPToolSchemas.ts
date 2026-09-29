@@ -404,7 +404,22 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
           .record(z.string(), z.unknown())
           .optional()
           .describe('OCPP 1.6 StopTransaction payload'),
-        transactionId: z.number().int().describe('Transaction ID to stop'),
+        // Deliberately optional: `injectOcppJsonSchemas` replaces `ocpp16Payload`
+        // with `StopTransaction.json`, whose `required` is
+        // `['transactionId', 'timestamp', 'meterStop']`, so the PUBLISHED
+        // contract carries `transactionId` INSIDE `ocpp16Payload` and nowhere
+        // else. The MCP SDK validates `inputSchema` before the handler runs
+        // (`mcp.js:125,249`), hence a contract-conforming client would be
+        // rejected with -32602 while the flat gate would have accepted it
+        // (`UIMCPServer` flattens the PDU, so the field is hoisted to the root
+        // by the time the gate runs). Dropping the property outright would be
+        // worse: `z.object` silently STRIPS an undeclared key (probe:
+        // `z.object({}).parse({transactionId: 7})` yields `{}`), so the client
+        // would see an opaque failure instead of a named requirement. The flat
+        // gate remains the runtime authority and still requires
+        // `transactionId` (`ChargingStationWorkerBroadcastChannel` requires it
+        // per station).
+        transactionId: z.number().int().optional().describe('Transaction ID to stop'),
       }),
     },
   ],

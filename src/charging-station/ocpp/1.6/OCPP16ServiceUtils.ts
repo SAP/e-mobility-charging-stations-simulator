@@ -53,6 +53,7 @@ import {
   type OCPP16SignedMeterValue,
   OCPP16StandardParametersKey,
   type OCPP16StatusNotificationRequest,
+  type OCPP16StatusNotificationRequestParams,
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
   OCPP16VendorParametersKey,
@@ -110,6 +111,26 @@ const moduleName = 'OCPP16ServiceUtils'
 const RFC3339_TIMESTAMP_PATTERN =
   /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([Zz]|([+-])(\d{2}):(\d{2}))$/
 const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
+
+/**
+ * Type guard for an OCPP 1.6 charge point status.
+ *
+ * The two connector status enumerations are NOT symmetric:
+ * `OCPP16ChargePointStatus` has 9 values against the 5 of
+ * `OCPP20ConnectorStatusEnumType`, and only `OCPP20ConnectorStatusEnumType`
+ * gains a member (`Occupied`, meaning a connector blocked outside any
+ * transaction) that OCPP 1.6 has no counterpart for — the 1.6 `StatusNotification`
+ * JSON schema closes its `status` enum to the 9 charge point statuses. A
+ * version-blind caller may therefore hand over a 2.0.1-only value, which must
+ * be refused here rather than shipped in a 1.6 PDU the station's AJV would
+ * reject per station. This is the exact mirror of `isOCPP20ConnectorStatus`
+ * refusing a 1.6-only value on the 2.0.1 path: a per-station refusal, never a
+ * silently invalid PDU.
+ * @param status - Untrusted connector status.
+ * @returns `true` when the value is an OCPP 1.6 charge point status.
+ */
+const isOCPP16ChargePointStatus = (status: string): status is OCPP16ChargePointStatus =>
+  (Object.values(OCPP16ChargePointStatus) as string[]).includes(status)
 
 const isLeapYear = (year: number): boolean =>
   year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
@@ -290,17 +311,33 @@ export class OCPP16ServiceUtils {
   }
 
   /**
-   * @param commandParams - Status notification parameters
+   * @param commandParams - Status notification parameters; `connectorStatus`
+   * takes precedence over `status`
    * @returns Formatted OCPP 1.6 StatusNotification request payload
+   * @throws {OCPPError} When no connector status is supplied, or when it is not
+   * a valid OCPP 1.6 charge point status
    */
   public static buildStatusNotificationRequest (
-    commandParams: OCPP16StatusNotificationRequest
+    commandParams: OCPP16StatusNotificationRequestParams
   ): OCPP16StatusNotificationRequest {
+    const { connectorId, errorCode } = commandParams
+    const status = commandParams.connectorStatus ?? commandParams.status
+    if (status == null || !isOCPP16ChargePointStatus(status)) {
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        `Cannot build status notification payload: invalid connector status for connector ${connectorId.toString()}`,
+        RequestCommand.STATUS_NOTIFICATION
+      )
+    }
     return {
-      connectorId: commandParams.connectorId,
-      errorCode: commandParams.errorCode,
-      status: commandParams.status,
-    } satisfies OCPP16StatusNotificationRequest
+      connectorId,
+      // `errorCode` is absent from the OCPP 2.0.1 request, hence optional in
+      // the untrusted params; the request service always supplies the
+      // `NO_ERROR` default before calling, and the member is otherwise passed
+      // through untouched.
+      errorCode,
+      status,
+    } as OCPP16StatusNotificationRequest
   }
 
   /**

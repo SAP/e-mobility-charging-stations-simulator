@@ -624,6 +624,62 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       assert.strictEqual(result.errorCode, undefined)
     })
+
+    await it('should resolve the inter-version connectorStatus alias', () => {
+      // The UI gate is version-blind, so a 2.0.x-shaped payload can reach the
+      // 1.6 builder; copying only `status` would emit `status: undefined` and
+      // the station's AJV would reject the PDU.
+      const result = OCPP16ServiceUtils.buildStatusNotificationRequest({
+        connectorId: 1,
+        connectorStatus: OCPP16ChargePointStatus.Available,
+        errorCode: ChargePointErrorCode.NO_ERROR,
+      })
+
+      assert.strictEqual(result.status, OCPP16ChargePointStatus.Available)
+    })
+
+    await it('should let connectorStatus take precedence over status', () => {
+      const result = OCPP16ServiceUtils.buildStatusNotificationRequest({
+        connectorId: 1,
+        connectorStatus: OCPP16ChargePointStatus.Faulted,
+        errorCode: ChargePointErrorCode.NO_ERROR,
+        status: OCPP16ChargePointStatus.Available,
+      })
+
+      assert.strictEqual(result.status, OCPP16ChargePointStatus.Faulted)
+    })
+
+    await it('should refuse a 2.0.1-only connector status', () => {
+      // `Occupied` is the only OCPP 2.0.1 status with no OCPP 1.6
+      // counterpart, and the 1.6 `StatusNotification` JSON schema closes its
+      // `status` enum to the 9 charge point statuses. Refusing here yields a
+      // per-station failure, where shipping it would yield a PDU the station
+      // itself rejects.
+      assert.throws(
+        () =>
+          OCPP16ServiceUtils.buildStatusNotificationRequest({
+            connectorId: 1,
+            connectorStatus: 'Occupied',
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          }),
+        (error: unknown) => {
+          assert.ok(error instanceof OCPPError)
+          assert.match(error.message, /invalid connector status for connector 1/)
+          return true
+        }
+      )
+    })
+
+    await it('should refuse a missing connector status', () => {
+      assert.throws(
+        () =>
+          OCPP16ServiceUtils.buildStatusNotificationRequest({
+            connectorId: 1,
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          }),
+        OCPPError
+      )
+    })
   })
 
   // ─── isConfigurationKeyVisible ─────────────────────────────────────────

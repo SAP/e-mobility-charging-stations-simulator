@@ -343,8 +343,8 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       const response = await service.requestHandler(
         createProtocolRequest(TEST_UUID, ProcedureName.STATUS_NOTIFICATION, {
           connectorId: 0,
-          connectorStatus: 'Available',
           hashIds: [TEST_HASH_ID],
+          status: 'Available',
         })
       )
 
@@ -477,6 +477,68 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     }
   })
 
+  await it('should require a connector or EVSE target on meterValues', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // `{ hashIds: [...] }` and `{}` used to pass the gate, then the worker
+      // threw `Missing connectorId or evseId` once per station. OCPP 1.6
+      // requires `connectorId` and OCPP 2.0.1 requires `evseId`, with no
+      // common mandatory member, so the gate enforces their union.
+      for (const payload of [{ hashIds: [TEST_HASH_ID] }, {}]) {
+        assertRejectedWith(
+          await dispatchUntrustedPayload(service, ProcedureName.METER_VALUES, payload),
+          /at least one of "connectorId" or "evseId" is required/
+        )
+      }
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should accept each meterValues target form alone and target one station', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      for (const payload of [{ connectorId: 0 }, { connectorId: 1 }, { evseId: 1 }]) {
+        const response = await service.requestHandler(
+          createProtocolRequest(TEST_UUID, ProcedureName.METER_VALUES, {
+            ...payload,
+            hashIds: [TEST_HASH_ID],
+            meterValue: [{ sampledValue: [{ value: '1' }] }],
+          })
+        )
+
+        assert.strictEqual(response, undefined)
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+      }
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should accept a startTransaction payload without idTag', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // `OCPP16RequestService` fills `idTag` with the default `00000000`, so the
+      // produced PDU is valid without it. Requiring it here would additionally
+      // break the shipped Web UI, which sends `{ connectorId }` alone.
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.START_TRANSACTION, {
+          connectorId: 1,
+          hashIds: [TEST_HASH_ID],
+        })
+      )
+
+      assert.strictEqual(response, undefined)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+    } finally {
+      service.stop()
+    }
+  })
+
   await it('should require a connector status on statusNotification', async () => {
     const { service } = createServiceContext(2)
 
@@ -569,12 +631,13 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     }
   })
 
-  await it('should report every violated field, not the first ones only', async () => {
+  await it('should name every violated sub-field of a nested object', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // 13 violations spread over `options` and `template`: a fixed cap on the
-      // number of rendered issues used to hide the trailing fields entirely.
+      // Grouping by top-level field alone made `options` atomic: one entry was
+      // rendered, twelve of the thirteen violations stayed invisible, and the
+      // rendered path belonged to the first issue only.
       const response = await dispatchUntrustedPayload(
         service,
         ProcedureName.ADD_CHARGING_STATIONS,
@@ -600,7 +663,52 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       const message = failureErrorMessage(response)
 
       assert.match(message, /template: /)
-      assert.match(message, /\+11 more issue\(s\)/)
+      for (const subField of [
+        'autoRegister',
+        'autoStart',
+        'baseName',
+        'enableStatistics',
+        'fixedName',
+        'nameSuffix',
+        'ocppStrictCompliance',
+        'persistentConfiguration',
+        'stopTransactionsOnStopped',
+        'supervisionPassword',
+        'supervisionUrls',
+        'supervisionUser',
+      ]) {
+        assert.match(
+          message,
+          new RegExp(`options\\.${subField}: `),
+          `Missing an entry naming options.${subField}`
+        )
+      }
+      // One entry per violated field, so the report stays bounded by the
+      // declared fields rather than by the number of issues.
+      assert.strictEqual(message.split('; ').length, 13)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should render one entry per violated field path', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // Two distinct violated paths must yield two entries, each carrying its
+      // own path rather than the one of the first issue seen.
+      const message = failureErrorMessage(
+        await dispatchUntrustedPayload(service, ProcedureName.CHANGE_CONFIGURATION, {
+          hashIds: [TEST_HASH_ID],
+          key: '',
+          value: 42,
+        })
+      )
+
+      assert.match(message, /key: /)
+      assert.match(message, /value: /)
+      assert.strictEqual(message.split('; ').length, 2)
       assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
     } finally {
       service.stop()

@@ -17,12 +17,22 @@
  * checked to be an array, its members stay unknown) so a mistyped container is
  * rejected once at the gate instead of failing per station.
  *
- * Relationship with `mcp/MCPToolSchemas.ts`: the MCP tool schemas describe the
- * LLM-facing *tool envelope* (`{ ocpp16Payload, ocpp20Payload }` wrappers) and
- * are consumed by the MCP SDK. `UIMCPServer` spreads the supplied OCPP payload
- * into the flat UI payload before the gate runs, so both transports see the same
- * flat fields. Both modules consume the same field schemas, so a field cannot
- * mean two things.
+ * Layering: the validation is split by responsibility, not duplicated. This
+ * gate validates what the UI server itself interprets. The MCP envelope
+ * (`{ ocpp16Payload, ocpp20Payload }`) is described by the tool schemas of
+ * `mcp/MCPToolSchemas.ts` and validated by the MCP SDK before any handler
+ * runs. `UIMCPServer` then spreads the versioned PDU into the flat UI payload
+ * before this gate runs, so both transports converge on the same flat fields.
+ *
+ * The two layers share the same *types* (both import the same field schemas),
+ * but not the same notion of *presence*, which this gate alone decides. That
+ * matters because the gate is version-blind: it runs once per request, before
+ * any station is targeted, whereas an OCPP field is only required by one of
+ * the two protocol versions. A root-level `transactionId` is therefore a UI
+ * protocol concept here, while on the MCP side it lives inside the versioned
+ * `StopTransaction` PDU, where the OCPP JSON schema declares it required.
+ * Such a field stays optional in this module: requiring it would reject a
+ * valid request of the other version.
  */
 
 import { z } from 'zod'
@@ -87,7 +97,19 @@ export const connectorIdsField = z
   .describe('Target physical connector IDs')
 
 /**
- * OCPP WebSocket URL, as accepted by the supervision endpoints.
+ * Absolute URL of a supervision endpoint.
+ *
+ * `z.url()` checks the syntax only, NOT the WebSocket-ness: `foo://bar` and
+ * `ftp://a/b` are valid URLs and are accepted here on purpose. The `ws`
+ * library used for the supervision WebSocket accepts the `http`, `https` and
+ * `ws+unix` schemes, so a non-WebSocket scheme fails later, at connection
+ * time, where the transport reports it. Restricting the scheme here would
+ * reject a legitimate client ahead of the layer that actually knows the
+ * answer.
+ *
+ * No `new URL()` refinement is layered on top: Zod 4 runs every refinement
+ * even after `z.url()` has already failed, and `new URL` throws on a
+ * non-URL string, turning a reported violation into a crash.
  */
 export const urlField = z.url()
 
@@ -199,14 +221,26 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
   // `meterValue` and its `sampledValue` entries are forwarded to the OCPP layer;
   // only their container types are checked, so a scalar instead of a list is
   // rejected once at the gate rather than per station.
-  [ProcedureName.METER_VALUES]: z.looseObject({
-    ...broadcastFields,
-    connectorId: connectorIdField.optional(),
-    evseId: evseIdField.optional(),
-    meterValue: z
-      .array(z.looseObject({ sampledValue: z.array(z.unknown()).optional() }))
-      .optional(),
-  }),
+  // The target is a union, not an intersection: OCPP 1.6 MeterValues requires
+  // `connectorId` while OCPP 2.0.1 requires `evseId`, and the two enumerations
+  // share no mandatory member, so no single field can be required here. The
+  // rule below is the same condition `handleMeterValues` applies per station
+  // (`ChargingStationWorkerBroadcastChannel` throws `Missing connectorId or
+  // evseId`), so it rejects nothing the worker would have accepted: a payload
+  // with neither now fails once at the gate instead of once per station.
+  [ProcedureName.METER_VALUES]: z
+    .looseObject({
+      ...broadcastFields,
+      connectorId: connectorIdField.optional(),
+      evseId: evseIdField.optional(),
+      meterValue: z
+        .array(z.looseObject({ sampledValue: z.array(z.unknown()).optional() }))
+        .optional(),
+    })
+    .refine(payload => payload.connectorId != null || payload.evseId != null, {
+      message: 'at least one of "connectorId" or "evseId" is required',
+      path: ['connectorId'],
+    }),
   [ProcedureName.NOTIFY_CUSTOMER_INFORMATION]: broadcastSchema,
   [ProcedureName.NOTIFY_REPORT]: broadcastSchema,
   [ProcedureName.OPEN_CONNECTION]: broadcastSchema,
@@ -282,39 +316,59 @@ const renderIssuePath = (issuePath: readonly PropertyKey[]): string => {
 }
 
 /**
+ * Renders a single `path -> message -> occurrence count` group.
+ * @param path - Normalized dotted path the issues belong to.
+ * @param messages - Distinct messages of the group, with their occurrence count.
+ * @returns `path: message` for a lone issue, `path: message (+N more issue(s))`
+ * for repeated occurrences of one message, `path: msg1 / msg2 (N issue(s))` for
+ * several distinct messages.
+ */
+const renderIssueGroup = (path: string, messages: ReadonlyMap<string, number>): string => {
+  // A group is only ever created while recording an issue, so it always holds
+  // at least one message.
+  const entries = [...messages]
+  const [firstMessage, firstCount] = entries[0]
+  if (messages.size === 1) {
+    return firstCount > 1
+      ? `${path}: ${firstMessage} (+${(firstCount - 1).toString()} more issue(s))`
+      : `${path}: ${firstMessage}`
+  }
+  const occurrences = entries.reduce((sum, [, count]) => sum + count, 0)
+  return `${path}: ${entries.map(([message]) => message).join(' / ')} (${occurrences.toString()} issue(s))`
+}
+
+/**
  * Renders Zod issues as a single-line, log-safe description, grouped by
- * top-level field.
+ * normalized field path.
  *
- * Grouping by the first path segment keeps the report bounded whatever the
- * number of issues: the schemas are not recursive, so a payload yields at most
- * one group per top-level field, each rendering the full path and message of
- * its first violation plus a count of the others. A flat list truncated at a
- * fixed number of issues instead hides whole fields, since an invalid array of
- * 60 000 entries emits 60 000 paths and starves every field declared after it.
+ * Grouping on the FULL path (array indices already dropped by
+ * {@link renderIssuePath}) keeps the report bounded while naming every
+ * offending field. The bound is structural rather than arbitrary: the schemas
+ * are not recursive, so a payload yields at most one group per declared
+ * field, and a payload repeating the same violation 60 000 times (an
+ * entirely invalid `hashIds` array) collapses into a single group. A flat list
+ * truncated at a fixed number of issues instead hides whole fields, since such
+ * an array emits 60 000 paths and starves every field declared after it.
+ *
+ * Grouping by first path segment alone would not do: a nested object is then
+ * atomic, so three invalid `options` sub-fields render one entry, two of them
+ * stay invisible, and the rendered path is the one of the first issue, which
+ * assigns the counted issues to a path that is not their own.
  * @param issues - Zod validation issues.
- * @returns Semicolon-separated `path: message (+N more issue(s))` groups, in
+ * @returns Semicolon-separated groups (see {@link renderIssueGroup}), in
  * first-seen field order.
  */
 const formatIssues = (issues: readonly z.core.$ZodIssue[]): string => {
-  const groups = new Map<string, { count: number; message: string; path: string }>()
+  const groups = new Map<string, Map<string, number>>()
   for (const issue of issues) {
-    // An empty path (`.refine` on the root) has no first segment, hence the
+    // An empty path (`.refine` on the root) has no segment, hence the
     // `<root>` group.
-    const field = renderIssuePath(issue.path.slice(0, 1))
-    const group = groups.get(field)
-    if (group) {
-      group.count++
-    } else {
-      groups.set(field, { count: 1, message: issue.message, path: renderIssuePath(issue.path) })
-    }
+    const path = renderIssuePath(issue.path)
+    const messages = groups.get(path) ?? new Map<string, number>()
+    messages.set(issue.message, (messages.get(issue.message) ?? 0) + 1)
+    groups.set(path, messages)
   }
-  return [...groups.values()]
-    .map(({ count, message, path }) =>
-      count > 1
-        ? `${path}: ${message} (+${(count - 1).toString()} more issue(s))`
-        : `${path}: ${message}`
-    )
-    .join('; ')
+  return [...groups].map(([path, messages]) => renderIssueGroup(path, messages)).join('; ')
 }
 
 /**

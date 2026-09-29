@@ -180,6 +180,22 @@ export interface OCPP16StatusNotificationRequest extends JsonObject {
   vendorId?: string
 }
 
+/**
+ * Untrusted input accepted by the OCPP 1.6 `StatusNotification` request
+ * builder.
+ *
+ * It is a partial request because the UI gate is version-blind and accepts
+ * both spellings of the connector status: `status` is the OCPP 1.6 member,
+ * `connectorStatus` the OCPP 2.0.x one carried by
+ * `StatusNotificationOptions`. `connectorStatus` is a plain string here: the
+ * 2.0.x enum has no OCPP 1.6 counterpart for every one of its values, so the
+ * builder validates it rather than the type.
+ */
+export type OCPP16StatusNotificationRequestParams = Partial<OCPP16StatusNotificationRequest> & {
+  connectorId: number
+  connectorStatus?: string
+}
+
 export interface OCPP16TriggerMessageRequest extends JsonObject {
   connectorId?: number
   requestedMessage: OCPP16MessageTrigger

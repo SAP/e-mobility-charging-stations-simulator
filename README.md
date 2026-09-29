@@ -1362,8 +1362,8 @@ Examples:
     `ProcedureName`: 'meterValues'  
     `PDU`: {  
     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-    `connectorId` or `evseId`: meter connector id integer (>= 0, 0 designates the main power meter),  
-    `meterValue`: sampled values array, each entry an object with a `sampledValue` array  
+    `connectorId?` or `evseId?`: meter connector id integer (>= 0, 0 designates the main power meter); at least one is required,  
+    `meterValue?`: sampled values array, each entry an object with a `sampledValue` array  
     }
 
   - Response:  
@@ -1380,7 +1380,7 @@ Examples:
     `PDU`: {  
     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
     `connectorId`: physical connector id integer (>= 1),  
-    `idTag`: RFID tag string  
+    `idTag?`: RFID tag string (optional, defaults to `'00000000'`)  
     }
 
   - Response:  
