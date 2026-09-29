@@ -5,34 +5,33 @@
  * `AbstractUIService.requestHandler` so the WebSocket, HTTP and MCP transports
  * share one contract.
  *
- * Scope of validation: the station targeting fields (`hashIds`, `connectorIds`,
- * `connectorId`, `evseId`) and the per-procedure control fields the UI server
- * itself interprets. The remaining OCPP PDU fields are deliberately NOT
- * validated here: they are merged into the outgoing request payload untouched
- * and belong to the OCPP layer, which validates them against the OCPP JSON
- * schemas (AJV, gated by `ocppStrictCompliance`) at send time. Every schema is
- * therefore a loose object, so an unlisted PDU field passes through instead of
- * being stripped or rejected. A field the UI server does interpret is declared
- * with a permissive-but-typed shape (e.g. `meterValue[].sampledValue` is
- * checked to be an array, its members stay unknown) so a mistyped container is
- * rejected once at the gate instead of failing per station.
+ * Scope: this gate validates the station targeting fields (`hashIds`,
+ * `connectorIds`, `connectorId`, `evseId`) and the control fields the UI server
+ * or its worker reads: `key`/`value`, `meterValue`, `status`,
+ * `connectorStatus`, `errorCode`, `transactionId`, `url`, `template`,
+ * `numberOfStations`, `options`, `deleteConfiguration`, `idTag`. A declared
+ * field is typed, so a mistyped container is rejected once at the gate instead
+ * of once per station; a permissive-but-typed one is checked for its container
+ * and its members stay unknown.
  *
- * Layering: the validation is split by responsibility, not duplicated. This
- * gate validates what the UI server itself interprets. The MCP envelope
- * (`{ ocpp16Payload, ocpp20Payload }`) is described by the tool schemas of
- * `mcp/MCPToolSchemas.ts` and validated by the MCP SDK before any handler
- * runs. `UIMCPServer` then spreads the versioned PDU into the flat UI payload
- * before this gate runs, so both transports converge on the same flat fields.
+ * Everything else is delegated: each schema is a loose object, so an
+ * unlisted OCPP PDU field passes through to the OCPP layer, which validates it
+ * against the OCPP JSON schemas (AJV, gated by `ocppStrictCompliance`) at send
+ * time. `chargingStationOptionsSchema` is the one exception, a strict object,
+ * since it carries only UI options and no PDU field.
  *
- * The two layers share the same *types* (both import the same field schemas),
- * but not the same notion of *presence*, which this gate alone decides. That
- * matters because the gate is version-blind: it runs once per request, before
- * any station is targeted, whereas an OCPP field is only required by one of
- * the two protocol versions. A root-level `transactionId` is therefore a UI
- * protocol concept here, while on the MCP side it lives inside the versioned
- * `StopTransaction` PDU, where the OCPP JSON schema declares it required.
- * Such a field stays optional in this module: requiring it would reject a
- * valid request of the other version.
+ * Layering: the MCP envelope (`{ ocpp16Payload, ocpp20Payload }`) is described
+ * by the tool schemas of `mcp/MCPToolSchemas.ts` and validated by the MCP SDK
+ * before any handler runs. `UIMCPServer` then spreads the versioned PDU into
+ * the flat UI payload before this gate runs, so both transports converge on
+ * the same flat fields. The two layers share the same *types* (both import the
+ * same field schemas), but not the same notion of *presence*, which this gate
+ * alone decides. That matters because the gate is version-blind: it runs once
+ * per request, before any station is targeted, whereas an OCPP field may be
+ * required by only one of the two protocol versions. A field required by both
+ * is required here (`transactionId`, read only for the 1.6 stations
+ * `handleStopTransaction` dispatches to); a field required by only one stays
+ * optional.
  */
 
 import { z } from 'zod'
@@ -69,13 +68,21 @@ const connectorIdField = z
 
 /**
  * OCPP PDU EVSE identifier, OCPP 2.0.x counterpart of {@link connectorIdField}.
- * Zero designates the main power meter, hence the non-negative bound.
+ *
+ * Its meaning depends on the carrying message, and only `MeterValuesRequest`
+ * gives 0 a special role — "0 designates the main power meter"
+ * (`docs/ocpp2/OCPP-2.0.1_edition3_part2_specification.md` §1.31.1).
+ * `StatusNotificationRequest.evseId` (§1.59.1) is only "the id of the EVSE to
+ * which the connector belongs" and defines no zero. Since one field serves both
+ * messages, the shared bound is non-negative: it admits the documented 0 of
+ * `MeterValues` without inventing a restriction the other message never
+ * states.
  */
 const evseIdField = z
   .number()
   .int()
   .nonnegative()
-  .describe('OCPP EVSE ID (0 designates the main power meter)')
+  .describe('OCPP EVSE ID (0 designates the main power meter in MeterValues only)')
 
 /**
  * Physical connector identifier: an actual cable outlet. Connector 0 is the

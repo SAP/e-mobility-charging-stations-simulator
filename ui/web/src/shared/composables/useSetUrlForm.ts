@@ -1,7 +1,17 @@
-import { readonly, ref, type Ref } from 'vue'
+import { type MaybeRefOrGetter, readonly, ref, type Ref, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/core/index.js'
+
+/**
+ * Credentials the charging station already carries, as the UI knows them.
+ * A field left equal to its base value is omitted from the request, so the
+ * station keeps the value it already has instead of having it rewritten.
+ */
+export interface SetUrlFormBaseCredentials {
+  supervisionPassword?: string
+  supervisionUser?: string
+}
 
 export interface SetUrlFormState {
   supervisionPassword: string
@@ -13,11 +23,15 @@ export interface SetUrlFormState {
  * Returns form state and submission logic for setting the supervision URL.
  * @param hashId - The charging station hash identifier
  * @param chargingStationId - The charging station display identifier
+ * @param baseCredentials - Credentials the station currently holds. Omitted by
+ * a caller that starts from an empty form, where an empty field still means
+ * "clear the stored credentials"
  * @returns Form state and submit/reset functions
  */
 export function useSetUrlForm (
   hashId: string,
-  chargingStationId: string
+  chargingStationId: string,
+  baseCredentials?: MaybeRefOrGetter<SetUrlFormBaseCredentials | undefined>
 ): {
   chargingStationId: string
   formState: Ref<SetUrlFormState>
@@ -37,6 +51,23 @@ export function useSetUrlForm (
   }
 
   /**
+   * Returns a form field to submit: `undefined` when it is left at its base
+   * value, so the station keeps what it already has. Without a base value
+   * (classic skin, empty form) an empty field is sent, which clears the stored
+   * credential.
+   * @param field - Credential field being submitted.
+   * @param value - Value currently held by the form.
+   * @returns The value to send, `undefined` when it equals the station base.
+   */
+  function credentialToSubmit (
+    field: keyof SetUrlFormBaseCredentials,
+    value: string
+  ): string | undefined {
+    const base = toValue(baseCredentials)?.[field]
+    return base != null && base === value ? undefined : value
+  }
+
+  /**
    * Validates and submits the supervision URL update.
    * @returns Whether the submission was successful
    */
@@ -51,8 +82,8 @@ export function useSetUrlForm (
       await $uiClient.setSupervisionUrl(
         hashId,
         formState.value.supervisionUrl,
-        formState.value.supervisionUser,
-        formState.value.supervisionPassword
+        credentialToSubmit('supervisionUser', formState.value.supervisionUser),
+        credentialToSubmit('supervisionPassword', formState.value.supervisionPassword)
       )
       $toast.success('Supervision url successfully set')
       return true

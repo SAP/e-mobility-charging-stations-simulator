@@ -16,17 +16,17 @@ export interface MCPToolSchema {
   inputSchema: z.ZodObject
 }
 
-const broadcastInputSchema = z.object({
+const broadcastInputSchema = z.looseObject({
   connectorIds,
   hashIds,
 })
 
-const connectorInputSchema = z.object({
+const connectorInputSchema = z.looseObject({
   connectorId: physicalConnectorIdField,
   hashIds,
 })
 
-const emptyInputSchema = z.object({})
+const emptyInputSchema = z.looseObject({})
 
 /** Maps ProcedureName to OCPP JSON Schema file base names per version */
 export const ocppSchemaMapping = new Map<ProcedureName, { ocpp16?: string; ocpp20?: string }>([
@@ -76,7 +76,7 @@ const buildOcppInputSchema = (mapping: { ocpp16?: string; ocpp20?: string }): z.
   if (mapping.ocpp20 != null) {
     fields.ocpp20Payload = ocpp20PayloadField
   }
-  return z.object(fields)
+  return z.looseObject(fields)
 }
 
 const buildVersionAffinity = (mapping: { ocpp16?: string; ocpp20?: string }): string => {
@@ -105,7 +105,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     ProcedureName.ADD_CHARGING_STATIONS,
     {
       description: 'Add new charging stations from a configuration template',
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         numberOfStations: z
           .number()
           .int()
@@ -140,7 +140,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     {
       description:
         'Change the value of an OCPP configuration key for one or more charging stations, applying the OCPP spec side effects (read-only keys are rejected)',
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         hashIds,
         key: z.string().min(1).describe('The OCPP configuration key to change'),
         value: z.string().describe('The new value to set for the configuration key'),
@@ -166,7 +166,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     ProcedureName.DELETE_CHARGING_STATIONS,
     {
       description: 'Delete one or more charging stations from the simulator',
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         deleteConfiguration: z
           .boolean()
           .optional()
@@ -308,7 +308,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     {
       description:
         'Set the OCPP server supervision URL and optionally the CSMS basic auth credentials for one or more charging stations',
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         hashIds,
         supervisionPassword: supervisionPasswordField
           .optional()
@@ -398,7 +398,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     ProcedureName.STOP_TRANSACTION,
     {
       description: ocppDescription('Stop a charging transaction', ProcedureName.STOP_TRANSACTION),
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         hashIds,
         ocpp16Payload: z
           .record(z.string(), z.unknown())
@@ -412,13 +412,11 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
         // (`mcp.js:125,249`), hence a contract-conforming client would be
         // rejected with -32602 while the flat gate would have accepted it
         // (`UIMCPServer` flattens the PDU, so the field is hoisted to the root
-        // by the time the gate runs). Dropping the property outright would be
-        // worse: `z.object` silently STRIPS an undeclared key (probe:
-        // `z.object({}).parse({transactionId: 7})` yields `{}`), so the client
-        // would see an opaque failure instead of a named requirement. The flat
-        // gate remains the runtime authority and still requires
-        // `transactionId` (`ChargingStationWorkerBroadcastChannel` requires it
-        // per station).
+        // by the time the gate runs). The flat gate remains the runtime
+        // authority and still requires `transactionId`
+        // (`ChargingStationWorkerBroadcastChannel` requires it per station),
+        // and the envelope is a loose object, so the field is neither stripped
+        // nor rejected here.
         transactionId: z.number().int().optional().describe('Transaction ID to stop'),
       }),
     },

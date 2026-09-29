@@ -73,6 +73,40 @@ describe('useSetUrlForm', () => {
     )
   })
 
+  it('should omit a credential left at the station base value', async () => {
+    const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001', {
+      supervisionPassword: 'secret',
+      supervisionUser: 'admin',
+    })
+    formState.value.supervisionUrl = 'ws://server:8080'
+    formState.value.supervisionUser = 'admin'
+    formState.value.supervisionPassword = 'secret'
+    await submitForm()
+    expect(mockSetSupervisionUrl).toHaveBeenCalledWith(
+      'hash1',
+      'ws://server:8080',
+      undefined,
+      undefined
+    )
+  })
+
+  it('should send a credential edited away from the station base value', async () => {
+    const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001', {
+      supervisionPassword: 'secret',
+      supervisionUser: 'admin',
+    })
+    formState.value.supervisionUrl = 'ws://server:8080'
+    formState.value.supervisionUser = 'operator:new'
+    formState.value.supervisionPassword = ''
+    await submitForm()
+    expect(mockSetSupervisionUrl).toHaveBeenCalledWith(
+      'hash1',
+      'ws://server:8080',
+      'operator:new',
+      ''
+    )
+  })
+
   it('should not show toast error when url is valid', async () => {
     const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001')
     formState.value.supervisionUrl = 'ws://valid-server:9090'

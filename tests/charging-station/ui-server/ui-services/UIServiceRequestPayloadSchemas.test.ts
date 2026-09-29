@@ -457,6 +457,31 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     }
   })
 
+  await it('should accept a meterValues entry without sampledValue', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // `sampledValue` is OPTIONAL at the gate, unlike its OCPP JSON schema:
+      // the entry passes here and the worker rejects it per station
+      // (`ChargingStationWorkerBroadcastChannel.handleMeterValues` throws
+      // `meterValue.sampledValue must be an array` when the member is not an
+      // array, including when it is absent). Requiring it here would change
+      // the reported failure from a per-station one to a whole-request
+      // rejection, and a request may also legitimately omit `meterValue` and
+      // ask the station for its current values.
+      const response = await dispatchUntrustedPayload(service, ProcedureName.METER_VALUES, {
+        connectorId: 1,
+        hashIds: [TEST_HASH_ID],
+        meterValue: [{}],
+      })
+
+      assert.strictEqual(response, undefined)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+    } finally {
+      service.stop()
+    }
+  })
+
   await it('should accept evseId zero on meterValues', async () => {
     const { service } = createServiceContext(2)
 

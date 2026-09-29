@@ -1363,7 +1363,7 @@ Examples:
     `PDU`: {  
     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
     `connectorId?` or `evseId?`: meter connector id integer (>= 0, 0 designates the main power meter); at least one is required,  
-    `meterValue?`: sampled values array, each entry an object with a `sampledValue` array  
+    `meterValue?`: sampled values array, each entry an object with an optional `sampledValue` array  
     }
 
   - Response:  
@@ -1415,7 +1415,7 @@ Examples:
     `PDU`: {  
     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
     `connectorId`: connector id integer (>= 0, 0 designates the charging station main controller),  
-    `evseId?`: EVSE id integer (>= 0, 0 designates the main power meter),  
+    `evseId?`: EVSE id integer (>= 0),  
     `errorCode?`: connector error code (optional, absent from the OCPP 2.0.1 request),  
     `status` or `connectorStatus`: connector status  
     }
