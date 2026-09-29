@@ -1357,6 +1357,23 @@ Examples:
   `responsesFailed`: failed responses payload array (optional)  
   }
 
+- **Meter Values**
+  - Request:  
+    `ProcedureName`: 'meterValues'  
+    `PDU`: {  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+    `connectorId` or `evseId`: meter connector id integer (>= 0, 0 designates the main power meter),  
+    `meterValue`: sampled values array, each entry an object with a `sampledValue` array  
+    }
+
+  - Response:  
+    `PDU`: {  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
+    }
+
 - **Start Transaction**
   - Request:  
     `ProcedureName`: 'startTransaction'  
@@ -1382,6 +1399,8 @@ Examples:
     `transactionId`: transaction id integer  
     }
 
+  The connector is resolved from the transaction, hence no connector identifier is sent.
+
   - Response:  
     `PDU`: {  
     `status`: 'success' | 'failure',  
@@ -1397,7 +1416,7 @@ Examples:
     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
     `connectorId`: connector id integer (>= 0, 0 designates the charging station main controller),  
     `evseId?`: EVSE id integer (>= 0, 0 designates the main power meter),  
-    `errorCode`: connector error code,  
+    `errorCode?`: connector error code (optional, absent from the OCPP 2.0.1 request),  
     `status` or `connectorStatus`: connector status  
     }
 

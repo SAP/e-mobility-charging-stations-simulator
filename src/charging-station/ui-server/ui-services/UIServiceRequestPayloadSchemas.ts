@@ -43,10 +43,13 @@ export const hashIdsField = z
 
 /**
  * OCPP PDU connector identifier, as used by the procedures whose OCPP message
- * carries one: `StatusNotification` (OCPP 1.6 §6.47: "Id '0' (zero) is used if
- * the status is for the Charge Point main controller") and `MeterValues`
- * (OCPP 1.6 §6.31 and OCPP 2.0.1 `MeterValuesRequest`: "'0' (zero) is used to
- * designate the main power meter"). Zero is therefore a first-class value.
+ * requires it.
+ *
+ * Spec ambiguity, flagged for the next maintainer: OCPP 1.6 edition 2
+ * declares FIELD TYPE `connectorId >= 0` but its DESCRIPTION reads "a number
+ * (>0) ... '0' designates the main power meter", and
+ * `docs/ocpp16/schemas/json/MeterValues.json` declares `{"type":"integer"}`
+ * with no minimum. The code follows the prose and accepts 0.
  */
 const connectorIdField = z
   .number()
@@ -83,8 +86,10 @@ export const connectorIdsField = z
   .optional()
   .describe('Target physical connector IDs')
 
-/** OCPP WebSocket URL, as accepted by the supervision endpoints. */
-const urlField = z.url()
+/**
+ * OCPP WebSocket URL, as accepted by the supervision endpoints.
+ */
+export const urlField = z.url()
 
 /** Supervision URL(s) of a charging station, single or array form. */
 const supervisionUrlsField = z.union([urlField, z.array(urlField)])
@@ -94,13 +99,13 @@ const supervisionUrlsField = z.union([urlField, z.array(urlField)])
  * the `user:password` credential (RFC 7617) and is refused, the same rule the
  * UI server applies to its own authentication username.
  */
-const supervisionUserField = z
+export const supervisionUserField = z
   .string()
   .regex(/^[^:]*$/, 'must not contain ":"')
   .describe('CSMS basic auth user used on the supervision WebSocket')
 
 /** Basic-auth password for the supervision WebSocket. */
-const supervisionPasswordField = z
+export const supervisionPasswordField = z
   .string()
   .describe('CSMS basic auth password used on the supervision WebSocket')
 
@@ -223,13 +228,19 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
     connectorId: physicalConnectorIdField,
     idTag: z.string().optional(),
   }),
-  // OCPP 1.6 §6.47 requires a connector status; OCPP 2.0.x sends `evseId`
-  // instead, and the station rejects a payload carrying neither.
+  // `evseId` is the EVSE identifier introduced by OCPP 2.0.x; `connectorId`
+  // stays required in both versions. The gate is version-blind because
+  // `UIMCPServer` spreads a single flat PDU, so the shared 1.6/2.0.x member is
+  // enforced and the version-specific one is merely passed through.
   [ProcedureName.STATUS_NOTIFICATION]: z
     .looseObject({
       ...broadcastFields,
       connectorId: connectorIdField,
       connectorStatus: z.string().optional(),
+      // OCPP 1.6 §6.47 requires `errorCode`, OCPP 2.0.1
+      // `StatusNotificationRequest.json` does not: the gate is version-blind,
+      // so it must stay optional or a valid 2.0.x client would be rejected.
+      errorCode: z.string().optional(),
       evseId: evseIdField.optional(),
       status: z.string().optional(),
     })
@@ -242,10 +253,11 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
   [ProcedureName.STOP_SIMULATOR]: z.looseObject({}),
   // OCPP 1.6 `StopTransaction.req` requires an integer transactionId, and
   // `handleStopTransaction` only ever dispatches to 1.6 stations. The connector
-  // is resolved from the transaction, so it is not a request field.
+  // is resolved from the transaction, so neither a connector nor an EVSE
+  // identifier is a request field: the worker never reads one and an unlisted
+  // PDU field merely passes through this loose object.
   [ProcedureName.STOP_TRANSACTION]: z.looseObject({
     ...broadcastFields,
-    evseId: evseIdField.optional(),
     transactionId: z.number().int(),
   }),
   [ProcedureName.TRANSACTION_EVENT]: broadcastSchema,
@@ -255,25 +267,54 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
   }),
 }
 
-/** Upper bound on the violations rendered by {@link formatIssues}. */
-const MAX_FORMATTED_ISSUES = 10
+/**
+ * Renders a Zod issue path as a log-safe dotted path, dropping array indices:
+ * `['hashIds', 3]` renders as `hashIds`, a path made of indices only as `[]`.
+ * @param issuePath - Zod issue path segments.
+ * @returns `<root>` for an empty path, otherwise the normalized dotted path.
+ */
+const renderIssuePath = (issuePath: readonly PropertyKey[]): string => {
+  if (isEmpty(issuePath)) {
+    return '<root>'
+  }
+  const properties = issuePath.filter(segment => typeof segment !== 'number')
+  return isEmpty(properties) ? '[]' : properties.map(segment => segment.toString()).join('.')
+}
 
 /**
- * Renders Zod issues as a single-line, log-safe description.
+ * Renders Zod issues as a single-line, log-safe description, grouped by
+ * top-level field.
+ *
+ * Grouping by the first path segment keeps the report bounded whatever the
+ * number of issues: the schemas are not recursive, so a payload yields at most
+ * one group per top-level field, each rendering the full path and message of
+ * its first violation plus a count of the others. A flat list truncated at a
+ * fixed number of issues instead hides whole fields, since an invalid array of
+ * 60 000 entries emits 60 000 paths and starves every field declared after it.
  * @param issues - Zod validation issues.
- * @returns Semicolon-separated `path: message` pairs for the first
- * `MAX_FORMATTED_ISSUES` violations, followed by a count of the remaining ones.
+ * @returns Semicolon-separated `path: message (+N more issue(s))` groups, in
+ * first-seen field order.
  */
 const formatIssues = (issues: readonly z.core.$ZodIssue[]): string => {
-  const rendered = issues
-    .slice(0, MAX_FORMATTED_ISSUES)
-    .map(issue => {
-      const path = isEmpty(issue.path) ? '<root>' : issue.path.join('.')
-      return `${path}: ${issue.message}`
-    })
+  const groups = new Map<string, { count: number; message: string; path: string }>()
+  for (const issue of issues) {
+    // An empty path (`.refine` on the root) has no first segment, hence the
+    // `<root>` group.
+    const field = renderIssuePath(issue.path.slice(0, 1))
+    const group = groups.get(field)
+    if (group) {
+      group.count++
+    } else {
+      groups.set(field, { count: 1, message: issue.message, path: renderIssuePath(issue.path) })
+    }
+  }
+  return [...groups.values()]
+    .map(({ count, message, path }) =>
+      count > 1
+        ? `${path}: ${message} (+${(count - 1).toString()} more issue(s))`
+        : `${path}: ${message}`
+    )
     .join('; ')
-  const remaining = issues.length - MAX_FORMATTED_ISSUES
-  return remaining > 0 ? `${rendered}; ...and ${remaining.toString()} more issue(s)` : rendered
 }
 
 /**

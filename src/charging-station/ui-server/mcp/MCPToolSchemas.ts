@@ -6,6 +6,9 @@ import {
   connectorIdsField as connectorIds,
   hashIdsField as hashIds,
   physicalConnectorIdField,
+  supervisionPasswordField,
+  supervisionUserField,
+  urlField,
 } from '../ui-services/UIServiceRequestPayloadSchemas.js'
 
 export interface MCPToolSchema {
@@ -307,16 +310,13 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
         'Set the OCPP server supervision URL and optionally the CSMS basic auth credentials for one or more charging stations',
       inputSchema: z.object({
         hashIds,
-        supervisionPassword: z
-          .string()
+        supervisionPassword: supervisionPasswordField
           .optional()
           .describe('CSMS basic auth password used on the supervision WebSocket'),
-        supervisionUser: z
-          .string()
-          .regex(/^[^:]*$/, 'must not contain ":"')
+        supervisionUser: supervisionUserField
           .optional()
           .describe('CSMS basic auth user used on the supervision WebSocket'),
-        url: z.url().describe('The OCPP server supervision URL to set'),
+        url: urlField.describe('The OCPP server supervision URL to set'),
       }),
     },
   ],
@@ -404,7 +404,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
           .record(z.string(), z.unknown())
           .optional()
           .describe('OCPP 1.6 StopTransaction payload'),
-        transactionId: z.number().int().optional().describe('Transaction ID to stop'),
+        transactionId: z.number().int().describe('Transaction ID to stop'),
       }),
     },
   ],

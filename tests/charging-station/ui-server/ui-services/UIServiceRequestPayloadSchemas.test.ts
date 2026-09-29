@@ -476,4 +476,153 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       service.stop()
     }
   })
+
+  await it('should require a connector status on statusNotification', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // Neither 1.6 `connectorStatus` nor 2.0.x `status` is present: the
+      // `.refine` branch must reject instead of letting the station fail.
+      assertRejectedWith(
+        await dispatchUntrustedPayload(service, ProcedureName.STATUS_NOTIFICATION, {
+          connectorId: 1,
+          hashIds: [TEST_HASH_ID],
+        }),
+        /at least one of "connectorStatus" or "status" is required/
+      )
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should accept statusNotification without errorCode and reject a mistyped one', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // `errorCode` is mandatory in OCPP 1.6 §6.47 but absent from the OCPP
+      // 2.0.1 request, and the gate is version-blind, so it stays optional.
+      for (const payload of [
+        { connectorId: 1, hashIds: [TEST_HASH_ID], status: 'Available' },
+        { connectorId: 1, errorCode: 'NoError', hashIds: [TEST_HASH_ID], status: 'Available' },
+      ]) {
+        const response = await dispatchUntrustedPayload(
+          service,
+          ProcedureName.STATUS_NOTIFICATION,
+          payload
+        )
+
+        assert.strictEqual(response, undefined)
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+      }
+      assertRejectedWith(
+        await dispatchUntrustedPayload(service, ProcedureName.STATUS_NOTIFICATION, {
+          connectorId: 1,
+          errorCode: 42,
+          hashIds: [TEST_HASH_ID],
+          status: 'Available',
+        }),
+        /errorCode/
+      )
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should ignore a foreign evseId on stopTransaction instead of rejecting it', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // The worker resolves the connector from the transaction and never reads
+      // an EVSE identifier, so the field is neither required nor interpreted.
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.STOP_TRANSACTION, {
+          evseId: 'foo',
+          hashIds: [TEST_HASH_ID],
+          transactionId: 1,
+        })
+      )
+
+      assert.strictEqual(response, undefined)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should reject a supervision user containing a colon', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // A colon would make the `user:password` credential of RFC 7617 ambiguous.
+      assertRejectedWith(
+        await dispatchUntrustedPayload(service, ProcedureName.SET_SUPERVISION_URL, {
+          hashIds: [TEST_HASH_ID],
+          supervisionUser: 'a:b',
+          url: 'ws://localhost:1/',
+        }),
+        /supervisionUser: must not contain ":"/
+      )
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should report every violated field, not the first ones only', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // 13 violations spread over `options` and `template`: a fixed cap on the
+      // number of rendered issues used to hide the trailing fields entirely.
+      const response = await dispatchUntrustedPayload(
+        service,
+        ProcedureName.ADD_CHARGING_STATIONS,
+        {
+          numberOfStations: 1,
+          options: {
+            autoRegister: 'yes',
+            autoStart: 'yes',
+            baseName: 1,
+            enableStatistics: 'yes',
+            fixedName: 'yes',
+            nameSuffix: 1,
+            ocppStrictCompliance: 'yes',
+            persistentConfiguration: 'yes',
+            stopTransactionsOnStopped: 'yes',
+            supervisionPassword: 1,
+            supervisionUrls: 1,
+            supervisionUser: 1,
+          },
+          template: 42,
+        }
+      )
+      const message = failureErrorMessage(response)
+
+      assert.match(message, /template: /)
+      assert.match(message, /\+11 more issue\(s\)/)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should bound the report when a station targeting array is entirely invalid', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // 20 000 invalid hashIds emit 20 000 issue paths but a single field: the
+      // report must stay one entry, not grow with the payload.
+      const message = failureErrorMessage(
+        await dispatchUntrustedPayload(service, ProcedureName.HEARTBEAT, {
+          hashIds: new Array<unknown>(20000).fill(42),
+        })
+      )
+
+      assert.match(message, /hashIds: /)
+      assert.match(message, /\+19999 more issue\(s\)/)
+    } finally {
+      service.stop()
+    }
+  })
 })
