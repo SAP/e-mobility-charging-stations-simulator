@@ -3,9 +3,9 @@ import { z } from 'zod'
 import { ProcedureName } from '../../../types/index.js'
 import {
   chargingStationOptionsSchema,
-  connectorIdField,
   connectorIdsField as connectorIds,
   hashIdsField as hashIds,
+  physicalConnectorIdField,
 } from '../ui-services/UIServiceRequestPayloadSchemas.js'
 
 export interface MCPToolSchema {
@@ -19,7 +19,7 @@ const broadcastInputSchema = z.object({
 })
 
 const connectorInputSchema = z.object({
-  connectorId: connectorIdField,
+  connectorId: physicalConnectorIdField,
   hashIds,
 })
 

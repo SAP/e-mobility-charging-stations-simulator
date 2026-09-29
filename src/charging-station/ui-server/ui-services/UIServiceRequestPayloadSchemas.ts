@@ -5,25 +5,30 @@
  * `AbstractUIService.requestHandler` so the WebSocket, HTTP and MCP transports
  * share one contract.
  *
- * Scope of validation: the fields the UI server itself interprets — station
- * targeting (`hashIds`, `connectorIds`, `connectorId`, `evseId`) and the
- * per-procedure control fields. OCPP PDU fields are deliberately NOT validated
- * here: they are merged into the outgoing request payload untouched and belong
- * to the OCPP layer, which validates them against the OCPP JSON schemas (AJV,
- * gated by `ocppStrictCompliance`) at send time. Every schema is therefore a
- * loose object, so an unlisted PDU field passes through instead of being
- * stripped or rejected.
+ * Scope of validation: the station targeting fields (`hashIds`, `connectorIds`,
+ * `connectorId`, `evseId`) and the per-procedure control fields the UI server
+ * itself interprets. The remaining OCPP PDU fields are deliberately NOT
+ * validated here: they are merged into the outgoing request payload untouched
+ * and belong to the OCPP layer, which validates them against the OCPP JSON
+ * schemas (AJV, gated by `ocppStrictCompliance`) at send time. Every schema is
+ * therefore a loose object, so an unlisted PDU field passes through instead of
+ * being stripped or rejected. A field the UI server does interpret is declared
+ * with a permissive-but-typed shape (e.g. `meterValue[].sampledValue` is
+ * checked to be an array, its members stay unknown) so a mistyped container is
+ * rejected once at the gate instead of failing per station.
  *
  * Relationship with `mcp/MCPToolSchemas.ts`: the MCP tool schemas describe the
  * LLM-facing *tool envelope* (`{ ocpp16Payload, ocpp20Payload }` wrappers) and
- * are consumed by the MCP SDK. The schemas here describe the *flat* payload of
- * the UI protocol, shared by all three transports. Both consume the same field
- * schemas exported below, so a field cannot mean two things.
+ * are consumed by the MCP SDK. `UIMCPServer` spreads the supplied OCPP payload
+ * into the flat UI payload before the gate runs, so both transports see the same
+ * flat fields. Both modules consume the same field schemas, so a field cannot
+ * mean two things.
  */
 
 import { z } from 'zod'
 
 import { ProcedureName } from '../../../types/index.js'
+import { isEmpty } from '../../../utils/index.js'
 
 /**
  * Station hash IDs targeting the request. An absent or empty array means
@@ -36,18 +41,68 @@ export const hashIdsField = z
   .optional()
   .describe('Target station hash IDs (omit for all stations)')
 
-export const connectorIdsField = z
-  .array(z.number().int().positive())
-  .optional()
-  .describe('Target connector IDs')
+/**
+ * OCPP PDU connector identifier, as used by the procedures whose OCPP message
+ * carries one: `StatusNotification` (OCPP 1.6 §6.47: "Id '0' (zero) is used if
+ * the status is for the Charge Point main controller") and `MeterValues`
+ * (OCPP 1.6 §6.31 and OCPP 2.0.1 `MeterValuesRequest`: "'0' (zero) is used to
+ * designate the main power meter"). Zero is therefore a first-class value.
+ */
+const connectorIdField = z
+  .number()
+  .int()
+  .nonnegative()
+  .describe('OCPP connector ID (0 designates the charge point main controller/meter)')
 
 /**
- * Connector 0 is the shared-power pseudo-connector: it carries no cable lock
- * and hosts no transaction, so it is not a valid target.
+ * OCPP PDU EVSE identifier, OCPP 2.0.x counterpart of {@link connectorIdField}.
+ * Zero designates the main power meter, hence the non-negative bound.
  */
-export const connectorIdField = z.number().int().positive().describe('Target connector ID')
+const evseIdField = z
+  .number()
+  .int()
+  .nonnegative()
+  .describe('OCPP EVSE ID (0 designates the main power meter)')
 
-export const evseIdField = z.number().int().positive().describe('Target EVSE ID')
+/**
+ * Physical connector identifier: an actual cable outlet. Connector 0 is the
+ * main controller / main meter pseudo-connector — it carries no cable lock and
+ * hosts no transaction — so procedures addressing a physical connector
+ * (`ChangeConfiguration` aside, `LockConnector`, `UnlockConnector`,
+ * `StartTransaction`: OCPP 1.6 §6.45 `connectorId > 0`) must reject it.
+ */
+export const physicalConnectorIdField = z
+  .number()
+  .int()
+  .positive()
+  .describe('Physical connector ID (must be greater than zero)')
+
+/** Physical connector IDs, each subject to {@link physicalConnectorIdField}. */
+export const connectorIdsField = z
+  .array(physicalConnectorIdField)
+  .optional()
+  .describe('Target physical connector IDs')
+
+/** OCPP WebSocket URL, as accepted by the supervision endpoints. */
+const urlField = z.url()
+
+/** Supervision URL(s) of a charging station, single or array form. */
+const supervisionUrlsField = z.union([urlField, z.array(urlField)])
+
+/**
+ * Basic-auth user for the supervision WebSocket. A colon would be ambiguous in
+ * the `user:password` credential (RFC 7617) and is refused, the same rule the
+ * UI server applies to its own authentication username.
+ */
+const supervisionUserField = z
+  .string()
+  .regex(/^[^:]*$/, 'must not contain ":"')
+  .describe('CSMS basic auth user used on the supervision WebSocket')
+
+/** Basic-auth password for the supervision WebSocket. */
+const supervisionPasswordField = z
+  .string()
+  .describe('CSMS basic auth password used on the supervision WebSocket')
 
 /** Overrides applied to charging stations created by `ADD_CHARGING_STATIONS`. */
 export const chargingStationOptionsSchema = z.object({
@@ -80,31 +135,23 @@ export const chargingStationOptionsSchema = z.object({
     .boolean()
     .optional()
     .describe('Enable stop transactions on station stop'),
-  supervisionPassword: z
-    .string()
-    .optional()
-    .describe('CSMS basic auth password used on the supervision WebSocket'),
-  supervisionUrls: z
-    .union([z.url(), z.array(z.url())])
-    .optional()
-    .describe('OCPP server supervision URL(s)'),
-  supervisionUser: z
-    .string()
-    .regex(/^[^:]*$/, 'must not contain ":"')
-    .optional()
-    .describe('CSMS basic auth user used on the supervision WebSocket'),
+  supervisionPassword: supervisionPasswordField.optional(),
+  supervisionUrls: supervisionUrlsField.optional().describe('OCPP server supervision URL(s)'),
+  supervisionUser: supervisionUserField.optional(),
 })
 
 /** Fields shared by every broadcast procedure. */
 const broadcastFields = { connectorIds: connectorIdsField, hashIds: hashIdsField } as const
 
 /**
- * A broadcast procedure whose payload carries only OCPP PDU fields on top of
- * the targeting fields. Nothing else is interpreted by the UI server.
+ * Every broadcast procedure shares this shape: only the station targeting
+ * fields are interpreted by the UI server, whatever OCPP PDU fields the caller
+ * adds. A single schema serves both the OCPP-carrying procedures
+ * (`AUTHORIZE`, `BOOT_NOTIFICATION`, ...) and the transport-only ones
+ * (`CLOSE_CONNECTION`, `HEARTBEAT`, `OPEN_CONNECTION`, `START_CHARGING_STATION`,
+ * `STOP_CHARGING_STATION`): the loose object makes the distinction a naming
+ * concern, not a behavioral one.
  */
-const ocppBroadcastSchema = z.looseObject(broadcastFields)
-
-/** A procedure whose payload carries no field the UI server interprets. */
 const broadcastSchema = z.looseObject(broadcastFields)
 
 /**
@@ -113,98 +160,121 @@ const broadcastSchema = z.looseObject(broadcastFields)
  * Typed as a total `Record` over `ProcedureName`: adding a procedure to the
  * enum without declaring its payload shape is a compile-time error.
  */
-export const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>> = {
+const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>> = {
   [ProcedureName.ADD_CHARGING_STATIONS]: z.looseObject({
     numberOfStations: z.number().int().positive(),
     options: chargingStationOptionsSchema.optional(),
     template: z.string(),
   }),
-  [ProcedureName.AUTHORIZE]: ocppBroadcastSchema,
-  [ProcedureName.BOOT_NOTIFICATION]: ocppBroadcastSchema,
+  [ProcedureName.AUTHORIZE]: broadcastSchema,
+  [ProcedureName.BOOT_NOTIFICATION]: broadcastSchema,
   [ProcedureName.CHANGE_CONFIGURATION]: z.looseObject({
     ...broadcastFields,
     key: z.string().min(1),
     value: z.string(),
   }),
   [ProcedureName.CLOSE_CONNECTION]: broadcastSchema,
-  [ProcedureName.DATA_TRANSFER]: ocppBroadcastSchema,
+  [ProcedureName.DATA_TRANSFER]: broadcastSchema,
   [ProcedureName.DELETE_CHARGING_STATIONS]: z.looseObject({
     ...broadcastFields,
     deleteConfiguration: z.boolean().optional(),
   }),
-  [ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION]: ocppBroadcastSchema,
-  [ProcedureName.FIRMWARE_STATUS_NOTIFICATION]: ocppBroadcastSchema,
-  [ProcedureName.GET_15118_EV_CERTIFICATE]: ocppBroadcastSchema,
-  [ProcedureName.GET_CERTIFICATE_STATUS]: ocppBroadcastSchema,
+  [ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION]: broadcastSchema,
+  [ProcedureName.FIRMWARE_STATUS_NOTIFICATION]: broadcastSchema,
+  [ProcedureName.GET_15118_EV_CERTIFICATE]: broadcastSchema,
+  [ProcedureName.GET_CERTIFICATE_STATUS]: broadcastSchema,
   [ProcedureName.HEARTBEAT]: broadcastSchema,
   [ProcedureName.LIST_CHARGING_STATIONS]: z.looseObject({}),
   [ProcedureName.LIST_TEMPLATES]: z.looseObject({}),
   [ProcedureName.LOCK_CONNECTOR]: z.looseObject({
     ...broadcastFields,
-    connectorId: connectorIdField,
+    connectorId: physicalConnectorIdField,
   }),
-  [ProcedureName.LOG_STATUS_NOTIFICATION]: ocppBroadcastSchema,
+  [ProcedureName.LOG_STATUS_NOTIFICATION]: broadcastSchema,
+  // `meterValue` and its `sampledValue` entries are forwarded to the OCPP layer;
+  // only their container types are checked, so a scalar instead of a list is
+  // rejected once at the gate rather than per station.
   [ProcedureName.METER_VALUES]: z.looseObject({
     ...broadcastFields,
     connectorId: connectorIdField.optional(),
     evseId: evseIdField.optional(),
-    meterValue: z.array(z.unknown()).optional(),
+    meterValue: z
+      .array(z.looseObject({ sampledValue: z.array(z.unknown()).optional() }))
+      .optional(),
   }),
-  [ProcedureName.NOTIFY_CUSTOMER_INFORMATION]: ocppBroadcastSchema,
-  [ProcedureName.NOTIFY_REPORT]: ocppBroadcastSchema,
+  [ProcedureName.NOTIFY_CUSTOMER_INFORMATION]: broadcastSchema,
+  [ProcedureName.NOTIFY_REPORT]: broadcastSchema,
   [ProcedureName.OPEN_CONNECTION]: broadcastSchema,
   [ProcedureName.PERFORMANCE_STATISTICS]: z.looseObject({}),
-  [ProcedureName.SECURITY_EVENT_NOTIFICATION]: ocppBroadcastSchema,
+  [ProcedureName.SECURITY_EVENT_NOTIFICATION]: broadcastSchema,
   [ProcedureName.SET_SUPERVISION_URL]: z.looseObject({
     ...broadcastFields,
-    supervisionPassword: z.string().optional(),
-    supervisionUser: z.string().optional(),
-    url: z.url(),
+    supervisionPassword: supervisionPasswordField.optional(),
+    supervisionUser: supervisionUserField.optional(),
+    url: urlField,
   }),
-  [ProcedureName.SIGN_CERTIFICATE]: ocppBroadcastSchema,
+  [ProcedureName.SIGN_CERTIFICATE]: broadcastSchema,
   [ProcedureName.SIMULATOR_STATE]: z.looseObject({}),
   [ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(broadcastFields),
   [ProcedureName.START_CHARGING_STATION]: broadcastSchema,
   [ProcedureName.START_SIMULATOR]: z.looseObject({}),
   [ProcedureName.START_TRANSACTION]: z.looseObject({
     ...broadcastFields,
-    connectorId: connectorIdField,
+    connectorId: physicalConnectorIdField,
     idTag: z.string().optional(),
   }),
-  [ProcedureName.STATUS_NOTIFICATION]: z.looseObject({
-    ...broadcastFields,
-    connectorId: connectorIdField,
-  }),
+  // OCPP 1.6 §6.47 requires a connector status; OCPP 2.0.x sends `evseId`
+  // instead, and the station rejects a payload carrying neither.
+  [ProcedureName.STATUS_NOTIFICATION]: z
+    .looseObject({
+      ...broadcastFields,
+      connectorId: connectorIdField,
+      connectorStatus: z.string().optional(),
+      evseId: evseIdField.optional(),
+      status: z.string().optional(),
+    })
+    .refine(payload => payload.connectorStatus != null || payload.status != null, {
+      message: 'at least one of "connectorStatus" or "status" is required',
+      path: [],
+    }),
   [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(broadcastFields),
   [ProcedureName.STOP_CHARGING_STATION]: broadcastSchema,
   [ProcedureName.STOP_SIMULATOR]: z.looseObject({}),
-  // OCPP 1.6 requires an integer transactionId; 2.0.x uses a string. The value
-  // is forwarded to the OCPP layer unchanged, which owns that distinction.
-  // The connector is resolved from the transaction, so it is not a request field.
+  // OCPP 1.6 `StopTransaction.req` requires an integer transactionId, and
+  // `handleStopTransaction` only ever dispatches to 1.6 stations. The connector
+  // is resolved from the transaction, so it is not a request field.
   [ProcedureName.STOP_TRANSACTION]: z.looseObject({
     ...broadcastFields,
     evseId: evseIdField.optional(),
-    transactionId: z.union([z.number().int(), z.string()]),
+    transactionId: z.number().int(),
   }),
-  [ProcedureName.TRANSACTION_EVENT]: ocppBroadcastSchema,
+  [ProcedureName.TRANSACTION_EVENT]: broadcastSchema,
   [ProcedureName.UNLOCK_CONNECTOR]: z.looseObject({
     ...broadcastFields,
-    connectorId: connectorIdField,
+    connectorId: physicalConnectorIdField,
   }),
 }
+
+/** Upper bound on the violations rendered by {@link formatIssues}. */
+const MAX_FORMATTED_ISSUES = 10
 
 /**
  * Renders Zod issues as a single-line, log-safe description.
  * @param issues - Zod validation issues.
- * @returns Semicolon-separated `path: message` pairs.
+ * @returns Semicolon-separated `path: message` pairs for the first
+ * `MAX_FORMATTED_ISSUES` violations, followed by a count of the remaining ones.
  */
-const formatIssues = (issues: readonly z.core.$ZodIssue[]): string =>
-  issues
+const formatIssues = (issues: readonly z.core.$ZodIssue[]): string => {
+  const rendered = issues
+    .slice(0, MAX_FORMATTED_ISSUES)
     .map(issue => {
-      const path = issue.path.length === 0 ? '<root>' : issue.path.join('.')
+      const path = isEmpty(issue.path) ? '<root>' : issue.path.join('.')
       return `${path}: ${issue.message}`
     })
     .join('; ')
+  const remaining = issues.length - MAX_FORMATTED_ISSUES
+  return remaining > 0 ? `${rendered}; ...and ${remaining.toString()} more issue(s)` : rendered
+}
 
 /**
  * Validates a UI protocol request payload against the canonical schema of its

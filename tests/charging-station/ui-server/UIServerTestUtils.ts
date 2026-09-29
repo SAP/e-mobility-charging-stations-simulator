@@ -21,7 +21,6 @@ import type {
   ProcedureName,
   ProtocolRequest,
   ProtocolResponse,
-  ProtocolVersion,
   RequestPayload,
   UIServerConfiguration,
   UUIDv4,
@@ -34,10 +33,11 @@ import {
   ApplicationProtocolVersion,
   AuthenticationType,
   type OCPPVersion,
+  ProtocolVersion,
   ResponseStatus,
 } from '../../../src/types/index.js'
 import { MockWebSocket } from '../mocks/MockWebSocket.js'
-import { TEST_UUID } from './UIServerTestConstants.js'
+import { TEST_HASH_ID, TEST_HASH_ID_2, TEST_UUID } from './UIServerTestConstants.js'
 
 export const createMockBootstrap = (): IBootstrap => ({
   addChargingStation: () => Promise.resolve(undefined),
@@ -235,6 +235,29 @@ export const createMockUIServerConfigurationWithAuth = (
     },
     ...overrides,
   })
+}
+
+/**
+ * Build a UI service context with `stationCount` live stations registered, so
+ * a request that degrades to a broadcast is observable through the
+ * outstanding responder count.
+ * @param stationCount - Number of stations to register (1 or 2 supported).
+ * @returns Server and registered UI service.
+ */
+export const createServiceContext = (
+  stationCount: 1 | 2 = 1
+): { readonly server: TestableUIWebSocketServer; readonly service: AbstractUIService } => {
+  const server = new TestableUIWebSocketServer(createMockUIServerConfiguration())
+  server.testRegisterProtocolVersionUIService(ProtocolVersion['0.0.1'])
+  const hashIds = stationCount === 1 ? [TEST_HASH_ID] : [TEST_HASH_ID, TEST_HASH_ID_2]
+  for (const hashId of hashIds) {
+    server.setChargingStationData(hashId, createMockChargingStationData(hashId))
+  }
+  const service = server.getUIService(ProtocolVersion['0.0.1'])
+  if (service == null) {
+    assert.fail('Expected UI service to be registered')
+  }
+  return { server, service }
 }
 
 export class MockServerResponse extends EventEmitter {

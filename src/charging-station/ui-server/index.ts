@@ -29,6 +29,9 @@
  *     transport-agnostic enum surfaced through this barrel.
  *   - `ui-services/UIService001` / `ui-services/UIServiceFactory` concrete
  *     implementations — internal to `AbstractUIService`.
+ *   - `ui-services/UIServiceRequestPayloadSchemas` — internal to
+ *     `AbstractUIService` (gate) and `mcp/MCPToolSchemas` (tool contract);
+ *     deliberately not surfaced as a public surface.
  */
 export type { AbstractUIServer } from './AbstractUIServer.js'
 export {
