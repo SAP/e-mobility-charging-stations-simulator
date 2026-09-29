@@ -9,7 +9,8 @@
  * `connectorIds`, `connectorId`, `evseId`) and the control fields the UI server
  * or its worker reads: `key`/`value`, `meterValue`, `status`,
  * `connectorStatus`, `errorCode`, `transactionId`, `url`, `template`,
- * `numberOfStations`, `options`, `deleteConfiguration`, `idTag`. A declared
+ * `numberOfStations`, `options`, `deleteConfiguration`, `idTag`,
+ * `supervisionUser`, `supervisionPassword`. A declared
  * field is typed, so a mistyped container is rejected once at the gate instead
  * of once per station; a permissive-but-typed one is checked for its container
  * and its members stay unknown.
@@ -71,7 +72,7 @@ const connectorIdField = z
  *
  * Its meaning depends on the carrying message, and only `MeterValuesRequest`
  * gives 0 a special role — "0 designates the main power meter"
- * (`docs/ocpp2/OCPP-2.0.1_edition3_part2_specification.md` §1.31.1).
+ * (`docs/ocpp2/OCPP-2.0.1_edition3_part2_specification.md` §1.32.1).
  * `StatusNotificationRequest.evseId` (§1.59.1) is only "the id of the EVSE to
  * which the connector belongs" and defines no zero. Since one field serves both
  * messages, the shared bound is non-negative: it admits the documented 0 of
@@ -85,17 +86,27 @@ const evseIdField = z
   .describe('OCPP EVSE ID (0 designates the main power meter in MeterValues only)')
 
 /**
- * Physical connector identifier: an actual cable outlet. Connector 0 is the
- * main controller / main meter pseudo-connector — it carries no cable lock and
- * hosts no transaction — so procedures addressing a physical connector
- * (`ChangeConfiguration` aside, `LockConnector`, `UnlockConnector`,
- * `StartTransaction`: OCPP 1.6 §6.45 `connectorId > 0`) must reject it.
+ * Connector identifier that the OCPP 1.6 core specification requires to be
+ * strictly positive, used only for the procedures that can actually carry a
+ * transaction or a cable lock.
+ *
+ * The bound is specification-backed **per procedure**, not per semantic class:
+ * - `StartTransaction` — `docs/ocpp16/ocpp-1.6 edition 2.md` §6.45,
+ *   `connectorId > 0`, cardinality `1..1`.
+ * - `UnlockConnector` — same document §6.53, `connectorId > 0`, cardinality
+ *   `1..1`.
+ *
+ * It is deliberately NOT applied to `LockConnector`: that message does not
+ * exist in the OCPP 1.6 core document (`grep -c LockConnector` returns 0) and
+ * ships no JSON schema, being an OCA addendum. The simulator treats a zero
+ * target there as a logged no-op (`ChargingStation.lockConnector`), so
+ * bounding it would be a behavior change this project never asked for.
  */
 export const physicalConnectorIdField = z
   .number()
   .int()
   .positive()
-  .describe('Physical connector ID (must be greater than zero)')
+  .describe('Connector ID required to be > 0 by OCPP 1.6 §6.45 / §6.53')
 
 /** Physical connector IDs, each subject to {@link physicalConnectorIdField}. */
 export const connectorIdsField = z
@@ -124,9 +135,25 @@ export const urlField = z.url()
 const supervisionUrlsField = z.union([urlField, z.array(urlField)])
 
 /**
- * Basic-auth user for the supervision WebSocket. A colon would be ambiguous in
- * the `user:password` credential (RFC 7617) and is refused, the same rule the
- * UI server applies to its own authentication username.
+ * Basic-auth user as it may appear in a station template or a
+ * `ADD_CHARGING_STATIONS` option.
+ *
+ * No RFC 7617 colon rule here, on purpose: `TemplateSchema` accepts any string
+ * and `ChargingStation.openWSConnection` deliberately degrades a colon-bearing
+ * user to a warning with the auth omitted rather than failing the station.
+ * A gate stricter than the template would make the same configuration value
+ * load from a file but be rejected over the API. The strict variant lives on
+ * {@link supervisionUserField}, for values the operator types explicitly.
+ */
+const supervisionUserOptionField = z
+  .string()
+  .describe('CSMS basic auth user used on the supervision WebSocket')
+
+/**
+ * Basic-auth user typed explicitly by an operator through
+ * `SET_SUPERVISION_URL`. A colon would be ambiguous in the `user:password`
+ * credential (RFC 7617) and is refused here rather than silently downgraded to
+ * an unauthenticated connection.
  */
 export const supervisionUserField = z
   .string()
@@ -171,11 +198,21 @@ export const chargingStationOptionsSchema = z.object({
     .describe('Enable stop transactions on station stop'),
   supervisionPassword: supervisionPasswordField.optional(),
   supervisionUrls: supervisionUrlsField.optional().describe('OCPP server supervision URL(s)'),
-  supervisionUser: supervisionUserField.optional(),
+  supervisionUser: supervisionUserOptionField.optional(),
 })
 
-/** Fields shared by every broadcast procedure. */
-const broadcastFields = { connectorIds: connectorIdsField, hashIds: hashIdsField } as const
+/**
+ * Station targeting fields shared by every broadcast procedure.
+ *
+ * `connectorIds` is deliberately absent: the worker only reads it for the
+ * automatic transaction generator and strips it from every other request
+ * (`ChargingStationWorkerBroadcastChannel.cleanRequestPayload`). Declaring it
+ * here would reject payloads the server already accepted and then discarded.
+ */
+const broadcastFields = { hashIds: hashIdsField } as const
+
+/** Targeting fields of the two automatic transaction generator procedures. */
+const atgTargetFields = { connectorIds: connectorIdsField, hashIds: hashIdsField } as const
 
 /**
  * Every broadcast procedure shares this shape: only the station targeting
@@ -222,7 +259,7 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
   [ProcedureName.LIST_TEMPLATES]: z.looseObject({}),
   [ProcedureName.LOCK_CONNECTOR]: z.looseObject({
     ...broadcastFields,
-    connectorId: physicalConnectorIdField,
+    connectorId: connectorIdField,
   }),
   [ProcedureName.LOG_STATUS_NOTIFICATION]: broadcastSchema,
   // `meterValue` and its `sampledValue` entries are forwarded to the OCPP layer;
@@ -261,7 +298,7 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
   }),
   [ProcedureName.SIGN_CERTIFICATE]: broadcastSchema,
   [ProcedureName.SIMULATOR_STATE]: z.looseObject({}),
-  [ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(broadcastFields),
+  [ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(atgTargetFields),
   [ProcedureName.START_CHARGING_STATION]: broadcastSchema,
   [ProcedureName.START_SIMULATOR]: z.looseObject({}),
   [ProcedureName.START_TRANSACTION]: z.looseObject({
@@ -289,7 +326,7 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
       message: 'at least one of "connectorStatus" or "status" is required',
       path: [],
     }),
-  [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(broadcastFields),
+  [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(atgTargetFields),
   [ProcedureName.STOP_CHARGING_STATION]: broadcastSchema,
   [ProcedureName.STOP_SIMULATOR]: z.looseObject({}),
   // OCPP 1.6 `StopTransaction.req` requires an integer transactionId, and

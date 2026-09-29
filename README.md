@@ -1288,7 +1288,7 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'lockConnector'  
   `PDU`: {  
   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorId`: physical connector id integer (>= 1)  
+  `connectorId`: connector id integer (>= 0; 0 is the main controller, which holds no cable lock)  
   }
 
 - Response:  

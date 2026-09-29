@@ -312,14 +312,17 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       service.stop()
     }
   })
-  await it('should reject the main controller pseudo-connector for a physical connector target', async () => {
+  await it('should reject connector 0 where OCPP 1.6 mandates a strictly positive connector', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // Connector 0 is not an outlet: `ChargingStation.lockConnector` treats it
-      // as a no-op and `StartTransaction` requires connectorId > 0, so both
-      // procedures must refuse it rather than let each station fail.
-      for (const procedureName of [ProcedureName.LOCK_CONNECTOR, ProcedureName.START_TRANSACTION]) {
+      // §6.45 (StartTransaction) and §6.53 (UnlockConnector) both declare
+      // `connectorId > 0` with cardinality 1..1, so these two must refuse the
+      // main controller pseudo-connector rather than let each station fail.
+      for (const procedureName of [
+        ProcedureName.START_TRANSACTION,
+        ProcedureName.UNLOCK_CONNECTOR,
+      ]) {
         assertRejectedWith(
           await dispatchUntrustedPayload(service, procedureName, {
             connectorId: 0,
@@ -329,6 +332,100 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
         )
       }
       assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should accept connector 0 for lockConnector, absent any specification bound', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // LockConnector is an OCA addendum: it is absent from the OCPP 1.6 core
+      // document and ships no JSON schema, so nothing mandates a positive bound.
+      // `ChargingStation.lockConnector` handles 0 as a logged no-op, and the
+      // gate must not narrow the accepted set beyond what the project already
+      // accepted.
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.LOCK_CONNECTOR, {
+          connectorId: 0,
+          hashIds: [TEST_HASH_ID],
+        })
+      )
+
+      assert.strictEqual(response, undefined)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should bound connectorIds only where the worker reads it', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // `ChargingStationWorkerBroadcastChannel.cleanRequestPayload` strips
+      // `connectorIds` from every command except the two automatic transaction
+      // generator ones, so the gate must type it only there: bounding it
+      // elsewhere would reject a payload the server already accepted and then
+      // discarded.
+      assertRejectedWith(
+        await dispatchUntrustedPayload(
+          service,
+          ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
+          {
+            connectorIds: [0],
+          }
+        ),
+        /connectorIds/
+      )
+
+      for (const procedureName of [ProcedureName.BOOT_NOTIFICATION, ProcedureName.HEARTBEAT]) {
+        const response = await service.requestHandler(
+          createProtocolRequest(TEST_UUID, procedureName, {
+            connectorIds: [0],
+            hashIds: [TEST_HASH_ID],
+          })
+        )
+
+        assert.strictEqual(response, undefined)
+      }
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should accept a colon-bearing supervision user in a station option', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      // `TemplateSchema` accepts any string and `openWSConnection` degrades a
+      // colon-bearing user to a warning with the auth omitted. Bounding the
+      // option more strictly than the template would make one configuration
+      // value load from a file but be rejected over the API.
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.ADD_CHARGING_STATIONS, {
+          numberOfStations: 1,
+          options: { supervisionUser: 'dom:admin' },
+          template: 'test.station-template',
+        })
+      )
+
+      assert.notStrictEqual(response, undefined)
+      if (response == null) return
+      const [, responsePayload] = response
+      const { errorMessage } = responsePayload
+      if (typeof errorMessage !== 'string') {
+        assert.fail('Expected a string errorMessage')
+      }
+      // The station does not exist in this context, so the request still
+      // fails downstream; what matters is that it fails for that reason and
+      // not on the colon rule.
+      assert.doesNotMatch(
+        errorMessage,
+        /supervisionUser/,
+        'the colon rule must not apply to a station option'
+      )
     } finally {
       service.stop()
     }
