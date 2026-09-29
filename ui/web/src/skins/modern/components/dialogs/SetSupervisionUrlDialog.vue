@@ -47,7 +47,8 @@
           placeholder="Password"
         >
         <span class="modern-form__hint">
-          Credentials are sent verbatim; leaving username or password empty clears the stored value.
+          Unchanged credentials are kept as they are. Clear a field to remove the stored value. The
+          username must not contain &quot;:&quot; (RFC 7617).
         </span>
       </div>
       <label class="modern-form__check">
