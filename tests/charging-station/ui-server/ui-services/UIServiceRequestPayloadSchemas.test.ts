@@ -219,6 +219,97 @@ await describe('AbstractUIService request payload validation', async () => {
     }
   })
 
+  await it('should require a connector target for startTransaction', async () => {
+    const { service } = createServiceContext()
+
+    try {
+      // `handleStartTransaction` requires connectorId; the gate must reject it
+      // once instead of letting a per-station failure surface the omission.
+      assertRejectedWith(
+        await dispatchUntrustedPayload(service, ProcedureName.START_TRANSACTION, {
+          hashIds: [TEST_HASH_ID],
+        }),
+        /connectorId/
+      )
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should require a connector target for statusNotification', async () => {
+    const { service } = createServiceContext()
+
+    try {
+      // `handleStatusNotification` requires connectorId for the same reason.
+      assertRejectedWith(
+        await dispatchUntrustedPayload(service, ProcedureName.STATUS_NOTIFICATION, {
+          hashIds: [TEST_HASH_ID],
+          status: 'Available',
+        }),
+        /connectorId/
+      )
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should reject a non-URL supervision url like the MCP tool contract does', async () => {
+    const { service } = createServiceContext()
+
+    try {
+      // The MCP schema has always required a real URL. Without the same rule
+      // here, WebSocket and HTTP accepted values the tool contract rejects.
+      assertRejectedWith(
+        await dispatchUntrustedPayload(service, ProcedureName.SET_SUPERVISION_URL, {
+          hashIds: [TEST_HASH_ID],
+          url: 'not-a-url',
+        }),
+        /url/
+      )
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should accept a websocket supervision url', async () => {
+    const { service } = createServiceContext()
+
+    try {
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.SET_SUPERVISION_URL, {
+          hashIds: [TEST_HASH_ID],
+          url: 'ws://localhost:9999/OCPP16',
+        })
+      )
+
+      assert.strictEqual(response, undefined)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should require a transactionId for stopTransaction', async () => {
+    const { service } = createServiceContext()
+
+    try {
+      // `handleStopTransaction` resolves the connector from the transaction, so
+      // transactionId is the required field, not connectorId.
+      assertRejectedWith(
+        await dispatchUntrustedPayload(service, ProcedureName.STOP_TRANSACTION, {
+          hashIds: [TEST_HASH_ID],
+        }),
+        /transactionId/
+      )
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
   await it('should keep reporting an unknown procedure as unimplemented', async () => {
     const { service } = createServiceContext()
 

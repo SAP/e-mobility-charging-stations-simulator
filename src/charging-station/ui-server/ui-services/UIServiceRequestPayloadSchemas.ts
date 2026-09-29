@@ -159,25 +159,32 @@ export const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.Zo
     ...broadcastFields,
     supervisionPassword: z.string().optional(),
     supervisionUser: z.string().optional(),
-    url: z.string().min(1),
+    url: z.url(),
   }),
   [ProcedureName.SIGN_CERTIFICATE]: ocppBroadcastSchema,
   [ProcedureName.SIMULATOR_STATE]: z.looseObject({}),
   [ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(broadcastFields),
   [ProcedureName.START_CHARGING_STATION]: broadcastSchema,
   [ProcedureName.START_SIMULATOR]: z.looseObject({}),
-  [ProcedureName.START_TRANSACTION]: ocppBroadcastSchema,
-  [ProcedureName.STATUS_NOTIFICATION]: ocppBroadcastSchema,
+  [ProcedureName.START_TRANSACTION]: z.looseObject({
+    ...broadcastFields,
+    connectorId: connectorIdField,
+    idTag: z.string().optional(),
+  }),
+  [ProcedureName.STATUS_NOTIFICATION]: z.looseObject({
+    ...broadcastFields,
+    connectorId: connectorIdField,
+  }),
   [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(broadcastFields),
   [ProcedureName.STOP_CHARGING_STATION]: broadcastSchema,
   [ProcedureName.STOP_SIMULATOR]: z.looseObject({}),
   // OCPP 1.6 requires an integer transactionId; 2.0.x uses a string. The value
   // is forwarded to the OCPP layer unchanged, which owns that distinction.
+  // The connector is resolved from the transaction, so it is not a request field.
   [ProcedureName.STOP_TRANSACTION]: z.looseObject({
     ...broadcastFields,
-    connectorId: connectorIdField.optional(),
     evseId: evseIdField.optional(),
-    transactionId: z.union([z.number().int(), z.string()]).optional(),
+    transactionId: z.union([z.number().int(), z.string()]),
   }),
   [ProcedureName.TRANSACTION_EVENT]: ocppBroadcastSchema,
   [ProcedureName.UNLOCK_CONNECTOR]: z.looseObject({
