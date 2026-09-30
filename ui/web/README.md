@@ -19,7 +19,6 @@ Vue.js dashboard for monitoring and controlling the e-mobility charging stations
     - [Single server](#single-server)
     - [Multiple servers](#multiple-servers)
   - [Configuration reference](#configuration-reference)
-- [Supervision URL form](#supervision-url-form)
 - [Theming](#theming)
 - [Skins](#skins)
 - [Getting started](#getting-started)
@@ -136,12 +135,6 @@ The `uiServer` field accepts an array to connect to multiple simulator instances
 | `authentication.type`     | `"protocol-basic-auth"` | No       | Authentication method                     |
 | `authentication.username` | `string`                | No       | Basic auth username                       |
 | `authentication.password` | `string`                | No       | Basic auth password                       |
-
-## Supervision URL form
-
-Both skins reject submitted usernames containing `:` before sending any update and keep the form open with a username-specific error. Passwords may contain `:`.
-
-The modern skin preserves unchanged credentials, including inherited usernames containing `:`; clearing a nonempty field removes the stored value. The classic skin starts with empty fields, which clear the corresponding stored credentials when submitted.
 
 ## Theming
 
