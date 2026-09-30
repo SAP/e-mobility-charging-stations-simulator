@@ -77,12 +77,17 @@ export function useSetUrlForm (
       $toast.error('Supervision url is required')
       return false
     }
+    const supervisionUser = credentialToSubmit('supervisionUser', formState.value.supervisionUser)
+    if (supervisionUser?.includes(':') === true) {
+      $toast.error('Supervision username must not contain ":"')
+      return false
+    }
     pending.value = true
     try {
       await $uiClient.setSupervisionUrl(
         hashId,
         formState.value.supervisionUrl,
-        credentialToSubmit('supervisionUser', formState.value.supervisionUser),
+        supervisionUser,
         credentialToSubmit('supervisionPassword', formState.value.supervisionPassword)
       )
       $toast.success('Supervision url successfully set')
