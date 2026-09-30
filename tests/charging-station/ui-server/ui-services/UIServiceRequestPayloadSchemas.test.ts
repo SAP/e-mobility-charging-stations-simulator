@@ -1,9 +1,7 @@
 /**
  * @file Tests for UI service request payload validation
- * @description Regression tests for the transport-independent payload gate in
- * `AbstractUIService.requestHandler`. The transports only guarantee the frame
- * shape, so every assertion here goes through the service dispatch point — the
- * same entry used by the WebSocket, HTTP and MCP transports.
+ * @description Exercises the shared flat-payload gate through the service
+ * dispatch point used by HTTP, WebSocket and MCP after transport validation.
  */
 
 import assert from 'node:assert/strict'
@@ -36,8 +34,7 @@ const dispatchUntrustedPayload = async (
   await service.requestHandler([TEST_UUID, procedureName, payload as RequestPayload])
 
 /**
- * Extract the error message of a rejection response, asserting every
- * intermediate invariant rather than returning early on it.
+ * Returns the rejection message, asserting a synchronous failure response.
  * @param response - Protocol response returned by the dispatch.
  * @returns The reported error message.
  */
@@ -53,8 +50,7 @@ const failureErrorMessage = (response: ProtocolResponse | undefined): string => 
 }
 
 /**
- * Assert that a dispatch was rejected before reaching the stations, and that it
- * described the expected violation.
+ * Asserts a failure response describing the expected violation.
  * @param response - Protocol response returned by the dispatch.
  * @param expectedViolation - Pattern the reported violation must match.
  */
@@ -163,8 +159,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // Previously forwarded to the worker as an unchecked `as boolean` cast,
-      // where any truthy value deleted the persisted configuration.
+      // A truthy non-boolean must not authorize deleting persisted configuration.
       const response = await dispatchUntrustedPayload(
         service,
         ProcedureName.DELETE_CHARGING_STATIONS,
@@ -244,8 +239,6 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // The MCP schema has always required a real URL. Without the same rule
-      // here, WebSocket and HTTP accepted values the tool contract rejects.
       assertRejectedWith(
         await dispatchUntrustedPayload(service, ProcedureName.SET_SUPERVISION_URL, {
           hashIds: [TEST_HASH_ID],
@@ -316,9 +309,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // §6.45 (StartTransaction) and §6.53 (UnlockConnector) both declare
-      // `connectorId > 0` with cardinality 1..1, so these two must refuse the
-      // main controller pseudo-connector rather than let each station fail.
+      // OCPP 1.6 §6.45 and §6.53 require physical connector IDs (> 0).
       for (const procedureName of [
         ProcedureName.START_TRANSACTION,
         ProcedureName.UNLOCK_CONNECTOR,
@@ -341,11 +332,8 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // LockConnector is an OCA addendum: it is absent from the OCPP 1.6 core
-      // document and ships no JSON schema, so nothing mandates a positive bound.
-      // `ChargingStation.lockConnector` handles 0 as a logged no-op, and the
-      // gate must not narrow the accepted set beyond what the project already
-      // accepted.
+      // The worker treats controller target 0 as a logged no-op; the flat gate
+      // must preserve that accepted target.
       const response = await service.requestHandler(
         createProtocolRequest(TEST_UUID, ProcedureName.LOCK_CONNECTOR, {
           connectorId: 0,
@@ -364,11 +352,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // `ChargingStationWorkerBroadcastChannel.cleanRequestPayload` strips
-      // `connectorIds` from every command except the two automatic transaction
-      // generator ones, so the gate must type it only there: bounding it
-      // elsewhere would reject a payload the server already accepted and then
-      // discarded.
+      // Workers discard connectorIds outside ATG, so only ATG validates it.
       assertRejectedWith(
         await dispatchUntrustedPayload(
           service,
@@ -399,10 +383,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // `TemplateSchema` accepts any string and `openWSConnection` degrades a
-      // colon-bearing user to a warning with the auth omitted. Bounding the
-      // option more strictly than the template would make one configuration
-      // value load from a file but be rejected over the API.
+      // Template-compatible options must not inherit the stricter URL-edit rule.
       const response = await service.requestHandler(
         createProtocolRequest(TEST_UUID, ProcedureName.ADD_CHARGING_STATIONS, {
           numberOfStations: 1,
@@ -418,9 +399,6 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       if (typeof errorMessage !== 'string') {
         assert.fail('Expected a string errorMessage')
       }
-      // The station does not exist in this context, so the request still
-      // fails downstream; what matters is that it fails for that reason and
-      // not on the colon rule.
       assert.doesNotMatch(
         errorMessage,
         /supervisionUser/,
@@ -435,8 +413,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // OCPP 1.6 §6.47: connector 0 is the Charge Point main controller, a
-      // first-class target for StatusNotification (and MeterValues).
+      // OCPP 1.6 §6.47 reserves connector 0 for the charge point main controller.
       const response = await service.requestHandler(
         createProtocolRequest(TEST_UUID, ProcedureName.STATUS_NOTIFICATION, {
           connectorId: 0,
@@ -517,8 +494,6 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // The gate now owns these checks, replacing the equivalent inline
-      // validation removed from `handleAddChargingStations`.
       for (const payload of [
         { numberOfStations: 1, template: 42 },
         { numberOfStations: 0, template: 'template' },
@@ -558,14 +533,9 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // `sampledValue` is OPTIONAL at the gate, unlike its OCPP JSON schema:
-      // the entry passes here and the worker rejects it per station
-      // (`ChargingStationWorkerBroadcastChannel.handleMeterValues` throws
-      // `meterValue.sampledValue must be an array` when the member is not an
-      // array, including when it is absent). Requiring it here would change
-      // the reported failure from a per-station one to a whole-request
-      // rejection, and a request may also legitimately omit `meterValue` and
-      // ask the station for its current values.
+      // sampledValue remains a worker-level requirement, so its absence yields
+      // a per-station failure rather than rejecting the entire broadcast.
+      // Omitting meterValue itself requests the station's current values.
       const response = await dispatchUntrustedPayload(service, ProcedureName.METER_VALUES, {
         connectorId: 1,
         hashIds: [TEST_HASH_ID],
@@ -603,10 +573,8 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // `{ hashIds: [...] }` and `{}` used to pass the gate, then the worker
-      // threw `Missing connectorId or evseId` once per station. OCPP 1.6
-      // requires `connectorId` and OCPP 2.0.1 requires `evseId`, with no
-      // common mandatory member, so the gate enforces their union.
+      // MeterValues requires connectorId in 1.6 or evseId in 2.0.1; this
+      // version-blind gate requires at least one.
       for (const payload of [{ hashIds: [TEST_HASH_ID] }, {}]) {
         assertRejectedWith(
           await dispatchUntrustedPayload(service, ProcedureName.METER_VALUES, payload),
@@ -665,8 +633,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // Neither 1.6 `connectorStatus` nor 2.0.x `status` is present: the
-      // `.refine` branch must reject instead of letting the station fail.
+      // Neither the 1.6 status nor the 2.0.x connectorStatus is supplied.
       assertRejectedWith(
         await dispatchUntrustedPayload(service, ProcedureName.STATUS_NOTIFICATION, {
           connectorId: 1,
@@ -796,7 +763,6 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
   })
 
   await it('should redact rejected station option credentials while preserving the original options', async () => {
-    // Arrange
     const { server, service } = createServiceContext()
     const payload = {
       numberOfStations: 0,
@@ -810,14 +776,12 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     }
 
     try {
-      // Act
       const response = await dispatchUntrustedPayload(
         service,
         ProcedureName.ADD_CHARGING_STATIONS,
         payload
       )
 
-      // Assert
       assertRejectedWith(response, /numberOfStations:/)
       assert.ok(response)
       assert.strictEqual(response[0], TEST_UUID)
@@ -889,9 +853,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // Grouping by top-level field alone made `options` atomic: one entry was
-      // rendered, twelve of the thirteen violations stayed invisible, and the
-      // rendered path belonged to the first issue only.
+      // Distinct nested fields must not collapse into a single options entry.
       const response = await dispatchUntrustedPayload(
         service,
         ProcedureName.ADD_CHARGING_STATIONS,
@@ -950,8 +912,6 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // Two distinct violated paths must yield two entries, each carrying its
-      // own path rather than the one of the first issue seen.
       const message = failureErrorMessage(
         await dispatchUntrustedPayload(service, ProcedureName.CHANGE_CONFIGURATION, {
           hashIds: [TEST_HASH_ID],
@@ -973,8 +933,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // 20 000 invalid hashIds emit 20 000 issue paths but a single field: the
-      // report must stay one entry, not grow with the payload.
+      // Large invalid arrays must not produce one report entry per element.
       const message = failureErrorMessage(
         await dispatchUntrustedPayload(service, ProcedureName.HEARTBEAT, {
           hashIds: new Array<unknown>(20000).fill(42),

@@ -113,19 +113,8 @@ const RFC3339_TIMESTAMP_PATTERN =
 const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
 
 /**
- * Type guard for an OCPP 1.6 charge point status.
- *
- * The two connector status enumerations are NOT symmetric:
- * `OCPP16ChargePointStatus` has 9 values against the 5 of
- * `OCPP20ConnectorStatusEnumType`. The latter includes `Occupied` (a connector
- * unavailable to a new EV driver; OCPP 2.0.1 Part 2 §3.23), which is not a valid
- * OCPP 1.6 status — the 1.6 `StatusNotification`
- * JSON schema closes its `status` enum to the 9 charge point statuses. A
- * version-blind caller may therefore hand over a 2.0.1-only value, which must
- * be refused here rather than shipped in a 1.6 PDU the station's AJV would
- * reject per station. This is the exact mirror of `isOCPP20ConnectorStatus`
- * refusing a 1.6-only value on the 2.0.1 path: a per-station refusal, never a
- * silently invalid PDU.
+ * Rejects statuses that OCPP 1.6 cannot encode: OCPP 2.0.1 `Occupied` has no
+ * 1.6 counterpart (OCPP 2.0.1 Part 2 §3.23).
  * @param status - Untrusted connector status.
  * @returns `true` when the value is an OCPP 1.6 charge point status.
  */
@@ -331,10 +320,8 @@ export class OCPP16ServiceUtils {
     }
     return {
       connectorId,
-      // `errorCode` is absent from the OCPP 2.0.1 request, hence optional in
-      // the untrusted params; the request service always supplies the
-      // `NO_ERROR` default before calling, and the member is otherwise passed
-      // through untouched.
+      // OCPP 2.0.1 has no errorCode; the 1.6 request service supplies NO_ERROR
+      // before calling this builder.
       errorCode,
       status,
     } as OCPP16StatusNotificationRequest

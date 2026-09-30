@@ -1013,9 +1013,9 @@ Note over UI Server,Client: WebSocket
   `uuid`: String uniquely linking the response to the request  
   `PDU`: Response parameters to requested procedure
 
-Request payloads are validated against a per-procedure schema before dispatch, on every transport. A payload that violates its procedure schema is rejected with `status: 'failure'` and a per-field explanation in `errorMessage`; it is never forwarded to the charging stations. The schemas constrain the fields the UI server interprets (station targeting and per-procedure control fields). OCPP command fields are forwarded untouched and validated by the OCPP layer against the OCPP JSON schemas when `ocppStrictCompliance` is enabled.
+Every transport uses a shared per-procedure payload gate. It rejects invalid targeting and control fields before dispatch, returning `status: 'failure'` with field-specific `errorMessage` details. Unlisted OCPP fields are preserved; the OCPP layer validates PDUs against the OCPP JSON schemas when `ocppStrictCompliance` is enabled.
 
-The shared service omits `supervisionUser` and `supervisionPassword` from its failure-response `requestPayload` diagnostics, both at the root and inside an object-valued `options` field. Other fields remain available for diagnostics. This redaction does not mutate the submitted payload.
+The `requestPayload` diagnostics in shared-service failure responses omit `supervisionUser` and `supervisionPassword` at the root and in object-valued `options` to avoid exposing credentials; other fields are preserved.
 
 MCP also validates tool arguments before this shared gate: `lockConnector` requires `connectorId > 0` over MCP even though the flat UI payload accepts 0. Unknown keys in `addChargingStations.options` are accepted by the shared gate; the MCP SDK removes them while parsing tool arguments, whereas HTTP and WebSocket retain them. MCP input validation can reject a request before the UI failure response is produced.
 

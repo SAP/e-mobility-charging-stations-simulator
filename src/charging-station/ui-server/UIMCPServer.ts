@@ -225,12 +225,8 @@ export class UIMCPServer extends AbstractUIServer {
         procedureName,
         {
           description: schema.description,
-          // The Zod OBJECT, not its `.shape`: the SDK wraps a raw shape with
-          // `objectFromShape`, which is a STRIP object — it would drop every
-          // top-level field the tool schema does not declare (e.g. the flat
-          // OCPP PDU members), so the handler would receive less than the
-          // WebSocket and HTTP transports do. The tool schemas are
-          // `z.looseObject`, so unknown keys pass through here too.
+          // Register the loose object itself: the SDK rebuilds raw shapes as
+          // stripping objects, which would drop unlisted flat OCPP fields.
           inputSchema: schema.inputSchema,
         },
         async (input: Record<string, unknown>) => {

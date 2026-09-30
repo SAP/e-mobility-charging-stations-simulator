@@ -626,9 +626,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
     })
 
     await it('should resolve the inter-version connectorStatus alias', () => {
-      // The UI gate is version-blind, so a 2.0.x-shaped payload can reach the
-      // 1.6 builder; copying only `status` would emit `status: undefined` and
-      // the station's AJV would reject the PDU.
+      // Version-blind UI requests may use connectorStatus even for 1.6 stations.
       const result = OCPP16ServiceUtils.buildStatusNotificationRequest({
         connectorId: 1,
         connectorStatus: OCPP16ChargePointStatus.Available,
@@ -650,11 +648,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
     })
 
     await it('should refuse a 2.0.1-only connector status', () => {
-      // `Occupied` is the only OCPP 2.0.1 status with no OCPP 1.6
-      // counterpart, and the 1.6 `StatusNotification` JSON schema closes its
-      // `status` enum to the 9 charge point statuses. Refusing here yields a
-      // per-station failure, where shipping it would yield a PDU the station
-      // itself rejects.
+      // Occupied cannot be encoded by the 1.6 StatusNotification schema.
       assert.throws(
         () =>
           OCPP16ServiceUtils.buildStatusNotificationRequest({

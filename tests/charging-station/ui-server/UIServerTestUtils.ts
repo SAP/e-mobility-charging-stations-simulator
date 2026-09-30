@@ -238,8 +238,7 @@ export const createMockUIServerConfigurationWithAuth = (
 }
 
 /**
- * Build a UI service context with `stationCount` live stations registered, so
- * a request that degrades to a broadcast is observable through the
+ * Registers stations so unintended fan-out is observable through the
  * outstanding responder count.
  * @param stationCount - Number of stations to register (1 or 2 supported).
  * @returns Server and registered UI service.

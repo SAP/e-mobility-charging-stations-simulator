@@ -1,36 +1,11 @@
 /**
  * @file Canonical UI request payload schemas.
- * @description Single source of truth for the shape of a UI protocol request
- * payload, keyed by `ProcedureName`, enforced once in
- * `AbstractUIService.requestHandler` so the WebSocket, HTTP and MCP transports
- * share a flat-payload validation gate after any transport-specific validation.
+ * @description Shared flat-payload gate for targeting and UI/worker control
+ * fields, enforced by `AbstractUIService.requestHandler` before dispatch.
  *
- * Scope: this gate validates the station targeting fields (`hashIds`,
- * `connectorIds`, `connectorId`, `evseId`) and the control fields the UI server
- * or its worker reads: `key`/`value`, `meterValue`, `status`,
- * `connectorStatus`, `errorCode`, `transactionId`, `url`, `template`,
- * `numberOfStations`, `options`, `deleteConfiguration`, `idTag`,
- * `supervisionUser`, `supervisionPassword`. A declared
- * field is typed, so a mistyped container is rejected once at the gate instead
- * of once per station; a permissive-but-typed one is checked for its container
- * and its members stay unknown.
- *
- * Everything else is delegated: each schema is a loose object, so an
- * unlisted OCPP PDU field passes through to the OCPP layer, which validates it
- * against the OCPP JSON schemas (AJV, gated by `ocppStrictCompliance`) at send
- * time. `chargingStationOptionsSchema` uses `z.object`: unknown option keys
- * are accepted but omitted from parsed output. This gate retains the original
- * payload; the MCP SDK uses parsed output and removes unknown option keys.
- *
- * Layering: the MCP envelope (`{ ocpp16Payload, ocpp20Payload }`) is described
- * by the tool schemas of `mcp/MCPToolSchemas.ts` and validated by the MCP SDK
- * before any handler runs. `UIMCPServer` then spreads the versioned PDU into
- * the flat UI payload before this gate runs, so both transports converge on
- * the same flat fields. Field types are shared; each layer declares its own
- * required fields. The gate is version-blind: it runs once per request, before
- * any station is targeted. Version-specific PDU requirements remain with the
- * OCPP layer; the gate also requires control fields read by every applicable
- * worker path, such as `transactionId` for the 1.6-only `handleStopTransaction`.
+ * The OCPP layer owns version-specific PDU validation. Unlisted PDU fields
+ * pass through unchanged. MCP validates its envelope before flattening;
+ * each layer declares its own required fields while sharing field types.
  */
 
 import { z } from 'zod'
@@ -39,10 +14,8 @@ import { ProcedureName } from '../../../types/index.js'
 import { isEmpty } from '../../../utils/index.js'
 
 /**
- * Station hash IDs targeting the request. An absent or empty array means
- * "every station" for broadcast procedures; `AbstractUIService` rejects an
- * explicitly empty array, since it means "targeted stations" that resolve to
- * none.
+ * Omit to broadcast. An explicit empty array targets no station and is rejected
+ * by `AbstractUIService` rather than expanded into a broadcast.
  */
 export const hashIdsField = z
   .array(z.string())
@@ -50,14 +23,8 @@ export const hashIdsField = z
   .describe('Target station hash IDs (omit for all stations)')
 
 /**
- * OCPP PDU connector identifier, as used by the procedures whose OCPP message
- * requires it.
- *
- * Spec ambiguity, flagged for the next maintainer: OCPP 1.6 edition 2
- * declares FIELD TYPE `connectorId >= 0` but its DESCRIPTION reads "a number
- * (>0) ... '0' designates the main power meter", and
- * `docs/ocpp16/schemas/json/MeterValues.json` declares `{"type":"integer"}`
- * with no minimum. The code follows the prose and accepts 0.
+ * Allows station-level targets: OCPP 1.6 MeterValues uses 0 for the main power
+ * meter (§6.31), and StatusNotification uses 0 for the main controller (§6.47).
  */
 const connectorIdField = z
   .number()
@@ -81,21 +48,9 @@ const evseIdField = z
   .describe('OCPP EVSE ID (0: reporting main controller; MeterValues main power meter)')
 
 /**
- * Connector identifier that the OCPP 1.6 core specification requires to be
- * strictly positive, used only for the procedures that can actually carry a
- * transaction or a cable lock.
- *
- * The bound is specification-backed **per procedure**, not per semantic class:
- * - `StartTransaction` — `docs/ocpp16/ocpp-1.6 edition 2.md` §6.45,
- *   `connectorId > 0`, cardinality `1..1`.
- * - `UnlockConnector` — same document §6.53, `connectorId > 0`, cardinality
- *   `1..1`.
- *
- * It is deliberately NOT applied to `LockConnector`: that message does not
- * exist in the OCPP 1.6 core document (`grep -c LockConnector` returns 0) and
- * ships no JSON schema, being an OCA addendum. The simulator treats a zero
- * target there as a logged no-op (`ChargingStation.lockConnector`), so
- * bounding it would be a behavior change this project never asked for.
+ * OCPP 1.6 StartTransaction (§6.45) and UnlockConnector (§6.53) require a positive
+ * connector ID. Do not apply this bound to LockConnector: the simulator accepts
+ * its controller target 0 as a logged no-op.
  */
 export const physicalConnectorIdField = z
   .number()
@@ -110,19 +65,9 @@ export const connectorIdsField = z
   .describe('Target physical connector IDs')
 
 /**
- * Absolute URL of a supervision endpoint.
- *
- * `z.url()` checks the syntax only, NOT the WebSocket-ness: `foo://bar` and
- * `ftp://a/b` are valid URLs and are accepted here on purpose. The `ws`
- * library used for the supervision WebSocket accepts the `http`, `https` and
- * `ws+unix` schemes, so a non-WebSocket scheme fails later, at connection
- * time, where the transport reports it. Restricting the scheme here would
- * reject a legitimate client ahead of the layer that actually knows the
- * answer.
- *
- * No `new URL()` refinement is layered on top: Zod 4 runs every refinement
- * even after `z.url()` has already failed, and `new URL` throws on a
- * non-URL string, turning a reported violation into a crash.
+ * Validate URL syntax here; the supervision transport checks scheme support
+ * at connection time. Avoid throwing refinements so malformed URLs remain
+ * validation failures rather than exceptions.
  */
 export const urlField = z.url()
 
@@ -130,15 +75,9 @@ export const urlField = z.url()
 const supervisionUrlsField = z.union([urlField, z.array(urlField)])
 
 /**
- * Basic-auth user as it may appear in a station template or a
- * `ADD_CHARGING_STATIONS` option.
- *
- * No RFC 7617 colon rule here, on purpose: `TemplateSchema` accepts any string
- * and `ChargingStation.openWSConnection` deliberately degrades a colon-bearing
- * user to a warning with the auth omitted rather than failing the station.
- * A gate stricter than the template would make the same configuration value
- * load from a file but be rejected over the API. The strict variant lives on
- * {@link supervisionUserField}, for values the operator types explicitly.
+ * Match template semantics: `openWSConnection` accepts a colon-bearing user
+ * but omits authentication with a warning. The stricter `supervisionUserField`
+ * would reject configurations accepted by templates.
  */
 const supervisionUserOptionField = z
   .string()
@@ -160,7 +99,10 @@ export const supervisionPasswordField = z
   .string()
   .describe('CSMS basic auth password used on the supervision WebSocket')
 
-/** Overrides applied to charging stations created by `ADD_CHARGING_STATIONS`. */
+/**
+ * Station overrides. Unknown keys are accepted but omitted from parsed output:
+ * this gate retains the original payload, while the MCP SDK uses parsed output.
+ */
 export const chargingStationOptionsSchema = z.object({
   autoRegister: z.boolean().optional().describe('Set stations as registered at boot notification'),
   autoStart: z.boolean().optional().describe('Enable automatic start of added charging station'),
@@ -197,12 +139,8 @@ export const chargingStationOptionsSchema = z.object({
 })
 
 /**
- * Station targeting fields shared by every broadcast procedure.
- *
- * `connectorIds` is deliberately absent: the worker only reads it for the
- * automatic transaction generator and strips it from every other request
- * (`ChargingStationWorkerBroadcastChannel.cleanRequestPayload`). Declaring it
- * here would reject payloads the server already accepted and then discarded.
+ * Only ATG procedures interpret `connectorIds`; other workers discard it.
+ * Declaring it here would reject otherwise ignored values.
  */
 const broadcastFields = { hashIds: hashIdsField } as const
 
@@ -210,13 +148,8 @@ const broadcastFields = { hashIds: hashIdsField } as const
 const atgTargetFields = { connectorIds: connectorIdsField, hashIds: hashIdsField } as const
 
 /**
- * Every broadcast procedure shares this shape: only the station targeting
- * fields are interpreted by the UI server, whatever OCPP PDU fields the caller
- * adds. A single schema serves both the OCPP-carrying procedures
- * (`AUTHORIZE`, `BOOT_NOTIFICATION`, ...) and the transport-only ones
- * (`CLOSE_CONNECTION`, `HEARTBEAT`, `OPEN_CONNECTION`, `START_CHARGING_STATION`,
- * `STOP_CHARGING_STATION`): the loose object makes the distinction a naming
- * concern, not a behavioral one.
+ * For procedures without additional UI control fields, validate only station
+ * targeting and leave OCPP PDU fields to the protocol layer.
  */
 const broadcastSchema = z.looseObject(broadcastFields)
 
@@ -301,10 +234,8 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
     connectorId: physicalConnectorIdField,
     idTag: z.string().optional(),
   }),
-  // `evseId` is the EVSE identifier introduced by OCPP 2.0.x; `connectorId`
-  // stays required in both versions. The gate is version-blind because
-  // `UIMCPServer` spreads a single flat PDU, so the shared 1.6/2.0.x member is
-  // enforced and the version-specific one is merely passed through.
+  // connectorId is shared by both versions; evseId belongs to OCPP 2.0.x and
+  // remains optional at this version-blind gate.
   [ProcedureName.STATUS_NOTIFICATION]: z
     .looseObject({
       ...broadcastFields,
@@ -324,11 +255,8 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
   [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(atgTargetFields),
   [ProcedureName.STOP_CHARGING_STATION]: broadcastSchema,
   [ProcedureName.STOP_SIMULATOR]: z.looseObject({}),
-  // OCPP 1.6 `StopTransaction.req` requires an integer transactionId, and
-  // `handleStopTransaction` only ever dispatches to 1.6 stations. The connector
-  // is resolved from the transaction, so neither a connector nor an EVSE
-  // identifier is a request field: the worker never reads one and an unlisted
-  // PDU field merely passes through this loose object.
+  // The 1.6-only worker resolves the connector from transactionId, so connector
+  // and EVSE identifiers are neither required nor interpreted here.
   [ProcedureName.STOP_TRANSACTION]: z.looseObject({
     ...broadcastFields,
     transactionId: z.number().int(),
@@ -363,8 +291,7 @@ const renderIssuePath = (issuePath: readonly PropertyKey[]): string => {
  * several distinct messages.
  */
 const renderIssueGroup = (path: string, messages: ReadonlyMap<string, number>): string => {
-  // A group is only ever created while recording an issue, so it always holds
-  // at least one message.
+  // Groups are nonempty because they are created for an issue.
   const entries = [...messages]
   const [firstMessage, firstCount] = entries[0]
   if (messages.size === 1) {
@@ -377,22 +304,8 @@ const renderIssueGroup = (path: string, messages: ReadonlyMap<string, number>): 
 }
 
 /**
- * Renders Zod issues as a single-line, log-safe description, grouped by
- * normalized field path.
- *
- * Grouping on the FULL path (array indices already dropped by
- * {@link renderIssuePath}) keeps the report bounded while naming every
- * offending field. The bound is structural rather than arbitrary: the schemas
- * are not recursive, so a payload yields at most one group per declared
- * field, and a payload repeating the same violation 60 000 times (an
- * entirely invalid `hashIds` array) collapses into a single group. A flat list
- * truncated at a fixed number of issues instead hides whole fields, since such
- * an array emits 60 000 paths and starves every field declared after it.
- *
- * Grouping by first path segment alone would not do: a nested object is then
- * atomic, so three invalid `options` sub-fields render one entry, two of them
- * stay invisible, and the rendered path is the one of the first issue, which
- * assigns the counted issues to a path that is not their own.
+ * Groups issues by full field path, without array indices, to bound report
+ * entries for large arrays while retaining distinct nested-field violations.
  * @param issues - Zod validation issues.
  * @returns Semicolon-separated groups (see {@link renderIssueGroup}), in
  * first-seen field order.
@@ -400,8 +313,6 @@ const renderIssueGroup = (path: string, messages: ReadonlyMap<string, number>): 
 const formatIssues = (issues: readonly z.core.$ZodIssue[]): string => {
   const groups = new Map<string, Map<string, number>>()
   for (const issue of issues) {
-    // An empty path (`.refine` on the root) has no segment, hence the
-    // `<root>` group.
     const path = renderIssuePath(issue.path)
     const messages = groups.get(path) ?? new Map<string, number>()
     messages.set(issue.message, (messages.get(issue.message) ?? 0) + 1)
@@ -411,13 +322,8 @@ const formatIssues = (issues: readonly z.core.$ZodIssue[]): string => {
 }
 
 /**
- * Validates a UI protocol request payload against the canonical schema of its
- * procedure.
- *
- * Validation is a gate, not a transformation: the caller must dispatch the
- * original payload. Parsing would rebuild the object and drop `undefined`
- * members, which several handlers rely on to distinguish "absent" from
- * "present but empty".
+ * Validates the procedure payload without transforming it: handlers rely on
+ * optional-field presence and unlisted PDU fields remaining unchanged.
  * @param procedureName - Procedure the payload is destined for.
  * @param requestPayload - Untrusted payload, as received from the transport.
  * @returns `undefined` when the payload is valid, otherwise a single-line

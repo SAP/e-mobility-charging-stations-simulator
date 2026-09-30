@@ -139,9 +139,9 @@ The `uiServer` field accepts an array to connect to multiple simulator instances
 
 ## Supervision URL form
 
-In both skins, a submitted supervision username must not contain `:`. An invalid edit is rejected before sending any URL or credential update, with a username-specific error; the form remains open. Passwords may contain `:`.
+Both skins reject submitted usernames containing `:` before sending any update and keep the form open with a username-specific error. Passwords may contain `:`.
 
-The modern skin preserves credentials left equal to the values already stored on the station, including an unchanged legacy username containing `:`. Clearing a nonempty field removes that stored credential. The classic skin starts with empty credential fields and sends them explicitly, so an empty field clears the stored value.
+The modern skin preserves unchanged credentials, including inherited usernames containing `:`; clearing a nonempty field removes the stored value. The classic skin starts with empty fields, which clear the corresponding stored credentials when submitted.
 
 ## Theming
 

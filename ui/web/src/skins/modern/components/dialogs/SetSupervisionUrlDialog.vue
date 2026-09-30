@@ -107,10 +107,8 @@ const currentStation = computed(() =>
   $chargingStations.value.find(station => station.stationInfo.hashId === props.hashId)
 )
 
-// The credentials the station already holds are the form base: a field left
-// untouched is then omitted from the request, so a station whose template
-// carries credentials (e.g. a `dom:` prefixed user) does not have them
-// resubmitted — and rejected by the server gate — when only the URL changes.
+// Omit unchanged credentials so URL-only edits preserve inherited usernames
+// containing ":" that the server would reject if resubmitted.
 const { formState, pending, submitForm } = useSetUrlForm(
   props.hashId,
   props.chargingStationId,

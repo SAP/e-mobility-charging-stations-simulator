@@ -404,19 +404,9 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
           .record(z.string(), z.unknown())
           .optional()
           .describe('OCPP 1.6 StopTransaction payload'),
-        // Deliberately optional: `injectOcppJsonSchemas` replaces `ocpp16Payload`
-        // with `StopTransaction.json`, whose `required` is
-        // `['transactionId', 'timestamp', 'meterStop']`, so the PUBLISHED
-        // contract carries `transactionId` INSIDE `ocpp16Payload` and nowhere
-        // else. The MCP SDK validates `inputSchema` before the handler runs
-        // (`mcp.js:125,249`), hence a contract-conforming client would be
-        // rejected with -32602 while the flat gate would have accepted it
-        // (`UIMCPServer` flattens the PDU, so the field is hoisted to the root
-        // by the time the gate runs). The flat gate remains the runtime
-        // authority and still requires `transactionId`
-        // (`ChargingStationWorkerBroadcastChannel` requires it per station),
-        // and the envelope is a loose object, so the field is neither stripped
-        // nor rejected here.
+        // The published 1.6 schema carries transactionId inside ocpp16Payload.
+        // Requiring it at the envelope root would reject that valid shape before
+        // UIMCPServer flattens it; the shared gate enforces it after flattening.
         transactionId: z.number().int().optional().describe('Transaction ID to stop'),
       }),
     },

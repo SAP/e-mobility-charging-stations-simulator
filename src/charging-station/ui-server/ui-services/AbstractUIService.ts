@@ -236,11 +236,8 @@ export abstract class AbstractUIService {
         )
       }
 
-      // Transport-independent payload gate. WebSocket, HTTP and MCP requests all
-      // reach this dispatch point, so the canonical schema of the procedure is the
-      // single validation source: the transports only guarantee the frame shape,
-      // never the payload fields. A violation is a client error and must be
-      // reported as such, not dispatched to the stations.
+      // Transport schemas may validate a different envelope; enforce the shared
+      // flat-payload contract before dispatching to stations.
       const validationError = getRequestPayloadValidationError(command, requestPayload)
       if (validationError != null) {
         throw new BaseError(`'${command}' request payload is invalid: ${validationError}`)
@@ -578,10 +575,10 @@ export abstract class AbstractUIService {
 }
 
 /**
- * Removes declared supervision credentials from failure-response diagnostics.
- * Copies only credential-bearing objects; never mutates the caller payload.
- * @param requestPayload - Original payload, potentially rejected by validation.
- * @returns Diagnostic payload without root or object-options credentials.
+ * Validation failures bypass worker-side credential redaction. Use diagnostic
+ * copies to preserve caller-owned payloads.
+ * @param requestPayload - Original, potentially invalid request payload.
+ * @returns Diagnostics without root or object-options supervision credentials.
  */
 const redactRequestCredentials = (
   requestPayload: RequestPayload | undefined

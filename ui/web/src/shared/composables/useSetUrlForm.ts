@@ -4,9 +4,7 @@ import { useToast } from 'vue-toast-notification'
 import { useUIClient } from '@/core/index.js'
 
 /**
- * Credentials the charging station already carries, as the UI knows them.
- * A field left equal to its base value is omitted from the request, so the
- * station keeps the value it already has instead of having it rewritten.
+ * Stored credentials used to omit unchanged fields from URL updates.
  */
 export interface SetUrlFormBaseCredentials {
   supervisionPassword?: string
@@ -23,9 +21,8 @@ export interface SetUrlFormState {
  * Returns form state and submission logic for setting the supervision URL.
  * @param hashId - The charging station hash identifier
  * @param chargingStationId - The charging station display identifier
- * @param baseCredentials - Credentials the station currently holds. Omitted by
- * a caller that starts from an empty form, where an empty field still means
- * "clear the stored credentials"
+ * @param baseCredentials - Stored credentials. Without a base, empty fields
+ * explicitly clear the stored values.
  * @returns Form state and submit/reset functions
  */
 export function useSetUrlForm (
@@ -51,10 +48,8 @@ export function useSetUrlForm (
   }
 
   /**
-   * Returns a form field to submit: `undefined` when it is left at its base
-   * value, so the station keeps what it already has. Without a base value
-   * (classic skin, empty form) an empty field is sent, which clears the stored
-   * credential.
+   * Omit unchanged credentials to avoid rewriting inherited values. Without a
+   * base value, an empty field explicitly clears the stored credential.
    * @param field - Credential field being submitted.
    * @param value - Value currently held by the form.
    * @returns The value to send, `undefined` when it equals the station base.
