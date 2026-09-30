@@ -117,9 +117,9 @@ const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
  *
  * The two connector status enumerations are NOT symmetric:
  * `OCPP16ChargePointStatus` has 9 values against the 5 of
- * `OCPP20ConnectorStatusEnumType`, and only `OCPP20ConnectorStatusEnumType`
- * gains a member (`Occupied`, meaning a connector blocked outside any
- * transaction) that OCPP 1.6 has no counterpart for — the 1.6 `StatusNotification`
+ * `OCPP20ConnectorStatusEnumType`. The latter includes `Occupied` (a connector
+ * unavailable to a new EV driver; OCPP 2.0.1 Part 2 §3.23), which is not a valid
+ * OCPP 1.6 status — the 1.6 `StatusNotification`
  * JSON schema closes its `status` enum to the 9 charge point statuses. A
  * version-blind caller may therefore hand over a 2.0.1-only value, which must
  * be refused here rather than shipped in a 1.6 PDU the station's AJV would
