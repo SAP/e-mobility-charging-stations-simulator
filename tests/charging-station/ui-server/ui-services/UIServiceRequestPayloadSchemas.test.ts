@@ -753,6 +753,138 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     }
   })
 
+  await it('should redact credentials from a rejected frozen supervision update without mutating it', async () => {
+    // Arrange
+    const { server, service } = createServiceContext()
+    const hashIds = Object.freeze([TEST_HASH_ID])
+    const diagnostic = Object.freeze({ source: 'operator' })
+    const payload = Object.freeze({
+      diagnostic,
+      hashIds,
+      supervisionPassword: 'synthetic-password-top',
+      supervisionUser: 'synthetic:user-top',
+      url: 'ws://localhost:1/',
+    })
+
+    try {
+      // Act
+      const response = await dispatchUntrustedPayload(
+        service,
+        ProcedureName.SET_SUPERVISION_URL,
+        payload
+      )
+
+      // Assert
+      assertRejectedWith(response, /supervisionUser:/)
+      assert.ok(response)
+      assert.strictEqual(response[0], TEST_UUID)
+      assert.deepStrictEqual(response[1].requestPayload, { diagnostic, hashIds, url: payload.url })
+      assert.deepStrictEqual(payload, {
+        diagnostic: { source: 'operator' },
+        hashIds: [TEST_HASH_ID],
+        supervisionPassword: 'synthetic-password-top',
+        supervisionUser: 'synthetic:user-top',
+        url: 'ws://localhost:1/',
+      })
+      const serialized = JSON.stringify(response)
+      assert.ok(!serialized.includes(payload.supervisionUser))
+      assert.ok(!serialized.includes(payload.supervisionPassword))
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      server.stop()
+    }
+  })
+
+  await it('should redact rejected station option credentials while preserving the original options', async () => {
+    // Arrange
+    const { server, service } = createServiceContext()
+    const payload = {
+      numberOfStations: 0,
+      options: {
+        autoStart: true,
+        diagnostic: { source: 'operator' },
+        supervisionPassword: 'synthetic-password-options',
+        supervisionUser: 'synthetic-user-options',
+      },
+      template: 'test.station-template',
+    }
+
+    try {
+      // Act
+      const response = await dispatchUntrustedPayload(
+        service,
+        ProcedureName.ADD_CHARGING_STATIONS,
+        payload
+      )
+
+      // Assert
+      assertRejectedWith(response, /numberOfStations:/)
+      assert.ok(response)
+      assert.strictEqual(response[0], TEST_UUID)
+      assert.deepStrictEqual(response[1].requestPayload, {
+        numberOfStations: 0,
+        options: { autoStart: true, diagnostic: { source: 'operator' } },
+        template: 'test.station-template',
+      })
+      assert.deepStrictEqual(payload, {
+        numberOfStations: 0,
+        options: {
+          autoStart: true,
+          diagnostic: { source: 'operator' },
+          supervisionPassword: 'synthetic-password-options',
+          supervisionUser: 'synthetic-user-options',
+        },
+        template: 'test.station-template',
+      })
+      const serialized = JSON.stringify(response)
+      assert.ok(!serialized.includes('synthetic-user-options'))
+      assert.ok(!serialized.includes('synthetic-password-options'))
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      server.stop()
+    }
+  })
+
+  await it('should preserve invalid option shapes while redacting malformed top-level credentials', async () => {
+    for (const options of [null, 'invalid-options', ['invalid-options']]) {
+      // Arrange
+      const { server, service } = createServiceContext()
+      const supervisionPassword = Object.freeze({ value: 'synthetic-password-object' })
+      const supervisionUser = Object.freeze(['synthetic-user-array'])
+      const payload = Object.freeze({
+        numberOfStations: 0,
+        options,
+        supervisionPassword,
+        supervisionUser,
+      })
+
+      try {
+        // Act
+        const response = await dispatchUntrustedPayload(
+          service,
+          ProcedureName.ADD_CHARGING_STATIONS,
+          payload
+        )
+
+        // Assert
+        assertRejectedWith(response, /options:/)
+        assert.ok(response)
+        assert.deepStrictEqual(response[1].requestPayload, { numberOfStations: 0, options })
+        assert.deepStrictEqual(payload, {
+          numberOfStations: 0,
+          options,
+          supervisionPassword: { value: 'synthetic-password-object' },
+          supervisionUser: ['synthetic-user-array'],
+        })
+        const serialized = JSON.stringify(response)
+        assert.ok(!serialized.includes('synthetic-password-object'))
+        assert.ok(!serialized.includes('synthetic-user-array'))
+      } finally {
+        server.stop()
+      }
+    }
+  })
+
   await it('should name every violated sub-field of a nested object', async () => {
     const { service } = createServiceContext(2)
 

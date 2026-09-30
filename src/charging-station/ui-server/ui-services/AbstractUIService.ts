@@ -28,6 +28,7 @@ import {
   ensureError,
   getErrorMessage,
   isEmpty,
+  isJsonObject,
   isNotEmptyArray,
   JSONStringify,
   logger,
@@ -260,7 +261,7 @@ export abstract class AbstractUIService {
         errorMessage: getErrorMessage(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         hashIds: requestPayload?.hashIds,
-        requestPayload,
+        requestPayload: redactRequestCredentials(requestPayload),
         responsePayload,
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
@@ -574,4 +575,39 @@ export abstract class AbstractUIService {
       throw error
     }
   }
+}
+
+/**
+ * Removes declared supervision credentials from failure-response diagnostics.
+ * Copies only credential-bearing objects; never mutates the caller payload.
+ * @param requestPayload - Original payload, potentially rejected by validation.
+ * @returns Diagnostic payload without root or object-options credentials.
+ */
+const redactRequestCredentials = (
+  requestPayload: RequestPayload | undefined
+): RequestPayload | undefined => {
+  if (!isJsonObject(requestPayload)) {
+    return requestPayload
+  }
+  const options = requestPayload.options
+  const redactOptions =
+    isJsonObject(options) &&
+    (Object.hasOwn(options, 'supervisionPassword') || Object.hasOwn(options, 'supervisionUser'))
+  if (
+    !Object.hasOwn(requestPayload, 'supervisionPassword') &&
+    !Object.hasOwn(requestPayload, 'supervisionUser') &&
+    !redactOptions
+  ) {
+    return requestPayload
+  }
+  const redactedPayload = { ...requestPayload }
+  delete redactedPayload.supervisionPassword
+  delete redactedPayload.supervisionUser
+  if (redactOptions) {
+    const redactedOptions = { ...options }
+    delete redactedOptions.supervisionPassword
+    delete redactedOptions.supervisionUser
+    redactedPayload.options = redactedOptions
+  }
+  return redactedPayload
 }

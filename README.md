@@ -1015,6 +1015,8 @@ Note over UI Server,Client: WebSocket
 
 Request payloads are validated against a per-procedure schema before dispatch, on every transport. A payload that violates its procedure schema is rejected with `status: 'failure'` and a per-field explanation in `errorMessage`; it is never forwarded to the charging stations. The schemas constrain the fields the UI server interprets (station targeting and per-procedure control fields). OCPP command fields are forwarded untouched and validated by the OCPP layer against the OCPP JSON schemas when `ocppStrictCompliance` is enabled.
 
+The shared service omits `supervisionUser` and `supervisionPassword` from its failure-response `requestPayload` diagnostics, both at the root and inside an object-valued `options` field. Other fields remain available for diagnostics. This redaction does not mutate the submitted payload.
+
 MCP also validates tool arguments before this shared gate: `lockConnector` requires `connectorId > 0` over MCP even though the flat UI payload accepts 0. Unknown keys in `addChargingStations.options` are accepted by the shared gate; the MCP SDK removes them while parsing tool arguments, whereas HTTP and WebSocket retain them. MCP input validation can reject a request before the UI failure response is produced.
 
 To learn how to use the WebSocket protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) WebSocket requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
