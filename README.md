@@ -1125,11 +1125,11 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'setSupervisionUrl'  
   `PDU`: {  
   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `url`: string,  
+  `url`: absolute URL string,  
   `supervisionUser?`: string,  
   `supervisionPassword?`: string  
   }  
-  `url` is required. `supervisionUser` and `supervisionPassword` are each optional and independent: a string (including `""`, which clears the field) updates the value; omitting the field preserves the existing value. Changes take effect on the next WebSocket (re)connect.
+  `url` is required and must be an absolute URL. `supervisionUser` must not contain `:` (RFC 7617). `supervisionUser` and `supervisionPassword` are each optional and independent: a string (including `""`, which clears the field) updates the value; omitting the field preserves the existing value. Changes take effect on the next WebSocket (re)connect.
 
 - Response:  
   `PDU`: {  
@@ -1252,7 +1252,7 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'startAutomaticTransactionGenerator'  
   `PDU`: {  
   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorIds`: connector id integer array (optional, default: all connectors)  
+  `connectorIds`: physical connector id integer array (>= 1, optional, default: all connectors)  
   }
 
 - Response:  
@@ -1269,7 +1269,7 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'stopAutomaticTransactionGenerator'  
   `PDU`: {  
   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorIds`: connector id integer array (optional, default: all connectors)  
+  `connectorIds`: physical connector id integer array (>= 1, optional, default: all connectors)  
   }
 
 - Response:  
@@ -1286,7 +1286,7 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'lockConnector'  
   `PDU`: {  
   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorId`: connector id integer  
+  `connectorId`: connector id integer (>= 0; 0 is the main controller, which holds no cable lock)  
   }
 
 - Response:  
@@ -1303,7 +1303,7 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'unlockConnector'  
   `PDU`: {  
   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorId`: connector id integer  
+  `connectorId`: physical connector id integer (>= 1)  
   }
 
 - Response:  
@@ -1355,13 +1355,30 @@ Examples:
   `responsesFailed`: failed responses payload array (optional)  
   }
 
+- **Meter Values**
+  - Request:  
+    `ProcedureName`: 'meterValues'  
+    `PDU`: {  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+    `connectorId?` or `evseId?`: connector or EVSE identifier integer (>= 0; 0 designates the main power meter); at least one is required,  
+    `meterValue?`: array of meter value objects, each with a required `sampledValue` array; omit to use the station's current values  
+    }
+
+  - Response:  
+    `PDU`: {  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
+    }
+
 - **Start Transaction**
   - Request:  
     `ProcedureName`: 'startTransaction'  
     `PDU`: {  
     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-    `connectorId`: connector id integer,  
-    `idTag`: RFID tag string  
+    `connectorId`: physical connector id integer (>= 1),  
+    `idTag?`: RFID tag string (optional, defaults to `'00000000'`)  
     }
 
   - Response:  
@@ -1380,6 +1397,8 @@ Examples:
     `transactionId`: transaction id integer  
     }
 
+  The connector is resolved from the transaction, hence no connector identifier is sent.
+
   - Response:  
     `PDU`: {  
     `status`: 'success' | 'failure',  
@@ -1393,9 +1412,10 @@ Examples:
     `ProcedureName`: 'statusNotification'  
     `PDU`: {  
     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-    `connectorId`: connector id integer,  
-    `errorCode`: connector error code,  
-    `status`: connector status  
+    `connectorId`: connector id integer (>= 0, 0 designates the charging station main controller),  
+    `evseId?`: EVSE id integer (>= 0),  
+    `errorCode?`: connector error code (optional, absent from the OCPP 2.0.1 request),  
+    `status` or `connectorStatus`: connector status  
     }
 
   - Response:  

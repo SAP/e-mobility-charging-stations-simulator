@@ -180,6 +180,16 @@ export interface OCPP16StatusNotificationRequest extends JsonObject {
   vendorId?: string
 }
 
+/**
+ * Accepts both UI status spellings: `status` (1.6) and `connectorStatus` (2.0.x).
+ * Values remain untrusted because not every 2.0.x status has a 1.6 counterpart;
+ * the builder validates them before producing a PDU.
+ */
+export type OCPP16StatusNotificationRequestParams = Partial<OCPP16StatusNotificationRequest> &
+  Pick<OCPP16StatusNotificationRequest, 'connectorId' | 'errorCode'> & {
+    connectorStatus?: string
+  }
+
 export interface OCPP16TriggerMessageRequest extends JsonObject {
   connectorId?: number
   requestedMessage: OCPP16MessageTrigger

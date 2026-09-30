@@ -53,6 +53,7 @@ import {
   type OCPP16SignedMeterValue,
   OCPP16StandardParametersKey,
   type OCPP16StatusNotificationRequest,
+  type OCPP16StatusNotificationRequestParams,
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
   OCPP16VendorParametersKey,
@@ -110,6 +111,18 @@ const moduleName = 'OCPP16ServiceUtils'
 const RFC3339_TIMESTAMP_PATTERN =
   /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([Zz]|([+-])(\d{2}):(\d{2}))$/
 const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
+const OCPP16_CHARGE_POINT_STATUSES: ReadonlySet<string> = new Set<string>(
+  Object.values(OCPP16ChargePointStatus)
+)
+
+/**
+ * Rejects statuses that OCPP 1.6 cannot encode: OCPP 2.0.1 `Occupied` has no
+ * 1.6 counterpart (OCPP 2.0.1 Part 2 §3.23).
+ * @param status - Untrusted connector status.
+ * @returns `true` when the value is an OCPP 1.6 charge point status.
+ */
+const isOCPP16ChargePointStatus = (status: string): status is OCPP16ChargePointStatus =>
+  OCPP16_CHARGE_POINT_STATUSES.has(status)
 
 const isLeapYear = (year: number): boolean =>
   year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
@@ -290,16 +303,30 @@ export class OCPP16ServiceUtils {
   }
 
   /**
-   * @param commandParams - Status notification parameters
+   * @param commandParams - Status notification parameters; `connectorStatus`
+   * takes precedence over `status`
    * @returns Formatted OCPP 1.6 StatusNotification request payload
+   * @throws {OCPPError} When no connector status is supplied, or when it is not
+   * a valid OCPP 1.6 charge point status
    */
   public static buildStatusNotificationRequest (
-    commandParams: OCPP16StatusNotificationRequest
+    commandParams: OCPP16StatusNotificationRequestParams
   ): OCPP16StatusNotificationRequest {
+    const { connectorId, errorCode } = commandParams
+    const status = commandParams.connectorStatus ?? commandParams.status
+    if (status == null || !isOCPP16ChargePointStatus(status)) {
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        `Cannot build status notification payload: invalid connector status for connector ${connectorId.toString()}`,
+        RequestCommand.STATUS_NOTIFICATION
+      )
+    }
     return {
-      connectorId: commandParams.connectorId,
-      errorCode: commandParams.errorCode,
-      status: commandParams.status,
+      connectorId,
+      // OCPP 2.0.1 has no errorCode; the 1.6 request service supplies NO_ERROR
+      // before calling this builder.
+      errorCode,
+      status,
     } satisfies OCPP16StatusNotificationRequest
   }
 

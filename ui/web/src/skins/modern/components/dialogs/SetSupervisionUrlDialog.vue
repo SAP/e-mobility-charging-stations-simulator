@@ -47,7 +47,8 @@
           placeholder="Password"
         >
         <span class="modern-form__hint">
-          Credentials are sent verbatim; leaving username or password empty clears the stored value.
+          Unchanged credentials are kept as they are. Clear a field to remove the stored value. The
+          username must not contain &quot;:&quot; (RFC 7617).
         </span>
       </div>
       <label class="modern-form__check">
@@ -97,7 +98,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const { formState, pending, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
 const $uiClient = useUIClient()
 const $chargingStations = useChargingStations()
 
@@ -105,6 +105,17 @@ const reconnect = ref(true)
 
 const currentStation = computed(() =>
   $chargingStations.value.find(station => station.stationInfo.hashId === props.hashId)
+)
+
+// Omit unchanged credentials so URL-only edits preserve inherited usernames
+// containing ":" that the server would reject if resubmitted.
+const { formState, pending, submitForm } = useSetUrlForm(
+  props.hashId,
+  props.chargingStationId,
+  computed(() => ({
+    supervisionPassword: currentStation.value?.stationInfo.supervisionPassword,
+    supervisionUser: currentStation.value?.stationInfo.supervisionUser,
+  }))
 )
 
 watch(

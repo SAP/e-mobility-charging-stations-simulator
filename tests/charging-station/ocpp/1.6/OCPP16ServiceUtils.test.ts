@@ -614,15 +614,50 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.strictEqual(result.errorCode, ChargePointErrorCode.CONNECTOR_LOCK_FAILURE)
     })
 
-    await it('should pass through undefined errorCode when not set in payload', () => {
-      const input = {
+    await it('should resolve the inter-version connectorStatus alias', () => {
+      // Version-blind UI requests may use connectorStatus even for 1.6 stations.
+      const result = OCPP16ServiceUtils.buildStatusNotificationRequest({
         connectorId: 1,
+        connectorStatus: OCPP16ChargePointStatus.Available,
+        errorCode: ChargePointErrorCode.NO_ERROR,
+      })
+
+      assert.strictEqual(result.status, OCPP16ChargePointStatus.Available)
+    })
+
+    await it('should let connectorStatus take precedence over status', () => {
+      const result = OCPP16ServiceUtils.buildStatusNotificationRequest({
+        connectorId: 1,
+        connectorStatus: OCPP16ChargePointStatus.Faulted,
+        errorCode: ChargePointErrorCode.NO_ERROR,
         status: OCPP16ChargePointStatus.Available,
-      } as unknown as OCPP16StatusNotificationRequest
+      })
 
-      const result = OCPP16ServiceUtils.buildStatusNotificationRequest(input)
+      assert.strictEqual(result.status, OCPP16ChargePointStatus.Faulted)
+    })
 
-      assert.strictEqual(result.errorCode, undefined)
+    await it('should refuse a 2.0.1-only connector status', () => {
+      // Occupied cannot be encoded by the 1.6 StatusNotification schema.
+      assert.throws(
+        () =>
+          OCPP16ServiceUtils.buildStatusNotificationRequest({
+            connectorId: 1,
+            connectorStatus: 'Occupied',
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          }),
+        OCPPError
+      )
+    })
+
+    await it('should refuse a missing connector status', () => {
+      assert.throws(
+        () =>
+          OCPP16ServiceUtils.buildStatusNotificationRequest({
+            connectorId: 1,
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          }),
+        OCPPError
+      )
     })
   })
 

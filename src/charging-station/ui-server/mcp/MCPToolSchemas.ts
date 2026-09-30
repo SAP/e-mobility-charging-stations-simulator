@@ -1,78 +1,32 @@
 import { z } from 'zod'
 
 import { ProcedureName } from '../../../types/index.js'
+import {
+  chargingStationOptionsSchema,
+  connectorIdsField as connectorIds,
+  hashIdsField as hashIds,
+  physicalConnectorIdField,
+  supervisionPasswordField,
+  supervisionUserField,
+  urlField,
+} from '../ui-services/UIServiceRequestPayloadSchemas.js'
 
 export interface MCPToolSchema {
   description: string
   inputSchema: z.ZodObject
 }
 
-const hashIds = z
-  .array(z.string())
-  .optional()
-  .describe('Target station hash IDs (omit for all stations)')
-
-const connectorIds = z
-  .array(z.number().int().positive())
-  .optional()
-  .describe('Target connector IDs')
-
-const broadcastInputSchema = z.object({
+const broadcastInputSchema = z.looseObject({
   connectorIds,
   hashIds,
 })
 
-const connectorInputSchema = z.object({
-  connectorId: z.number().int().positive().describe('Target connector ID'),
+const connectorInputSchema = z.looseObject({
+  connectorId: physicalConnectorIdField,
   hashIds,
 })
 
-const emptyInputSchema = z.object({})
-
-const chargingStationOptionsSchema = z.object({
-  autoRegister: z.boolean().optional().describe('Set stations as registered at boot notification'),
-  autoStart: z.boolean().optional().describe('Enable automatic start of added charging station'),
-  baseName: z
-    .string()
-    .optional()
-    .describe('Override the template base name used to derive the charging station id'),
-  enableStatistics: z.boolean().optional().describe('Enable charging station statistics'),
-  fixedName: z
-    .boolean()
-    .optional()
-    .describe('Use base name verbatim as charging station id instead of appending index/suffix'),
-  nameSuffix: z
-    .string()
-    .optional()
-    .describe(
-      'Suffix appended to the derived charging station id (ignored when fixed name is true)'
-    ),
-  ocppStrictCompliance: z
-    .boolean()
-    .optional()
-    .describe('Enable strict OCPP specifications adherence'),
-  persistentConfiguration: z
-    .boolean()
-    .optional()
-    .describe('Enable persistent OCPP parameters storage'),
-  stopTransactionsOnStopped: z
-    .boolean()
-    .optional()
-    .describe('Enable stop transactions on station stop'),
-  supervisionPassword: z
-    .string()
-    .optional()
-    .describe('CSMS basic auth password used on the supervision WebSocket'),
-  supervisionUrls: z
-    .union([z.url(), z.array(z.url())])
-    .optional()
-    .describe('OCPP server supervision URL(s)'),
-  supervisionUser: z
-    .string()
-    .regex(/^[^:]*$/, 'must not contain ":"')
-    .optional()
-    .describe('CSMS basic auth user used on the supervision WebSocket'),
-})
+const emptyInputSchema = z.looseObject({})
 
 /** Maps ProcedureName to OCPP JSON Schema file base names per version */
 export const ocppSchemaMapping = new Map<ProcedureName, { ocpp16?: string; ocpp20?: string }>([
@@ -122,7 +76,7 @@ const buildOcppInputSchema = (mapping: { ocpp16?: string; ocpp20?: string }): z.
   if (mapping.ocpp20 != null) {
     fields.ocpp20Payload = ocpp20PayloadField
   }
-  return z.object(fields)
+  return z.looseObject(fields)
 }
 
 const buildVersionAffinity = (mapping: { ocpp16?: string; ocpp20?: string }): string => {
@@ -151,7 +105,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     ProcedureName.ADD_CHARGING_STATIONS,
     {
       description: 'Add new charging stations from a configuration template',
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         numberOfStations: z
           .number()
           .int()
@@ -186,7 +140,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     {
       description:
         'Change the value of an OCPP configuration key for one or more charging stations, applying the OCPP spec side effects (read-only keys are rejected)',
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         hashIds,
         key: z.string().min(1).describe('The OCPP configuration key to change'),
         value: z.string().describe('The new value to set for the configuration key'),
@@ -212,7 +166,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     ProcedureName.DELETE_CHARGING_STATIONS,
     {
       description: 'Delete one or more charging stations from the simulator',
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         deleteConfiguration: z
           .boolean()
           .optional()
@@ -354,18 +308,15 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     {
       description:
         'Set the OCPP server supervision URL and optionally the CSMS basic auth credentials for one or more charging stations',
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         hashIds,
-        supervisionPassword: z
-          .string()
+        supervisionPassword: supervisionPasswordField
           .optional()
           .describe('CSMS basic auth password used on the supervision WebSocket'),
-        supervisionUser: z
-          .string()
-          .regex(/^[^:]*$/, 'must not contain ":"')
+        supervisionUser: supervisionUserField
           .optional()
           .describe('CSMS basic auth user used on the supervision WebSocket'),
-        url: z.url().describe('The OCPP server supervision URL to set'),
+        url: urlField.describe('The OCPP server supervision URL to set'),
       }),
     },
   ],
@@ -447,12 +398,15 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     ProcedureName.STOP_TRANSACTION,
     {
       description: ocppDescription('Stop a charging transaction', ProcedureName.STOP_TRANSACTION),
-      inputSchema: z.object({
+      inputSchema: z.looseObject({
         hashIds,
         ocpp16Payload: z
           .record(z.string(), z.unknown())
           .optional()
           .describe('OCPP 1.6 StopTransaction payload'),
+        // The published 1.6 schema carries transactionId inside ocpp16Payload.
+        // Requiring it at the envelope root would reject that valid shape before
+        // UIMCPServer flattens it; the shared gate enforces it after flattening.
         transactionId: z.number().int().optional().describe('Transaction ID to stop'),
       }),
     },

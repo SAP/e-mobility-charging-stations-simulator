@@ -225,7 +225,9 @@ export class UIMCPServer extends AbstractUIServer {
         procedureName,
         {
           description: schema.description,
-          inputSchema: schema.inputSchema.shape,
+          // Register the loose object itself: the SDK rebuilds raw shapes as
+          // stripping objects, which would drop unlisted flat OCPP fields.
+          inputSchema: schema.inputSchema,
         },
         async (input: Record<string, unknown>) => {
           return await this.invokeProcedure(procedureName, input as RequestPayload, this.service)

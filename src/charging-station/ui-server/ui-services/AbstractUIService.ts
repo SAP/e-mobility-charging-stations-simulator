@@ -28,12 +28,14 @@ import {
   ensureError,
   getErrorMessage,
   isEmpty,
+  isJsonObject,
   isNotEmptyArray,
   JSONStringify,
   logger,
 } from '../../../utils/index.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import { DEFAULT_MAX_STATIONS, isValidNumberOfStations } from '../UIServerSecurity.js'
+import { getRequestPayloadValidationError } from './UIServiceRequestPayloadSchemas.js'
 
 const moduleName = 'AbstractUIService'
 
@@ -234,6 +236,13 @@ export abstract class AbstractUIService {
         )
       }
 
+      // Transport schemas may validate a different envelope; enforce the shared
+      // flat-payload contract before dispatching to stations.
+      const validationError = getRequestPayloadValidationError(command, requestPayload)
+      if (validationError != null) {
+        throw new BaseError(`'${command}' request payload is invalid: ${validationError}`)
+      }
+
       // Call the request handler to build the response payload
       const requestHandler = this.requestHandlers.get(command)
       if (requestHandler == null) {
@@ -249,7 +258,7 @@ export abstract class AbstractUIService {
         errorMessage: getErrorMessage(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         hashIds: requestPayload?.hashIds,
-        requestPayload,
+        requestPayload: redactRequestCredentials(requestPayload),
         responsePayload,
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
@@ -340,17 +349,6 @@ export abstract class AbstractUIService {
       return {
         errorMessage:
           'Cannot add charging station(s) while the charging stations simulator is not started',
-        status: ResponseStatus.FAILURE,
-      } satisfies ResponsePayload
-    }
-    if (
-      typeof template !== 'string' ||
-      typeof numberOfStations !== 'number' ||
-      !Number.isInteger(numberOfStations) ||
-      numberOfStations <= 0
-    ) {
-      return {
-        errorMessage: 'Invalid request payload',
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
     }
@@ -574,4 +572,39 @@ export abstract class AbstractUIService {
       throw error
     }
   }
+}
+
+/**
+ * Validation failures bypass worker-side credential redaction. Use diagnostic
+ * copies to preserve caller-owned payloads.
+ * @param requestPayload - Original, potentially invalid request payload.
+ * @returns Diagnostics without root or object-options supervision credentials.
+ */
+const redactRequestCredentials = (
+  requestPayload: RequestPayload | undefined
+): RequestPayload | undefined => {
+  if (!isJsonObject(requestPayload)) {
+    return requestPayload
+  }
+  const options = requestPayload.options
+  const redactOptions =
+    isJsonObject(options) &&
+    (Object.hasOwn(options, 'supervisionPassword') || Object.hasOwn(options, 'supervisionUser'))
+  if (
+    !Object.hasOwn(requestPayload, 'supervisionPassword') &&
+    !Object.hasOwn(requestPayload, 'supervisionUser') &&
+    !redactOptions
+  ) {
+    return requestPayload
+  }
+  const redactedPayload = { ...requestPayload }
+  delete redactedPayload.supervisionPassword
+  delete redactedPayload.supervisionUser
+  if (redactOptions) {
+    const redactedOptions = { ...options }
+    delete redactedOptions.supervisionPassword
+    delete redactedOptions.supervisionUser
+    redactedPayload.options = redactedOptions
+  }
+  return redactedPayload
 }

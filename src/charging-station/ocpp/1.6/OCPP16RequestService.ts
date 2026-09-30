@@ -12,7 +12,7 @@ import {
   type OCPP16MeterValue,
   OCPP16RequestCommand,
   type OCPP16StartTransactionRequest,
-  type OCPP16StatusNotificationRequest,
+  type OCPP16StatusNotificationRequestParams,
   OCPPVersion,
 } from '../../../types/index.js'
 import { assertIsJsonObject, Constants, logger } from '../../../utils/index.js'
@@ -140,7 +140,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         return OCPP16ServiceUtils.buildStatusNotificationRequest({
           errorCode: ChargePointErrorCode.NO_ERROR,
           ...params,
-        } as OCPP16StatusNotificationRequest)
+        } as OCPP16StatusNotificationRequestParams)
       case OCPP16RequestCommand.STOP_TRANSACTION: {
         const transactionId = params.transactionId as number
         const hasIdTag = Object.hasOwn(params, 'idTag')

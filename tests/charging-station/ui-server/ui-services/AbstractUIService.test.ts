@@ -24,25 +24,11 @@ import {
   createMockChargingStationData,
   createMockUIServerConfiguration,
   createProtocolRequest,
+  createServiceContext,
   emitWorkerResponse,
   expectSingleLog,
   TestableUIWebSocketServer,
 } from '../UIServerTestUtils.js'
-
-const createServiceContext = (): {
-  readonly server: TestableUIWebSocketServer
-  readonly service: AbstractUIService
-} => {
-  const config = createMockUIServerConfiguration()
-  const server = new TestableUIWebSocketServer(config)
-  server.testRegisterProtocolVersionUIService(ProtocolVersion['0.0.1'])
-  server.setChargingStationData(TEST_HASH_ID, createMockChargingStationData(TEST_HASH_ID))
-  const service = server.getUIService(ProtocolVersion['0.0.1'])
-  if (service == null) {
-    assert.fail('Expected UI service to be registered')
-  }
-  return { server, service }
-}
 
 const registerInternalStopRequest = async (server: TestableUIWebSocketServer): Promise<void> => {
   await server.sendInternalRequest(
