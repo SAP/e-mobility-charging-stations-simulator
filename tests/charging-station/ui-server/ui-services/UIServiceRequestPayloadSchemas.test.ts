@@ -529,18 +529,42 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     }
   })
 
-  await it('should accept a meterValues entry without sampledValue', async () => {
+  await it('should reject a meterValues entry without sampledValue before broadcasting', async () => {
     const { service } = createServiceContext(2)
 
     try {
-      // sampledValue remains a worker-level requirement, so its absence yields
-      // a per-station failure rather than rejecting the entire broadcast.
-      // Omitting meterValue itself requests the station's current values.
-      const response = await dispatchUntrustedPayload(service, ProcedureName.METER_VALUES, {
-        connectorId: 1,
-        hashIds: [TEST_HASH_ID],
-        meterValue: [{}],
-      })
+      for (const payload of [
+        { connectorId: 1, meterValue: [{}] },
+        {
+          evseId: 1,
+          hashIds: [TEST_HASH_ID],
+          meterValue: [{ sampledValue: [{ value: '1' }] }, {}],
+        },
+      ]) {
+        const response = await dispatchUntrustedPayload(
+          service,
+          ProcedureName.METER_VALUES,
+          payload
+        )
+
+        assertRejectedWith(response, /meterValue.*sampledValue/)
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+      }
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should dispatch a request for current values when meterValue is omitted', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.METER_VALUES, {
+          connectorId: 1,
+          hashIds: [TEST_HASH_ID],
+        })
+      )
 
       assert.strictEqual(response, undefined)
       assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)

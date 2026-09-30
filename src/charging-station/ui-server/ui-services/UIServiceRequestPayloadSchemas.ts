@@ -190,9 +190,7 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
     connectorId: connectorIdField,
   }),
   [ProcedureName.LOG_STATUS_NOTIFICATION]: broadcastSchema,
-  // `meterValue` and its `sampledValue` entries are forwarded to the OCPP layer;
-  // only their container types are checked, so a scalar instead of a list is
-  // rejected once at the gate rather than per station.
+  // Supplied meter values require sampled-value arrays; contents stay OCPP-owned.
   // The target is a union, not an intersection: OCPP 1.6 MeterValues requires
   // `connectorId` while OCPP 2.0.1 requires `evseId`, and the two enumerations
   // share no mandatory member, so no single field can be required here. The
@@ -205,9 +203,7 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
       ...broadcastFields,
       connectorId: connectorIdField.optional(),
       evseId: evseIdField.optional(),
-      meterValue: z
-        .array(z.looseObject({ sampledValue: z.array(z.unknown()).optional() }))
-        .optional(),
+      meterValue: z.array(z.looseObject({ sampledValue: z.array(z.unknown()) })).optional(),
     })
     .refine(payload => payload.connectorId != null || payload.evseId != null, {
       message: 'at least one of "connectorId" or "evseId" is required',
