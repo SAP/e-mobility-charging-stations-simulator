@@ -111,6 +111,9 @@ const moduleName = 'OCPP16ServiceUtils'
 const RFC3339_TIMESTAMP_PATTERN =
   /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([Zz]|([+-])(\d{2}):(\d{2}))$/
 const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
+const OCPP16_CHARGE_POINT_STATUSES: ReadonlySet<string> = new Set<string>(
+  Object.values(OCPP16ChargePointStatus)
+)
 
 /**
  * Rejects statuses that OCPP 1.6 cannot encode: OCPP 2.0.1 `Occupied` has no
@@ -119,7 +122,7 @@ const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
  * @returns `true` when the value is an OCPP 1.6 charge point status.
  */
 const isOCPP16ChargePointStatus = (status: string): status is OCPP16ChargePointStatus =>
-  (Object.values(OCPP16ChargePointStatus) as string[]).includes(status)
+  OCPP16_CHARGE_POINT_STATUSES.has(status)
 
 const isLeapYear = (year: number): boolean =>
   year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
@@ -324,7 +327,7 @@ export class OCPP16ServiceUtils {
       // before calling this builder.
       errorCode,
       status,
-    } as OCPP16StatusNotificationRequest
+    } satisfies OCPP16StatusNotificationRequest
   }
 
   /**

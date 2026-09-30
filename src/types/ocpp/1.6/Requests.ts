@@ -185,10 +185,10 @@ export interface OCPP16StatusNotificationRequest extends JsonObject {
  * Values remain untrusted because not every 2.0.x status has a 1.6 counterpart;
  * the builder validates them before producing a PDU.
  */
-export type OCPP16StatusNotificationRequestParams = Partial<OCPP16StatusNotificationRequest> & {
-  connectorId: number
-  connectorStatus?: string
-}
+export type OCPP16StatusNotificationRequestParams = Partial<OCPP16StatusNotificationRequest> &
+  Pick<OCPP16StatusNotificationRequest, 'connectorId' | 'errorCode'> & {
+    connectorStatus?: string
+  }
 
 export interface OCPP16TriggerMessageRequest extends JsonObject {
   connectorId?: number
