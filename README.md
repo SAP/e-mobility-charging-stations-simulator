@@ -1013,12 +1013,6 @@ Note over UI Server,Client: WebSocket
   `uuid`: String uniquely linking the response to the request  
   `PDU`: Response parameters to requested procedure
 
-Every transport uses a shared per-procedure payload gate. It rejects invalid targeting and control fields before dispatch, returning `status: 'failure'` with field-specific `errorMessage` details. Unlisted OCPP fields are preserved; the OCPP layer validates PDUs against the OCPP JSON schemas when `ocppStrictCompliance` is enabled.
-
-The `requestPayload` diagnostics in shared-service failure responses omit `supervisionUser` and `supervisionPassword` at the root and in object-valued `options` to avoid exposing credentials; other fields are preserved.
-
-MCP also validates tool arguments before this shared gate: `lockConnector` requires `connectorId > 0` over MCP even though the flat UI payload accepts 0. Unknown keys in `addChargingStations.options` are accepted by the shared gate; the MCP SDK removes them while parsing tool arguments, whereas HTTP and WebSocket retain them. MCP input validation can reject a request before the UI failure response is produced.
-
 To learn how to use the WebSocket protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) WebSocket requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
 
 #### Version 0.0.1
