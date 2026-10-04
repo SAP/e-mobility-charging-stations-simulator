@@ -2476,7 +2476,10 @@ export class ChargingStation extends EventEmitter {
         return new URL(configuredSupervisionUrl)
       } catch (error) {
         const errorMsg = `Invalid supervision url '${configuredSupervisionUrl}' configured`
-        logger.error(`${this.logPrefix()} ${moduleName}.getConfiguredSupervisionUrl: ${errorMsg}`, error)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.getConfiguredSupervisionUrl: ${errorMsg}`,
+          error
+        )
         throw new BaseError(errorMsg, { cause: error })
       }
     }
