@@ -3,14 +3,17 @@ import {
   type MeterValueContext,
   type MeterValuePhase,
   type OCPP16BootNotificationRequest,
-  type OCPP16MeterValueContext,
+  OCPP16MeterValueContext,
   OCPP16MeterValueFormat,
   OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
+  OCPP16MeterValuePhase,
+  OCPP16MeterValueUnit,
   type OCPP16SampledValue,
   type OCPP16SignedMeterValue,
   type SampledValueTemplate,
 } from '../../../types/index.js'
+import { getEnumStringValue } from '../../../utils/index.js'
 import { resolveSampledValueFields } from '../OCPPServiceUtils.js'
 
 export const buildOCPP16BootNotificationRequest = (
@@ -52,14 +55,19 @@ export function buildOCPP16SampledValue (
   phase?: MeterValuePhase
 ): OCPP16SampledValue {
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
+  const resolvedContext = getEnumStringValue(OCPP16MeterValueContext, fields.context)
+  const resolvedLocation = getEnumStringValue(OCPP16MeterValueLocation, fields.location)
+  const resolvedMeasurand = getEnumStringValue(OCPP16MeterValueMeasurand, fields.measurand)
+  const resolvedPhase = getEnumStringValue(OCPP16MeterValuePhase, fields.phase)
+  const resolvedUnit = getEnumStringValue(OCPP16MeterValueUnit, fields.unit)
   return {
-    context: fields.context,
-    location: fields.location,
-    measurand: fields.measurand,
-    ...(fields.unit != null && { unit: fields.unit }),
+    ...(resolvedContext != null && { context: resolvedContext }),
+    ...(resolvedLocation != null && { location: resolvedLocation }),
+    ...(resolvedMeasurand != null && { measurand: resolvedMeasurand }),
+    ...(resolvedUnit != null && { unit: resolvedUnit }),
     value: fields.value.toString(),
-    ...(fields.phase != null && { phase: fields.phase }),
-  } as OCPP16SampledValue
+    ...(resolvedPhase != null && { phase: resolvedPhase }),
+  }
 }
 
 /**

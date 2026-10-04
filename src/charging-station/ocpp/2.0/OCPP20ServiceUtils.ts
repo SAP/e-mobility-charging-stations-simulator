@@ -52,6 +52,7 @@ import {
   type ConnectorStatusEnum,
   CurrentType,
   ErrorType,
+  isOCPP20MeterValue,
   type MeterValue,
   MeterValueLocation,
   OCPP20AuthorizationStatusEnumType,
@@ -143,6 +144,13 @@ import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata } from './OCPP20VariableRegistry.js'
 
 const moduleName = 'OCPP20ServiceUtils'
+
+const requireOCPP20MeterValue = (meterValue: MeterValue): OCPP20MeterValue => {
+  if (!isOCPP20MeterValue(meterValue)) {
+    throw new BaseError('MeterValue builder returned OCPP 1.6 data for an OCPP 2.0.x station')
+  }
+  return meterValue
+}
 
 // Measurands that are not applicable to the station main power meter (evseId 0).
 // J01.FR.14 note: "evseId = 0 (grid meter) will not have a Current.Offered or
@@ -1523,29 +1531,31 @@ export class OCPP20ServiceUtils {
     }
     const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     const sharedRegisterBeforeRequestedBuild = sharedEnergyRegisterWh
-    const meterValue = buildMeterValue(
-      chargingStation,
-      transactionId,
-      interval,
-      measurandsKey,
-      context,
-      false,
-      {
-        connectorId,
-        energyNominalInterval,
-        ...(evseId != null && { evseId }),
-        timestamp: meterValueTimestamp,
-        ...(settlementOnly && { deferEnergyInterval: true, suppressSigning: true }),
-        ...(usesSharedEvseRegister && {
-          advanceEnergy: connectorId === sharedEnergyOwnerConnectorId,
-          ...(connectorId === sharedEnergyOwnerConnectorId &&
+    const meterValue = requireOCPP20MeterValue(
+      buildMeterValue(
+        chargingStation,
+        transactionId,
+        interval,
+        measurandsKey,
+        context,
+        false,
+        {
+          connectorId,
+          energyNominalInterval,
+          ...(evseId != null && { evseId }),
+          timestamp: meterValueTimestamp,
+          ...(settlementOnly && { deferEnergyInterval: true, suppressSigning: true }),
+          ...(usesSharedEvseRegister && {
+            advanceEnergy: connectorId === sharedEnergyOwnerConnectorId,
+            ...(connectorId === sharedEnergyOwnerConnectorId &&
             context !== OCPP20ReadingContextEnumType.TRANSACTION_BEGIN && {
-            energyElapsedInterval: sharedEnergyInterval,
+              energyElapsedInterval: sharedEnergyInterval,
+            }),
+            energyRegisterWhOverride: sharedEnergyRegisterWh,
           }),
-          energyRegisterWhOverride: sharedEnergyRegisterWh,
-        }),
-      }
-    ) as OCPP20MeterValue
+        }
+      )
+    )
     const sharedObservationEnergyWh =
       usesSharedEvseRegister &&
       context !== OCPP20ReadingContextEnumType.TRANSACTION_BEGIN &&
@@ -4615,10 +4625,14 @@ export class OCPP20ServiceUtils {
     evseId?: number
   ): OCPP20MeterValue[] {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
-    const endedMeterValues = (connectorStatus?.transactionEndedMeterValues ??
-      []) as OCPP20MeterValue[]
-    const beginMeterValue = connectorStatus?.transactionBeginMeterValue as
-      OCPP20MeterValue | undefined
+    const endedMeterValues = connectorStatus?.transactionEndedMeterValues ?? []
+    if (!endedMeterValues.every(isOCPP20MeterValue)) {
+      throw new BaseError('Stored transaction-ended MeterValues do not match OCPP 2.0.x')
+    }
+    const beginMeterValue = connectorStatus?.transactionBeginMeterValue
+    if (beginMeterValue != null && !isOCPP20MeterValue(beginMeterValue)) {
+      throw new BaseError('Stored transaction-begin MeterValue does not match OCPP 2.0.x')
+    }
     const measurandsKey = buildConfigKey(
       OCPP20ComponentName.SampledDataCtrlr,
       OCPP20RequiredVariableName.TxEndedMeasurands

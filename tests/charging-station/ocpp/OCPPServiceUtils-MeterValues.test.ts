@@ -49,31 +49,31 @@ const energyTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
   unit: 'Wh',
   value: '0',
-} as unknown as SampledValueTemplate
+}
 
 const socTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.STATE_OF_CHARGE,
   unit: 'Percent',
   value: '75',
-} as unknown as SampledValueTemplate
+}
 
 const voltageTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.VOLTAGE,
   unit: 'V',
   value: '230',
-} as unknown as SampledValueTemplate
+}
 
 const powerTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
   unit: 'W',
   value: '11000',
-} as unknown as SampledValueTemplate
+}
 
 const currentTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.CURRENT_IMPORT,
   unit: 'A',
   value: '16',
-} as unknown as SampledValueTemplate
+}
 
 await describe('buildMeterValue', async () => {
   let station: ChargingStation
@@ -120,7 +120,7 @@ await describe('buildMeterValue', async () => {
           measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: MeterValueUnit.WATT_HOUR,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
 
       const meterValue = buildMeterValue(station, TEST_TRANSACTION_ID, 0)
 
@@ -233,7 +233,7 @@ await describe('buildMeterValue', async () => {
             unit: 'Wh',
             value: '1000',
           },
-        ] as unknown as SampledValueTemplate[]
+        ]
 
         buildMeterValue(testStation, TEST_TRANSACTION_ID_STRING, 3_600_000)
 
@@ -261,7 +261,7 @@ await describe('buildMeterValue', async () => {
           unit: MeterValueUnit.WATT_HOUR,
           value: '0',
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
       addConfigurationKey(
         station,
         buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20RequiredVariableName.Measurands),

@@ -8,14 +8,14 @@ import { BaseError } from './BaseError.js'
 
 export class OCPPError extends BaseError {
   code: ErrorType
-  command: IncomingRequestCommand | RequestCommand
+  command: IncomingRequestCommand | RequestCommand | string
   details?: JsonType
   public override readonly name = 'OCPPError' as const
 
   constructor (
     code: ErrorType,
     message: string,
-    command?: IncomingRequestCommand | RequestCommand,
+    command?: IncomingRequestCommand | RequestCommand | string,
     details?: JsonType
   ) {
     super(message)

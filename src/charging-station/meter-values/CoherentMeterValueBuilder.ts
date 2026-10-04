@@ -185,7 +185,7 @@ const energyIntervalFallbackIdentity = (
   JSON.stringify([
     template.phase,
     template.location ?? MeterValueLocation.OUTLET,
-    (template.unit as MeterValueUnit | undefined) ?? MeterValueUnit.WATT_HOUR,
+    template.unit ?? MeterValueUnit.WATT_HOUR,
     context ?? template.context ?? MeterValueContext.SAMPLE_PERIODIC,
     ocppVersion === OCPPVersion.VERSION_16
       ? (template.format ?? OCPP16MeterValueFormat.RAW)
@@ -201,7 +201,7 @@ const templateFamilyKey = (
     customData: template.customData,
     location: template.location ?? MeterValueLocation.OUTLET,
     measurand: template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-    unit: (template.unit as MeterValueUnit | undefined) ?? MeterValueUnit.WATT_HOUR,
+    unit: template.unit ?? MeterValueUnit.WATT_HOUR,
   })
 
 /**
@@ -503,7 +503,7 @@ const serializeCoherentMeterValue = (
         const intervalTemplate = {
           ...template,
           measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
-        } as SampledValueTemplate
+        }
         return !intervalTemplateIdentities.has(
           energyIntervalFallbackIdentity(
             intervalTemplate,
@@ -517,7 +517,7 @@ const serializeCoherentMeterValue = (
           ({
             ...template,
             measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
-          }) as SampledValueTemplate
+          })
       )
     if (isNotEmptyArray(intervalFallbacks)) {
       groups.set(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL, [
@@ -582,7 +582,7 @@ const serializeCoherentMeterValue = (
           : raw
       const unitDivider = resolveMeterValueUnitDivider(
         measurand,
-        template.unit as MeterValueUnit | undefined
+        template.unit
       )
       const scaled =
         measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL

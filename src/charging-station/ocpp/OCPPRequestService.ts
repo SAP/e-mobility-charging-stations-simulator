@@ -10,7 +10,7 @@ import {
   type ErrorCallback,
   type ErrorResponse,
   ErrorType,
-  type IncomingRequestCommand,
+  IncomingRequestCommand,
   type JsonType,
   MessageType,
   type OCPPVersion,
@@ -28,6 +28,7 @@ import {
   ensureError,
   formatDurationMilliSeconds,
   generateUUID,
+  getEnumStringValue,
   getErrorMessage,
   getMessageTypeString,
   handleSendMessageError,
@@ -41,6 +42,22 @@ import {
   isRequestCommandSupported,
   validatePayload,
 } from './OCPPServiceUtils.js'
+
+const requireIncomingRequestCommand = (commandName: string): IncomingRequestCommand => {
+  const command = getEnumStringValue(IncomingRequestCommand, commandName)
+  if (command == null) {
+    throw new OCPPError(ErrorType.NOT_SUPPORTED, `Unknown OCPP command '${commandName}'`)
+  }
+  return command
+}
+
+const requireRequestCommand = (commandName: string): RequestCommand => {
+  const command = getEnumStringValue(RequestCommand, commandName)
+  if (command == null) {
+    throw new OCPPError(ErrorType.NOT_SUPPORTED, `Unknown OCPP command '${commandName}'`)
+  }
+  return command
+}
 
 interface OutgoingCallCancellationState {
   readonly destructiveError: OCPPError | undefined
@@ -410,7 +427,7 @@ export abstract class OCPPRequestService {
     chargingStation: ChargingStation,
     messageId: string,
     ocppError: OCPPError,
-    commandName: IncomingRequestCommand | RequestCommand
+    commandName: IncomingRequestCommand | RequestCommand | string
   ): Promise<ResponseType> {
     try {
       return await this.internalSendMessage(
@@ -582,7 +599,7 @@ export abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
-    commandName: IncomingRequestCommand | RequestCommand
+    commandName: IncomingRequestCommand | RequestCommand | string
   ): string {
     let messageToSend: string
     // Type of message
@@ -606,20 +623,22 @@ export abstract class OCPPRequestService {
         break
       }
       // Request
-      case MessageType.CALL_MESSAGE:
-        this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonType)
+      case MessageType.CALL_MESSAGE: {
+        const requestCommand = requireRequestCommand(commandName)
+        this.validateRequestPayload(chargingStation, requestCommand, messagePayload as JsonType)
         messageToSend = JSON.stringify([
           messageType,
           messageId,
-          commandName as RequestCommand,
+          requestCommand,
           messagePayload as JsonType,
         ] satisfies OutgoingRequest)
         break
+      }
       // Response
       case MessageType.CALL_RESULT_MESSAGE:
         this.validateIncomingRequestResponsePayload(
           chargingStation,
-          commandName,
+          requireIncomingRequestCommand(commandName),
           messagePayload as JsonType
         )
         messageToSend = JSON.stringify([
@@ -664,7 +683,7 @@ export abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
-    commandName: IncomingRequestCommand | RequestCommand,
+    commandName: IncomingRequestCommand | RequestCommand | string,
     params: RequestParams,
     responseTimeoutMs: number
   ): PendingSendOperation {
@@ -752,7 +771,7 @@ export abstract class OCPPRequestService {
         // reject an already-answered request while its handler is still running.
         chargingStation.requests.delete(messageId)
         this.ocppResponseService
-          .responseHandler(chargingStation, commandName as RequestCommand, payload, requestPayload)
+          .responseHandler(chargingStation, requireRequestCommand(commandName), payload, requestPayload)
           .then(() => {
             resolve(payload)
             return undefined
@@ -911,7 +930,7 @@ export abstract class OCPPRequestService {
               chargingStation,
               messageId,
               messagePayload as JsonType,
-              commandName,
+              requireRequestCommand(commandName),
               responseCallback,
               errorCallback,
               cancelPendingSend,
@@ -1046,7 +1065,7 @@ export abstract class OCPPRequestService {
             chargingStation,
             messageId,
             messagePayload as JsonType,
-            commandName,
+            requireRequestCommand(commandName),
             responseCallback,
             errorCallback,
             cancelPendingSend,
@@ -1105,7 +1124,7 @@ export abstract class OCPPRequestService {
                     chargingStation,
                     messageId,
                     messagePayload as JsonType,
-                    commandName,
+                    requireRequestCommand(commandName),
                     responseCallback,
                     errorCallback,
                     cancelPendingSend,
@@ -1203,7 +1222,7 @@ export abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
-    commandName: IncomingRequestCommand | RequestCommand,
+    commandName: IncomingRequestCommand | RequestCommand | string,
     params?: RequestParams,
     cancellationGenerationAtRequestStart?: number
   ): Promise<ResponseType> {
@@ -1219,7 +1238,7 @@ export abstract class OCPPRequestService {
       ((chargingStation.inUnknownState() ||
         chargingStation.inPendingState() ||
         chargingStation.inRejectedState()) &&
-        commandName === RequestCommand.BOOT_NOTIFICATION) ||
+        getEnumStringValue(RequestCommand, commandName) === RequestCommand.BOOT_NOTIFICATION) ||
       (chargingStation.stationInfo?.ocppStrictCompliance === false &&
         chargingStation.inUnknownState()) ||
       chargingStation.inAcceptedState() ||

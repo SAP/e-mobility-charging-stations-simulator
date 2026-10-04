@@ -104,7 +104,7 @@ export const handleFileException = (
 
 export const handleSendMessageError = (
   chargingStation: ChargingStation,
-  commandName: IncomingRequestCommand | RequestCommand,
+  commandName: IncomingRequestCommand | RequestCommand | string,
   messageType: MessageType,
   error: Error,
   params?: HandleErrorParams<EmptyObject>

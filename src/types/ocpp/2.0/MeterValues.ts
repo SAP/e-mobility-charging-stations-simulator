@@ -100,5 +100,5 @@ export interface OCPP20SignedMeterValue extends JsonObject {
 export interface OCPP20UnitOfMeasure extends JsonObject {
   customData?: CustomDataType
   multiplier?: number // Default: 0
-  unit?: OCPP20UnitEnumType | (Record<never, never> & string)
+  unit?: OCPP20UnitEnumType | string
 }

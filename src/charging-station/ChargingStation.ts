@@ -1438,7 +1438,7 @@ export class ChargingStation extends EventEmitter {
    * @param messageType - Message type of the recorded exchange.
    */
   public recordRequestStatistic (
-    command: IncomingRequestCommand | RequestCommand,
+    command: IncomingRequestCommand | RequestCommand | string,
     messageType: MessageType
   ): void {
     if (this.stationInfo?.enableStatistics === true) {

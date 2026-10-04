@@ -9,6 +9,7 @@ import {
   type SampledValue,
   SigningMethodEnumType,
 } from '../../types/index.js'
+import { getEnumStringValue } from '../../utils/index.js'
 import { getErrorMessage, isJsonObject, isNotEmptyString, logger } from '../../utils/index.js'
 
 export const getOCPP16SignedMeterValuePublicKey = (
@@ -173,16 +174,11 @@ export const validateSigningPrerequisites = (
   return { enabled: true, signingMethod: configuredSigningMethod ?? derivedMethod }
 }
 
-const PUBLIC_KEY_WITH_SIGNED_METER_VALUE_VALUES = new Set<string>(
-  Object.values(PublicKeyWithSignedMeterValueEnumType)
-)
-
 export const parsePublicKeyWithSignedMeterValue = (
   value: string | undefined
 ): PublicKeyWithSignedMeterValueEnumType =>
-  value != null && PUBLIC_KEY_WITH_SIGNED_METER_VALUE_VALUES.has(value)
-    ? (value as PublicKeyWithSignedMeterValueEnumType)
-    : PublicKeyWithSignedMeterValueEnumType.Never
+  getEnumStringValue(PublicKeyWithSignedMeterValueEnumType, value) ??
+  PublicKeyWithSignedMeterValueEnumType.Never
 
 export const shouldIncludePublicKey = (
   config: PublicKeyWithSignedMeterValueEnumType,

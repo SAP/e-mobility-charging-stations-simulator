@@ -5,9 +5,7 @@ import {
   ConfigurationStatus,
   DataTransferStatus,
   GenericStatus,
-  type IncomingRequestCommand,
   MeterValueMeasurand,
-  type RequestCommand,
   ReservationStatus,
   TriggerMessageStatus,
   UnlockStatus,
@@ -161,8 +159,7 @@ export class OCPPConstants {
   })
 
   static readonly OCPP_WEBSOCKET_TIMEOUT_MS = 60_000
-  static readonly UNKNOWN_OCPP_COMMAND = 'unknown OCPP command' as
-    IncomingRequestCommand | RequestCommand
+  static readonly UNKNOWN_OCPP_COMMAND = 'unknown OCPP command'
 
   protected constructor () {
     // This is intentional

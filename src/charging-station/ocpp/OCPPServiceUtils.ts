@@ -10,7 +10,6 @@ import type {
   BootReasonEnumType,
   OCPP20RequiredVariableName,
   OCPP20VendorVariableName,
-  SigningMethodEnumType,
 } from '../../types/index.js'
 
 import {
@@ -44,6 +43,9 @@ import {
   ErrorType,
   FileType,
   IncomingRequestCommand,
+  isOCPP16SampledValue,
+  isOCPP20MeterValue,
+  isOCPP20SampledValue,
   type JsonType,
   type MeasurandPerPhaseSampledValueTemplates,
   type MeasurandValues,
@@ -56,15 +58,19 @@ import {
   MeterValueUnit,
   OCPP16MeterValueFormat,
   OCPP20ComponentName,
+  OCPP20LocationEnumType,
+  OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
   OCPP20OptionalVariableName,
   OCPP20PhaseEnumType,
   OCPP20ReadingContextEnumType,
   type OCPP20SampledValue,
+  OCPP20UnitEnumType,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
   type SampledValueTemplate,
+  SigningMethodEnumType,
   StandardParametersKey,
   VendorParametersKey,
 } from '../../types/index.js'
@@ -76,6 +82,7 @@ import {
   convertToFloat,
   convertToInt,
   DCElectricUtils,
+  getEnumStringValue,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   handleFileException,
@@ -107,6 +114,42 @@ import {
 } from './OCPPSignedMeterValueUtils.js'
 
 const moduleName = 'OCPPServiceUtils'
+
+const LINE_PHASES = [MeterValuePhase.L1, MeterValuePhase.L2, MeterValuePhase.L3] as const
+const LINE_TO_LINE_PHASES = [
+  MeterValuePhase.L1_L2,
+  MeterValuePhase.L2_L3,
+  MeterValuePhase.L3_L1,
+] as const
+const LINE_TO_NEUTRAL_PHASES = [
+  MeterValuePhase.L1_N,
+  MeterValuePhase.L2_N,
+  MeterValuePhase.L3_N,
+] as const
+
+const toSnapshotBaselineSample = (sampledValue: SampledValue): OCPP20SampledValue => {
+  if (isOCPP20SampledValue(sampledValue)) return sampledValue
+  const context = getEnumStringValue(OCPP20ReadingContextEnumType, sampledValue.context)
+  const location = getEnumStringValue(OCPP20LocationEnumType, sampledValue.location)
+  const measurand = getEnumStringValue(OCPP20MeasurandEnumType, sampledValue.measurand)
+  const phase = getEnumStringValue(OCPP20PhaseEnumType, sampledValue.phase)
+  const unit = getEnumStringValue(OCPP20UnitEnumType, sampledValue.unit)
+  return {
+    ...(context != null && { context }),
+    ...(location != null && { location }),
+    ...(measurand != null && { measurand }),
+    ...(phase != null && { phase }),
+    ...(unit != null && { unitOfMeasure: { unit } }),
+    value: convertToFloat(sampledValue.value),
+  }
+}
+
+const requireOCPP20MeterValue = (meterValue: MeterValue): OCPP20MeterValue => {
+  if (!isOCPP20MeterValue(meterValue)) {
+    throw new BaseError('MeterValue builder returned OCPP 1.6 data for an OCPP 2.0.x station')
+  }
+  return meterValue
+}
 
 const isOCPP20FlagEnabled = (
   chargingStation: ChargingStation,
@@ -1159,10 +1202,16 @@ const createVersionedSampledValueDispatcher = (
               chargingStation,
               buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.PublicKey)
             )?.value
-            const configuredSigningMethod = getConfigurationKey(
-              chargingStation,
-              buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.SigningMethod)
-            )?.value as SigningMethodEnumType | undefined
+            const configuredSigningMethod = getEnumStringValue(
+              SigningMethodEnumType,
+              getConfigurationKey(
+                chargingStation,
+                buildConfigKey(
+                  OCPP20ComponentName.FiscalMetering,
+                  VendorParametersKey.SigningMethod
+                )
+              )?.value
+            )
 
             const prerequisiteResult = validateSigningPrerequisites(
               publicKeyHex,
@@ -1246,8 +1295,6 @@ const createVersionedSampledValueDispatcher = (
 // abort semantics, no `resetStationState` hook — a diagnostic side-effect
 // cache freed only by GC.
 const warnedInvalidMeasurands = new WeakMap<ChargingStation, Set<string>>()
-const KNOWN_MEASURANDS: ReadonlySet<string> = new Set<string>(Object.values(MeterValueMeasurand))
-
 const getOrCreateWarnedMeasurands = (chargingStation: ChargingStation): Set<string> => {
   let warned = warnedInvalidMeasurands.get(chargingStation)
   if (warned == null) {
@@ -1302,8 +1349,9 @@ const resolveEnabledMeasurands = (
     if (isEmpty(trimmed)) {
       continue
     }
-    if (KNOWN_MEASURANDS.has(trimmed)) {
-      enabled.add(trimmed as MeterValueMeasurand)
+    const measurand = getEnumStringValue(MeterValueMeasurand, trimmed)
+    if (measurand != null) {
+      enabled.add(measurand)
       continue
     }
     const warned = getOrCreateWarnedMeasurands(chargingStation)
@@ -1369,7 +1417,7 @@ const addEnergyIntervalTemplateFallbacks = (
       {
         ...template,
         measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
-      } as SampledValueTemplate,
+      },
     ]
   })
 }
@@ -1492,7 +1540,7 @@ const buildEnergyIntervalSampledValues = (
           physicalValue /
             resolveMeterValueUnitDivider(
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
-              template.unit as string | undefined
+              template.unit
             )
         ),
         context,
@@ -1592,7 +1640,7 @@ const expandClockAlignedSnapshotSamples = (
   ).map((template): SampledValueTemplate => {
     const measurand = template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
     return evseId === 0 && template.location == null && isElectricalMeasurand(measurand)
-      ? ({ ...template, location: MeterValueLocation.INLET } as SampledValueTemplate)
+      ? { ...template, location: MeterValueLocation.INLET }
       : template
   })
   const templatesWithIntervalFallback =
@@ -1782,7 +1830,7 @@ const expandClockAlignedSnapshotSamples = (
       if (idle) {
         rawValue = 0
       } else {
-        const divider = resolveMeterValueUnitDivider(measurand, template.unit as string | undefined)
+        const divider = resolveMeterValueUnitDivider(measurand, template.unit)
         const maximumValue =
           measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
             ? chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId) /
@@ -1836,7 +1884,7 @@ const expandClockAlignedSnapshotSamples = (
         getRandomFloatFluctuatedRounded(
           convertToFloat(template.value),
           template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
-        ) * resolveMeterValueUnitDivider(measurand, template.unit as string | undefined)
+        ) * resolveMeterValueUnitDivider(measurand, template.unit)
     } else if (measurand === MeterValueMeasurand.VOLTAGE) {
       const nominal =
         phaseFamily === 'LineToLine'
@@ -1858,7 +1906,7 @@ const expandClockAlignedSnapshotSamples = (
       preferBaseline
     )
     const unitValue =
-      physicalValue / resolveMeterValueUnitDivider(measurand, template.unit as string | undefined)
+      physicalValue / resolveMeterValueUnitDivider(measurand, template.unit)
     const value =
       measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
         ? truncateTransactionIntervalValue(unitValue)
@@ -1867,18 +1915,27 @@ const expandClockAlignedSnapshotSamples = (
   }
   return applyClockAlignedVoltageControls(
     chargingStation,
-    expanded as OCPP20SampledValue[],
+    expanded,
     buildVersionedSampledValue,
     context
   )
 }
 
+const getSampledValueUnit = (sampledValue: SampledValue): string | undefined =>
+  isOCPP20SampledValue(sampledValue) ? sampledValue.unitOfMeasure?.unit : sampledValue.unit
+
+const getSampledValueCustomData = (sampledValue: SampledValue): unknown =>
+  isOCPP20SampledValue(sampledValue) ? sampledValue.customData : undefined
+
+const getSampledValueFormat = (sampledValue: SampledValue): string | undefined =>
+  isOCPP20SampledValue(sampledValue) ? undefined : sampledValue.format
+
 const applyClockAlignedVoltageControls = (
   chargingStation: ChargingStation,
-  sampledValues: OCPP20SampledValue[],
+  sampledValues: SampledValue[],
   buildVersionedSampledValue: BuildVersionedSampledValue,
   context: MeterValueContext | undefined
-): OCPP20SampledValue[] => {
+): SampledValue[] => {
   if (
     chargingStation.getNumberOfPhases() !== 3 ||
     chargingStation.stationInfo?.currentOutType !== CurrentType.AC
@@ -1892,45 +1949,46 @@ const applyClockAlignedVoltageControls = (
   const configuredPhaseSamples = sampledValues.filter(
     sample => sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase != null
   )
-  const automaticSamples: OCPP20SampledValue[] = []
+  const automaticSamples: SampledValue[] = []
   for (const aggregateVoltage of aggregateVoltages) {
-    const configuredPhases = new Set(
-      configuredPhaseSamples
-        .filter(
-          sample =>
-            sample.context === aggregateVoltage.context &&
-            canonicalizeCustomData(sample.customData) ===
-              canonicalizeCustomData(aggregateVoltage.customData) &&
-            sample.format === aggregateVoltage.format &&
-            sample.location === aggregateVoltage.location &&
-            sample.unitOfMeasure?.unit === aggregateVoltage.unitOfMeasure?.unit
-        )
-        .map(sample => sample.phase)
-    )
-    const template = {
-      ...aggregateVoltage,
-      unit: aggregateVoltage.unitOfMeasure?.unit,
-    } as SampledValueTemplate
-    const addPhase = (phase: OCPP20PhaseEnumType, value: number): void => {
+    const configuredPhases = new Set(configuredPhaseSamples
+      .filter(
+        sample =>
+          sample.context === aggregateVoltage.context &&
+          canonicalizeCustomData(getSampledValueCustomData(sample)) ===
+            canonicalizeCustomData(getSampledValueCustomData(aggregateVoltage)) &&
+          getSampledValueFormat(sample) === getSampledValueFormat(aggregateVoltage) &&
+          sample.location === aggregateVoltage.location &&
+          getSampledValueUnit(sample) === getSampledValueUnit(aggregateVoltage)
+      )
+      .map(sample => sample.phase))
+    const template: SampledValueTemplate = {
+      ...(isOCPP20SampledValue(aggregateVoltage)
+        ? { customData: aggregateVoltage.customData }
+        : { format: aggregateVoltage.format }),
+      context: aggregateVoltage.context,
+      location: aggregateVoltage.location,
+      measurand: aggregateVoltage.measurand,
+      phase: aggregateVoltage.phase,
+      unit: getSampledValueUnit(aggregateVoltage),
+      value: aggregateVoltage.value,
+    }
+    const addPhase = (phase: MeterValuePhase, value: number): void => {
       if (!configuredPhases.has(phase)) {
         automaticSamples.push(
-          buildVersionedSampledValue(
-            template,
-            roundTo(value, 2),
-            context,
-            phase
-          ) as OCPP20SampledValue
+          buildVersionedSampledValue(template, roundTo(value, 2), context, phase)
         )
       }
     }
-    addPhase(OCPP20PhaseEnumType.L1_N, aggregateVoltage.value)
-    addPhase(OCPP20PhaseEnumType.L2_N, aggregateVoltage.value)
-    addPhase(OCPP20PhaseEnumType.L3_N, aggregateVoltage.value)
+    const aggregateValue = convertToFloat(aggregateVoltage.value)
+    addPhase(MeterValuePhase.L1_N, aggregateValue)
+    addPhase(MeterValuePhase.L2_N, aggregateValue)
+    addPhase(MeterValuePhase.L3_N, aggregateValue)
     if (chargingStation.stationInfo.phaseLineToLineVoltageMeterValues === true) {
-      const lineToLineVoltage = aggregateVoltage.value * Math.sqrt(3)
-      addPhase(OCPP20PhaseEnumType.L1_L2, lineToLineVoltage)
-      addPhase(OCPP20PhaseEnumType.L2_L3, lineToLineVoltage)
-      addPhase(OCPP20PhaseEnumType.L3_L1, lineToLineVoltage)
+      const lineToLineVoltage = aggregateValue * Math.sqrt(3)
+      addPhase(MeterValuePhase.L1_L2, lineToLineVoltage)
+      addPhase(MeterValuePhase.L2_L3, lineToLineVoltage)
+      addPhase(MeterValuePhase.L3_L1, lineToLineVoltage)
     }
   }
   const retainedSamples =
@@ -2050,15 +2108,17 @@ export const buildClockAlignedConnectorMeterValue = (
       RequestCommand.METER_VALUES
     )
   }
-  return buildIdentifiedMeterValue(
-    chargingStation,
-    { ...identity, commitState: identity.commitState ?? true, snapshot: true },
-    interval,
-    measurandsKey,
-    context,
-    false,
-    OCPP20ComponentName.AlignedDataCtrlr
-  ) as OCPP20MeterValue
+  return requireOCPP20MeterValue(
+    buildIdentifiedMeterValue(
+      chargingStation,
+      { ...identity, commitState: identity.commitState ?? true, snapshot: true },
+      interval,
+      measurandsKey,
+      context,
+      false,
+      OCPP20ComponentName.AlignedDataCtrlr
+    )
+  )
 }
 
 const buildIdentifiedMeterValue = (
@@ -2106,24 +2166,31 @@ const buildIdentifiedMeterValue = (
   if (snapshot && identity.sampledValueBaseline != null) {
     const timestamp = identity.timestamp ?? new Date()
     if (signingConfig != null) signingConfig.timestamp = timestamp
-    return {
-      sampledValue: expandClockAlignedSnapshotSamples(
-        chargingStation,
-        connectorId,
-        evseId,
-        identity.sampledValueBaseline,
-        buildSignedVersionedSampledValue,
-        measurandsKey,
-        context,
-        registerValuesWithoutPhases,
-        identity.idle ?? true,
-        identity.transactionId != null,
-        identity.energyRegisterWhOverride,
-        true,
-        identity.sampledValueTemplates
-      ),
-      timestamp,
-    } as OCPP20MeterValue
+    const sampledValue = expandClockAlignedSnapshotSamples(
+      chargingStation,
+      connectorId,
+      evseId,
+      identity.sampledValueBaseline,
+      buildSignedVersionedSampledValue,
+      measurandsKey,
+      context,
+      registerValuesWithoutPhases,
+      identity.idle ?? true,
+      identity.transactionId != null,
+      identity.energyRegisterWhOverride,
+      true,
+      identity.sampledValueTemplates
+    )
+    if (isOCPP20x(chargingStation.stationInfo?.ocppVersion)) {
+      if (!sampledValue.every(isOCPP20SampledValue)) {
+        throw new BaseError('Clock-aligned snapshot contains OCPP 1.6 SampledValues for OCPP 2.0.x')
+      }
+      return { sampledValue, timestamp }
+    }
+    if (!sampledValue.every(isOCPP16SampledValue)) {
+      throw new BaseError('Clock-aligned snapshot contains OCPP 2.0.x SampledValues for OCPP 1.6')
+    }
+    return { sampledValue, timestamp }
   }
   const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
   const transactionBegin = context === MeterValueContext.TRANSACTION_BEGIN
@@ -2177,13 +2244,17 @@ const buildIdentifiedMeterValue = (
         coherentMeterValue.timestamp
     }
     if (snapshot) {
-      const coherentOcpp20MeterValue = coherentMeterValue as OCPP20MeterValue
-      coherentOcpp20MeterValue.sampledValue = applyClockAlignedVoltageControls(
+      const coherentOcpp20MeterValue = requireOCPP20MeterValue(coherentMeterValue)
+      const controlledSampledValues = applyClockAlignedVoltageControls(
         chargingStation,
         coherentOcpp20MeterValue.sampledValue,
         buildSignedVersionedSampledValue,
         context
       )
+      if (!controlledSampledValues.every(isOCPP20SampledValue)) {
+        throw new BaseError('Voltage controls produced OCPP 1.6 SampledValues for OCPP 2.0.x')
+      }
+      coherentOcpp20MeterValue.sampledValue = controlledSampledValues
     }
     // Only transactional builds may flip the one-time public-key flag. A
     // coherent session always carries a transactionId, but guard explicitly to
@@ -2262,7 +2333,7 @@ const buildIdentifiedMeterValue = (
         connectorId,
         meterValue,
         voltageMeasurand,
-        `L${phase.toString()}-N` as MeterValuePhase,
+        LINE_TO_NEUTRAL_PHASES[phase - 1],
         chargingStation.getVoltageOut(),
         buildVersionedSampledValue,
         measurandsKey,
@@ -2272,11 +2343,7 @@ const buildIdentifiedMeterValue = (
         snapshot
       )
       if (chargingStation.stationInfo?.phaseLineToLineVoltageMeterValues === true) {
-        const nextPhase =
-          (phase + 1) % chargingStation.getNumberOfPhases() !== 0
-            ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
-            : chargingStation.getNumberOfPhases().toString()
-        const lineToLineLabel = `L${phase.toString()}-L${nextPhase}` as MeterValuePhase
+        const lineToLineLabel = LINE_TO_LINE_PHASES[phase - 1]
         // `V_LL = sqrt(3) * V_LN` in a balanced 3-phase Y system; the
         // sqrt(3) factor comes from the 30-degree phase separation, not
         // from the phase count itself. Emitting L-L values makes physical
@@ -2347,7 +2414,7 @@ const buildIdentifiedMeterValue = (
             `L${phase.toString()}` as keyof MeasurandPerPhaseSampledValueTemplates
           ]
         if (phaseTemplate != null) {
-          const phaseValue = `L${phase.toString()}-N` as MeterValuePhase
+          const phaseValue = LINE_TO_NEUTRAL_PHASES[phase - 1]
           const phasePowerValue =
             powerMeasurand.values[`L${phase.toString()}` as keyof MeasurandValues]
           meterValue.sampledValue.push(
@@ -2415,7 +2482,7 @@ const buildIdentifiedMeterValue = (
       chargingStation.getNumberOfPhases() === 3 && phase <= chargingStation.getNumberOfPhases();
       phase++
     ) {
-      const phaseValue = `L${phase.toString()}` as MeterValuePhase
+      const phaseValue = LINE_PHASES[phase - 1]
       meterValue.sampledValue.push(
         buildVersionedSampledValue(
           currentMeasurand.perPhaseTemplates[
@@ -2658,7 +2725,7 @@ const buildIdentifiedMeterValue = (
       chargingStation,
       connectorId,
       evseId,
-      meterValue.sampledValue as OCPP20SampledValue[],
+      meterValue.sampledValue.map(toSnapshotBaselineSample),
       buildSignedVersionedSampledValue,
       measurandsKey,
       context,
@@ -2892,7 +2959,7 @@ export const resolveSampledValueFields = (
   location: MeterValueLocation | undefined
   measurand: MeterValueMeasurand
   phase: MeterValuePhase | undefined
-  unit: MeterValueUnit | undefined
+  unit: string | undefined
   value: number
 } => {
   const sampledValueMeasurand =
@@ -2903,8 +2970,7 @@ export const resolveSampledValueFields = (
     measurand: sampledValueMeasurand,
     phase: phase ?? sampledValueTemplate.phase,
     unit:
-      (sampledValueTemplate.unit as MeterValueUnit | undefined) ??
-      getMeasurandDefaultUnit(sampledValueMeasurand),
+      sampledValueTemplate.unit ?? getMeasurandDefaultUnit(sampledValueMeasurand),
     value,
   }
 }

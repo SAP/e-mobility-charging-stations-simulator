@@ -9,17 +9,23 @@ import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocolVersion,
   MapStringifyFormat,
-  type ProcedureName,
-  type Protocol,
+  ProcedureName,
+  Protocol,
   type ProtocolRequest,
   type ProtocolResponse,
-  type ProtocolVersion,
+  ProtocolVersion,
   type RequestPayload,
   ResponseStatus,
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { generateUUID, getErrorMessage, JSONStringify, logger } from '../../utils/index.js'
+import {
+  generateUUID,
+  getEnumStringValue,
+  getErrorMessage,
+  JSONStringify,
+  logger,
+} from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   DEFAULT_COMPRESSION_THRESHOLD_BYTES,
@@ -208,10 +214,20 @@ export class UIHttpServer extends AbstractUIServer {
           `Malformed URL path: '${pathname}' (expected /ui/:version/:procedureName)`
         )
       }
-      const [protocol, version, procedureName] = parts as [Protocol, ProtocolVersion, ProcedureName]
-      const fullProtocol = `${protocol}${version}`
-      if (!isProtocolAndVersionSupported(fullProtocol)) {
+      const [rawProtocol, rawVersion, rawProcedureName] = parts
+      const protocol = getEnumStringValue(Protocol, rawProtocol)
+      const version = getEnumStringValue(ProtocolVersion, rawVersion)
+      const procedureName = getEnumStringValue(ProcedureName, rawProcedureName)
+      const fullProtocol = `${rawProtocol}${rawVersion}`
+      if (
+        protocol == null ||
+        version == null ||
+        !isProtocolAndVersionSupported(fullProtocol)
+      ) {
         throw new BaseError(`Unsupported UI protocol version: '${fullProtocol}'`)
+      }
+      if (procedureName == null) {
+        throw new BaseError(`Unsupported UI procedure: '${rawProcedureName}'`)
       }
       this.registerProtocolVersionUIService(version)
 

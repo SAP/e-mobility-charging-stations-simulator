@@ -8,8 +8,6 @@ import {
   isWithinInterval,
 } from 'date-fns'
 
-import type { SigningMethodEnumType } from '../../../types/index.js'
-
 import {
   type ChargingStation,
   getConfigurationKey,
@@ -32,6 +30,8 @@ import {
   type ConnectorStatus,
   ErrorType,
   type GenericResponse,
+  isOCPP16MeterValue,
+  type MeterValue,
   type MeterValuesRequest,
   type MeterValuesResponse,
   OCPP16AuthorizationStatus,
@@ -61,6 +61,7 @@ import {
   PublicKeyWithSignedMeterValueEnumType,
   RequestCommand,
   type RequestParams,
+  SigningMethodEnumType,
   type StartTransactionRequest,
   type StartTransactionResponse,
   type StopTransactionReason,
@@ -75,6 +76,7 @@ import {
   convertToDate,
   convertToInt,
   ensureError,
+  getEnumStringValue,
   isNotEmptyArray,
   isNotEmptyString,
   logger,
@@ -84,7 +86,6 @@ import {
 import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
-  buildEmptyMeterValue,
   buildMeterValue,
   createPayloadConfigs,
   getSampledValueTemplate,
@@ -108,6 +109,14 @@ import { OCPP16Constants } from './OCPP16Constants.js'
 import { buildOCPP16SampledValue, buildSignedOCPP16SampledValue } from './OCPP16RequestBuilders.js'
 
 const moduleName = 'OCPP16ServiceUtils'
+
+const requireOCPP16MeterValue = (meterValue: MeterValue): OCPP16MeterValue => {
+  if (!isOCPP16MeterValue(meterValue)) {
+    throw new BaseError('MeterValue builder returned OCPP 2.0.x data for an OCPP 1.6 station')
+  }
+  return meterValue
+}
+
 const RFC3339_TIMESTAMP_PATTERN =
   /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([Zz]|([+-])(\d{2}):(\d{2}))$/
 const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
@@ -352,7 +361,7 @@ export class OCPP16ServiceUtils {
         transactionId
       )
     }
-    const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
+    const meterValue: OCPP16MeterValue = { sampledValue: [], timestamp: new Date() }
     const meterStartOutputWh = meterStart ?? 0
     // Energy.Active.Import.Register measurand (default)
     const sampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
@@ -1137,11 +1146,13 @@ export class OCPP16ServiceUtils {
         const sampleAt = Date.now()
         const elapsedInterval = Math.max(elapsedIntervalCarry, sampleAt - lastSampleAt)
         const intervalState = captureTransactionIntervalState(connectorStatus)
-        const meterValue = buildMeterValue(
-          chargingStation,
-          transactionId,
-          elapsedInterval
-        ) as OCPP16MeterValue
+        const meterValue = requireOCPP16MeterValue(
+          buildMeterValue(
+            chargingStation,
+            transactionId,
+            elapsedInterval
+          )
+        )
         lastSampleAt = sampleAt
         elapsedIntervalCarry = 0
         completeTransactionIntervalState(intervalState, 'default', [meterValue])
@@ -1998,13 +2009,15 @@ export class OCPP16ServiceUtils {
       getConfigurationKey(chargingStation, startTxnSampledDataKey)?.value != null
         ? startTxnSampledDataKey
         : undefined
-    return buildMeterValue(
-      chargingStation,
-      transactionId,
-      0,
-      measurandsKey,
-      OCPP16MeterValueContext.TRANSACTION_BEGIN
-    ) as OCPP16MeterValue
+    return requireOCPP16MeterValue(
+      buildMeterValue(
+        chargingStation,
+        transactionId,
+        0,
+        measurandsKey,
+        OCPP16MeterValueContext.TRANSACTION_BEGIN
+      )
+    )
   }
 
   private static buildSignedSampledValue (
@@ -2058,23 +2071,25 @@ export class OCPP16ServiceUtils {
       chargingStation.getConnectorStatus(connectorId)?.transactionEnergyActiveImportIntervalCarry
         ?.default ?? 0
     if (intervalEnergyWh <= 0) return
-    const intervalMeterValue = buildMeterValue(
-      chargingStation,
-      transactionId,
-      0,
-      OCPP16StandardParametersKey.StopTxnSampledData,
-      OCPP16MeterValueContext.TRANSACTION_END,
-      false,
-      {
-        advanceEnergy: false,
-        connectorId,
-        energyIntervalWhOverride: intervalEnergyWh,
-        energyRegisterWhOverride: meterStop,
-        projectDcForLocation: true,
-        snapshot: true,
-        timestamp: meterValue.timestamp,
-      }
-    ) as OCPP16MeterValue
+    const intervalMeterValue = requireOCPP16MeterValue(
+      buildMeterValue(
+        chargingStation,
+        transactionId,
+        0,
+        OCPP16StandardParametersKey.StopTxnSampledData,
+        OCPP16MeterValueContext.TRANSACTION_END,
+        false,
+        {
+          advanceEnergy: false,
+          connectorId,
+          energyIntervalWhOverride: intervalEnergyWh,
+          energyRegisterWhOverride: meterStop,
+          projectDcForLocation: true,
+          snapshot: true,
+          timestamp: meterValue.timestamp,
+        }
+      )
+    )
     const intervalSamples = intervalMeterValue.sampledValue.filter(
       sampledValue =>
         sampledValue.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
@@ -2234,10 +2249,10 @@ export class OCPP16ServiceUtils {
       chargingStation,
       `${OCPP16VendorParametersKey.MeterPublicKey}${connectorId.toString()}`
     )?.value
-    const configuredSigningMethod = getConfigurationKey(
-      chargingStation,
-      OCPP16VendorParametersKey.SigningMethod
-    )?.value as SigningMethodEnumType | undefined
+    const configuredSigningMethod = getEnumStringValue(
+      SigningMethodEnumType,
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SigningMethod)?.value
+    )
 
     const prerequisiteResult = validateSigningPrerequisites(publicKeyHex, configuredSigningMethod)
     if (!prerequisiteResult.enabled) {

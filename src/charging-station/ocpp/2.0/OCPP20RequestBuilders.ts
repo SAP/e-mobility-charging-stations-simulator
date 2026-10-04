@@ -5,14 +5,19 @@ import {
   type ChargingStationInfo,
   type MeterValueContext,
   type MeterValuePhase,
+  MeterValueUnit,
   OCPP16StopTransactionReason,
   type OCPP20BootNotificationRequest,
+  OCPP20LocationEnumType,
   OCPP20MeasurandEnumType,
+  OCPP20PhaseEnumType,
+  OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
   type OCPP20SampledValue,
   OCPP20TriggerReasonEnumType,
   type SampledValueTemplate,
 } from '../../../types/index.js'
+import { getEnumStringValue } from '../../../utils/index.js'
 import { resolveSampledValueFields } from '../OCPPServiceUtils.js'
 import {
   generateSignedMeterData,
@@ -64,17 +69,21 @@ export function buildOCPP20SampledValue (
   signingConfig?: SampledValueSigningConfig
 ): SignedSampledValueResult<OCPP20SampledValue> {
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
+  const resolvedContext = getEnumStringValue(OCPP20ReadingContextEnumType, fields.context)
+  const resolvedLocation = getEnumStringValue(OCPP20LocationEnumType, fields.location)
+  const resolvedMeasurand = getEnumStringValue(OCPP20MeasurandEnumType, fields.measurand)
+  const resolvedPhase = getEnumStringValue(OCPP20PhaseEnumType, fields.phase)
   const sampledValue: OCPP20SampledValue = {
     ...(sampledValueTemplate.customData != null && {
       customData: sampledValueTemplate.customData,
     }),
-    context: fields.context,
-    location: fields.location,
-    measurand: fields.measurand,
+    ...(resolvedContext != null && { context: resolvedContext }),
+    ...(resolvedLocation != null && { location: resolvedLocation }),
+    ...(resolvedMeasurand != null && { measurand: resolvedMeasurand }),
     ...(fields.unit != null && { unitOfMeasure: { unit: fields.unit } }),
     value: fields.value,
-    ...(fields.phase != null && { phase: fields.phase }),
-  } as OCPP20SampledValue
+    ...(resolvedPhase != null && { phase: resolvedPhase }),
+  }
 
   let publicKeyIncluded = false
 
@@ -90,7 +99,7 @@ export function buildOCPP20SampledValue (
       context: fields.context,
       meterSerialNumber: signingConfig.meterSerialNumber,
       meterValue: fields.value,
-      meterValueUnit: fields.unit,
+      meterValueUnit: getEnumStringValue(MeterValueUnit, fields.unit),
       timestamp: signingConfig.timestamp ?? new Date(),
       transactionId: signingConfig.transactionId,
     }

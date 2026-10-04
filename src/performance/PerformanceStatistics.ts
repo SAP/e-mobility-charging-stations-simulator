@@ -128,7 +128,7 @@ export class PerformanceStatistics {
   }
 
   public addRequestStatistic (
-    command: IncomingRequestCommand | RequestCommand,
+    command: IncomingRequestCommand | RequestCommand | string,
     messageType: MessageType
   ): void {
     switch (messageType) {

@@ -82,17 +82,17 @@ const configureMeterValueTemplates = (station: ChargingStation): void => {
     {
       measurand: MeterValueMeasurand.STATE_OF_CHARGE,
       unit: 'Percent',
-    } as unknown as SampledValueTemplate,
-    { measurand: MeterValueMeasurand.VOLTAGE, unit: 'V' } as unknown as SampledValueTemplate,
+    },
+    { measurand: MeterValueMeasurand.VOLTAGE, unit: 'V' },
     {
       measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
       unit: 'W',
-    } as unknown as SampledValueTemplate,
-    { measurand: MeterValueMeasurand.CURRENT_IMPORT, unit: 'A' } as unknown as SampledValueTemplate,
+    },
+    { measurand: MeterValueMeasurand.CURRENT_IMPORT, unit: 'A' },
     {
       measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
       unit: OCPP16MeterValueUnit.WATT_HOUR,
-    } as unknown as SampledValueTemplate,
+    },
   ]
   const connectorStatus = station.getConnectorStatus(CONNECTOR_ID)
   if (connectorStatus != null) {

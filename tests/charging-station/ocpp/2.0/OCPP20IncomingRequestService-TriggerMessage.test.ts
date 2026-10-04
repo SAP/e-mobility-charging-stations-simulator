@@ -8,7 +8,6 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
   ConnectorStatus,
-  EvseStatus,
   OCPP20FirmwareStatusNotificationRequest,
   OCPP20MeterValuesRequest,
   OCPP20TransactionEventRequest,
@@ -85,7 +84,7 @@ function addTriggerMessageConnector (
       measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
       unit: 'Wh',
     },
-  ] as unknown as NonNullable<EvseStatus['MeterValues']>
+  ]
   connectorStatus.energyActiveImportRegisterValue = energyValue
   evseStatus.connectors.set(connectorId, connectorStatus)
   return connectorStatus
@@ -164,7 +163,7 @@ function createTriggerMessageStation (): {
         measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
         unit: 'Wh',
       },
-    ] as unknown as NonNullable<EvseStatus['MeterValues']>
+    ]
     connectorStatus.energyActiveImportRegisterValue = (evseId ?? 0) * 10
   }
   return { mockStation, requestHandlerMock }
@@ -610,7 +609,7 @@ await describe('F06 - TriggerMessage', async () => {
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connectorStatus.transactionEnergyActiveImportRegisterValue = 150
       connectorStatus.transactionEnergyActiveImportIntervalBaselines = { [baselineKey]: 60 }
       connectorStatus.transactionEnergyActiveImportIntervalCarry = { [baselineKey]: 0 }
@@ -751,7 +750,7 @@ await describe('F06 - TriggerMessage', async () => {
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: 'Wh',
           },
-        ] as unknown as NonNullable<EvseStatus['MeterValues']>
+        ]
         connectorStatus.transactionId = `duplicate-response-${evseId.toString()}`
         connectorStatus.transactionStarted = true
       }
@@ -1460,7 +1459,7 @@ await describe('F06 - TriggerMessage', async () => {
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       connectorStatus.transactionEnergyActiveImportIntervalBaselines = { [baselineKey]: 0 }
       connectorStatus.transactionEnergyActiveImportIntervalCarry = { [baselineKey]: 0 }
@@ -1563,7 +1562,7 @@ await describe('F06 - TriggerMessage', async () => {
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connectorStatus.transactionEnergyActiveImportRegisterValue = 150
       // Pin the register read ahead of the sample window so the coalesced interval energy
       // reflects only the register delta, never wall-clock proration (deterministic on any host).
@@ -1974,7 +1973,7 @@ await describe('F06 - TriggerMessage', async () => {
     function seedActiveTransaction (evseId: number, transactionId: string): void {
       const evseStatus = mockStation.getEvseStatus(evseId)
       if (evseStatus != null) {
-        evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
+        evseStatus.MeterValues = [{ unit: 'Wh' }]
       }
       setupConnectorWithTransaction(mockStation, evseId, {
         energyImport: 1234,
@@ -2420,7 +2419,7 @@ await describe('F06 - TriggerMessage', async () => {
       assert.ok(evseStatus != null && connectorStatus != null)
       evseStatus.connectors.delete(2)
       evseStatus.connectors.set(1, connectorStatus)
-      evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
+      evseStatus.MeterValues = [{ unit: 'Wh' }]
       connectorStatus.transactionStarted = true
       connectorStatus.transactionId = 'txn-evse-2-local-connector'
       connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
@@ -2522,7 +2521,7 @@ await describe('F06 - TriggerMessage', async () => {
       })
       const rejectEvseStatus = rejectStation.getEvseStatus(1)
       if (rejectEvseStatus != null) {
-        rejectEvseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
+        rejectEvseStatus.MeterValues = [{ unit: 'Wh' }]
       }
       setupConnectorWithTransaction(rejectStation, 1, {
         energyImport: 1234,

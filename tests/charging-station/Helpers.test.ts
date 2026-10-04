@@ -41,7 +41,6 @@ import {
   CurrentType,
   OCPPVersion,
   type Reservation,
-  type SampledValueTemplate,
 } from '../../src/types/index.js'
 import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
@@ -977,7 +976,7 @@ await describe('Helpers', async () => {
       const connectorStatus: ConnectorStatus = {
         availability: AvailabilityType.Operative,
         energyActiveImportIntervalBaselines: { 'station:aligned': 42 },
-        MeterValues: [{} as unknown as SampledValueTemplate],
+        MeterValues: [{}],
         status: ConnectorStatusEnum.Available,
         transactionEnergyActiveImportIntervalBaselines: { transaction: 21 },
         transactionStarted: true,

@@ -144,7 +144,7 @@ export const buildSampledValueFamilyKey = (identity: {
   customData: unknown
   location: MeterValueLocation | undefined
   measurand: MeterValueMeasurand
-  unit: MeterValueUnit | undefined
+  unit: string | undefined
 }): string =>
   JSON.stringify([
     identity.context,

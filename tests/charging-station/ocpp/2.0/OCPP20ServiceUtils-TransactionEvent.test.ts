@@ -14,7 +14,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { CoherentSession } from '../../../../src/charging-station/meter-values/index.js'
-import type { ConnectorStatus, EmptyObject, EvseStatus } from '../../../../src/types/index.js'
+import type { ConnectorStatus, EmptyObject } from '../../../../src/types/index.js'
 
 import { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import {
@@ -70,7 +70,6 @@ import {
   OCPPVersion,
   PublicKeyWithSignedMeterValueEnumType,
   type RequestParams,
-  type SampledValueTemplate,
   SigningMethodEnumType,
   Voltage,
 } from '../../../../src/types/index.js'
@@ -747,7 +746,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
             unit: 'Wh',
           },
-        ] as unknown as EvseStatus['MeterValues']
+        ]
         addConfigurationKey(
           station,
           intervalBaselineKey,
@@ -5622,7 +5621,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
             unit: 'Wh',
           },
-        ] as unknown as EvseStatus['MeterValues']
+        ]
         addConfigurationKey(
           station,
           `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
@@ -5689,7 +5688,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: 'Wh',
             value: '0',
-          } as unknown as SampledValueTemplate,
+          },
           20,
           undefined,
           undefined,
@@ -6479,7 +6478,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: 'Wh',
             value: '0',
-          } as unknown as SampledValueTemplate,
+          },
           20,
           undefined,
           undefined,
@@ -6753,7 +6752,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: 'Wh',
             value: '0',
-          } as unknown as SampledValueTemplate,
+          },
           2,
           undefined,
           undefined,
@@ -7681,7 +7680,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         mockTracking.station.getEvseIdByConnectorId(connectorId) ?? 1
       )
       if (evseStatus != null) {
-        evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as ConnectorStatus['MeterValues']
+        evseStatus.MeterValues = [{ unit: 'Wh' }]
       }
 
       addConfigurationKey(
@@ -11126,7 +11125,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       // Arrange
       const evseStatus = station.getEvseStatus(1)
       if (evseStatus != null) {
-        evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as ConnectorStatus['MeterValues']
+        evseStatus.MeterValues = [{ unit: 'Wh' }]
       }
 
       const transactionId = generateUUID()
@@ -11181,7 +11180,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             unit: 'Wh',
             value: '1000',
           },
-        ] as unknown as ConnectorStatus['MeterValues']
+        ]
         addConfigurationKey(
           station,
           buildConfigKey(
@@ -11237,7 +11236,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             unit: 'Wh',
             value: '1000000',
           },
-        ] as unknown as ConnectorStatus['MeterValues']
+        ]
         addConfigurationKey(
           station,
           buildConfigKey(
@@ -11372,7 +11371,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       // Arrange
       const evseStatus = mockTracking.station.getEvseStatus(1)
       if (evseStatus != null) {
-        evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as ConnectorStatus['MeterValues']
+        evseStatus.MeterValues = [{ unit: 'Wh' }]
       }
 
       const transactionId = generateUUID()
@@ -11427,7 +11426,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           unit: 'Wh',
           value: '1000',
         },
-      ] as unknown as ConnectorStatus['MeterValues']
+      ]
       const transactionId = generateUUID()
       setupConnectorWithTransaction(station, 1, { transactionId })
       connectorStatus.transactionEnergyActiveImportRegisterValue = 1000

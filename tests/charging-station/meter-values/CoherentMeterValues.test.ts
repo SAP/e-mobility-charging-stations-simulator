@@ -21,7 +21,6 @@ import type {
   ChargingStationInfo,
   ConnectorStatus,
   OCPP20SampledValue,
-  SampledValue,
   SampledValueTemplate,
 } from '../../../src/types/index.js'
 
@@ -36,16 +35,21 @@ import {
   resolveRootSeed,
 } from '../../../src/charging-station/meter-values/index.js'
 import { hashLabel } from '../../../src/charging-station/meter-values/PRNG.js'
+import { buildOCPP16SampledValue } from '../../../src/charging-station/ocpp/1.6/OCPP16RequestBuilders.js'
 import { buildOCPP20SampledValue } from '../../../src/charging-station/ocpp/2.0/OCPP20RequestBuilders.js'
 import {
   AvailabilityType,
   CurrentType,
+  isOCPP20SampledValue,
   MeterValueContext,
   MeterValueLocation,
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
+  OCPP16MeterValueFormat,
+  OCPP20MeasurandEnumType,
   OCPPVersion,
+  Voltage,
 } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_METER_VALUES_INTERVAL_MS } from '../ChargingStationTestConstants.js'
@@ -96,7 +100,7 @@ const buildContext = (
     groupUnderEvse?: boolean
     numberOfPhases?: number
     siblingConnectorMeterValues?: SampledValueTemplate[]
-    voltageOut?: number
+    voltageOut?: Voltage
   } = {}
 ): {
   connectorStatus: ConnectorStatus
@@ -106,7 +110,7 @@ const buildContext = (
   stationInfo: ChargingStationInfo
 } => {
   const numberOfPhases = overrides.numberOfPhases ?? 1
-  const voltageOut = overrides.voltageOut ?? 230
+  const voltageOut = overrides.voltageOut ?? Voltage.VOLTAGE_230
   const evseMax = overrides.evseMaxPowerW ?? 22000
 
   const stationInfo: ChargingStationInfo = {
@@ -203,7 +207,7 @@ const templatesFor = (
         : measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
           ? MeterValueUnit.WATT
           : undefined
-    return (unit != null ? { measurand, unit } : { measurand }) as SampledValueTemplate
+    return unit != null ? { measurand, unit } : { measurand }
   })
 }
 
@@ -214,13 +218,7 @@ const templatesFor = (
  * @param value - Numeric value to be serialized.
  * @returns Minimal SampledValue with stringified value.
  */
-const passThroughBuilder: BuildVersionedSampledValue = (template, value): SampledValue => {
-  return {
-    ...(template.measurand != null && { measurand: template.measurand }),
-    ...(template.unit != null && { unit: template.unit as never }),
-    value: value.toString(),
-  } as SampledValue
-}
+const passThroughBuilder: BuildVersionedSampledValue = buildOCPP16SampledValue
 
 /**
  * Creates a coherent session and asserts it is defined. Encapsulates the
@@ -266,7 +264,7 @@ const advanceDcEnergyAtLocations = (
     measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
     unit: MeterValueUnit.WATT_HOUR,
     value: 0,
-  })) as SampledValueTemplate[]
+  }))
 
   const meterValue = buildCoherentMeterValue(
     context,
@@ -323,7 +321,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 7400,
         numberOfPhases: 1,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -355,7 +353,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -385,7 +383,7 @@ await describe('CoherentMeterValues', async () => {
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.DC,
         evseMaxPowerW: 50000,
-        voltageOut: 400,
+        voltageOut: Voltage.VOLTAGE_400,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -549,7 +547,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.DC,
         evseMaxPowerW: 1000,
         groupUnderEvse: true,
-        voltageOut: 400,
+        voltageOut: Voltage.VOLTAGE_400,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -573,7 +571,7 @@ await describe('CoherentMeterValues', async () => {
             unit: MeterValueUnit.WATT_HOUR,
           },
         ]
-      ) as unknown as SampledValueTemplate[]
+      )
 
       const meterValue = buildCoherentMeterValue(
         context,
@@ -613,7 +611,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.DC,
         evseMaxPowerW: 1000,
         groupUnderEvse: true,
-        voltageOut: 400,
+        voltageOut: Voltage.VOLTAGE_400,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -634,7 +632,7 @@ await describe('CoherentMeterValues', async () => {
           unit:
             measurand === MeterValueMeasurand.VOLTAGE ? MeterValueUnit.VOLT : MeterValueUnit.AMP,
         }))
-      ) as unknown as SampledValueTemplate[]
+      )
 
       const meterValue = buildCoherentMeterValue(
         context,
@@ -875,7 +873,7 @@ await describe('CoherentMeterValues', async () => {
           value: '50Hz',
         },
         { measurand: MeterValueMeasurand.CURRENT_EXPORT },
-      ] as unknown as SampledValueTemplate[]
+      ]
       const enabledMeasurands = new Set([
         MeterValueMeasurand.CURRENT_EXPORT,
         MeterValueMeasurand.FREQUENCY,
@@ -981,7 +979,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 1,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1033,7 +1031,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 1,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1113,7 +1111,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1154,7 +1152,7 @@ await describe('CoherentMeterValues', async () => {
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.DC,
         evseMaxPowerW: 50000,
-        voltageOut: 400,
+        voltageOut: Voltage.VOLTAGE_400,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1361,7 +1359,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1374,13 +1372,7 @@ await describe('CoherentMeterValues', async () => {
       sessions.set(1, session)
       // Phase-preserving builder: include template.phase and template.measurand
       // so per-phase emissions can be counted and cross-checked.
-      const phaseBuilder: BuildVersionedSampledValue = (template, value): SampledValue =>
-        ({
-          ...(template.measurand != null && { measurand: template.measurand }),
-          ...(template.phase != null && { phase: template.phase as never }),
-          ...(template.unit != null && { unit: template.unit as never }),
-          value: value.toString(),
-        }) as SampledValue
+      const phaseBuilder: BuildVersionedSampledValue = buildOCPP16SampledValue
       connectorStatus.MeterValues = [
         { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_N },
         { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L2_N },
@@ -1404,7 +1396,7 @@ await describe('CoherentMeterValues', async () => {
         },
         { measurand: MeterValueMeasurand.CURRENT_IMPORT, phase: MeterValuePhase.L1 },
         { measurand: MeterValueMeasurand.CURRENT_IMPORT, phase: MeterValuePhase.N },
-      ] as unknown as SampledValueTemplate[]
+      ]
       const mv = buildCoherentMeterValue(context, session, phaseBuilder, {
         intervalMs: TEST_METER_VALUES_INTERVAL_MS,
         nowMs: TEST_METER_VALUES_INTERVAL_MS,
@@ -1449,7 +1441,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 7400,
         numberOfPhases: 1,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1463,7 +1455,7 @@ await describe('CoherentMeterValues', async () => {
       connectorStatus.MeterValues = [
         { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_L2 },
         { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_N },
-      ] as unknown as SampledValueTemplate[]
+      ]
       const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
         intervalMs: TEST_METER_VALUES_INTERVAL_MS,
         nowMs: TEST_METER_VALUES_INTERVAL_MS,
@@ -1481,7 +1473,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1500,7 +1492,7 @@ await describe('CoherentMeterValues', async () => {
           phase: MeterValuePhase.L1_N,
           unit: MeterValueUnit.WATT_HOUR,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
       const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
         intervalMs: 3_600_000,
         nowMs: 3_600_000,
@@ -1522,7 +1514,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1555,7 +1547,7 @@ await describe('CoherentMeterValues', async () => {
           phase: MeterValuePhase.L3_N,
           unit: MeterValueUnit.WATT_HOUR,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
       const mv = buildCoherentMeterValue(
         context,
         session,
@@ -1587,7 +1579,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1616,7 +1608,7 @@ await describe('CoherentMeterValues', async () => {
           phase: MeterValuePhase.L3_N,
           unit: MeterValueUnit.WATT_HOUR,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
       const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
         intervalMs: 3_600_000,
         nowMs: 3_600_000,
@@ -1640,7 +1632,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1667,7 +1659,7 @@ await describe('CoherentMeterValues', async () => {
           phase: MeterValuePhase.L3_N,
           unit: MeterValueUnit.WATT,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
       const mv = buildCoherentMeterValue(
         context,
         session,
@@ -1699,7 +1691,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1728,7 +1720,7 @@ await describe('CoherentMeterValues', async () => {
           phase: MeterValuePhase.L3_N,
           unit: MeterValueUnit.WATT_HOUR,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
       const mv = buildCoherentMeterValue(
         context,
         session,
@@ -1776,7 +1768,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1820,7 +1812,7 @@ await describe('CoherentMeterValues', async () => {
           measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: MeterValueUnit.WATT_HOUR,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
       const mv = buildCoherentMeterValue(
         context,
         session,
@@ -1859,7 +1851,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -1888,7 +1880,7 @@ await describe('CoherentMeterValues', async () => {
           phase: MeterValuePhase.L2_N,
           unit: MeterValueUnit.WATT_HOUR,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
 
       const meterValue = buildCoherentMeterValue(
         context,
@@ -1926,7 +1918,7 @@ await describe('CoherentMeterValues', async () => {
       connectorStatus.MeterValues = [
         { phase: MeterValuePhase.L1_N },
         { context: MeterValueContext.TRANSACTION_BEGIN, phase: MeterValuePhase.L2_N },
-        { format: 'SignedData', phase: MeterValuePhase.L3_N },
+        { format: OCPP16MeterValueFormat.SIGNED_DATA, phase: MeterValuePhase.L3_N },
         {
           location: MeterValueLocation.OUTLET,
           phase: MeterValuePhase.L1_N,
@@ -1936,7 +1928,7 @@ await describe('CoherentMeterValues', async () => {
           customData: { vendorId: 'sensor-b' },
           phase: MeterValuePhase.L2_N,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
 
       const meterValue = buildCoherentMeterValue(
         context,
@@ -1949,8 +1941,10 @@ await describe('CoherentMeterValues', async () => {
         true
       )
       const energySamples = meterValue.sampledValue.filter(
-        sample => sample.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-      ) as OCPP20SampledValue[]
+        (sample): sample is OCPP20SampledValue =>
+          isOCPP20SampledValue(sample) &&
+          sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
 
       assert.deepStrictEqual(
         energySamples.map(sample => [
@@ -1985,13 +1979,13 @@ await describe('CoherentMeterValues', async () => {
       const evseTemplate: SampledValueTemplate = {
         measurand: MeterValueMeasurand.STATE_OF_CHARGE,
         unit: MeterValueUnit.PERCENT,
-      } as unknown as SampledValueTemplate
+      }
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         evseMeterValues: [evseTemplate],
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -2007,7 +2001,7 @@ await describe('CoherentMeterValues', async () => {
         {
           measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: MeterValueUnit.WATT_HOUR,
-        } as unknown as SampledValueTemplate,
+        },
       ]
       const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
         intervalMs: TEST_METER_VALUES_INTERVAL_MS,
@@ -2029,13 +2023,13 @@ await describe('CoherentMeterValues', async () => {
       const connectorTemplate: SampledValueTemplate = {
         measurand: MeterValueMeasurand.STATE_OF_CHARGE,
         unit: MeterValueUnit.PERCENT,
-      } as unknown as SampledValueTemplate
+      }
       // No evseMeterValues override => getEvseIdByConnectorId returns undefined.
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -2067,7 +2061,7 @@ await describe('CoherentMeterValues', async () => {
       const connectorTemplate: SampledValueTemplate = {
         measurand: MeterValueMeasurand.STATE_OF_CHARGE,
         unit: MeterValueUnit.PERCENT,
-      } as unknown as SampledValueTemplate
+      }
       // evseMeterValues=[] => getEvseIdByConnectorId returns 1, getEvseStatus(1).MeterValues = [].
       // resolveTemplates must skip the empty EVSE array and fall back to connector-level.
       const { connectorStatus, context, sessions } = buildContext({
@@ -2075,7 +2069,7 @@ await describe('CoherentMeterValues', async () => {
         evseMaxPowerW: 22000,
         evseMeterValues: [],
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -2107,7 +2101,7 @@ await describe('CoherentMeterValues', async () => {
       const connectorTemplate: SampledValueTemplate = {
         measurand: MeterValueMeasurand.STATE_OF_CHARGE,
         unit: MeterValueUnit.PERCENT,
-      } as unknown as SampledValueTemplate
+      }
       // groupUnderEvse=true + no evseMeterValues => getEvseIdByConnectorId returns 1,
       // getEvseStatus(1).MeterValues = undefined. resolveTemplates must fall back
       // to connector-level (guard: isNotEmptyArray(evseTemplates) narrows undefined
@@ -2117,7 +2111,7 @@ await describe('CoherentMeterValues', async () => {
         evseMaxPowerW: 22000,
         groupUnderEvse: true,
         numberOfPhases: 3,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -2154,7 +2148,7 @@ await describe('CoherentMeterValues', async () => {
       const siblingTemplate: SampledValueTemplate = {
         measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
         unit: MeterValueUnit.WATT,
-      } as unknown as SampledValueTemplate
+      }
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
@@ -2162,7 +2156,7 @@ await describe('CoherentMeterValues', async () => {
         groupUnderEvse: true,
         numberOfPhases: 3,
         siblingConnectorMeterValues: [siblingTemplate],
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -2203,7 +2197,7 @@ await describe('CoherentMeterValues', async () => {
           currentType: CurrentType.AC,
           evseMaxPowerW: 7400,
           numberOfPhases: 1,
-          voltageOut: 230,
+          voltageOut: Voltage.VOLTAGE_230,
         })
         const session = createSessionOrFail(context, {
           connectorId: 1,
@@ -2245,7 +2239,7 @@ await describe('CoherentMeterValues', async () => {
           currentType: CurrentType.AC,
           evseMaxPowerW: 22000,
           numberOfPhases: 3,
-          voltageOut: 230,
+          voltageOut: Voltage.VOLTAGE_230,
         })
         const session = createSessionOrFail(context, {
           connectorId: 1,
@@ -2292,7 +2286,7 @@ await describe('CoherentMeterValues', async () => {
           currentType: CurrentType.DC,
           evseMaxPowerW: 50000,
           numberOfPhases: 0,
-          voltageOut: 400,
+          voltageOut: Voltage.VOLTAGE_400,
         })
         const session = createSessionOrFail(context, {
           connectorId: 1,
@@ -2341,7 +2335,7 @@ await describe('CoherentMeterValues', async () => {
         currentType: CurrentType.AC,
         evseMaxPowerW: 7400,
         numberOfPhases: 1,
-        voltageOut: 230,
+        voltageOut: Voltage.VOLTAGE_230,
       })
       const session = createSessionOrFail(context, {
         connectorId: 1,
@@ -2408,7 +2402,7 @@ await describe('CoherentMeterValues', async () => {
           currentType: CurrentType.AC,
           evseMaxPowerW: 7400,
           numberOfPhases: 1,
-          voltageOut: 230,
+          voltageOut: Voltage.VOLTAGE_230,
         })
         const session = createSessionOrFail(context, {
           connectorId: 1,

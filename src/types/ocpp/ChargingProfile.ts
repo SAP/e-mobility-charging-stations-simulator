@@ -19,6 +19,10 @@ import {
 
 export type ChargingProfile = OCPP16ChargingProfile | OCPP20ChargingProfileType
 
+export const isOCPP16ChargingProfile = (
+  chargingProfile: ChargingProfile
+): chargingProfile is OCPP16ChargingProfile => 'chargingProfileId' in chargingProfile
+
 export type ChargingSchedule = OCPP16ChargingSchedule | OCPP20ChargingScheduleType
 
 export type ChargingSchedulePeriod = OCPP16ChargingSchedulePeriod | OCPP20ChargingSchedulePeriodType

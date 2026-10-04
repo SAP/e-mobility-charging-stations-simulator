@@ -36,13 +36,13 @@ const energyTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
   unit: 'Wh',
   value: '0',
-} as unknown as SampledValueTemplate
+}
 
 const voltageTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.VOLTAGE,
   unit: 'V',
   value: '230',
-} as unknown as SampledValueTemplate
+}
 
 await describe('OCPP 2.0 Signed Meter Values', async () => {
   await describe('buildOCPP20SampledValue with signing config', async () => {

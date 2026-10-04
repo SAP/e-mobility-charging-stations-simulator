@@ -17,7 +17,13 @@ import {
   SetVariableStatusEnumType,
   type VariableType,
 } from '../../../types/index.js'
-import { Constants, convertToIntOrNaN, isEmpty, logger } from '../../../utils/index.js'
+import {
+  Constants,
+  convertToIntOrNaN,
+  getEnumStringValue,
+  isEmpty,
+  logger,
+} from '../../../utils/index.js'
 import {
   addConfigurationKey,
   buildConfigKey,
@@ -42,10 +48,10 @@ import {
 } from './OCPP20VariableRegistry.js'
 
 const isOCPP20ComponentName = (name: string): name is OCPP20ComponentName => {
-  return Object.values(OCPP20ComponentName).includes(name as OCPP20ComponentName)
+  return getEnumStringValue(OCPP20ComponentName, name) != null
 }
 const isOCPP20RequiredVariableName = (name: string): name is OCPP20RequiredVariableName => {
-  return Object.values(OCPP20RequiredVariableName).includes(name as OCPP20RequiredVariableName)
+  return getEnumStringValue(OCPP20RequiredVariableName, name) != null
 }
 
 const computeConfigurationKeyName = (variableMetadata: VariableMetadata): string =>

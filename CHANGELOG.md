@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### 🐞 Bug Fixes
+
+- **deps:** keep refreshed lockfiles compatible with strict enum linting and Vue template type checking
+
 ## [4.12.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.11.0...simulator@v4.12.0) (2026-08-23)
 
 ### 🚀 Features

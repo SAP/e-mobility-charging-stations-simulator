@@ -44,7 +44,7 @@ const energyTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
   unit: 'Wh',
   value: '0',
-} as unknown as SampledValueTemplate
+}
 
 await describe('StrategyDispatch', async () => {
   let station: ChargingStation
@@ -148,7 +148,7 @@ await describe('StrategyDispatch', async () => {
           {
             measurand: MeterValueMeasurand.STATE_OF_CHARGE,
             unit: 'Percent',
-          } as unknown as SampledValueTemplate,
+          },
         ]
         connectorStatus.transactionId = TEST_TRANSACTION_ID
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
@@ -230,7 +230,7 @@ await describe('StrategyDispatch', async () => {
             phase: MeterValuePhase.L3_N,
             unit: MeterValueUnit.WATT_HOUR,
           },
-        ] as unknown as SampledValueTemplate[]
+        ]
         connectorStatus.transactionId = TEST_TRANSACTION_ID
         connectorStatus.transactionEnergyActiveImportRegisterValue = 6000
         connectorStatus.energyActiveImportRegisterValue = 6000

@@ -33,6 +33,7 @@ export {
 export { ConfigurationValidationError, validateConfiguration } from './ConfigurationValidation.js'
 export { Constants } from './Constants.js'
 export { ACElectricUtils, DCElectricUtils } from './ElectricUtils.js'
+export { getEnumStringValue } from './EnumUtils.js'
 export {
   ensureError,
   getErrorMessage,
