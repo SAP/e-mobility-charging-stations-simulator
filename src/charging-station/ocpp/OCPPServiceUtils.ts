@@ -1905,8 +1905,7 @@ const expandClockAlignedSnapshotSamples = (
       rawValue,
       preferBaseline
     )
-    const unitValue =
-      physicalValue / resolveMeterValueUnitDivider(measurand, template.unit)
+    const unitValue = physicalValue / resolveMeterValueUnitDivider(measurand, template.unit)
     const value =
       measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
         ? truncateTransactionIntervalValue(unitValue)
@@ -1951,17 +1950,19 @@ const applyClockAlignedVoltageControls = (
   )
   const automaticSamples: SampledValue[] = []
   for (const aggregateVoltage of aggregateVoltages) {
-    const configuredPhases = new Set(configuredPhaseSamples
-      .filter(
-        sample =>
-          sample.context === aggregateVoltage.context &&
-          canonicalizeCustomData(getSampledValueCustomData(sample)) ===
-            canonicalizeCustomData(getSampledValueCustomData(aggregateVoltage)) &&
-          getSampledValueFormat(sample) === getSampledValueFormat(aggregateVoltage) &&
-          sample.location === aggregateVoltage.location &&
-          getSampledValueUnit(sample) === getSampledValueUnit(aggregateVoltage)
-      )
-      .map(sample => sample.phase))
+    const configuredPhases = new Set(
+      configuredPhaseSamples
+        .filter(
+          sample =>
+            sample.context === aggregateVoltage.context &&
+            canonicalizeCustomData(getSampledValueCustomData(sample)) ===
+              canonicalizeCustomData(getSampledValueCustomData(aggregateVoltage)) &&
+            getSampledValueFormat(sample) === getSampledValueFormat(aggregateVoltage) &&
+            sample.location === aggregateVoltage.location &&
+            getSampledValueUnit(sample) === getSampledValueUnit(aggregateVoltage)
+        )
+        .map(sample => sample.phase)
+    )
     const template: SampledValueTemplate = {
       ...(isOCPP20SampledValue(aggregateVoltage)
         ? { customData: aggregateVoltage.customData }
@@ -2969,8 +2970,7 @@ export const resolveSampledValueFields = (
     location: sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueMeasurand),
     measurand: sampledValueMeasurand,
     phase: phase ?? sampledValueTemplate.phase,
-    unit:
-      sampledValueTemplate.unit ?? getMeasurandDefaultUnit(sampledValueMeasurand),
+    unit: sampledValueTemplate.unit ?? getMeasurandDefaultUnit(sampledValueMeasurand),
     value,
   }
 }

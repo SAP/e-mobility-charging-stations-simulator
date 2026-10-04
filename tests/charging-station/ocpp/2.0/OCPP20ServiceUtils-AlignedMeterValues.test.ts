@@ -5186,9 +5186,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const sourceEvse = mockStation.getEvseStatus(1)
       assert.ok(stationEvse != null)
       assert.ok(sourceEvse != null)
-      stationEvse.MeterValues = [
-        { measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: 'A' },
-      ]
+      stationEvse.MeterValues = [{ measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: 'A' }]
       sourceEvse.MeterValues = [
         MeterValuePhase.L1_N,
         MeterValuePhase.L2_N,
@@ -5221,9 +5219,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mockStation.stationInfo.numberOfPhases = 3
       const stationEvse = mockStation.getEvseStatus(0)
       assert.ok(stationEvse != null)
-      stationEvse.MeterValues = [
-        { measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: 'A' },
-      ]
+      stationEvse.MeterValues = [{ measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: 'A' }]
       const phaseValues = [
         [MeterValuePhase.L1_N, 10],
         [MeterValuePhase.L2_N, 20],

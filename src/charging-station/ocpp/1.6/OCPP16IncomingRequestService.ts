@@ -1168,11 +1168,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         valueChanged = true
       }
       let triggerHeartbeatRestart = false
-      if (
-        standardKey ===
-          OCPP16StandardParametersKey.HeartBeatInterval &&
-        valueChanged
-      ) {
+      if (standardKey === OCPP16StandardParametersKey.HeartBeatInterval && valueChanged) {
         setConfigurationKeyValue(
           chargingStation,
           OCPP16StandardParametersKey.HeartbeatInterval,
@@ -1180,11 +1176,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         )
         triggerHeartbeatRestart = true
       }
-      if (
-        standardKey ===
-          OCPP16StandardParametersKey.HeartbeatInterval &&
-        valueChanged
-      ) {
+      if (standardKey === OCPP16StandardParametersKey.HeartbeatInterval && valueChanged) {
         setConfigurationKeyValue(
           chargingStation,
           OCPP16StandardParametersKey.HeartBeatInterval,
@@ -1195,16 +1187,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       if (triggerHeartbeatRestart) {
         chargingStation.restartHeartbeat()
       }
-      if (
-        standardKey ===
-          OCPP16StandardParametersKey.WebSocketPingInterval &&
-        valueChanged
-      ) {
+      if (standardKey === OCPP16StandardParametersKey.WebSocketPingInterval && valueChanged) {
         chargingStation.restartWebSocketPing()
       }
       if (
-        standardKey ===
-          OCPP16StandardParametersKey.MeterValueSampleInterval &&
+        standardKey === OCPP16StandardParametersKey.MeterValueSampleInterval &&
         chargingStation.getNumberOfRunningTransactions() > 0 &&
         valueChanged
       ) {
@@ -1356,10 +1343,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       const allChargingProfiles: OCPP16ChargingProfile[] = []
       for (const { connectorId: aggregatedConnectorId } of chargingStation.iterateConnectors()) {
         allChargingProfiles.push(
-          ...(getConnectorChargingProfiles(
-            chargingStation,
-            aggregatedConnectorId
-          ).filter(isOCPP16ChargingProfile))
+          ...getConnectorChargingProfiles(chargingStation, aggregatedConnectorId).filter(
+            isOCPP16ChargingProfile
+          )
         )
       }
       if (isEmpty(allChargingProfiles)) {
@@ -1393,10 +1379,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED
     }
-    const chargingProfiles = getConnectorChargingProfiles(
-      chargingStation,
-      connectorId
-    ).filter(isOCPP16ChargingProfile)
+    const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId).filter(
+      isOCPP16ChargingProfile
+    )
     const compositeSchedule = this.composeCompositeSchedule(
       chargingStation,
       chargingProfiles,

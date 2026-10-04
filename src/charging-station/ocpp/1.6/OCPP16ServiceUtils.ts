@@ -1147,11 +1147,7 @@ export class OCPP16ServiceUtils {
         const elapsedInterval = Math.max(elapsedIntervalCarry, sampleAt - lastSampleAt)
         const intervalState = captureTransactionIntervalState(connectorStatus)
         const meterValue = requireOCPP16MeterValue(
-          buildMeterValue(
-            chargingStation,
-            transactionId,
-            elapsedInterval
-          )
+          buildMeterValue(chargingStation, transactionId, elapsedInterval)
         )
         lastSampleAt = sampleAt
         elapsedIntervalCarry = 0

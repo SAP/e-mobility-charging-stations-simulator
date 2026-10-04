@@ -1532,29 +1532,21 @@ export class OCPP20ServiceUtils {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     const sharedRegisterBeforeRequestedBuild = sharedEnergyRegisterWh
     const meterValue = requireOCPP20MeterValue(
-      buildMeterValue(
-        chargingStation,
-        transactionId,
-        interval,
-        measurandsKey,
-        context,
-        false,
-        {
-          connectorId,
-          energyNominalInterval,
-          ...(evseId != null && { evseId }),
-          timestamp: meterValueTimestamp,
-          ...(settlementOnly && { deferEnergyInterval: true, suppressSigning: true }),
-          ...(usesSharedEvseRegister && {
-            advanceEnergy: connectorId === sharedEnergyOwnerConnectorId,
-            ...(connectorId === sharedEnergyOwnerConnectorId &&
+      buildMeterValue(chargingStation, transactionId, interval, measurandsKey, context, false, {
+        connectorId,
+        energyNominalInterval,
+        ...(evseId != null && { evseId }),
+        timestamp: meterValueTimestamp,
+        ...(settlementOnly && { deferEnergyInterval: true, suppressSigning: true }),
+        ...(usesSharedEvseRegister && {
+          advanceEnergy: connectorId === sharedEnergyOwnerConnectorId,
+          ...(connectorId === sharedEnergyOwnerConnectorId &&
             context !== OCPP20ReadingContextEnumType.TRANSACTION_BEGIN && {
-              energyElapsedInterval: sharedEnergyInterval,
-            }),
-            energyRegisterWhOverride: sharedEnergyRegisterWh,
+            energyElapsedInterval: sharedEnergyInterval,
           }),
-        }
-      )
+          energyRegisterWhOverride: sharedEnergyRegisterWh,
+        }),
+      })
     )
     const sharedObservationEnergyWh =
       usesSharedEvseRegister &&

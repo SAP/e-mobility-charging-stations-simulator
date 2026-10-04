@@ -219,11 +219,7 @@ export class UIHttpServer extends AbstractUIServer {
       const version = getEnumStringValue(ProtocolVersion, rawVersion)
       const procedureName = getEnumStringValue(ProcedureName, rawProcedureName)
       const fullProtocol = `${rawProtocol}${rawVersion}`
-      if (
-        protocol == null ||
-        version == null ||
-        !isProtocolAndVersionSupported(fullProtocol)
-      ) {
+      if (protocol == null || version == null || !isProtocolAndVersionSupported(fullProtocol)) {
         throw new BaseError(`Unsupported UI protocol version: '${fullProtocol}'`)
       }
       if (procedureName == null) {

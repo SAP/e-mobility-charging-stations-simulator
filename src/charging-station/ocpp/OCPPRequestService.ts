@@ -771,7 +771,12 @@ export abstract class OCPPRequestService {
         // reject an already-answered request while its handler is still running.
         chargingStation.requests.delete(messageId)
         this.ocppResponseService
-          .responseHandler(chargingStation, requireRequestCommand(commandName), payload, requestPayload)
+          .responseHandler(
+            chargingStation,
+            requireRequestCommand(commandName),
+            payload,
+            requestPayload
+          )
           .then(() => {
             resolve(payload)
             return undefined

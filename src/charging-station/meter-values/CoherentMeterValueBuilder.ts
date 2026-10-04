@@ -512,13 +512,10 @@ const serializeCoherentMeterValue = (
           )
         )
       })
-      .map(
-        template =>
-          ({
-            ...template,
-            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
-          })
-      )
+      .map(template => ({
+        ...template,
+        measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+      }))
     if (isNotEmptyArray(intervalFallbacks)) {
       groups.set(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL, [
         ...intervalTemplates,
@@ -580,10 +577,7 @@ const serializeCoherentMeterValue = (
         measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
           ? projectDcOutputValue(context, currentType, effectiveEvseId, template, raw)
           : raw
-      const unitDivider = resolveMeterValueUnitDivider(
-        measurand,
-        template.unit
-      )
+      const unitDivider = resolveMeterValueUnitDivider(measurand, template.unit)
       const scaled =
         measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
           ? truncateTransactionIntervalValue(physicalValue / unitDivider)
