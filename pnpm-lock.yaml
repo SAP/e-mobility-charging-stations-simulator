@@ -170,17 +170,17 @@ importers:
         specifier: ^6.6.14
         version: 6.6.14(@mikro-orm/core@6.6.17)(mariadb@3.4.5)(supports-color@7.2.0)
       '@mikro-orm/core':
-        specifier: ^6.6.16
+        specifier: ^6.6.17
         version: 6.6.17
       '@mikro-orm/mariadb':
-        specifier: ^6.6.16
+        specifier: ^6.6.17
         version: 6.6.17(@mikro-orm/core@6.6.17)(better-sqlite3@11.10.0)(supports-color@7.2.0)
       '@mikro-orm/reflection':
-        specifier: ^6.6.16
+        specifier: ^6.6.17
         version: 6.6.17(@mikro-orm/core@6.6.17)
       '@modelcontextprotocol/sdk':
-        specifier: ~1.31.0
-        version: 1.31.0(supports-color@7.2.0)(zod@4.6.5)
+        specifier: ~1.32.0
+        version: 1.32.0(supports-color@7.2.0)(zod@4.6.5)
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -243,10 +243,10 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.12.0(jiti@2.6.1)(supports-color@7.2.0))
       '@mikro-orm/cli':
-        specifier: ^6.6.16
+        specifier: ^6.6.17
         version: 6.6.17(better-sqlite3@11.10.0)(mariadb@3.4.5)(supports-color@7.2.0)
       '@types/node':
-        specifier: ^24.19.0
+        specifier: ^24.19.1
         version: 24.19.1
       '@types/semver':
         specifier: ^7.8.0
@@ -267,10 +267,10 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1(esbuild@0.28.2)
       eslint:
-        specifier: ^10.11.0
+        specifier: ^10.12.0
         version: 10.12.0(jiti@2.6.1)(supports-color@7.2.0)
       eslint-plugin-jsdoc:
-        specifier: ^65.0.1
+        specifier: ^65.0.2
         version: 65.0.2(eslint@10.12.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       eslint-plugin-perfectionist:
         specifier: ^5.12.1
@@ -405,7 +405,7 @@ importers:
         specifier: ^30.1.1
         version: 30.1.1
       vite:
-        specifier: ^8.3.1
+        specifier: ^8.3.2
         version: 8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.6.1)(tsx@4.23.15)(yaml@2.9.1)
       vitest:
         specifier: ^5.0.3
@@ -1269,8 +1269,8 @@ packages:
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@modelcontextprotocol/sdk@1.31.0':
-    resolution: {integrity: sha512-UvTMgnNlnIBO/22ob2RcVGDlcvOslQs8T59+FTGdA0L27a39fdGF/EDETNtDVK4DZGpwomlsYpRdA8UXcVL/pw==}
+  '@modelcontextprotocol/sdk@1.32.0':
+    resolution: {integrity: sha512-8BviX/hK4Gd2eL1KdTwm0gfl4d3wdoErW0Jd00h6nomUAtk6IJk5vwQJc6kfWtJTzN5OEV/lgIiJKI8fiDGAlA==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -5468,7 +5468,7 @@ snapshots:
       globby: 11.1.0
       ts-morph: 27.0.2
 
-  '@modelcontextprotocol/sdk@1.31.0(supports-color@7.2.0)(zod@4.6.5)':
+  '@modelcontextprotocol/sdk@1.32.0(supports-color@7.2.0)(zod@4.6.5)':
     dependencies:
       '@hono/node-server': 2.1.3(hono@4.13.12)
       ajv: 8.20.0
