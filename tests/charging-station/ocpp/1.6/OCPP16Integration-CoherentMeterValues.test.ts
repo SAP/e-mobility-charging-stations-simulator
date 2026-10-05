@@ -81,14 +81,14 @@ const configureMeterValueTemplates = (station: ChargingStation): void => {
   const templates: SampledValueTemplate[] = [
     {
       measurand: MeterValueMeasurand.STATE_OF_CHARGE,
-      unit: 'Percent',
+      unit: OCPP16MeterValueUnit.PERCENT,
     },
-    { measurand: MeterValueMeasurand.VOLTAGE, unit: 'V' },
+    { measurand: MeterValueMeasurand.VOLTAGE, unit: OCPP16MeterValueUnit.VOLT },
     {
       measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
-      unit: 'W',
+      unit: OCPP16MeterValueUnit.WATT,
     },
-    { measurand: MeterValueMeasurand.CURRENT_IMPORT, unit: 'A' },
+    { measurand: MeterValueMeasurand.CURRENT_IMPORT, unit: OCPP16MeterValueUnit.AMP },
     {
       measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
       unit: OCPP16MeterValueUnit.WATT_HOUR,

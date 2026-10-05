@@ -9,8 +9,6 @@
 
 ### 🐞 Bug Fixes
 
-- **meter-values:** preserve protocol-specific snapshots and OCPP 2.0 unit multiplier semantics
-- **ui-server:** return actionable errors for unsupported HTTP procedures
 - **deps:** update all non-major dependencies ([#2051](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2051)) ([e545222](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e545222d7afb921dec5f79ed172b1b24f1c5afaf))
 - **deps:** update all non-major dependencies ([#2057](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2057)) ([82e9650](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/82e96505d12548d6d7563471375b7368078e5e20))
 - **deps:** update all non-major dependencies ([#2067](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2067)) ([fc76b35](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fc76b350ae3bcf57948f6fb93c619bb9f7f7626b))

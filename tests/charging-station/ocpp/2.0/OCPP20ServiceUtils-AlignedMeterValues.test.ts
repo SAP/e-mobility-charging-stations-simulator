@@ -214,7 +214,7 @@ function createAlignedStation (
   for (const evseId of evseIds) {
     const evseStatus = mockStation.getEvseStatus(evseId)
     if (evseStatus != null) {
-      evseStatus.MeterValues = [{ unit: 'Wh' }]
+      evseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
     }
   }
   const seedRegister = (connectorId: number, value: number): void => {
@@ -2104,7 +2104,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(stationEvseStatus != null)
       assert.ok(evseStatus != null)
       assert.ok(connectorStatus != null)
-      stationEvseStatus.MeterValues = [{ unit: 'Wh' }]
+      stationEvseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
       evseStatus.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -5206,7 +5206,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const sourceEvse = mockStation.getEvseStatus(1)
       assert.ok(stationEvse != null)
       assert.ok(sourceEvse != null)
-      stationEvse.MeterValues = [{ measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: 'A' }]
+      stationEvse.MeterValues = [
+        { measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: OCPP20UnitEnumType.AMP },
+      ]
       sourceEvse.MeterValues = [
         MeterValuePhase.L1_N,
         MeterValuePhase.L2_N,
@@ -5239,7 +5241,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mockStation.stationInfo.numberOfPhases = 3
       const stationEvse = mockStation.getEvseStatus(0)
       assert.ok(stationEvse != null)
-      stationEvse.MeterValues = [{ measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: 'A' }]
+      stationEvse.MeterValues = [
+        { measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: OCPP20UnitEnumType.AMP },
+      ]
       const phaseValues = [
         [MeterValuePhase.L1_N, 10],
         [MeterValuePhase.L2_N, 20],

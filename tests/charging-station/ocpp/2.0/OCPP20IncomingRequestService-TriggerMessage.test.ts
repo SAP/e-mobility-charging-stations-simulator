@@ -42,6 +42,7 @@ import {
   OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
+  OCPP20UnitEnumType,
   OCPPVersion,
   PublicKeyWithSignedMeterValueEnumType,
   ReasonCodeEnumType,
@@ -82,7 +83,7 @@ function addTriggerMessageConnector (
   connectorStatus.MeterValues = [
     {
       measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
-      unit: 'Wh',
+      unit: OCPP20UnitEnumType.WATT_HOUR,
     },
   ]
   connectorStatus.energyActiveImportRegisterValue = energyValue
@@ -161,7 +162,7 @@ function createTriggerMessageStation (): {
     connectorStatus.MeterValues = [
       {
         measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
-        unit: 'Wh',
+        unit: OCPP20UnitEnumType.WATT_HOUR,
       },
     ]
     connectorStatus.energyActiveImportRegisterValue = (evseId ?? 0) * 10
@@ -607,7 +608,7 @@ await describe('F06 - TriggerMessage', async () => {
         {
           location: OCPP20LocationEnumType.Inlet,
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
-          unit: 'Wh',
+          unit: OCPP20UnitEnumType.WATT_HOUR,
         },
       ]
       connectorStatus.transactionEnergyActiveImportRegisterValue = 150
@@ -748,7 +749,7 @@ await describe('F06 - TriggerMessage', async () => {
         connectorStatus.MeterValues = [
           {
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
-            unit: 'Wh',
+            unit: OCPP20UnitEnumType.WATT_HOUR,
           },
         ]
         connectorStatus.transactionId = `duplicate-response-${evseId.toString()}`
@@ -1457,7 +1458,7 @@ await describe('F06 - TriggerMessage', async () => {
       connectorStatus.MeterValues = [
         {
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
-          unit: 'Wh',
+          unit: OCPP20UnitEnumType.WATT_HOUR,
         },
       ]
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
@@ -1555,12 +1556,12 @@ await describe('F06 - TriggerMessage', async () => {
         {
           fluctuationPercent: 0,
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
-          unit: 'Wh',
+          unit: OCPP20UnitEnumType.WATT_HOUR,
         },
         {
           fluctuationPercent: 0,
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
-          unit: 'Wh',
+          unit: OCPP20UnitEnumType.WATT_HOUR,
         },
       ]
       connectorStatus.transactionEnergyActiveImportRegisterValue = 150
@@ -1973,7 +1974,7 @@ await describe('F06 - TriggerMessage', async () => {
     function seedActiveTransaction (evseId: number, transactionId: string): void {
       const evseStatus = mockStation.getEvseStatus(evseId)
       if (evseStatus != null) {
-        evseStatus.MeterValues = [{ unit: 'Wh' }]
+        evseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
       }
       setupConnectorWithTransaction(mockStation, evseId, {
         energyImport: 1234,
@@ -2419,7 +2420,7 @@ await describe('F06 - TriggerMessage', async () => {
       assert.ok(evseStatus != null && connectorStatus != null)
       evseStatus.connectors.delete(2)
       evseStatus.connectors.set(1, connectorStatus)
-      evseStatus.MeterValues = [{ unit: 'Wh' }]
+      evseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
       connectorStatus.transactionStarted = true
       connectorStatus.transactionId = 'txn-evse-2-local-connector'
       connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
@@ -2521,7 +2522,7 @@ await describe('F06 - TriggerMessage', async () => {
       })
       const rejectEvseStatus = rejectStation.getEvseStatus(1)
       if (rejectEvseStatus != null) {
-        rejectEvseStatus.MeterValues = [{ unit: 'Wh' }]
+        rejectEvseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
       }
       setupConnectorWithTransaction(rejectStation, 1, {
         energyImport: 1234,

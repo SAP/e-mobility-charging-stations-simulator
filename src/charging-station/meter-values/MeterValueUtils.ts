@@ -121,17 +121,9 @@ export const resolveMeterValueUnitScale = (
   multiplier = 0
 ): number => {
   const namedUnitScale =
-    unit === 'kPa' ||
-    unit === MeterValueUnit.KILO_VAR ||
-    unit === MeterValueUnit.KILO_VAR_HOUR ||
-    unit === MeterValueUnit.KILO_VOLT_AMP ||
-    unit === MeterValueUnit.KILO_VOLT_AMP_HOUR ||
-    unit === MeterValueUnit.KILO_WATT ||
-    unit === MeterValueUnit.KILO_WATT_HOUR
+    unit === MeterValueUnit.KILO_PASCAL
       ? Constants.UNIT_DIVIDER_KILO
-      : unit === 'MWh'
-        ? 1_000_000
-        : resolveMeterValueUnitDivider(measurand, unit)
+      : resolveMeterValueUnitDivider(measurand, unit)
   return namedUnitScale * 10 ** multiplier
 }
 

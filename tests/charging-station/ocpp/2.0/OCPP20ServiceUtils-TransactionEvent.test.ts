@@ -7749,7 +7749,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         mockTracking.station.getEvseIdByConnectorId(connectorId) ?? 1
       )
       if (evseStatus != null) {
-        evseStatus.MeterValues = [{ unit: 'Wh' }]
+        evseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
       }
 
       addConfigurationKey(
@@ -11194,7 +11194,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       // Arrange
       const evseStatus = station.getEvseStatus(1)
       if (evseStatus != null) {
-        evseStatus.MeterValues = [{ unit: 'Wh' }]
+        evseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
       }
 
       const transactionId = generateUUID()
@@ -11441,7 +11441,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       // Arrange
       const evseStatus = mockTracking.station.getEvseStatus(1)
       if (evseStatus != null) {
-        evseStatus.MeterValues = [{ unit: 'Wh' }]
+        evseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
       }
 
       const transactionId = generateUUID()
