@@ -50,6 +50,7 @@ import {
   ConnectorStatusEnum,
   CurrentType,
   ErrorType,
+  isOCPP20MeterValue,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
@@ -3090,7 +3091,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
         let online = false
         const attemptedSequenceNumbers: number[] = []
-        const malformedTriggerReason = 'Bogus' as OCPP20TriggerReasonEnumType
+        const malformedTriggerReason = 'Bogus' as unknown as OCPP20TriggerReasonEnumType
         let successorPayload: OCPP20TransactionEventRequest | undefined
         const malformedError = new OCPPError(
           ErrorType.FORMAT_VIOLATION,
@@ -11283,7 +11284,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           60_000,
           txUpdatedMeasurandsKey,
           OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
-        ) as OCPP20MeterValue
+        )
+        assert.ok(isOCPP20MeterValue(meterValue))
         const expectedEnergyDelta = Number(
           (
             (station.getConnectorMaximumAvailablePower(connectorId) * sampleInterval) /

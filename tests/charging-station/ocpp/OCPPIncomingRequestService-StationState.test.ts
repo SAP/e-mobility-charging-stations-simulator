@@ -126,10 +126,10 @@ await describe('OCPPIncomingRequestService — per-station state plumbing', asyn
 
   await it('should bind a nested post-restart CALL to the fresh station state', async () => {
     const oldState = plumbing.getOrCreateStationState(stationA)
-    const outerCommand = 'OuterInheritedCall' as Parameters<
+    const outerCommand = 'OuterInheritedCall' as unknown as Parameters<
       OCPP16IncomingRequestService['incomingRequestHandler']
     >[2]
-    const nestedCommand = 'NestedRestartedCall' as Parameters<
+    const nestedCommand = 'NestedRestartedCall' as unknown as Parameters<
       OCPP16IncomingRequestService['incomingRequestHandler']
     >[2]
     let freshState: OCPP16StationStateShape | undefined

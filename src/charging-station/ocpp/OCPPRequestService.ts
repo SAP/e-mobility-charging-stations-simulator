@@ -494,11 +494,12 @@ export abstract class OCPPRequestService {
     payload: T,
     { forceValidation = false }: { forceValidation?: boolean } = {}
   ): boolean {
+    const requestCommand = getEnumStringValue(RequestCommand, commandName)
     return validatePayload(
       chargingStation,
       commandName,
       payload,
-      this.payloadValidatorFunctions.get(commandName as RequestCommand),
+      requestCommand == null ? undefined : this.payloadValidatorFunctions.get(requestCommand),
       'request',
       true,
       forceValidation
@@ -582,13 +583,16 @@ export abstract class OCPPRequestService {
     commandName: IncomingRequestCommand | RequestCommand,
     payload: T
   ): boolean {
+    const incomingRequestCommand = getEnumStringValue(IncomingRequestCommand, commandName)
     return validatePayload(
       chargingStation,
       commandName,
       payload,
-      this.ocppResponseService.incomingRequestResponsePayloadValidateFunctions.get(
-        commandName as IncomingRequestCommand
-      ),
+      incomingRequestCommand == null
+        ? undefined
+        : this.ocppResponseService.incomingRequestResponsePayloadValidateFunctions.get(
+          incomingRequestCommand
+        ),
       'incoming request response',
       true
     )

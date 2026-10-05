@@ -69,7 +69,6 @@ import {
   SupportedFeatureProfiles,
   VendorParametersKey,
   Voltage,
-  WebSocketCloseEventStatusCode,
   type WSError,
   type WsOptions,
 } from '../types/index.js'
@@ -3439,11 +3438,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private onClose (
-    wsConnection: WebSocket,
-    code: WebSocketCloseEventStatusCode,
-    reason: Buffer
-  ): void {
+  private onClose (wsConnection: WebSocket, code: number, reason: Buffer): void {
     const closedByRequest = this.wsConnectionsClosedByRequest.delete(wsConnection)
     if (wsConnection !== this.wsConnection) {
       return
@@ -3460,8 +3455,8 @@ export class ChargingStation extends EventEmitter {
     this.emitChargingStationEvent(ChargingStationEvents.updated)
     switch (code) {
       // Normal close
-      case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
-      case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
+      case 1000: // Normal closure
+      case 1005: // No status received
         logger.info(
           `${this.logPrefix()} ${moduleName}.onClose: WebSocket normally closed with status '${getWebSocketCloseEventStatusString(
             code
@@ -3520,24 +3515,26 @@ export class ChargingStation extends EventEmitter {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       request = JSON.parse(data.toString()) as ErrorResponse | IncomingRequest | Response
       if (Array.isArray(request)) {
-        ;[messageType] = request
+        const [parsedMessageType] = request
         if (
           this.isStopping() &&
-          messageType !== MessageType.CALL_RESULT_MESSAGE &&
-          messageType !== MessageType.CALL_ERROR_MESSAGE
+          parsedMessageType !== MessageType.CALL_RESULT_MESSAGE &&
+          parsedMessageType !== MessageType.CALL_ERROR_MESSAGE
         ) {
           return
         }
-        switch (messageType) {
+        switch (parsedMessageType) {
           // Error Message
           case MessageType.CALL_ERROR_MESSAGE:
-            this.handleErrorMessage(request as ErrorResponse)
+            messageType = MessageType.CALL_ERROR_MESSAGE
+            this.handleErrorMessage(request)
             break
           // Incoming Message
           case MessageType.CALL_MESSAGE:
+            messageType = MessageType.CALL_MESSAGE
             if (!messageLifecycleIsCurrent()) return
             await this.handleIncomingMessage(
-              request as IncomingRequest,
+              request,
               messageLifecycleSignal,
               messageLifecycleIsCurrent,
               messageSourceIsCurrent
@@ -3545,7 +3542,8 @@ export class ChargingStation extends EventEmitter {
             break
           // Response Message
           case MessageType.CALL_RESULT_MESSAGE:
-            this.handleResponseMessage(request as Response)
+            messageType = MessageType.CALL_RESULT_MESSAGE
+            this.handleResponseMessage(request)
             break
           // Unknown Message
           default:
@@ -3603,8 +3601,8 @@ export class ChargingStation extends EventEmitter {
         }
         return
       }
-      let commandName: IncomingRequestCommand | undefined
-      let requestCommandName: IncomingRequestCommand | RequestCommand | undefined
+      let commandName: string | undefined
+      let requestCommandName: string | undefined
       let errorCallback: ErrorCallback
       const [, messageId] = request
       const ocppError =
@@ -3625,11 +3623,18 @@ export class ChargingStation extends EventEmitter {
             this.requests.delete(messageId)
           }
           break
-        case MessageType.CALL_MESSAGE:
+        case MessageType.CALL_MESSAGE: {
           if (!messageLifecycleIsCurrent() || !messageSourceIsCurrent()) return
-          ;[, , commandName] = request as IncomingRequest
-          await this.ocppRequestService.sendError(this, messageId, ocppError, commandName)
+          const [, , rawCommandName] = request
+          commandName = typeof rawCommandName === 'string' ? rawCommandName : undefined
+          await this.ocppRequestService.sendError(
+            this,
+            messageId,
+            ocppError,
+            commandName ?? OCPPConstants.UNKNOWN_OCPP_COMMAND
+          )
           break
+        }
       }
       if (!(error instanceof OCPPError)) {
         logger.warn(
@@ -4322,8 +4327,8 @@ export class ChargingStation extends EventEmitter {
         onCompleteCallback()
         return
       }
-      if (isRequest) {
-        ;[, messageId, commandName] = parsedMessage as OutgoingRequest
+      if (parsedMessage[0] === MessageType.CALL_MESSAGE) {
+        ;[, messageId, commandName] = parsedMessage
       }
       const bufferedMessageInFlight: {
         entry: BufferedMessageEntry

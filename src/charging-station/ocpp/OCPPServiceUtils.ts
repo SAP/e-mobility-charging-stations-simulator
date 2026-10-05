@@ -1049,12 +1049,13 @@ const buildCurrentMeasurandValue = (
 }
 
 /**
- * Builds an empty MeterValue with no sampled values and the current timestamp.
+ * Builds an empty MeterValue with no sampled values.
+ * @param timestamp - Meter value timestamp; defaults to the current time
  * @returns Empty MeterValue object
  */
-export const buildEmptyMeterValue = (): MeterValue => ({
+export const buildEmptyMeterValue = (timestamp = new Date()): MeterValue => ({
   sampledValue: [],
-  timestamp: new Date(),
+  timestamp,
 })
 
 /**

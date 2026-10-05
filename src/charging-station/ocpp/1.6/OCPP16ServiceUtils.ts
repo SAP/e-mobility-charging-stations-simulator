@@ -86,6 +86,7 @@ import {
 import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
+  buildEmptyMeterValue,
   buildMeterValue,
   createPayloadConfigs,
   getSampledValueTemplate,
@@ -361,7 +362,7 @@ export class OCPP16ServiceUtils {
         transactionId
       )
     }
-    const meterValue: OCPP16MeterValue = { sampledValue: [], timestamp: new Date() }
+    const meterValue = requireOCPP16MeterValue(buildEmptyMeterValue())
     const meterStartOutputWh = meterStart ?? 0
     // Energy.Active.Import.Register measurand (default)
     const sampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
@@ -465,7 +466,7 @@ export class OCPP16ServiceUtils {
       sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR
         ? Constants.UNIT_DIVIDER_KILO
         : 1
-    const meterValue = { sampledValue: [], timestamp } as OCPP16MeterValue
+    const meterValue = requireOCPP16MeterValue(buildEmptyMeterValue(timestamp))
     meterValue.sampledValue.push(
       buildOCPP16SampledValue(
         sampledValueTemplate,
@@ -1506,6 +1507,7 @@ export class OCPP16ServiceUtils {
             terminalMeterValuesHasPublicKey &&
             !stopTransactionHasPublicKey
 
+          const stopReason = getEnumStringValue(OCPP16StopTransactionReason, reason)
           stopTransactionSnapshot = Object.freeze({
             ...snapshotOverrides,
             idTag,
@@ -1513,7 +1515,7 @@ export class OCPP16ServiceUtils {
             timestamp,
             transactionData,
             transactionId,
-            ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
+            ...(stopReason != null && { reason: stopReason }),
           })
           if (
             strictEndMeterValueIsSolePublicKeyCarrier &&

@@ -9,9 +9,8 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { StopTransactionReason } from '../../../../src/types/index.js'
-
 import { mapStopReasonToOCPP20 } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestBuilders.js'
+import { OCPP16StopTransactionReason } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 await describe('OCPP20RequestBuilders', async () => {
@@ -21,7 +20,7 @@ await describe('OCPP20RequestBuilders', async () => {
 
   await describe('mapStopReasonToOCPP20', async () => {
     await it('should map Other to Other/AbnormalCondition', () => {
-      const result = mapStopReasonToOCPP20('Other' as StopTransactionReason)
+      const result = mapStopReasonToOCPP20(OCPP16StopTransactionReason.OTHER)
 
       assert.strictEqual(result.stoppedReason, 'Other')
       assert.strictEqual(result.triggerReason, 'AbnormalCondition')
@@ -35,7 +34,7 @@ await describe('OCPP20RequestBuilders', async () => {
     })
 
     await it('should map Remote to Remote/RemoteStop', () => {
-      const result = mapStopReasonToOCPP20('Remote' as StopTransactionReason)
+      const result = mapStopReasonToOCPP20(OCPP16StopTransactionReason.REMOTE)
 
       assert.strictEqual(result.stoppedReason, 'Remote')
       assert.strictEqual(result.triggerReason, 'RemoteStop')

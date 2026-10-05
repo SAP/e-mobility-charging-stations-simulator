@@ -186,7 +186,7 @@ await describe('Configuration', async () => {
 
   await it('should throw for unknown configuration section', () => {
     assert.throws(() => {
-      Configuration.getConfigurationSection('unknown' as ConfigurationSection)
+      Configuration.getConfigurationSection('unknown' as unknown as ConfigurationSection)
     }, Error)
   })
 })

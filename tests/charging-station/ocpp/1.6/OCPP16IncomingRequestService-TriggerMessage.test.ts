@@ -1114,7 +1114,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {
-        requestedMessage: 'UnknownMessage' as OCPP16MessageTrigger,
+        requestedMessage: 'UnknownMessage' as unknown as OCPP16MessageTrigger,
       })
 
       // Assert

@@ -34,6 +34,8 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   OCPP16MeterValueFormat,
+  OCPP16MeterValueMeasurand,
+  OCPP20MeasurandEnumType,
   OCPPVersion,
 } from '../../types/index.js'
 import {
@@ -492,6 +494,10 @@ const serializeCoherentMeterValue = (
   const templates = resolveTemplates(context, connectorId, connectorStatus, evseIdOverride)
   const groups = groupTemplatesByMeasurand(templates)
   if (enabledMeasurands?.has(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) === true) {
+    const intervalMeasurand =
+      context.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
+        ? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+        : OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
     const intervalTemplates = groups.get(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) ?? []
     const intervalTemplateIdentities = new Set(
       intervalTemplates.map(template =>
@@ -502,7 +508,7 @@ const serializeCoherentMeterValue = (
       .filter(template => {
         const intervalTemplate = {
           ...template,
-          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+          measurand: intervalMeasurand,
         }
         return !intervalTemplateIdentities.has(
           energyIntervalFallbackIdentity(
@@ -514,7 +520,7 @@ const serializeCoherentMeterValue = (
       })
       .map(template => ({
         ...template,
-        measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+        measurand: intervalMeasurand,
       }))
     if (isNotEmptyArray(intervalFallbacks)) {
       groups.set(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL, [
