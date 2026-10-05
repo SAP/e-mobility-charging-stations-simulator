@@ -364,7 +364,7 @@ describe('Actions', () => {
       )
     })
 
-    for (const invalidVersion of ['invalid', ['1.6', '2.0']]) {
+    for (const invalidVersion of ['invalid', [OCPPVersion.VERSION_16, OCPPVersion.VERSION_20]]) {
       it(`should reject the present invalid OCPP version ${JSON.stringify(invalidVersion)}`, async () => {
         mockRoute.value.query = { evseId: '1', ocppVersion: invalidVersion }
         const wrapper = mountStartTx()

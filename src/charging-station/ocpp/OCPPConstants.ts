@@ -9,6 +9,7 @@ import {
   type OCPPCommandName,
   ReservationStatus,
   TriggerMessageStatus,
+  UNKNOWN_OCPP_COMMAND,
   UnlockStatus,
 } from '../../types/index.js'
 import { Constants } from '../../utils/index.js'
@@ -160,7 +161,7 @@ export class OCPPConstants {
   })
 
   static readonly OCPP_WEBSOCKET_TIMEOUT_MS = 60_000
-  static readonly UNKNOWN_OCPP_COMMAND: OCPPCommandName = 'unknown OCPP command'
+  static readonly UNKNOWN_OCPP_COMMAND: OCPPCommandName = UNKNOWN_OCPP_COMMAND
 
   protected constructor () {
     // This is intentional

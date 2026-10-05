@@ -13,7 +13,13 @@ import {
   restoreTransactionIntervalState,
   truncateTransactionIntervalValue,
 } from '../../src/charging-station/meter-values/index.js'
-import { type ConnectorStatus, MeterValueUnit } from '../../src/types/index.js'
+import {
+  type ConnectorStatus,
+  MeterValueLocation,
+  MeterValueMeasurand,
+  MeterValuePhase,
+  MeterValueUnit,
+} from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('TransactionIntervalUtils', async () => {
@@ -50,7 +56,7 @@ await describe('TransactionIntervalUtils', async () => {
         {
           sampledValue: [
             {
-              measurand: 'Energy.Active.Import.Interval',
+              measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
               unit: MeterValueUnit.KILO_WATT_HOUR,
               value: '0.01',
             },
@@ -65,8 +71,8 @@ await describe('TransactionIntervalUtils', async () => {
         {
           sampledValue: [
             {
-              measurand: 'Energy.Active.Import.Interval',
-              phase: 'L1',
+              measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+              phase: MeterValuePhase.L1,
               unitOfMeasure: { unit: MeterValueUnit.KILO_WATT_HOUR },
               value: 0.003,
             },
@@ -81,7 +87,7 @@ await describe('TransactionIntervalUtils', async () => {
         {
           sampledValue: [
             {
-              measurand: 'Energy.Active.Import.Interval',
+              measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
               unitOfMeasure: { multiplier: -1, unit: MeterValueUnit.KILO_WATT_HOUR },
               value: 0.2,
             },
@@ -96,8 +102,8 @@ await describe('TransactionIntervalUtils', async () => {
         {
           sampledValue: [
             {
-              location: 'Inlet',
-              measurand: 'Energy.Active.Import.Interval',
+              location: MeterValueLocation.INLET,
+              measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
               unit: MeterValueUnit.WATT_HOUR,
               value: 100,
             },
@@ -113,9 +119,9 @@ await describe('TransactionIntervalUtils', async () => {
         {
           sampledValue: [
             {
-              location: 'Inlet',
-              measurand: 'Energy.Active.Import.Interval',
-              phase: 'L1',
+              location: MeterValueLocation.INLET,
+              measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+              phase: MeterValuePhase.L1,
               unit: MeterValueUnit.WATT_HOUR,
               value: 100 / 3,
             },

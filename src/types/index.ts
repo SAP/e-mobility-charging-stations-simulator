@@ -407,6 +407,7 @@ export {
   type ResponseType,
   type StatusNotificationOptions,
   type StatusNotificationRequest,
+  UNKNOWN_OCPP_COMMAND,
 } from './ocpp/Requests.js'
 export {
   type Reservation,

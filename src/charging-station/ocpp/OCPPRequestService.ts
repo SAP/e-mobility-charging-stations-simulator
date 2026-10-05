@@ -44,16 +44,11 @@ import {
   validatePayload,
 } from './OCPPServiceUtils.js'
 
-const requireIncomingRequestCommand = (commandName: string): IncomingRequestCommand => {
-  const command = getEnumStringValue(IncomingRequestCommand, commandName)
-  if (command == null) {
-    throw new OCPPError(ErrorType.NOT_SUPPORTED, `Unknown OCPP command '${commandName}'`)
-  }
-  return command
-}
-
-const requireRequestCommand = (commandName: string): RequestCommand => {
-  const command = getEnumStringValue(RequestCommand, commandName)
+const requireOCPPCommand = <T extends IncomingRequestCommand | RequestCommand>(
+  commands: Readonly<Record<string, T>>,
+  commandName: string
+): T => {
+  const command = getEnumStringValue(commands, commandName)
   if (command == null) {
     throw new OCPPError(ErrorType.NOT_SUPPORTED, `Unknown OCPP command '${commandName}'`)
   }
@@ -629,7 +624,7 @@ export abstract class OCPPRequestService {
       }
       // Request
       case MessageType.CALL_MESSAGE: {
-        const requestCommand = requireRequestCommand(commandName)
+        const requestCommand = requireOCPPCommand(RequestCommand, commandName)
         this.validateRequestPayload(chargingStation, requestCommand, messagePayload as JsonType)
         messageToSend = JSON.stringify([
           messageType,
@@ -643,7 +638,7 @@ export abstract class OCPPRequestService {
       case MessageType.CALL_RESULT_MESSAGE:
         this.validateIncomingRequestResponsePayload(
           chargingStation,
-          requireIncomingRequestCommand(commandName),
+          requireOCPPCommand(IncomingRequestCommand, commandName),
           messagePayload as JsonType
         )
         messageToSend = JSON.stringify([
@@ -778,7 +773,7 @@ export abstract class OCPPRequestService {
         this.ocppResponseService
           .responseHandler(
             chargingStation,
-            requireRequestCommand(commandName),
+            requireOCPPCommand(RequestCommand, commandName),
             payload,
             requestPayload
           )
@@ -940,7 +935,7 @@ export abstract class OCPPRequestService {
               chargingStation,
               messageId,
               messagePayload as JsonType,
-              requireRequestCommand(commandName),
+              requireOCPPCommand(RequestCommand, commandName),
               responseCallback,
               errorCallback,
               cancelPendingSend,
@@ -1075,7 +1070,7 @@ export abstract class OCPPRequestService {
             chargingStation,
             messageId,
             messagePayload as JsonType,
-            requireRequestCommand(commandName),
+            requireOCPPCommand(RequestCommand, commandName),
             responseCallback,
             errorCallback,
             cancelPendingSend,
@@ -1134,7 +1129,7 @@ export abstract class OCPPRequestService {
                     chargingStation,
                     messageId,
                     messagePayload as JsonType,
-                    requireRequestCommand(commandName),
+                    requireOCPPCommand(RequestCommand, commandName),
                     responseCallback,
                     errorCallback,
                     cancelPendingSend,

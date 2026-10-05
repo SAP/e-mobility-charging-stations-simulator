@@ -54,7 +54,6 @@ import {
   type IncomingRequestCommand,
   type IncomingRequestHandler,
   isOCPP16ChargingProfile,
-  isOCPP16MeterValue,
   type JsonType,
   type LogConfiguration,
   OCPP16AuthorizationStatus,
@@ -141,6 +140,7 @@ import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { isIdTagAuthorized } from '../OCPPServiceOperations.js'
 import {
+  assertMeterValueBuilderResult,
   buildMeterValue,
   createPayloadValidatorMap,
   isConnectorIdValid,
@@ -2180,11 +2180,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               false,
               { advanceEnergy: true, connectorId: target.connectorId, snapshot: true }
             )
-            if (!isOCPP16MeterValue(builtMeterValue)) {
-              throw new BaseError(
-                'MeterValue builder returned OCPP 2.0.x data for an OCPP 1.6 station'
-              )
-            }
+            assertMeterValueBuilderResult(builtMeterValue, OCPPVersion.VERSION_16)
             const meterValue = builtMeterValue
             if (!isNotEmptyArray(meterValue.sampledValue)) {
               delivery?.settle(true)

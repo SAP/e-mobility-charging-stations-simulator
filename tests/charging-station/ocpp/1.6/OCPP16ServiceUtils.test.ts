@@ -48,6 +48,7 @@ import {
   type OCPP16StopTransactionResponse,
   OCPP16SupportedFeatureProfiles,
   OCPP16VendorParametersKey,
+  OCPP20ReasonEnumType,
   OCPPVersion,
   type RequestParams,
 } from '../../../../src/types/index.js'
@@ -729,7 +730,10 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
     }
 
-    for (const invalidReason of ['InvalidReason', 'EnergyLimitReached'] as const) {
+    for (const invalidReason of [
+      'InvalidReason',
+      OCPP20ReasonEnumType.EnergyLimitReached,
+    ] as const) {
       await it(`should reject unsupported reason '${invalidReason}' before mutating transaction state`, async () => {
         const requestHandler = mock.fn(() => Promise.resolve({}))
         const { station } = createMockChargingStation({

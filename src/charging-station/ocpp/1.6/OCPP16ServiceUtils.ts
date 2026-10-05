@@ -30,7 +30,6 @@ import {
   type ConnectorStatus,
   ErrorType,
   type GenericResponse,
-  isOCPP16MeterValue,
   type MeterValue,
   type MeterValuesRequest,
   type MeterValuesResponse,
@@ -85,6 +84,7 @@ import {
 import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
+  assertMeterValueBuilderResult,
   buildEmptyMeterValue,
   buildMeterValue,
   createPayloadConfigs,
@@ -111,9 +111,7 @@ import { buildOCPP16SampledValue, buildSignedOCPP16SampledValue } from './OCPP16
 const moduleName = 'OCPP16ServiceUtils'
 
 const requireOCPP16MeterValue = (meterValue: MeterValue): OCPP16MeterValue => {
-  if (!isOCPP16MeterValue(meterValue)) {
-    throw new BaseError('MeterValue builder returned OCPP 2.0.x data for an OCPP 1.6 station')
-  }
+  assertMeterValueBuilderResult(meterValue, OCPPVersion.VERSION_16)
   return meterValue
 }
 
