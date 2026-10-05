@@ -17,7 +17,7 @@ import {
 import { getEnumStringValue } from '../../../utils/index.js'
 import { resolveSampledValueFields } from '../OCPPServiceUtils.js'
 
-const resolveOCPP16EnumValue = <T extends string> (
+const resolveOCPP16EnumValue = <T extends string>(
   enumObject: Readonly<Record<string, T>>,
   value: string | undefined,
   fieldName: string,

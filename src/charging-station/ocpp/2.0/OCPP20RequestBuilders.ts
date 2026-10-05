@@ -30,7 +30,7 @@ import {
   type SignedSampledValueResult,
 } from '../OCPPSignedMeterValueUtils.js'
 
-const requireOCPP20EnumValue = <T extends string> (
+const requireOCPP20EnumValue = <T extends string>(
   enumObject: Readonly<Record<string, T>>,
   value: string | undefined,
   fieldName: string

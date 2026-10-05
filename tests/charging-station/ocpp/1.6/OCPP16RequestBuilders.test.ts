@@ -15,10 +15,7 @@ import {
 
 await describe('OCPP16RequestBuilders', async () => {
   await describe('buildOCPP16SampledValue', async () => {
-    for (const unit of [
-      OCPP16MeterValueUnit.TEMP_CELCIUS,
-      OCPP16MeterValueUnit.TEMP_CELSIUS,
-    ]) {
+    for (const unit of [OCPP16MeterValueUnit.TEMP_CELCIUS, OCPP16MeterValueUnit.TEMP_CELSIUS]) {
       await it(`should preserve the schema-supported ${unit} temperature unit`, () => {
         const sampledValue = buildOCPP16SampledValue({ unit }, 21)
 

@@ -1204,10 +1204,7 @@ const createVersionedSampledValueDispatcher = (
             )?.value
             const configuredSigningMethod = getConfigurationKey(
               chargingStation,
-              buildConfigKey(
-                OCPP20ComponentName.FiscalMetering,
-                VendorParametersKey.SigningMethod
-              )
+              buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.SigningMethod)
             )?.value
 
             const prerequisiteResult = validateSigningPrerequisites(

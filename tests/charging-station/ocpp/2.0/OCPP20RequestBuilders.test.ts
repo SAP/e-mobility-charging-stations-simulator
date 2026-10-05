@@ -29,11 +29,7 @@ await describe('OCPP20RequestBuilders', async () => {
   await describe('buildOCPP20SampledValue', async () => {
     await it('should reject an OCPP 1.6-only measurand', () => {
       assert.throws(
-        () =>
-          buildOCPP20SampledValue(
-            { measurand: OCPP16MeterValueMeasurand.FAN_RPM },
-            1
-          ),
+        () => buildOCPP20SampledValue({ measurand: OCPP16MeterValueMeasurand.FAN_RPM }, 1),
         (error: unknown) =>
           error instanceof BaseError && error.message.includes('sampled value measurand')
       )
