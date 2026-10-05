@@ -20,6 +20,8 @@ import {
   GetCertificateStatusEnumType,
   type HeartbeatResponse,
   Iso15118EVCertificateStatusEnumType,
+  isOCPP16MeterValue,
+  isOCPP20MeterValue,
   type MessageEvent,
   type MeterValuesRequest,
   type MeterValuesResponse,
@@ -49,6 +51,7 @@ import {
 import {
   Constants,
   convertToInt,
+  getEnumStringValue,
   getErrorMessage,
   isAsyncFunction,
   isEmpty,
@@ -116,17 +119,18 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     [
       BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
       r =>
-        (r as OCPP20Get15118EVCertificateResponse).status ===
+        getEnumStringValue(Iso15118EVCertificateStatusEnumType, r.status) ===
         Iso15118EVCertificateStatusEnumType.Accepted,
     ],
     [
       BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
       r =>
-        (r as OCPP20GetCertificateStatusResponse).status === GetCertificateStatusEnumType.Accepted,
+        getEnumStringValue(GetCertificateStatusEnumType, r.status) ===
+        GetCertificateStatusEnumType.Accepted,
     ],
     [
       BroadcastChannelProcedureName.SIGN_CERTIFICATE,
-      r => (r as OCPP20SignCertificateResponse).status === GenericStatus.Accepted,
+      r => getEnumStringValue(GenericStatus, r.status) === GenericStatus.Accepted,
     ],
   ])
 
@@ -525,15 +529,21 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       )
     }
     const requestedPublicKeyIncluded =
-      requestedMeterValues?.some(meterValue =>
-        isOcpp2
-          ? (meterValue as OCPP20MeterValue).sampledValue.some(sampledValue =>
-              isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
-            )
-          : (meterValue as OCPP16MeterValue).sampledValue.some(sampledValue =>
-              isNotEmptyString(getOCPP16SignedMeterValuePublicKey(sampledValue))
-            )
-      ) === true
+      requestedMeterValues?.some(meterValue => {
+        if (isOcpp2 && isOCPP20MeterValue(meterValue)) {
+          return meterValue.sampledValue.some(sampledValue =>
+            isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
+          )
+        }
+        if (!isOcpp2 && isOCPP16MeterValue(meterValue)) {
+          return meterValue.sampledValue.some(sampledValue =>
+            isNotEmptyString(getOCPP16SignedMeterValuePublicKey(sampledValue))
+          )
+        }
+        throw new BaseError(
+          `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: meterValue does not match the station OCPP version`
+        )
+      }) === true
     if (requestedMeterValues == null && connectorStatus?.transactionEnding === true) {
       throw new BaseError(
         `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Transaction is ending`
@@ -615,14 +625,20 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         // SignedData SampledValue when signing is enabled for the connector.
         // OCPP 2.0.x signing is applied inline by the versioned dispatcher.
         if (!isOcpp2 && transactionId != null) {
+          if (!isOCPP16MeterValue(meterValue)) {
+            throw new BaseError('Generated MeterValue does not match OCPP 1.6')
+          }
           publicKeyIncluded = OCPP16ServiceUtils.appendSignedUpdatedReadings(
             this.chargingStation,
             connectorId,
             convertToInt(transactionId),
-            meterValue as OCPP16MeterValue
+            meterValue
           )
         } else if (isOcpp2) {
-          publicKeyIncluded = (meterValue as OCPP20MeterValue).sampledValue.some(sampledValue =>
+          if (!isOCPP20MeterValue(meterValue)) {
+            throw new BaseError('Generated MeterValue does not match OCPP 2.0.x')
+          }
+          publicKeyIncluded = meterValue.sampledValue.some(sampledValue =>
             isNotEmptyString(getRawSignedMeterValuePublicKey(sampledValue))
           )
         }

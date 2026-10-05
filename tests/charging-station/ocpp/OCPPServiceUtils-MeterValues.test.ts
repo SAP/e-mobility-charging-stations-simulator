@@ -19,17 +19,20 @@ import type { ChargingStation } from '../../../src/charging-station/index.js'
 
 import { addConfigurationKey, buildConfigKey } from '../../../src/charging-station/index.js'
 import {
+  assertMeterValueBuilderResult,
   buildClockAlignedConnectorMeterValue,
   buildMeterValue,
 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   CurrentType,
+  type MeterValue,
   MeterValueContext,
   MeterValueLocation,
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
   OCPP20ComponentName,
+  OCPP20LocationEnumType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPPVersion,
@@ -49,37 +52,52 @@ const energyTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
   unit: 'Wh',
   value: '0',
-} as unknown as SampledValueTemplate
+}
 
 const socTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.STATE_OF_CHARGE,
   unit: 'Percent',
   value: '75',
-} as unknown as SampledValueTemplate
+}
 
 const voltageTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.VOLTAGE,
   unit: 'V',
   value: '230',
-} as unknown as SampledValueTemplate
+}
 
 const powerTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
   unit: 'W',
   value: '11000',
-} as unknown as SampledValueTemplate
+}
 
 const currentTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.CURRENT_IMPORT,
   unit: 'A',
   value: '16',
-} as unknown as SampledValueTemplate
+}
 
 await describe('buildMeterValue', async () => {
   let station: ChargingStation
 
   afterEach(() => {
     standardCleanup()
+  })
+
+  await it('should allow empty internal results but reject mixed version samples', () => {
+    const emptyMeterValue: MeterValue = { sampledValue: [], timestamp: new Date() }
+    assert.doesNotThrow(() => {
+      assertMeterValueBuilderResult(emptyMeterValue, OCPPVersion.VERSION_201)
+    })
+
+    const mixedMeterValue = {
+      sampledValue: [{ value: '1' }, { value: 1 }],
+      timestamp: new Date(),
+    } as unknown as MeterValue
+    assert.throws(() => {
+      assertMeterValueBuilderResult(mixedMeterValue, OCPPVersion.VERSION_201)
+    }, /do not match OCPP 2\.0\.1/u)
   })
 
   await describe('OCPP 1.6', async () => {
@@ -120,7 +138,7 @@ await describe('buildMeterValue', async () => {
           measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: MeterValueUnit.WATT_HOUR,
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
 
       const meterValue = buildMeterValue(station, TEST_TRANSACTION_ID, 0)
 
@@ -233,7 +251,7 @@ await describe('buildMeterValue', async () => {
             unit: 'Wh',
             value: '1000',
           },
-        ] as unknown as SampledValueTemplate[]
+        ]
 
         buildMeterValue(testStation, TEST_TRANSACTION_ID_STRING, 3_600_000)
 
@@ -261,7 +279,7 @@ await describe('buildMeterValue', async () => {
           unit: MeterValueUnit.WATT_HOUR,
           value: '0',
         },
-      ] as unknown as SampledValueTemplate[]
+      ]
       addConfigurationKey(
         station,
         buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20RequiredVariableName.Measurands),
@@ -288,6 +306,92 @@ await describe('buildMeterValue', async () => {
         return meterValue.sampledValue.map(sample => sample.value)
       })
       assert.deepStrictEqual(values, [[125], [0]])
+    })
+
+    await it('should preserve physical energy when consuming a multiplied snapshot baseline', () => {
+      const template: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+        unit: MeterValueUnit.WATT_HOUR,
+        unitOfMeasure: { multiplier: 1, unit: MeterValueUnit.WATT_HOUR },
+      }
+
+      const meterValue = buildClockAlignedConnectorMeterValue(
+        station,
+        {
+          connectorId: 1,
+          evseId: 1,
+          sampledValueBaseline: [
+            {
+              location: OCPP20LocationEnumType.Outlet,
+              measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+              unitOfMeasure: { multiplier: -1, unit: MeterValueUnit.KILO_WATT_HOUR },
+              value: 2,
+            },
+          ],
+          sampledValueTemplates: [template],
+          transactionId: TEST_TRANSACTION_ID_STRING,
+        },
+        60_000,
+        undefined,
+        MeterValueContext.SAMPLE_CLOCK
+      )
+
+      assert.strictEqual(meterValue.sampledValue[0]?.value, 20)
+      assert.deepStrictEqual(meterValue.sampledValue[0]?.unitOfMeasure, {
+        multiplier: 1,
+        unit: MeterValueUnit.WATT_HOUR,
+      })
+    })
+
+    await it('should preserve native unit descriptor families during snapshot phase suppression', () => {
+      addConfigurationKey(
+        station,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          OCPP20OptionalVariableName.RegisterValuesWithoutPhases
+        ),
+        'true',
+        undefined,
+        { overwrite: true }
+      )
+      const templates = ['sensor-a', 'sensor-b'].map((vendorId, index) => ({
+        measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+        phase: index === 0 ? MeterValuePhase.L1_N : MeterValuePhase.L2_N,
+        unit: MeterValueUnit.WATT_HOUR,
+        unitOfMeasure: {
+          customData: { vendorId },
+          multiplier: index,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+      })) as SampledValueTemplate[]
+
+      const meterValue = buildClockAlignedConnectorMeterValue(
+        station,
+        {
+          connectorId: 1,
+          energyRegisterWhOverride: 100,
+          evseId: 1,
+          sampledValueBaseline: [],
+          sampledValueTemplates: templates,
+          transactionId: TEST_TRANSACTION_ID_STRING,
+        },
+        60_000,
+        undefined,
+        MeterValueContext.SAMPLE_CLOCK
+      )
+
+      assert.deepStrictEqual(
+        meterValue.sampledValue.map(sample => [
+          sample.unitOfMeasure?.customData?.vendorId,
+          sample.unitOfMeasure?.multiplier,
+          sample.phase,
+          sample.value,
+        ]),
+        [
+          ['sensor-a', 0, undefined, 100],
+          ['sensor-b', 1, undefined, 10],
+        ]
+      )
     })
 
     await it('should suppress register phases by effective OCPP 2.0 output identity', () => {

@@ -38,6 +38,7 @@ import {
   recordPendingSharedEnergy,
   resolveInletToOutputEfficiency,
   resolveLinePhaseIndex,
+  resolveMeterValueUnitScale,
   resolveRootSeed,
   type TransactionMeterValueDelivery,
   TransactionMeterValueDeliveryBarrier,
@@ -52,6 +53,7 @@ import {
   type ConnectorStatusEnum,
   CurrentType,
   ErrorType,
+  isOCPP20MeterValue,
   type MeterValue,
   MeterValueLocation,
   OCPP20AuthorizationStatusEnumType,
@@ -124,6 +126,7 @@ import {
 } from '../auth/index.js'
 import { sendPostTransactionStatus } from '../OCPPConnectorStatusOperations.js'
 import {
+  assertMeterValueBuilderResult,
   buildClockAlignedConnectorMeterValue,
   buildMeterValue,
   createPayloadConfigs,
@@ -740,9 +743,11 @@ const normalizeClockAlignedAdditiveSample = (
   unitFamily: MeterValueUnitFamily
 ): OCPP20SampledValue => {
   const configuredUnit = sampledValue.unitOfMeasure?.unit
-  const namedUnitMultiplier =
-    configuredUnit === unitFamily.kiloUnit ? Constants.UNIT_DIVIDER_KILO : 1
-  const decimalMultiplier = 10 ** (sampledValue.unitOfMeasure?.multiplier ?? 0)
+  const unitScale = resolveMeterValueUnitScale(
+    sampledValue.measurand ?? OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+    configuredUnit,
+    sampledValue.unitOfMeasure?.multiplier
+  )
   return {
     ...sampledValue,
     unitOfMeasure: {
@@ -750,7 +755,7 @@ const normalizeClockAlignedAdditiveSample = (
       multiplier: 0,
       unit: unitFamily.baseUnit,
     },
-    value: sampledValue.value * namedUnitMultiplier * decimalMultiplier,
+    value: sampledValue.value * unitScale,
   }
 }
 
@@ -1545,7 +1550,8 @@ export class OCPP20ServiceUtils {
           energyRegisterWhOverride: sharedEnergyRegisterWh,
         }),
       }
-    ) as OCPP20MeterValue
+    )
+    assertMeterValueBuilderResult(meterValue, OCPPVersion.VERSION_201)
     const sharedObservationEnergyWh =
       usesSharedEvseRegister &&
       context !== OCPP20ReadingContextEnumType.TRANSACTION_BEGIN &&
@@ -4615,10 +4621,14 @@ export class OCPP20ServiceUtils {
     evseId?: number
   ): OCPP20MeterValue[] {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
-    const endedMeterValues = (connectorStatus?.transactionEndedMeterValues ??
-      []) as OCPP20MeterValue[]
-    const beginMeterValue = connectorStatus?.transactionBeginMeterValue as
-      OCPP20MeterValue | undefined
+    const endedMeterValues = connectorStatus?.transactionEndedMeterValues ?? []
+    if (!endedMeterValues.every(isOCPP20MeterValue)) {
+      throw new BaseError('Stored transaction-ended MeterValues do not match OCPP 2.0.x')
+    }
+    const beginMeterValue = connectorStatus?.transactionBeginMeterValue
+    if (beginMeterValue != null && !isOCPP20MeterValue(beginMeterValue)) {
+      throw new BaseError('Stored transaction-begin MeterValue does not match OCPP 2.0.x')
+    }
     const measurandsKey = buildConfigKey(
       OCPP20ComponentName.SampledDataCtrlr,
       OCPP20RequiredVariableName.TxEndedMeasurands

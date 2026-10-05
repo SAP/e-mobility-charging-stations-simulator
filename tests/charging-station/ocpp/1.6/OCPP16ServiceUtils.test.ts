@@ -48,6 +48,7 @@ import {
   type OCPP16StopTransactionResponse,
   OCPP16SupportedFeatureProfiles,
   OCPP16VendorParametersKey,
+  OCPP20ReasonEnumType,
   OCPPVersion,
   type RequestParams,
 } from '../../../../src/types/index.js'
@@ -727,6 +728,37 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         `${OCPP16VendorParametersKey.MeterPublicKey}1`,
         TEST_PUBLIC_KEY_HEX
       )
+    }
+
+    for (const invalidReason of [
+      'InvalidReason',
+      OCPP20ReasonEnumType.EnergyLimitReached,
+    ] as const) {
+      await it(`should reject unsupported reason '${invalidReason}' before mutating transaction state`, async () => {
+        const requestHandler = mock.fn(() => Promise.resolve({}))
+        const { station } = createMockChargingStation({
+          ocppRequestService: { requestHandler },
+          ocppVersion: OCPPVersion.VERSION_16,
+        })
+        setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+        const connectorStatus = station.getConnectorStatus(1)
+        assert.ok(connectorStatus != null)
+
+        const requestOverrides = {
+          reason: invalidReason,
+        } as unknown as Partial<OCPP16StopTransactionRequest>
+
+        await assert.rejects(
+          OCPP16ServiceUtils.stopTransactionOnConnector(station, 1, undefined, requestOverrides),
+          (error: unknown) =>
+            error instanceof OCPPError &&
+            error.code === ErrorType.FORMAT_VIOLATION &&
+            error.message.includes('Invalid StopTransaction reason')
+        )
+
+        assert.notStrictEqual(connectorStatus.transactionEnding, true)
+        assert.strictEqual(requestHandler.mock.callCount(), 0)
+      })
     }
 
     await it('should suppress periodic MeterValues while a transaction is ending', t => {

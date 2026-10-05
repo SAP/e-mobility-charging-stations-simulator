@@ -334,7 +334,7 @@ export const getDefaultVoltageOut = (
   templateFile: string
 ): Voltage => {
   const errorMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`
-  let defaultVoltageOut: number
+  let defaultVoltageOut: Voltage
   switch (currentType) {
     case CurrentType.AC:
       defaultVoltageOut = Voltage.VOLTAGE_230

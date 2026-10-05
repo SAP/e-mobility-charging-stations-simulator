@@ -58,6 +58,7 @@ export {
   type MeterValueUnitFamily,
   resolveLinePhaseIndex,
   resolveMeterValueUnitDivider,
+  resolveMeterValueUnitScale,
 } from './MeterValueUtils.js'
 export {
   captureTransactionIntervalState,

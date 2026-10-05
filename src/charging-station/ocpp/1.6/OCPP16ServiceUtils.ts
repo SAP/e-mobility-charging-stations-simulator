@@ -8,8 +8,6 @@ import {
   isWithinInterval,
 } from 'date-fns'
 
-import type { SigningMethodEnumType } from '../../../types/index.js'
-
 import {
   type ChargingStation,
   getConfigurationKey,
@@ -32,6 +30,7 @@ import {
   type ConnectorStatus,
   ErrorType,
   type GenericResponse,
+  type MeterValue,
   type MeterValuesRequest,
   type MeterValuesResponse,
   OCPP16AuthorizationStatus,
@@ -75,6 +74,7 @@ import {
   convertToDate,
   convertToInt,
   ensureError,
+  getEnumStringValue,
   isNotEmptyArray,
   isNotEmptyString,
   logger,
@@ -84,6 +84,7 @@ import {
 import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
+  assertMeterValueBuilderResult,
   buildEmptyMeterValue,
   buildMeterValue,
   createPayloadConfigs,
@@ -108,6 +109,12 @@ import { OCPP16Constants } from './OCPP16Constants.js'
 import { buildOCPP16SampledValue, buildSignedOCPP16SampledValue } from './OCPP16RequestBuilders.js'
 
 const moduleName = 'OCPP16ServiceUtils'
+
+const requireOCPP16MeterValue = (meterValue: MeterValue): OCPP16MeterValue => {
+  assertMeterValueBuilderResult(meterValue, OCPPVersion.VERSION_16)
+  return meterValue
+}
+
 const RFC3339_TIMESTAMP_PATTERN =
   /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([Zz]|([+-])(\d{2}):(\d{2}))$/
 const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
@@ -352,7 +359,7 @@ export class OCPP16ServiceUtils {
         transactionId
       )
     }
-    const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
+    const meterValue = requireOCPP16MeterValue(buildEmptyMeterValue())
     const meterStartOutputWh = meterStart ?? 0
     // Energy.Active.Import.Register measurand (default)
     const sampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
@@ -456,7 +463,7 @@ export class OCPP16ServiceUtils {
       sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR
         ? Constants.UNIT_DIVIDER_KILO
         : 1
-    const meterValue = { sampledValue: [], timestamp } as OCPP16MeterValue
+    const meterValue = requireOCPP16MeterValue(buildEmptyMeterValue(timestamp))
     meterValue.sampledValue.push(
       buildOCPP16SampledValue(
         sampledValueTemplate,
@@ -1137,11 +1144,9 @@ export class OCPP16ServiceUtils {
         const sampleAt = Date.now()
         const elapsedInterval = Math.max(elapsedIntervalCarry, sampleAt - lastSampleAt)
         const intervalState = captureTransactionIntervalState(connectorStatus)
-        const meterValue = buildMeterValue(
-          chargingStation,
-          transactionId,
-          elapsedInterval
-        ) as OCPP16MeterValue
+        const meterValue = requireOCPP16MeterValue(
+          buildMeterValue(chargingStation, transactionId, elapsedInterval)
+        )
         lastSampleAt = sampleAt
         elapsedIntervalCarry = 0
         completeTransactionIntervalState(intervalState, 'default', [meterValue])
@@ -1331,6 +1336,18 @@ export class OCPP16ServiceUtils {
       )
     }
 
+    const rawStopReason = reason ?? requestOverrides.reason
+    const validatedStopReason = getEnumStringValue(OCPP16StopTransactionReason, rawStopReason)
+    if (rawStopReason !== undefined && validatedStopReason == null) {
+      return Promise.reject(
+        new OCPPError(
+          ErrorType.FORMAT_VIOLATION,
+          `${moduleName}.stopTransactionOnConnector: Invalid StopTransaction reason '${rawStopReason}'`,
+          RequestCommand.STOP_TRANSACTION
+        )
+      )
+    }
+
     let transactionEndingOwned = true
     const periodicMeterValuesWasRunning =
       connectorStatus.transactionUpdatedMeterValuesSetInterval != null
@@ -1506,7 +1523,7 @@ export class OCPP16ServiceUtils {
             timestamp,
             transactionData,
             transactionId,
-            ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
+            ...(validatedStopReason != null && { reason: validatedStopReason }),
           })
           if (
             strictEndMeterValueIsSolePublicKeyCarrier &&
@@ -1998,13 +2015,15 @@ export class OCPP16ServiceUtils {
       getConfigurationKey(chargingStation, startTxnSampledDataKey)?.value != null
         ? startTxnSampledDataKey
         : undefined
-    return buildMeterValue(
-      chargingStation,
-      transactionId,
-      0,
-      measurandsKey,
-      OCPP16MeterValueContext.TRANSACTION_BEGIN
-    ) as OCPP16MeterValue
+    return requireOCPP16MeterValue(
+      buildMeterValue(
+        chargingStation,
+        transactionId,
+        0,
+        measurandsKey,
+        OCPP16MeterValueContext.TRANSACTION_BEGIN
+      )
+    )
   }
 
   private static buildSignedSampledValue (
@@ -2058,23 +2077,25 @@ export class OCPP16ServiceUtils {
       chargingStation.getConnectorStatus(connectorId)?.transactionEnergyActiveImportIntervalCarry
         ?.default ?? 0
     if (intervalEnergyWh <= 0) return
-    const intervalMeterValue = buildMeterValue(
-      chargingStation,
-      transactionId,
-      0,
-      OCPP16StandardParametersKey.StopTxnSampledData,
-      OCPP16MeterValueContext.TRANSACTION_END,
-      false,
-      {
-        advanceEnergy: false,
-        connectorId,
-        energyIntervalWhOverride: intervalEnergyWh,
-        energyRegisterWhOverride: meterStop,
-        projectDcForLocation: true,
-        snapshot: true,
-        timestamp: meterValue.timestamp,
-      }
-    ) as OCPP16MeterValue
+    const intervalMeterValue = requireOCPP16MeterValue(
+      buildMeterValue(
+        chargingStation,
+        transactionId,
+        0,
+        OCPP16StandardParametersKey.StopTxnSampledData,
+        OCPP16MeterValueContext.TRANSACTION_END,
+        false,
+        {
+          advanceEnergy: false,
+          connectorId,
+          energyIntervalWhOverride: intervalEnergyWh,
+          energyRegisterWhOverride: meterStop,
+          projectDcForLocation: true,
+          snapshot: true,
+          timestamp: meterValue.timestamp,
+        }
+      )
+    )
     const intervalSamples = intervalMeterValue.sampledValue.filter(
       sampledValue =>
         sampledValue.measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
@@ -2237,7 +2258,7 @@ export class OCPP16ServiceUtils {
     const configuredSigningMethod = getConfigurationKey(
       chargingStation,
       OCPP16VendorParametersKey.SigningMethod
-    )?.value as SigningMethodEnumType | undefined
+    )?.value
 
     const prerequisiteResult = validateSigningPrerequisites(publicKeyHex, configuredSigningMethod)
     if (!prerequisiteResult.enabled) {

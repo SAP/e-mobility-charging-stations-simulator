@@ -34,6 +34,8 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   OCPP16MeterValueFormat,
+  OCPP16MeterValueMeasurand,
+  OCPP20MeasurandEnumType,
   OCPPVersion,
 } from '../../types/index.js'
 import {
@@ -185,11 +187,17 @@ const energyIntervalFallbackIdentity = (
   JSON.stringify([
     template.phase,
     template.location ?? MeterValueLocation.OUTLET,
-    (template.unit as MeterValueUnit | undefined) ?? MeterValueUnit.WATT_HOUR,
+    ocppVersion === OCPPVersion.VERSION_16
+      ? (template.unit ?? MeterValueUnit.WATT_HOUR)
+      : (template.unitOfMeasure?.unit ?? template.unit ?? MeterValueUnit.WATT_HOUR),
+    ocppVersion === OCPPVersion.VERSION_16 ? 0 : (template.unitOfMeasure?.multiplier ?? 0),
     context ?? template.context ?? MeterValueContext.SAMPLE_PERIODIC,
     ocppVersion === OCPPVersion.VERSION_16
       ? (template.format ?? OCPP16MeterValueFormat.RAW)
-      : canonicalizeCustomData(template.customData),
+      : [
+          canonicalizeCustomData(template.customData),
+          canonicalizeCustomData(template.unitOfMeasure?.customData),
+        ],
   ])
 
 const templateFamilyKey = (
@@ -201,7 +209,9 @@ const templateFamilyKey = (
     customData: template.customData,
     location: template.location ?? MeterValueLocation.OUTLET,
     measurand: template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-    unit: (template.unit as MeterValueUnit | undefined) ?? MeterValueUnit.WATT_HOUR,
+    unit: template.unitOfMeasure?.unit ?? template.unit ?? MeterValueUnit.WATT_HOUR,
+    unitCustomData: template.unitOfMeasure?.customData,
+    unitMultiplier: template.unitOfMeasure?.multiplier,
   })
 
 /**
@@ -492,6 +502,10 @@ const serializeCoherentMeterValue = (
   const templates = resolveTemplates(context, connectorId, connectorStatus, evseIdOverride)
   const groups = groupTemplatesByMeasurand(templates)
   if (enabledMeasurands?.has(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) === true) {
+    const intervalMeasurand =
+      context.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
+        ? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
+        : OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL
     const intervalTemplates = groups.get(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) ?? []
     const intervalTemplateIdentities = new Set(
       intervalTemplates.map(template =>
@@ -502,8 +516,8 @@ const serializeCoherentMeterValue = (
       .filter(template => {
         const intervalTemplate = {
           ...template,
-          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
-        } as SampledValueTemplate
+          measurand: intervalMeasurand,
+        }
         return !intervalTemplateIdentities.has(
           energyIntervalFallbackIdentity(
             intervalTemplate,
@@ -512,13 +526,10 @@ const serializeCoherentMeterValue = (
           )
         )
       })
-      .map(
-        template =>
-          ({
-            ...template,
-            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
-          }) as SampledValueTemplate
-      )
+      .map(template => ({
+        ...template,
+        measurand: intervalMeasurand,
+      }))
     if (isNotEmptyArray(intervalFallbacks)) {
       groups.set(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL, [
         ...intervalTemplates,
@@ -580,10 +591,7 @@ const serializeCoherentMeterValue = (
         measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
           ? projectDcOutputValue(context, currentType, effectiveEvseId, template, raw)
           : raw
-      const unitDivider = resolveMeterValueUnitDivider(
-        measurand,
-        template.unit as MeterValueUnit | undefined
-      )
+      const unitDivider = resolveMeterValueUnitDivider(measurand, template.unit)
       const scaled =
         measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL
           ? truncateTransactionIntervalValue(physicalValue / unitDivider)

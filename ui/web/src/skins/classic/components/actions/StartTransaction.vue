@@ -37,8 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import type { OCPPVersion } from 'ui-common'
-
+import { getEnumStringValue, OCPPVersion } from 'ui-common'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -61,7 +60,15 @@ const evseId = computed(() =>
 )
 const ocppVersion = computed(() => {
   const raw = $route.query.ocppVersion
-  return typeof raw === 'string' ? (raw as OCPPVersion) : undefined
+  if (raw == null) return undefined
+  if (typeof raw !== 'string') {
+    throw new Error('Invalid OCPP version query parameter')
+  }
+  const parsedVersion = getEnumStringValue(OCPPVersion, raw)
+  if (parsedVersion == null) {
+    throw new Error(`Invalid OCPP version query parameter '${raw}'`)
+  }
+  return parsedVersion
 })
 
 const toggleButtonId = computed(

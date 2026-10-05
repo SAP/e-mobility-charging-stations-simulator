@@ -41,7 +41,7 @@ await describe('ConfigurationUtils', async () => {
 
     // Test unsupported storage type
     assert.throws(() => {
-      getDefaultPerformanceStorageUri('unsupported' as StorageType)
+      getDefaultPerformanceStorageUri('unsupported' as unknown as StorageType)
     }, Error)
   })
 })

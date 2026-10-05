@@ -100,6 +100,11 @@ export const RequestCommand = {
   ...OCPP16RequestCommand,
   ...OCPP20RequestCommand,
 } as const
+export type OCPPCommand = IncomingRequestCommand | RequestCommand
+
+export const UNKNOWN_OCPP_COMMAND = 'unknown OCPP command'
+export type OCPPCommandName = `${OCPPCommand}` | typeof UNKNOWN_OCPP_COMMAND
+
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand
 

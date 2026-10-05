@@ -296,7 +296,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       // procedure has no schema to check against.
       const response = await dispatchUntrustedPayload(
         service,
-        'UnknownProcedure' as ProcedureNameType,
+        'UnknownProcedure' as unknown as ProcedureNameType,
         { hashIds: 'not-an-array' }
       )
 

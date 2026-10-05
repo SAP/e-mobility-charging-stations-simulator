@@ -373,8 +373,7 @@ await describe('AuthValidators', async () => {
 
     await it('should return false for unsupported type', () => {
       const identifier: Identifier = {
-        // @ts-expect-error: Testing invalid type
-        type: 'UNSUPPORTED_TYPE',
+        type: 'UNSUPPORTED_TYPE' as unknown as IdentifierType,
         value: 'VALUE',
       }
 

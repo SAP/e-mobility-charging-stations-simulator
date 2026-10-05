@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http'
 
 import { Protocol, ProtocolVersion } from '../../types/index.js'
-import { isEmpty, logger, logPrefix } from '../../utils/index.js'
+import { getEnumStringValue, isEmpty, logger, logPrefix } from '../../utils/index.js'
 
 export enum HttpMethod {
   DELETE = 'DELETE',
@@ -57,10 +57,7 @@ export const isProtocolAndVersionSupported = (protocolStr: string): boolean => {
   if (protocolAndVersion == null) {
     return false
   }
-  const [protocol, version] = protocolAndVersion
-  return (
-    Object.values(Protocol).includes(protocol) && Object.values(ProtocolVersion).includes(version)
-  )
+  return true
 }
 
 export const getProtocolAndVersion = (
@@ -73,10 +70,16 @@ export const getProtocolAndVersion = (
     return undefined
   }
   const protocolIndex = protocolStr.indexOf(Protocol.UI)
-  const protocol = protocolStr.substring(protocolIndex, protocolIndex + Protocol.UI.length)
-  const version = protocolStr.substring(protocolIndex + Protocol.UI.length)
-  if (isEmpty(protocol) || isEmpty(version)) {
+  const protocol = getEnumStringValue(
+    Protocol,
+    protocolStr.substring(protocolIndex, protocolIndex + Protocol.UI.length)
+  )
+  const version = getEnumStringValue(
+    ProtocolVersion,
+    protocolStr.substring(protocolIndex + Protocol.UI.length)
+  )
+  if (protocol == null || version == null) {
     return undefined
   }
-  return [protocol, version] as [Protocol, ProtocolVersion]
+  return [protocol, version]
 }

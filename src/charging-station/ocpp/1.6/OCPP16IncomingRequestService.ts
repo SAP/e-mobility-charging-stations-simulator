@@ -36,7 +36,7 @@ import {
   type TransactionMeterValueDelivery,
   TransactionMeterValueDeliveryBarrier,
 } from '../../../charging-station/meter-values/index.js'
-import { OCPPError } from '../../../exception/index.js'
+import { BaseError, OCPPError } from '../../../exception/index.js'
 import {
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
@@ -53,6 +53,7 @@ import {
   type GetDiagnosticsResponse,
   type IncomingRequestCommand,
   type IncomingRequestHandler,
+  isOCPP16ChargingProfile,
   type JsonType,
   type LogConfiguration,
   OCPP16AuthorizationStatus,
@@ -83,7 +84,6 @@ import {
   type OCPP16HeartbeatResponse,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
-  type OCPP16MeterValue,
   OCPP16MeterValueContext,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
@@ -108,6 +108,7 @@ import {
   type RemoteStopTransactionRequest,
   ReservationTerminationReason,
   type ResetRequest,
+  ResetType,
   type SetChargingProfileRequest,
   type SetChargingProfileResponse,
   type StatusNotificationOptions,
@@ -123,6 +124,7 @@ import {
   convertToIntOrNaN,
   ensureError,
   formatDurationMilliSeconds,
+  getEnumStringValue,
   handleIncomingRequestError,
   isEmpty,
   isNotEmptyArray,
@@ -138,6 +140,7 @@ import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { isIdTagAuthorized } from '../OCPPServiceOperations.js'
 import {
+  assertMeterValueBuilderResult,
   buildMeterValue,
   createPayloadValidatorMap,
   isConnectorIdValid,
@@ -153,6 +156,38 @@ import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16IncomingRequestService'
+
+const requireOCPP16ChargePointStatus = (status: string | undefined): OCPP16ChargePointStatus => {
+  const ocpp16Status = getEnumStringValue(OCPP16ChargePointStatus, status)
+  if (ocpp16Status == null) {
+    throw new BaseError(`Invalid OCPP 1.6 charge point status '${String(status)}'`)
+  }
+  return ocpp16Status
+}
+
+const resolveTriggeredStatusNotificationStatus = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  status: string | undefined
+): OCPP16ChargePointStatus =>
+  requireOCPP16ChargePointStatus(
+    status ??
+      (connectorId === 0
+        ? chargingStation.getConnectorStatus(0)?.availability === OCPP16AvailabilityType.Operative
+          ? OCPP16ChargePointStatus.Available
+          : OCPP16ChargePointStatus.Unavailable
+        : undefined)
+  )
+
+const requireOCPP16ChargingProfiles = (
+  chargingProfiles: ConnectorStatus['chargingProfiles']
+): OCPP16ChargingProfile[] => {
+  const profiles = chargingProfiles ?? []
+  if (!profiles.every(isOCPP16ChargingProfile)) {
+    throw new BaseError('Charging profiles do not match OCPP 1.6')
+  }
+  return profiles
+}
 
 /**
  * Per-station lifecycle state carried on {@link OCPP16IncomingRequestService}.
@@ -752,8 +787,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                   OCPP16RequestCommand.STATUS_NOTIFICATION,
                   {
                     connectorId,
-                    status: chargingStation.getConnectorStatus(connectorId)
-                      ?.status as OCPP16ChargePointStatus,
+                    status: resolveTriggeredStatusNotificationStatus(
+                      chargingStation,
+                      connectorId,
+                      chargingStation.getConnectorStatus(connectorId)?.status
+                    ),
                   },
                   {
                     triggerMessage: true,
@@ -768,7 +806,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                     OCPP16RequestCommand.STATUS_NOTIFICATION,
                     {
                       connectorId,
-                      status: connectorStatus.status as OCPP16ChargePointStatus,
+                      status: resolveTriggeredStatusNotificationStatus(
+                        chargingStation,
+                        connectorId,
+                        connectorStatus.status
+                      ),
                     },
                     {
                       triggerMessage: true,
@@ -1119,6 +1161,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   ): ChangeConfigurationResponse {
     const { key, value } = commandPayload
     const keyToChange = getConfigurationKey(chargingStation, key, true)
+    const standardKey = getEnumStringValue(OCPP16StandardParametersKey, keyToChange?.key)
     if (keyToChange?.readonly === true) {
       return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
     } else if (keyToChange?.readonly === false) {
@@ -1131,7 +1174,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         OCPP16StandardParametersKey.TransactionMessageRetryInterval,
         OCPP16StandardParametersKey.WebSocketPingInterval,
       ])
-      if (integerKeys.has(keyToChange.key as OCPP16StandardParametersKey)) {
+      if (standardKey != null && integerKeys.has(standardKey)) {
         // convertToInt would truncate '1.5' → 1 and throw on ''/'abc'; Number() instead yields a non-integer
         // float or NaN that !Number.isInteger rejects, and isNotEmptyString rejects '' (Number('') === 0 would otherwise pass).
         const numValue = Number(value)
@@ -1145,11 +1188,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         valueChanged = true
       }
       let triggerHeartbeatRestart = false
-      if (
-        (keyToChange.key as OCPP16StandardParametersKey) ===
-          OCPP16StandardParametersKey.HeartBeatInterval &&
-        valueChanged
-      ) {
+      if (standardKey === OCPP16StandardParametersKey.HeartBeatInterval && valueChanged) {
         setConfigurationKeyValue(
           chargingStation,
           OCPP16StandardParametersKey.HeartbeatInterval,
@@ -1157,11 +1196,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         )
         triggerHeartbeatRestart = true
       }
-      if (
-        (keyToChange.key as OCPP16StandardParametersKey) ===
-          OCPP16StandardParametersKey.HeartbeatInterval &&
-        valueChanged
-      ) {
+      if (standardKey === OCPP16StandardParametersKey.HeartbeatInterval && valueChanged) {
         setConfigurationKeyValue(
           chargingStation,
           OCPP16StandardParametersKey.HeartBeatInterval,
@@ -1172,16 +1207,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       if (triggerHeartbeatRestart) {
         chargingStation.restartHeartbeat()
       }
-      if (
-        (keyToChange.key as OCPP16StandardParametersKey) ===
-          OCPP16StandardParametersKey.WebSocketPingInterval &&
-        valueChanged
-      ) {
+      if (standardKey === OCPP16StandardParametersKey.WebSocketPingInterval && valueChanged) {
         chargingStation.restartWebSocketPing()
       }
       if (
-        (keyToChange.key as OCPP16StandardParametersKey) ===
-          OCPP16StandardParametersKey.MeterValueSampleInterval &&
+        standardKey === OCPP16StandardParametersKey.MeterValueSampleInterval &&
         chargingStation.getNumberOfRunningTransactions() > 0 &&
         valueChanged
       ) {
@@ -1247,7 +1277,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         const clearedCP = OCPP16ServiceUtils.clearChargingProfiles(
           chargingStation,
           commandPayload,
-          connectorStatus.chargingProfiles as OCPP16ChargingProfile[]
+          requireOCPP16ChargingProfiles(connectorStatus.chargingProfiles)
         )
         if (clearedCP) {
           logger.debug(
@@ -1262,7 +1292,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         const clearedConnectorCP = OCPP16ServiceUtils.clearChargingProfiles(
           chargingStation,
           commandPayload,
-          connectorStatus.chargingProfiles as OCPP16ChargingProfile[]
+          requireOCPP16ChargingProfiles(connectorStatus.chargingProfiles)
         )
         if (clearedConnectorCP && !clearedCP) {
           clearedCP = true
@@ -1333,10 +1363,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       const allChargingProfiles: OCPP16ChargingProfile[] = []
       for (const { connectorId: aggregatedConnectorId } of chargingStation.iterateConnectors()) {
         allChargingProfiles.push(
-          ...(getConnectorChargingProfiles(
-            chargingStation,
-            aggregatedConnectorId
-          ) as OCPP16ChargingProfile[])
+          ...getConnectorChargingProfiles(chargingStation, aggregatedConnectorId).filter(
+            isOCPP16ChargingProfile
+          )
         )
       }
       if (isEmpty(allChargingProfiles)) {
@@ -1370,10 +1399,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED
     }
-    const chargingProfiles = getConnectorChargingProfiles(
-      chargingStation,
-      connectorId
-    ) as OCPP16ChargingProfile[]
+    const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId).filter(
+      isOCPP16ChargingProfile
+    )
     const compositeSchedule = this.composeCompositeSchedule(
       chargingStation,
       chargingProfiles,
@@ -1888,8 +1916,18 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
   ): GenericResponse {
-    const { type } = commandPayload
-    const reason = `${type}Reset` as OCPP16StopTransactionReason
+    const resetType = getEnumStringValue(ResetType, commandPayload.type)
+    if (resetType == null) {
+      throw new OCPPError(
+        ErrorType.FORMAT_VIOLATION,
+        `Invalid Reset type '${commandPayload.type}'`,
+        OCPP16IncomingRequestCommand.RESET
+      )
+    }
+    const reason =
+      resetType === ResetType.HARD
+        ? OCPP16StopTransactionReason.HARD_RESET
+        : OCPP16StopTransactionReason.SOFT_RESET
     const graceful = reason === OCPP16StopTransactionReason.SOFT_RESET
     this.pendingResetActions.set(commandPayload, async lifecycleSignal => {
       if (chargingStation.lifecycleAbortSignal !== lifecycleSignal || lifecycleSignal.aborted) {
@@ -1898,7 +1936,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       await chargingStation.reset(reason, graceful)
     })
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: ${type} reset request received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: ${resetType} reset request received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
         chargingStation.stationInfo?.resetTime ?? 0
       )}`
     )
@@ -2153,7 +2191,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               target.transactionId != null
                 ? captureTransactionIntervalState(target.connectorStatus)
                 : undefined
-            const meterValue = buildMeterValue(
+            const builtMeterValue = buildMeterValue(
               chargingStation,
               target.transactionId,
               0,
@@ -2161,7 +2199,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               OCPP16MeterValueContext.TRIGGER,
               false,
               { advanceEnergy: true, connectorId: target.connectorId, snapshot: true }
-            ) as OCPP16MeterValue
+            )
+            assertMeterValueBuilderResult(builtMeterValue, OCPPVersion.VERSION_16)
+            const meterValue = builtMeterValue
             if (!isNotEmptyArray(meterValue.sampledValue)) {
               delivery?.settle(true)
               for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)

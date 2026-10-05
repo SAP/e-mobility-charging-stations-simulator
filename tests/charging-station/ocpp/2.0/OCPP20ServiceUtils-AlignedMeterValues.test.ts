@@ -214,7 +214,7 @@ function createAlignedStation (
   for (const evseId of evseIds) {
     const evseStatus = mockStation.getEvseStatus(evseId)
     if (evseStatus != null) {
-      evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
+      evseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
     }
   }
   const seedRegister = (connectorId: number, value: number): void => {
@@ -359,7 +359,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       evseStatus.MeterValues = []
       connector1.MeterValues = [
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connector2.MeterValues = [
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
         {
@@ -368,7 +368,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'V',
           value: '230',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -409,14 +409,14 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connector2.MeterValues = [
         {
           customData: { vendorId: 'sensor-b' },
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -460,7 +460,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'V',
           value: '210',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connector2.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -468,7 +468,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'V',
           value: '240',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, ALIGNED_MEASURANDS_KEY, OCPP20MeasurandEnumType.VOLTAGE)
@@ -516,7 +516,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(connector2 != null)
       stationEvse.MeterValues = [
         { measurand: OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_REGISTER, unit: 'varh' },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       evseStatus.MeterValues = []
       connector1.MeterValues = [
         {
@@ -525,7 +525,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'varh',
           value: '1000',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connector2.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -533,7 +533,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'varh',
           value: '2000',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
@@ -582,7 +582,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             unit,
             value,
           },
-        ] as unknown as NonNullable<EvseStatus['MeterValues']>
+        ]
       }
       for (const evseId of [1, 2]) {
         const evseStatus = mockStation.getEvseStatus(evseId)
@@ -628,7 +628,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
           unit: 'W',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       evse1.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -644,7 +644,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'W',
           value: '9000',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       evse2.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -653,7 +653,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'W',
           value: '2000',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -727,12 +727,12 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             value: outletValue.toString(),
           },
         ]
-      ) as unknown as NonNullable<EvseStatus['MeterValues']>
+      )
       stationEvse.MeterValues = sourcePairs.map(([measurand, unit]) => ({
         location: OCPP20LocationEnumType.Outlet,
         measurand,
         unit,
-      })) as unknown as NonNullable<EvseStatus['MeterValues']>
+      }))
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -804,12 +804,12 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           value: '400',
         },
       ]
-      physicalEvse.MeterValues = templates as unknown as NonNullable<EvseStatus['MeterValues']>
+      physicalEvse.MeterValues = templates
       stationEvse.MeterValues = templates.map(template => ({
         ...template,
         location: OCPP20LocationEnumType.Inlet,
         value: undefined,
-      })) as unknown as NonNullable<EvseStatus['MeterValues']>
+      }))
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -865,7 +865,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'kW',
           value: '1',
         },
-      ] as unknown as ConnectorStatus['MeterValues']
+      ]
       const stationMeter = mockStation.getEvseStatus(0)
       assert.ok(stationMeter != null)
       stationMeter.MeterValues = [
@@ -875,7 +875,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'W',
           value: '0',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -913,7 +913,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Percent',
           value: '50',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       stationMeter.MeterValues = []
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-soc' })
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
@@ -956,7 +956,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             unit,
             value,
           },
-        ] as unknown as NonNullable<EvseStatus['MeterValues']>
+        ]
       }
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -999,7 +999,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             unit,
             value: value.toString(),
           },
-        ] as unknown as NonNullable<EvseStatus['MeterValues']>
+        ]
       }
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -1107,7 +1107,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
               unit: 'varh',
               value: '1000',
             },
-          ] as unknown as NonNullable<ConnectorStatus['MeterValues']>
+          ]
         }
       }
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-1' })
@@ -1199,7 +1199,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       evseStatus.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -1213,7 +1213,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '60',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-suppressed' })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -1280,7 +1280,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '60',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-independent-cadences' })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -1371,7 +1371,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
             unit: 'Wh',
           },
-        ] as unknown as EvseStatus['MeterValues']
+        ]
         evseStatus.MeterValues = [
           {
             fluctuationPercent: 0,
@@ -1379,7 +1379,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             unit: 'Wh',
             value: '60',
           },
-        ] as unknown as EvseStatus['MeterValues']
+        ]
         const transactionId = `tx-station-cadence-${String(meteringPerTransaction)}`
         const baselineTimestamp = Date.now()
         setupConnectorWithTransaction(mockStation, 1, { transactionId })
@@ -1456,7 +1456,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'V',
           value: '230',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       connectorStatus.energyActiveImportRegisterValue = 115
       connectorStatus.energyActiveImportIntervalBaselines = {
         [`station:${ALIGNED_MEASURANDS_KEY}`]: 100,
@@ -1496,7 +1496,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '0',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       const activeAt = new Date(60_000)
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-active-idle-baseline' })
       connectorStatus.energyActiveImportRegisterValue = 40
@@ -1553,7 +1553,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '0',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       evseStatus.energyActiveImportIntervalBaseline = 80
       connector1.energyActiveImportRegisterValue = 40
       connector2.energyActiveImportRegisterValue = 60
@@ -1609,7 +1609,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '0',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       connector1.energyActiveImportRegisterValue = 10
       connector2.energyActiveImportRegisterValue = 30
       connector1.energyActiveImportIntervalBaselines = {
@@ -1663,7 +1663,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: OCPP20UnitEnumType.WATT_HOUR,
           value: '0',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       const stationBaselineKey = `station:${ALIGNED_MEASURANDS_KEY}`
       connectorStatus.energyActiveImportRegisterValue = 10
       connectorStatus.energyActiveImportIntervalBaselines = {
@@ -1754,7 +1754,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '0',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-shared-evse-restore' })
       const connector1 = mockStation.getConnectorStatus(1, 1)
       const connector2 = mockStation.getConnectorStatus(2, 1)
@@ -1991,7 +1991,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '0',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       connectorStatus.energyActiveImportRegisterValue = 40
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       connectorStatus.energyActiveImportIntervalBaselines = {
@@ -2104,7 +2104,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(stationEvseStatus != null)
       assert.ok(evseStatus != null)
       assert.ok(connectorStatus != null)
-      stationEvseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
+      stationEvseStatus.MeterValues = [{ unit: OCPP20UnitEnumType.WATT_HOUR }]
       evseStatus.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -2112,7 +2112,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '0',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       connectorStatus.energyActiveImportRegisterValue = 40
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       connectorStatus.energyActiveImportIntervalBaselines = {
@@ -2192,7 +2192,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-between-slots' })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -2738,7 +2738,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_INTERVAL,
           unit: 'varh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       evseStatus.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -2766,7 +2766,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'varh',
           value: '5',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-coalesced' })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -2857,7 +2857,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       evseStatus.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -2865,7 +2865,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       evseStatus.energyActiveImportRegisterLastUpdatedAt = new Date(0)
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-meter-values-retry' })
       let failed = false
@@ -3167,6 +3167,26 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(energySample.value, 1234)
     })
 
+    await it('should not sign active aligned samples when the configured signing method is invalid', async () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, SIGN_UPDATED_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, FISCAL_PUBLIC_KEY, TEST_PUBLIC_KEY_HEX)
+      upsertConfigurationKey(mockStation, FISCAL_SIGNING_METHOD, 'invalid')
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-invalid-method' })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const samples = sentTransactionEvents(requestHandlerMock).flatMap(transactionEvent =>
+        (transactionEvent.meterValue ?? []).flatMap(meterValue => meterValue.sampledValue)
+      )
+      assert.ok(samples.length > 0)
+      assert.ok(samples.every(sample => sample.signedMeterValue == null))
+    })
+
     await it('should not sign active aligned samples when SignUpdatedReadings is disabled', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
@@ -3257,7 +3277,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         })
-      ) as unknown as NonNullable<EvseStatus['MeterValues']>
+      )
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-coherent' })
       if (mockStation.stationInfo != null) mockStation.stationInfo.meteringPerTransaction = true
       const coherentConnectorStatus = mockStation.getConnectorStatus(1)
@@ -3626,7 +3646,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '90')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
@@ -3701,7 +3721,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '1000',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
@@ -3732,7 +3752,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mock.method(mockStation, 'getConnectorMaximumAvailablePower', () => 3600)
       evseStatus.MeterValues = [
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
@@ -3790,7 +3810,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'V',
           value: '230',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
@@ -3825,7 +3845,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'V',
           value: '230',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
@@ -3887,7 +3907,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '1000',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       setupConnectorWithTransaction(mockStation, 1, {
@@ -3925,7 +3945,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '1000',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -4709,7 +4729,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       stationConnectorStatus.energyActiveImportRegisterValue = 7
 
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
@@ -4761,7 +4781,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
             unit: 'W',
           },
-        ] as unknown as EvseStatus['MeterValues']
+        ]
         sourceEvse.MeterValues = [
           {
             fluctuationPercent: 0,
@@ -4770,7 +4790,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             unit: 'W',
             value: '800',
           },
-        ] as unknown as EvseStatus['MeterValues']
+        ]
         setupConnectorWithTransaction(mockStation, 1, {
           transactionId: `tx-station-power-${location}`,
         })
@@ -4814,7 +4834,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
           unit: 'W',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       sourceEvse.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -4823,7 +4843,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'W',
           value: '800',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, {
         transactionId: 'tx-station-outlet-power',
       })
@@ -4880,7 +4900,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       sourceEvse.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -4889,7 +4909,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '800',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-station-energy' })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -4950,7 +4970,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         fluctuationPercent: 0,
         location: OCPP20LocationEnumType.Inlet,
         measurand,
-      })) as NonNullable<EvseStatus['MeterValues']>
+      }))
       sourceEvse.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -5031,7 +5051,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         location: OCPP20LocationEnumType.Outlet,
         measurand,
         phase: MeterValuePhase.L1_N,
-      })) as NonNullable<EvseStatus['MeterValues']>
+      }))
       sourceEvse.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -5075,7 +5095,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(sourceEvse != null)
       stationEvse.MeterValues = [
         { measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT, unit: 'W' },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       sourceEvse.MeterValues = [
         MeterValuePhase.L1_N,
         MeterValuePhase.L2_N,
@@ -5086,7 +5106,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         phase,
         unit: 'W',
         value: '1000',
-      })) as unknown as EvseStatus['MeterValues']
+      }))
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-phased-power' })
 
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
@@ -5118,7 +5138,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'W',
           value: '9000',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       sourceEvse.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -5127,7 +5147,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'W',
           value: '1000',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-partial-phase' })
 
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
@@ -5160,7 +5180,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'varh',
           value: '1000',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
 
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
@@ -5187,8 +5207,8 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(stationEvse != null)
       assert.ok(sourceEvse != null)
       stationEvse.MeterValues = [
-        { measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: 'A' },
-      ] as unknown as EvseStatus['MeterValues']
+        { measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: OCPP20UnitEnumType.AMP },
+      ]
       sourceEvse.MeterValues = [
         MeterValuePhase.L1_N,
         MeterValuePhase.L2_N,
@@ -5199,7 +5219,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         phase,
         unit: 'A',
         value: '5',
-      })) as unknown as EvseStatus['MeterValues']
+      }))
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-current' })
 
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
@@ -5222,8 +5242,8 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const stationEvse = mockStation.getEvseStatus(0)
       assert.ok(stationEvse != null)
       stationEvse.MeterValues = [
-        { measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: 'A' },
-      ] as unknown as EvseStatus['MeterValues']
+        { measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT, unit: OCPP20UnitEnumType.AMP },
+      ]
       const phaseValues = [
         [MeterValuePhase.L1_N, 10],
         [MeterValuePhase.L2_N, 20],
@@ -5241,7 +5261,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             unit: 'A',
             value: value.toString(),
           },
-        ] as unknown as EvseStatus['MeterValues']
+        ]
         setupConnectorWithTransaction(mockStation, evseId, {
           transactionId: `tx-cross-evse-current-${evseId.toString()}`,
         })
@@ -5284,7 +5304,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       ] as const
       stationEvse.MeterValues = measurands.map(measurand => ({
         measurand,
-      })) as EvseStatus['MeterValues']
+      }))
       const phaseValues = [
         [MeterValuePhase.L1, 10],
         [MeterValuePhase.L1_N, 20],
@@ -5299,7 +5319,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: measurand === OCPP20MeasurandEnumType.CURRENT_IMPORT ? 'A' : 'W',
           value: value.toString(),
         }))
-      ) as unknown as EvseStatus['MeterValues']
+      )
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-phase-aliases' })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -5347,7 +5367,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(phasedEvse != null)
       stationEvse.MeterValues = [
         { measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT, unit: 'W' },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       aggregateEvse.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -5355,7 +5375,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'W',
           value: '3000',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       phasedEvse.MeterValues = [
         MeterValuePhase.L1_N,
         MeterValuePhase.L2_N,
@@ -5366,7 +5386,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         phase,
         unit: 'W',
         value: '1000',
-      })) as unknown as EvseStatus['MeterValues']
+      }))
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-aggregate-power' })
       setupConnectorWithTransaction(mockStation, 2, { transactionId: 'tx-phased-power' })
 
@@ -5406,7 +5426,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             unit: 'W',
             value: '2000',
           },
-        ] as unknown as EvseStatus['MeterValues']
+        ]
       }
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-custom-data' })
 
@@ -5451,7 +5471,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
           unit: 'W',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       sourceEvse.MeterValues = []
       connector1.MeterValues = [
         {
@@ -5461,7 +5481,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'W',
           value: '1000',
         },
-      ] as unknown as ConnectorStatus['MeterValues']
+      ]
       connector2.MeterValues = [
         {
           customData: (() => {
@@ -5545,7 +5565,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         })
-      ) as unknown as EvseStatus['MeterValues']
+      )
       connectorStatus.energyActiveImportRegisterValue = 800
       upsertConfigurationKey(
         mockStation,
@@ -5597,7 +5617,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '800',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-main-energy' })
       upsertConfigurationKey(
         mockStation,
@@ -5664,7 +5684,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           value: '230',
         },
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20RequiredVariableName.Measurands),
@@ -5768,7 +5788,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(evseStatus != null)
       evseStatus.MeterValues = [
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, {
         transactionId: '00000000-0000-4000-8000-000000000123',
       })
@@ -5815,7 +5835,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-shared-energy-1' })
       setupConnectorWithTransaction(mockStation, 2, { transactionId: 'tx-shared-energy-2' })
       const connector1 = mockStation.getConnectorStatus(1, 1)
@@ -5883,7 +5903,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '60',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -5937,7 +5957,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '60',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -5981,7 +6001,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -6086,7 +6106,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '60',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -6175,7 +6195,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '60',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -6356,7 +6376,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: 'Wh',
           },
-        ] as unknown as EvseStatus['MeterValues']
+        ]
         upsertConfigurationKey(
           mockStation,
           TX_UPDATED_MEASURANDS_KEY,
@@ -6422,7 +6442,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -6510,7 +6530,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -6602,7 +6622,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         phase,
         unit: 'Wh',
         value: '90',
-      })) as unknown as EvseStatus['MeterValues']
+      }))
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -6652,7 +6672,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -6699,7 +6719,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       evseStatus.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -6712,7 +6732,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -6840,7 +6860,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -6929,7 +6949,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -7026,8 +7046,8 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       }
       stationEvse.MeterValues = [
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL, unit: 'Wh' },
-      ] as unknown as EvseStatus['MeterValues']
-      evseStatus.MeterValues = [intervalTemplate] as unknown as EvseStatus['MeterValues']
+      ]
+      evseStatus.MeterValues = [intervalTemplate]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(
         mockStation,
@@ -7088,7 +7108,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -7157,7 +7177,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         ALIGNED_MEASURANDS_KEY,
@@ -7214,7 +7234,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         location: OCPP20LocationEnumType.Inlet,
         measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
         unit: 'Wh',
-      })) as unknown as EvseStatus['MeterValues']
+      }))
       evseStatus.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -7230,7 +7250,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         })),
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -7297,7 +7317,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -7372,7 +7392,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '10',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -7555,7 +7575,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
           unit: 'W',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       evseStatus.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -7574,7 +7594,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
           unit: 'W',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(
@@ -7661,7 +7681,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       upsertConfigurationKey(
         mockStation,
         TX_UPDATED_MEASURANDS_KEY,
@@ -7804,10 +7824,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'varh',
           value: '1000',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       stationEvse.MeterValues = [
         { measurand: OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_REGISTER, unit: 'varh' },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-shared-register-1' })
       setupConnectorWithTransaction(mockStation, 2, { transactionId: 'tx-shared-register-2' })
 
@@ -7847,7 +7867,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
         OCPP20RequiredVariableName.Measurands
@@ -7887,7 +7907,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '80',
         },
-      ] as unknown as EvseStatus['MeterValues']
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-dc-inlet-interval' })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -7948,7 +7968,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         },
         { measurand: OCPP20MeasurandEnumType.VOLTAGE },
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
         OCPP20RequiredVariableName.Measurands
@@ -7988,7 +8008,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Hz',
           value: '50',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
         OCPP20RequiredVariableName.Measurands
@@ -8077,7 +8097,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL,
             phase,
             unit: 'Wh',
-          })) as unknown as EvseStatus['MeterValues'],
+          })),
           timestamp: new Date(60_000),
         },
         60_000,
@@ -8112,7 +8132,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         phase,
         unit: 'Wh',
         value: '90',
-      })) as unknown as EvseStatus['MeterValues']
+      }))
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
         OCPP20RequiredVariableName.Measurands
@@ -8158,7 +8178,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         phase,
         unit: 'Wh',
         value: '90',
-      })) as unknown as EvseStatus['MeterValues']
+      }))
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-aligned-phase-interval' })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
@@ -8231,7 +8251,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: 'Wh',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-phase-only' })
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
@@ -8367,7 +8387,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           value: '1000',
         },
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connector2.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -8376,7 +8396,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           value: '2000',
         },
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       setupConnectorWithTransaction(mockStation, 2, { transactionId: 'tx-2' })
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
@@ -8417,7 +8437,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '100',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connector2.MeterValues = [
         {
           customData: { vendorId: 'connector-2' },
@@ -8426,7 +8446,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Wh',
           value: '200',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       setupConnectorWithTransaction(mockStation, 2, { transactionId: 'tx-2' })
       upsertConfigurationKey(
         mockStation,
@@ -8521,7 +8541,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           value: '211',
         },
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       connector2.MeterValues = [
         {
           fluctuationPercent: 0,
@@ -8543,7 +8563,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           value: '240',
         },
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
         OCPP20RequiredVariableName.Measurands
@@ -8902,7 +8922,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           phase: MeterValuePhase.L2_N,
           unit: 'V',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       const invalidSinglePhaseMeterValue = buildClockAlignedConnectorMeterValue(
         mockStation,
         { connectorId: 1, evseId: 1 },
@@ -8944,7 +8964,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           phase: MeterValuePhase.N,
           unit: 'V',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       const dcMeterValue = buildClockAlignedConnectorMeterValue(
         mockStation,
         { connectorId: 1, evseId: 1 },
@@ -8975,7 +8995,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           value: '230',
         },
         { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
         OCPP20RequiredVariableName.Measurands
@@ -9066,6 +9086,63 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         false
       )
     })
+
+    await it('should preserve custom unit metadata and physical values on automatic voltage phases', () => {
+      // Arrange
+      const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
+      mock.method(mockStation, 'getNumberOfPhases', () => 3)
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.currentOutType = CurrentType.AC
+      mockStation.stationInfo.mainVoltageMeterValues = false
+      const evseStatus = mockStation.getEvseStatus(1)
+      assert.ok(evseStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.VOLTAGE,
+          unit: 'custom-voltage',
+          unitOfMeasure: {
+            customData: { vendorId: 'custom-meter' },
+            multiplier: 1,
+            unit: 'custom-voltage',
+          },
+          value: '23',
+        },
+      ]
+      const measurandsKey = buildConfigKey(
+        OCPP20ComponentName.AlignedDataCtrlr,
+        OCPP20RequiredVariableName.Measurands
+      )
+      upsertConfigurationKey(mockStation, measurandsKey, OCPP20MeasurandEnumType.VOLTAGE)
+
+      // Act
+      const meterValue = buildClockAlignedConnectorMeterValue(
+        mockStation,
+        { connectorId: 1, evseId: 1 },
+        60_000,
+        measurandsKey,
+        OCPP20ReadingContextEnumType.SAMPLE_CLOCK
+      )
+
+      // Assert
+      assert.deepStrictEqual(
+        meterValue.sampledValue.map(sample => ({
+          phase: sample.phase,
+          physicalValue: sample.value * 10,
+          unitOfMeasure: sample.unitOfMeasure,
+        })),
+        [MeterValuePhase.L1_N, MeterValuePhase.L2_N, MeterValuePhase.L3_N].map(phase => ({
+          phase,
+          physicalValue: 23,
+          unitOfMeasure: {
+            customData: { vendorId: 'custom-meter' },
+            multiplier: 1,
+            unit: 'custom-voltage',
+          },
+        }))
+      )
+    })
+
     await it('should not suppress automatic voltage phases across customData identities', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       mock.method(mockStation, 'getNumberOfPhases', () => 3)
@@ -9091,7 +9168,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'V',
           value: '231',
         },
-      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      ]
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
         OCPP20RequiredVariableName.Measurands

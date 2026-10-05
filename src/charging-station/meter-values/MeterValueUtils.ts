@@ -97,7 +97,7 @@ export const areMeterValueUnitsCompatible = (
  * Resolves the base-to-configured-unit divider for a meter-value measurand.
  * @param measurand - OCPP meter-value measurand.
  * @param unit - Configured output unit.
- * @returns `Constants.UNIT_DIVIDER_KILO` for the family's kilo unit, otherwise `1`.
+ * @returns The named unit's divider from the family's base unit.
  */
 export const resolveMeterValueUnitDivider = (
   measurand: MeterValueMeasurand,
@@ -105,6 +105,26 @@ export const resolveMeterValueUnitDivider = (
 ): number => {
   const kiloUnit = getMeterValueUnitFamily(measurand)?.kiloUnit
   return kiloUnit != null && kiloUnit === unit ? Constants.UNIT_DIVIDER_KILO : 1
+}
+
+/**
+ * Resolves the scale from an emitted meter-value number to its physical base quantity.
+ * The named-unit scale and OCPP 2.0 decimal multiplier are cumulative.
+ * @param measurand - Meter-value measurand used to resolve base/kilo unit families.
+ * @param unit - Emitted unit name.
+ * @param multiplier - OCPP 2.0 decimal multiplier.
+ * @returns Scale from the emitted number to the physical base quantity.
+ */
+export const resolveMeterValueUnitScale = (
+  measurand: MeterValueMeasurand,
+  unit: string | undefined,
+  multiplier = 0
+): number => {
+  const namedUnitScale =
+    unit === MeterValueUnit.KILO_PASCAL
+      ? Constants.UNIT_DIVIDER_KILO
+      : resolveMeterValueUnitDivider(measurand, unit)
+  return namedUnitScale * 10 ** multiplier
 }
 
 /**
@@ -137,6 +157,8 @@ export const resolveLinePhaseIndex = (phase: string | undefined): number | undef
  * @param identity.location - Effective measurement location
  * @param identity.measurand - Effective measurand
  * @param identity.unit - Effective unit
+ * @param identity.unitCustomData - Unit descriptor custom data
+ * @param identity.unitMultiplier - Effective decimal multiplier
  * @returns Stable serialized family identity
  */
 export const buildSampledValueFamilyKey = (identity: {
@@ -144,12 +166,16 @@ export const buildSampledValueFamilyKey = (identity: {
   customData: unknown
   location: MeterValueLocation | undefined
   measurand: MeterValueMeasurand
-  unit: MeterValueUnit | undefined
+  unit: string | undefined
+  unitCustomData?: unknown
+  unitMultiplier?: number
 }): string =>
   JSON.stringify([
     identity.context,
     identity.location,
     identity.unit,
+    identity.unitMultiplier ?? 0,
     identity.measurand,
     canonicalizeCustomData(identity.customData),
+    canonicalizeCustomData(identity.unitCustomData),
   ])

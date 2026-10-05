@@ -73,6 +73,7 @@ export enum OCPP16MeterValueUnit {
   KILO_WATT = 'kW',
   KILO_WATT_HOUR = 'kWh',
   PERCENT = 'Percent',
+  TEMP_CELCIUS = 'Celcius',
   TEMP_CELSIUS = 'Celsius',
   TEMP_FAHRENHEIT = 'Fahrenheit',
   TEMP_KELVIN = 'K',
