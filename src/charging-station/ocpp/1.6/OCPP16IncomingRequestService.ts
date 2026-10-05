@@ -165,6 +165,20 @@ const requireOCPP16ChargePointStatus = (status: string | undefined): OCPP16Charg
   return ocpp16Status
 }
 
+const resolveTriggeredStatusNotificationStatus = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  status: string | undefined
+): OCPP16ChargePointStatus =>
+  requireOCPP16ChargePointStatus(
+    status ??
+      (connectorId === 0
+        ? chargingStation.getConnectorStatus(0)?.availability === OCPP16AvailabilityType.Operative
+          ? OCPP16ChargePointStatus.Available
+          : OCPP16ChargePointStatus.Unavailable
+        : undefined)
+  )
+
 const requireOCPP16ChargingProfiles = (
   chargingProfiles: ConnectorStatus['chargingProfiles']
 ): OCPP16ChargingProfile[] => {
@@ -773,7 +787,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                   OCPP16RequestCommand.STATUS_NOTIFICATION,
                   {
                     connectorId,
-                    status: requireOCPP16ChargePointStatus(
+                    status: resolveTriggeredStatusNotificationStatus(
+                      chargingStation,
+                      connectorId,
                       chargingStation.getConnectorStatus(connectorId)?.status
                     ),
                   },
@@ -790,7 +806,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                     OCPP16RequestCommand.STATUS_NOTIFICATION,
                     {
                       connectorId,
-                      status: requireOCPP16ChargePointStatus(connectorStatus.status),
+                      status: resolveTriggeredStatusNotificationStatus(
+                        chargingStation,
+                        connectorId,
+                        connectorStatus.status
+                      ),
                     },
                     {
                       triggerMessage: true,

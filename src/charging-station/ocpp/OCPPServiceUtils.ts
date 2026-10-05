@@ -2022,6 +2022,7 @@ const applyClockAlignedVoltageControls = (
       ...(isOCPP20SampledValue(aggregateVoltage)
         ? {
             customData: aggregateVoltage.customData,
+            unit: getSampledValueUnit(aggregateVoltage),
             unitOfMeasure: aggregateVoltage.unitOfMeasure,
           }
         : { format: aggregateVoltage.format, unit: aggregateVoltage.unit }),

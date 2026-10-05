@@ -70,6 +70,7 @@ import {
   SupportedFeatureProfiles,
   VendorParametersKey,
   Voltage,
+  WebSocketCloseEventStatusCode,
   type WSError,
   type WsOptions,
 } from '../types/index.js'
@@ -219,6 +220,12 @@ class TransactionEventQueuePersistenceDiscardedError extends BaseError {}
 class TransactionEventQueuePersistenceSupersededError extends BaseError {}
 
 export class ChargingStation extends EventEmitter {
+  private static readonly normalWebSocketCloseEventStatusCodes: ReadonlySet<number> =
+    new Set<number>([
+      WebSocketCloseEventStatusCode.CLOSE_NO_STATUS,
+      WebSocketCloseEventStatusCode.CLOSE_NORMAL,
+    ])
+
   public automaticTransactionGenerator?: AutomaticTransactionGenerator
   public bootNotificationRequest?: BootNotificationRequest
   public bootNotificationResponse?: BootNotificationResponse
@@ -3452,24 +3459,14 @@ export class ChargingStation extends EventEmitter {
     )
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
-    switch (code) {
-      // Normal close
-      case 1000: // Normal closure
-      case 1005: // No status received
-        logger.info(
-          `${this.logPrefix()} ${moduleName}.onClose: WebSocket normally closed with status '${getWebSocketCloseEventStatusString(
-            code
-          )}' and reason '${reason.toString()}'`
-        )
-        break
-      // Abnormal close
-      default:
-        logger.error(
-          `${this.logPrefix()} ${moduleName}.onClose: WebSocket abnormally closed with status '${getWebSocketCloseEventStatusString(
-            code
-          )}' and reason '${reason.toString()}'`
-        )
-        break
+    if (ChargingStation.normalWebSocketCloseEventStatusCodes.has(code)) {
+      logger.info(
+        `${this.logPrefix()} ${moduleName}.onClose: WebSocket normally closed with status '${getWebSocketCloseEventStatusString(code)}' and reason '${reason.toString()}'`
+      )
+    } else {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.onClose: WebSocket abnormally closed with status '${getWebSocketCloseEventStatusString(code)}' and reason '${reason.toString()}'`
+      )
     }
     // Reconnect on any close we did not request while still started: a
     // server-initiated drop, or an internal close wanting a fresh connection
@@ -3534,7 +3531,12 @@ export class ChargingStation extends EventEmitter {
             if (!messageLifecycleIsCurrent()) return
             const commandName = getEnumStringValue(IncomingRequestCommand, request[2])
             if (commandName == null) {
-              throw new OCPPError(ErrorType.NOT_SUPPORTED, `Unknown OCPP command '${request[2]}'`)
+              throw new OCPPError(
+                ErrorType.NOT_IMPLEMENTED,
+                `Unknown OCPP command '${request[2]}'`,
+                OCPPConstants.UNKNOWN_OCPP_COMMAND,
+                { command: request[2] }
+              )
             }
             await this.handleIncomingMessage(
               [parsedMessageType, request[1], commandName, request[3]],

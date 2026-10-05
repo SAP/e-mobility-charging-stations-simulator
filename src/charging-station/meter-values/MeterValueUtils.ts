@@ -97,7 +97,7 @@ export const areMeterValueUnitsCompatible = (
  * Resolves the base-to-configured-unit divider for a meter-value measurand.
  * @param measurand - OCPP meter-value measurand.
  * @param unit - Configured output unit.
- * @returns `Constants.UNIT_DIVIDER_KILO` for the family's kilo unit, otherwise `1`.
+ * @returns The named unit's divider from the family's base unit.
  */
 export const resolveMeterValueUnitDivider = (
   measurand: MeterValueMeasurand,

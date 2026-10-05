@@ -9086,6 +9086,63 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         false
       )
     })
+
+    await it('should preserve custom unit metadata and physical values on automatic voltage phases', () => {
+      // Arrange
+      const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
+      mock.method(mockStation, 'getNumberOfPhases', () => 3)
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.currentOutType = CurrentType.AC
+      mockStation.stationInfo.mainVoltageMeterValues = false
+      const evseStatus = mockStation.getEvseStatus(1)
+      assert.ok(evseStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.VOLTAGE,
+          unit: 'custom-voltage',
+          unitOfMeasure: {
+            customData: { vendorId: 'custom-meter' },
+            multiplier: 1,
+            unit: 'custom-voltage',
+          },
+          value: '23',
+        },
+      ]
+      const measurandsKey = buildConfigKey(
+        OCPP20ComponentName.AlignedDataCtrlr,
+        OCPP20RequiredVariableName.Measurands
+      )
+      upsertConfigurationKey(mockStation, measurandsKey, OCPP20MeasurandEnumType.VOLTAGE)
+
+      // Act
+      const meterValue = buildClockAlignedConnectorMeterValue(
+        mockStation,
+        { connectorId: 1, evseId: 1 },
+        60_000,
+        measurandsKey,
+        OCPP20ReadingContextEnumType.SAMPLE_CLOCK
+      )
+
+      // Assert
+      assert.deepStrictEqual(
+        meterValue.sampledValue.map(sample => ({
+          phase: sample.phase,
+          physicalValue: sample.value * 10,
+          unitOfMeasure: sample.unitOfMeasure,
+        })),
+        [MeterValuePhase.L1_N, MeterValuePhase.L2_N, MeterValuePhase.L3_N].map(phase => ({
+          phase,
+          physicalValue: 23,
+          unitOfMeasure: {
+            customData: { vendorId: 'custom-meter' },
+            multiplier: 1,
+            unit: 'custom-voltage',
+          },
+        }))
+      )
+    })
+
     await it('should not suppress automatic voltage phases across customData identities', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       mock.method(mockStation, 'getNumberOfPhases', () => 3)

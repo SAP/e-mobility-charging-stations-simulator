@@ -54,14 +54,14 @@ await describe('OCPP20RequestBuilders', async () => {
       assert.deepStrictEqual(sampledValue.unitOfMeasure, { unit: 'custom-unit' })
     })
 
-    await it('should preserve physical quantity across nested unit and multiplier conversion', () => {
+    await it('should preserve physical quantity across standardized unit multipliers', () => {
       const { sampledValue } = buildOCPP20SampledValue(
         {
           measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
           unit: OCPP20UnitEnumType.WATT_HOUR,
-          unitOfMeasure: { multiplier: -1, unit: OCPP20UnitEnumType.KILO_WATT_HOUR },
+          unitOfMeasure: { multiplier: 3, unit: OCPP20UnitEnumType.KILO_WATT_HOUR },
         },
-        2500,
+        2_500_000,
         undefined,
         undefined,
         {
@@ -73,16 +73,17 @@ await describe('OCPP20RequestBuilders', async () => {
         }
       )
 
-      assert.strictEqual(sampledValue.value, 25)
+      assert.strictEqual(sampledValue.value, 2.5)
       assert.deepStrictEqual(sampledValue.unitOfMeasure, {
-        multiplier: -1,
+        multiplier: 3,
         unit: OCPP20UnitEnumType.KILO_WATT_HOUR,
       })
+      assert.strictEqual(sampledValue.value * 1_000 * 10 ** 3, 2_500_000)
       assert.match(
         Buffer.from(sampledValue.signedMeterValue?.signedMeterData ?? '', 'base64').toString(
           'utf8'
         ),
-        /"RV":2\.5/u
+        /"RV":2500/u
       )
     })
   })

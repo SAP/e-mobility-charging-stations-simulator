@@ -32,6 +32,8 @@ import {
   CurrentType,
   ErrorType,
   OCPP16AuthorizationStatus,
+  OCPP16AvailabilityType,
+  OCPP16ChargePointStatus,
   OCPP16DiagnosticsStatus,
   OCPP16FirmwareStatus,
   OCPP16IncomingRequestCommand,
@@ -1315,6 +1317,53 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
         assert.strictEqual(args[1], expectedCommand)
       })
     }
+
+    await it('should include connector zero with a derived valid status in a broadcast trigger', () => {
+      // Arrange
+      const stationStatus = station.getConnectorStatus(0)
+      const connectorOneStatus = station.getConnectorStatus(1)
+      const connectorTwoStatus = station.getConnectorStatus(2)
+      assert.ok(stationStatus != null)
+      assert.ok(connectorOneStatus != null)
+      assert.ok(connectorTwoStatus != null)
+      delete stationStatus.status
+      stationStatus.availability = OCPP16AvailabilityType.Operative
+      connectorOneStatus.status = OCPP16ChargePointStatus.Available
+      connectorTwoStatus.status = OCPP16ChargePointStatus.Unavailable
+      const request: OCPP16TriggerMessageRequest = {
+        requestedMessage: OCPP16MessageTrigger.StatusNotification,
+      }
+
+      // Act
+      incomingRequestServiceForListener.emit(
+        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+        station,
+        request,
+        { status: OCPP16TriggerMessageStatus.ACCEPTED }
+      )
+
+      // Assert
+      assert.deepStrictEqual(
+        requestHandlerMock.mock.calls.map(call => call.arguments.slice(1)),
+        [
+          [
+            OCPP16RequestCommand.STATUS_NOTIFICATION,
+            { connectorId: 0, status: OCPP16ChargePointStatus.Available },
+            { triggerMessage: true },
+          ],
+          [
+            OCPP16RequestCommand.STATUS_NOTIFICATION,
+            { connectorId: 1, status: OCPP16ChargePointStatus.Available },
+            { triggerMessage: true },
+          ],
+          [
+            OCPP16RequestCommand.STATUS_NOTIFICATION,
+            { connectorId: 2, status: OCPP16ChargePointStatus.Unavailable },
+            { triggerMessage: true },
+          ],
+        ]
+      )
+    })
 
     await it('should handle requestHandler rejection gracefully', async () => {
       const rejectingMock = mock.fn(async () => Promise.reject(new Error('test error')))

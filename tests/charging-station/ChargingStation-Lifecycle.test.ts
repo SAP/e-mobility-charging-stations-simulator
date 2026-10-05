@@ -2152,7 +2152,8 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(sendError.mock.callCount(), 1)
       const error: unknown = sendError.mock.calls[0]?.arguments[2]
       assert.ok(error instanceof OCPPError)
-      assert.strictEqual(error.code, ErrorType.NOT_SUPPORTED)
+      assert.strictEqual(error.code, ErrorType.NOT_IMPLEMENTED)
+      assert.deepStrictEqual(error.details, { command: 'UnknownCommand' })
     })
 
     await it('should report the parsed unknown OCPP message type', async t => {
