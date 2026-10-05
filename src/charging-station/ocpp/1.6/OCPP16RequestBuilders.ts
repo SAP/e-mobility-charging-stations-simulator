@@ -68,6 +68,9 @@ export function buildOCPP16SampledValue (
   context?: MeterValueContext,
   phase?: MeterValuePhase
 ): OCPP16SampledValue {
+  if (sampledValueTemplate.unitOfMeasure != null) {
+    throw new BaseError('Invalid OCPP 1.6 sampled value unitOfMeasure')
+  }
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
   const resolvedContext = resolveOCPP16EnumValue(
     OCPP16MeterValueContext,

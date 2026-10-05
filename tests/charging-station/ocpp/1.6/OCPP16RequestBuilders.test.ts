@@ -32,6 +32,20 @@ await describe('OCPP16RequestBuilders', async () => {
       assert.strictEqual(sampledValue.unit, undefined)
     })
 
+    await it('should reject an OCPP 2.0-only unit descriptor', () => {
+      assert.throws(
+        () =>
+          buildOCPP16SampledValue(
+            {
+              unitOfMeasure: { multiplier: 3, unit: OCPP16MeterValueUnit.WATT_HOUR },
+            },
+            1
+          ),
+        (error: unknown) =>
+          error instanceof BaseError && error.message.includes('sampled value unitOfMeasure')
+      )
+    })
+
     for (const fieldName of ['context', 'location', 'measurand', 'phase', 'unit'] as const) {
       await it(`should reject an invalid supplied ${fieldName}`, () => {
         const template = { [fieldName]: 'Invalid' } as unknown as SampledValueTemplate
