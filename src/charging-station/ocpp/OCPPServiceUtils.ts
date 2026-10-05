@@ -30,6 +30,7 @@ import {
   resolveInletToOutputEfficiency,
   resolveLinePhaseIndex,
   resolveMeterValueUnitDivider,
+  resolveMeterValueUnitScale,
   resolveRootSeed,
   truncateTransactionIntervalValue,
 } from '../../charging-station/meter-values/index.js'
@@ -45,7 +46,6 @@ import {
   FileType,
   IncomingRequestCommand,
   isOCPP16SampledValue,
-  isOCPP20MeterValue,
   isOCPP20SampledValue,
   type JsonType,
   type MeasurandPerPhaseSampledValueTemplates,
@@ -57,6 +57,7 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
+  type OCPP16MeterValue,
   OCPP16MeterValueFormat,
   type OCPP16MeterValueUnit,
   OCPP20ComponentName,
@@ -146,11 +147,35 @@ const toSnapshotBaselineSample = (sampledValue: SampledValue): OCPP20SampledValu
   }
 }
 
-const requireOCPP20MeterValue = (meterValue: MeterValue): OCPP20MeterValue => {
-  if (!isOCPP20MeterValue(meterValue)) {
-    throw new BaseError('MeterValue builder returned OCPP 1.6 data for an OCPP 2.0.x station')
+export function assertMeterValueBuilderResult (
+  meterValue: MeterValue,
+  version: OCPPVersion.VERSION_16
+): asserts meterValue is OCPP16MeterValue
+export function assertMeterValueBuilderResult (
+  meterValue: MeterValue,
+  version: OCPPVersion.VERSION_20 | OCPPVersion.VERSION_201
+): asserts meterValue is OCPP20MeterValue
+/**
+ * Validates the protocol representation of an internal MeterValue builder result.
+ * Empty sampled-value arrays are valid omission signals inside builders.
+ * @param meterValue - Internal builder result to validate.
+ * @param version - OCPP version expected by the caller.
+ * @throws {BaseError} When a non-empty result contains a sample from another OCPP version.
+ */
+export function assertMeterValueBuilderResult (
+  meterValue: MeterValue,
+  version: OCPPVersion
+): void {
+  const matchesVersion =
+    meterValue.sampledValue.length === 0 ||
+    (version === OCPPVersion.VERSION_16
+      ? meterValue.sampledValue.every(isOCPP16SampledValue)
+      : meterValue.sampledValue.every(isOCPP20SampledValue))
+  if (!matchesVersion) {
+    throw new BaseError(
+      `MeterValue builder returned sampled values that do not match OCPP ${version}`
+    )
   }
-  return meterValue
 }
 
 const isOCPP20FlagEnabled = (
@@ -1383,11 +1408,17 @@ const getEnergyTemplateIdentity = (
   return JSON.stringify([
     resolved.phase,
     resolved.location,
-    resolved.unit,
+    ocppVersion === OCPPVersion.VERSION_16
+      ? resolved.unit
+      : (template.unitOfMeasure?.unit ?? resolved.unit),
+    ocppVersion === OCPPVersion.VERSION_16 ? 0 : (template.unitOfMeasure?.multiplier ?? 0),
     resolved.context,
     ocppVersion === OCPPVersion.VERSION_16
       ? (template.format ?? OCPP16MeterValueFormat.RAW)
-      : canonicalizeCustomData(template.customData),
+      : [
+          canonicalizeCustomData(template.customData),
+          canonicalizeCustomData(template.unitOfMeasure?.customData),
+        ],
   ])
 }
 
@@ -1571,7 +1602,9 @@ const applySnapshotRegisterValuesWithoutPhases = (
       customData: template.customData,
       location: identity.location,
       measurand: identity.measurand,
-      unit: identity.unit,
+      unit: template.unitOfMeasure?.unit ?? identity.unit,
+      unitCustomData: template.unitOfMeasure?.customData,
+      unitMultiplier: template.unitOfMeasure?.multiplier,
     })
     const family = families.get(key) ?? []
     family.push(template)
@@ -1653,14 +1686,19 @@ const expandClockAlignedSnapshotSamples = (
     const templatesByIdentity = new Map<string, SampledValueTemplate>()
     for (const template of templatesWithIntervalFallback) {
       const identity = resolveSampledValueFields(template, 0, context, template.phase)
-      const key = JSON.stringify([
-        identity.measurand,
-        identity.phase,
-        identity.location,
-        identity.unit,
+      const isOcpp16 =
         chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
-          ? template.format
-          : canonicalizeCustomData(template.customData),
+      const key = JSON.stringify([
+        identity.phase,
+        buildSampledValueFamilyKey({
+          context: identity.context,
+          customData: isOcpp16 ? template.format : template.customData,
+          location: identity.location,
+          measurand: identity.measurand,
+          unit: isOcpp16 ? identity.unit : (template.unitOfMeasure?.unit ?? identity.unit),
+          unitCustomData: isOcpp16 ? undefined : template.unitOfMeasure?.customData,
+          unitMultiplier: isOcpp16 ? undefined : template.unitOfMeasure?.multiplier,
+        }),
       ])
       if (!templatesByIdentity.has(key)) templatesByIdentity.set(key, template)
     }
@@ -1756,7 +1794,12 @@ const expandClockAlignedSnapshotSamples = (
         ? [...phasedPowerByLine.values()].reduce(
             (total, sample) =>
               total +
-              sample.value * resolveMeterValueUnitDivider(measurand, sample.unitOfMeasure?.unit),
+              sample.value *
+                resolveMeterValueUnitScale(
+                  measurand,
+                  sample.unitOfMeasure?.unit,
+                  sample.unitOfMeasure?.multiplier
+                ),
             0
           )
         : undefined
@@ -1766,7 +1809,12 @@ const expandClockAlignedSnapshotSamples = (
     } else if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
       if (evseId !== 0 && source != null && preferBaseline) {
         rawValue =
-          source.value * resolveMeterValueUnitDivider(measurand, source.unitOfMeasure?.unit)
+          source.value *
+          resolveMeterValueUnitScale(
+            measurand,
+            source.unitOfMeasure?.unit,
+            source.unitOfMeasure?.multiplier
+          )
       } else if (phaseFamily === 'Aggregate') {
         rawValue = energyRegister
       } else if (phaseFamily === 'Line') {
@@ -1794,7 +1842,13 @@ const expandClockAlignedSnapshotSamples = (
     ) {
       continue
     } else if (source != null && preferBaseline) {
-      rawValue = source.value * resolveMeterValueUnitDivider(measurand, source.unitOfMeasure?.unit)
+      rawValue =
+        source.value *
+        resolveMeterValueUnitScale(
+          measurand,
+          source.unitOfMeasure?.unit,
+          source.unitOfMeasure?.multiplier
+        )
       if (
         (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT ||
           measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) &&
@@ -1867,7 +1921,13 @@ const expandClockAlignedSnapshotSamples = (
     ) {
       rawValue = randomInt(template.minimumValue ?? 0, Constants.SOC_MAXIMUM_PERCENT + 1)
     } else if (source != null) {
-      rawValue = source.value * resolveMeterValueUnitDivider(measurand, source.unitOfMeasure?.unit)
+      rawValue =
+        source.value *
+        resolveMeterValueUnitScale(
+          measurand,
+          source.unitOfMeasure?.unit,
+          source.unitOfMeasure?.multiplier
+        )
       if (
         (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT ||
           measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL) &&
@@ -1981,7 +2041,17 @@ const applyClockAlignedVoltageControls = (
         )
       }
     }
-    const aggregateValue = convertToFloat(aggregateVoltage.value)
+    const aggregateValue =
+      convertToFloat(aggregateVoltage.value) *
+      resolveMeterValueUnitScale(
+        MeterValueMeasurand.VOLTAGE,
+        isOCPP20SampledValue(aggregateVoltage)
+          ? aggregateVoltage.unitOfMeasure?.unit
+          : aggregateVoltage.unit,
+        isOCPP20SampledValue(aggregateVoltage)
+          ? aggregateVoltage.unitOfMeasure?.multiplier
+          : undefined
+      )
     addPhase(MeterValuePhase.L1_N, aggregateValue)
     addPhase(MeterValuePhase.L2_N, aggregateValue)
     addPhase(MeterValuePhase.L3_N, aggregateValue)
@@ -2109,17 +2179,17 @@ export const buildClockAlignedConnectorMeterValue = (
       RequestCommand.METER_VALUES
     )
   }
-  return requireOCPP20MeterValue(
-    buildIdentifiedMeterValue(
-      chargingStation,
-      { ...identity, commitState: identity.commitState ?? true, snapshot: true },
-      interval,
-      measurandsKey,
-      context,
-      false,
-      OCPP20ComponentName.AlignedDataCtrlr
-    )
+  const meterValue = buildIdentifiedMeterValue(
+    chargingStation,
+    { ...identity, commitState: identity.commitState ?? true, snapshot: true },
+    interval,
+    measurandsKey,
+    context,
+    false,
+    OCPP20ComponentName.AlignedDataCtrlr
   )
+  assertMeterValueBuilderResult(meterValue, OCPPVersion.VERSION_201)
+  return meterValue
 }
 
 const buildIdentifiedMeterValue = (
@@ -2245,17 +2315,20 @@ const buildIdentifiedMeterValue = (
         coherentMeterValue.timestamp
     }
     if (snapshot) {
-      const coherentOcpp20MeterValue = requireOCPP20MeterValue(coherentMeterValue)
+      const version = chargingStation.stationInfo?.ocppVersion
       const controlledSampledValues = applyClockAlignedVoltageControls(
         chargingStation,
-        coherentOcpp20MeterValue.sampledValue,
+        coherentMeterValue.sampledValue,
         buildSignedVersionedSampledValue,
         context
       )
-      if (!controlledSampledValues.every(isOCPP20SampledValue)) {
-        throw new BaseError('Voltage controls produced OCPP 1.6 SampledValues for OCPP 2.0.x')
+      const controlledMeterValue = { ...coherentMeterValue, sampledValue: controlledSampledValues } as MeterValue
+      if (version === OCPPVersion.VERSION_16) {
+        assertMeterValueBuilderResult(controlledMeterValue, OCPPVersion.VERSION_16)
+      } else {
+        assertMeterValueBuilderResult(controlledMeterValue, OCPPVersion.VERSION_201)
       }
-      coherentOcpp20MeterValue.sampledValue = controlledSampledValues
+      coherentMeterValue.sampledValue = controlledMeterValue.sampledValue
     }
     // Only transactional builds may flip the one-time public-key flag. A
     // coherent session always carries a transactionId, but guard explicitly to

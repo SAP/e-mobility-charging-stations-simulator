@@ -7245,6 +7245,74 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepStrictEqual(observedIntervals, [1000, 10_000])
       })
 
+      await it('should send a periodic event without a MeterValue for an empty selection', async t => {
+        // Arrange
+        t.mock.timers.enable({ apis: ['setInterval'] })
+        const transactionId = generateUUID()
+        setupConnectorWithTransaction(mockStation, 1, { transactionId })
+        assert.ok(mockStation.stationInfo != null)
+        mockStation.stationInfo.coherentMeterValues = true
+        const session: CoherentSession = {
+          connectorId: 1,
+          currentType: CurrentType.AC,
+          numberOfPhases: 3,
+          profile: {
+            batteryCapacityWh: 40000,
+            chargingCurve: [
+              { powerFraction: 1, socPercent: 0 },
+              { powerFraction: 1, socPercent: 100 },
+            ],
+            id: 'empty-selection-test',
+            initialSocPercentMax: 30,
+            initialSocPercentMin: 30,
+            maxPowerW: 11000,
+            weight: 1,
+          },
+          rampUpDurationMs: 0,
+          sessionStartMs: Date.now(),
+          socPercent: 30,
+          transactionId,
+          voltageOutNominal: Voltage.VOLTAGE_230,
+        }
+        mockStation.__injectCoherentSession(transactionId, session)
+        addConfigurationKey(
+          mockStation,
+          buildConfigKey(
+            OCPP20ComponentName.SampledDataCtrlr,
+            OCPP20RequiredVariableName.TxUpdatedMeasurands
+          ),
+          '',
+          undefined,
+          { overwrite: true }
+        )
+
+        // Act
+        const meterValue = OCPP20ServiceUtils.buildTransactionMeterValue(
+          mockStation,
+          1,
+          1,
+          transactionId,
+          1000,
+          buildConfigKey(
+            OCPP20ComponentName.SampledDataCtrlr,
+            OCPP20RequiredVariableName.TxUpdatedMeasurands
+          )
+        )
+        assert.deepStrictEqual(meterValue.sampledValue, [])
+
+        OCPP20ServiceUtils.startUpdatedMeterValues(mockStation, 1, 1000, 1)
+        t.mock.timers.tick(1000)
+        for (let index = 0; index < 10; index++) await flushMicrotasks()
+
+        // Assert
+        assert.strictEqual(sentRequests.length, 1)
+        assert.strictEqual(
+          sentRequests[0].payload.triggerReason,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic
+        )
+        assert.strictEqual(sentRequests[0].payload.meterValue, undefined)
+      })
+
       await it('should not start timer when interval is zero', () => {
         const connectorId = 1
 

@@ -82,6 +82,21 @@ await describe('TransactionIntervalUtils', async () => {
         {
           sampledValue: [
             {
+              measurand: 'Energy.Active.Import.Interval',
+              unitOfMeasure: { multiplier: -1, unit: 'kWh' },
+              value: 0.2,
+            },
+          ],
+        },
+        1
+      ),
+      20
+    )
+    assert.strictEqual(
+      getRepresentedTransactionIntervalEnergyWh(
+        {
+          sampledValue: [
+            {
               location: 'Inlet',
               measurand: 'Energy.Active.Import.Interval',
               unit: 'Wh',

@@ -560,6 +560,23 @@ await describe('UIHttpServer', async () => {
       })
     })
 
+    await it('should reject an unknown procedure with an actionable error', async () => {
+      const broadcastServer = createBroadcastServer()
+      try {
+        const res = new MockServerResponse()
+
+        broadcastServer.emitRequest(buildProcedureRequest('unknownProcedure', {}), res)
+        await awaitFinish(res)
+
+        const payload = parseHttpResponsePayload(res)
+        assert.strictEqual(payload.status, ResponseStatus.FAILURE)
+        assert.strictEqual(payload.errorMessage, "Unsupported UI procedure: 'unknownProcedure'")
+        assert.strictEqual(payload.errorStack, undefined)
+      } finally {
+        broadcastServer.stop()
+      }
+    })
+
     await it('should respond immediately to a synchronous non-broadcast procedure', async () => {
       const broadcastServer = createBroadcastServer()
       try {

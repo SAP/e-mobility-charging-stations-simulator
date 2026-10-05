@@ -20,7 +20,10 @@ import type {
   RequestParams,
 } from '../../../../src/types/index.js'
 
-import { TransactionMeterValueDeliveryBarrier } from '../../../../src/charging-station/meter-values/index.js'
+import {
+  type CoherentSession,
+  TransactionMeterValueDeliveryBarrier,
+} from '../../../../src/charging-station/meter-values/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
@@ -33,6 +36,7 @@ import {
   OCPP16FirmwareStatus,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
+  OCPP16MeterValueContext,
   OCPP16MeterValueFormat,
   OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
@@ -44,6 +48,7 @@ import {
   OCPP16VendorParametersKey,
   OCPPVersion,
   PublicKeyWithSignedMeterValueEnumType,
+  Voltage,
 } from '../../../../src/types/index.js'
 import { Constants, logger } from '../../../../src/utils/index.js'
 import {
@@ -188,6 +193,81 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
 
       // Assert
       assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    })
+
+    await it('should send an OCPP 1.6 coherent snapshot for a MeterValues trigger', async () => {
+      // Arrange
+      const { incomingRequestService, station, testableService } = context
+      const transactionId = 100
+      setupConnectorWithTransaction(station, 1, { transactionId })
+      assert.ok(station.stationInfo != null)
+      station.stationInfo.coherentMeterValues = true
+      enableConnectorMeterValues(station, 1)
+      const session: CoherentSession = {
+        connectorId: 1,
+        currentType: CurrentType.AC,
+        numberOfPhases: 3,
+        profile: {
+          batteryCapacityWh: 40000,
+          chargingCurve: [
+            { powerFraction: 1, socPercent: 0 },
+            { powerFraction: 1, socPercent: 100 },
+          ],
+          id: 'trigger-test',
+          initialSocPercentMax: 30,
+          initialSocPercentMin: 30,
+          maxPowerW: 11000,
+          weight: 1,
+        },
+        rampUpDurationMs: 0,
+        sessionStartMs: Date.now(),
+        socPercent: 30,
+        transactionId,
+        voltageOutNominal: Voltage.VOLTAGE_230,
+      }
+      station.__injectCoherentSession(transactionId, session)
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      const energyBefore = connectorStatus.transactionEnergyActiveImportRegisterValue
+      const socBefore = session.socPercent
+      let sentRequest: OCPP16MeterValuesRequest | undefined
+      ;(
+        station.ocppRequestService as unknown as {
+          requestHandler: (...args: unknown[]) => Promise<unknown>
+        }
+      ).requestHandler = (...args: unknown[]) => {
+        if (args[1] === OCPP16RequestCommand.METER_VALUES) {
+          sentRequest = args[2] as OCPP16MeterValuesRequest
+        }
+        return Promise.resolve({})
+      }
+      const request: OCPP16TriggerMessageRequest = {
+        connectorId: 1,
+        requestedMessage: OCPP16MessageTrigger.MeterValues,
+      }
+
+      // Act
+      const response = testableService.handleRequestTriggerMessage(station, request)
+      incomingRequestService.emit(
+        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+        station,
+        request,
+        response
+      )
+      await flushMicrotasks()
+
+      // Assert
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+      assert.ok(sentRequest != null)
+      assert.strictEqual(sentRequest.connectorId, 1)
+      assert.ok((sentRequest.meterValue[0]?.sampledValue.length ?? 0) > 0)
+      assert.strictEqual(
+        sentRequest.meterValue[0]?.sampledValue[0]?.context,
+        OCPP16MeterValueContext.TRIGGER
+      )
+      assert.strictEqual(typeof sentRequest.meterValue[0]?.sampledValue[0]?.value, 'string')
+      assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, energyBefore)
+      assert.strictEqual(session.socPercent, socBefore)
     })
   })
 

@@ -187,11 +187,17 @@ const energyIntervalFallbackIdentity = (
   JSON.stringify([
     template.phase,
     template.location ?? MeterValueLocation.OUTLET,
-    template.unit ?? MeterValueUnit.WATT_HOUR,
+    ocppVersion === OCPPVersion.VERSION_16
+      ? (template.unit ?? MeterValueUnit.WATT_HOUR)
+      : (template.unitOfMeasure?.unit ?? template.unit ?? MeterValueUnit.WATT_HOUR),
+    ocppVersion === OCPPVersion.VERSION_16 ? 0 : (template.unitOfMeasure?.multiplier ?? 0),
     context ?? template.context ?? MeterValueContext.SAMPLE_PERIODIC,
     ocppVersion === OCPPVersion.VERSION_16
       ? (template.format ?? OCPP16MeterValueFormat.RAW)
-      : canonicalizeCustomData(template.customData),
+      : [
+          canonicalizeCustomData(template.customData),
+          canonicalizeCustomData(template.unitOfMeasure?.customData),
+        ],
   ])
 
 const templateFamilyKey = (
@@ -203,7 +209,9 @@ const templateFamilyKey = (
     customData: template.customData,
     location: template.location ?? MeterValueLocation.OUTLET,
     measurand: template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-    unit: template.unit ?? MeterValueUnit.WATT_HOUR,
+    unit: template.unitOfMeasure?.unit ?? template.unit ?? MeterValueUnit.WATT_HOUR,
+    unitCustomData: template.unitOfMeasure?.customData,
+    unitMultiplier: template.unitOfMeasure?.multiplier,
   })
 
 /**

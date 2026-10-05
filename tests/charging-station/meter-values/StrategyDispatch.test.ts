@@ -271,10 +271,14 @@ await describe('StrategyDispatch', async () => {
       const connectorStatus = station.getConnectorStatus(1)
       assert.ok(connectorStatus != null)
       const templates = connectorStatus.MeterValues
-      connectorStatus.MeterValues = ['sensor-a', 'sensor-b'].flatMap(vendorId =>
+      connectorStatus.MeterValues = ['sensor-a', 'sensor-b'].flatMap((vendorId, index) =>
         templates.map(template => ({
           ...template,
-          customData: { vendorId },
+          unitOfMeasure: {
+            customData: { vendorId },
+            multiplier: index,
+            unit: MeterValueUnit.WATT_HOUR,
+          },
         }))
       )
       const meterValue = buildMeterValue(
@@ -290,16 +294,18 @@ await describe('StrategyDispatch', async () => {
       assert.strictEqual(
         energySamples.length,
         2,
-        'phase suppression must preserve distinct customData register families'
+        'phase suppression must preserve distinct native unit descriptor families'
       )
       assert.deepStrictEqual(
         energySamples.map(sample => [
-          (sample as { customData?: { vendorId?: string } }).customData?.vendorId,
+          (sample as { unitOfMeasure?: { customData?: { vendorId?: string }; multiplier?: number } })
+            .unitOfMeasure?.customData?.vendorId,
+          (sample as { unitOfMeasure?: { multiplier?: number } }).unitOfMeasure?.multiplier,
           sample.phase,
         ]),
         [
-          ['sensor-a', undefined],
-          ['sensor-b', undefined],
+          ['sensor-a', 0, undefined],
+          ['sensor-b', 1, undefined],
         ]
       )
     })

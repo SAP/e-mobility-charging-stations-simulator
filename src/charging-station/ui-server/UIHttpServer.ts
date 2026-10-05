@@ -263,7 +263,12 @@ export class UIHttpServer extends AbstractUIServer {
         `${this.logPrefix(moduleName, 'requestListener')} Handle HTTP request error:`,
         error
       )
-      this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }))
+      this.sendResponse(
+        this.buildProtocolResponse(uuid, {
+          errorMessage: getErrorMessage(error),
+          status: ResponseStatus.FAILURE,
+        })
+      )
     }
   }
 

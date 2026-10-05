@@ -18,7 +18,12 @@ import {
   OCPP20TriggerReasonEnumType,
   type SampledValueTemplate,
 } from '../../../types/index.js'
-import { getEnumStringValue } from '../../../utils/index.js'
+import { convertToFloat, getEnumStringValue } from '../../../utils/index.js'
+import {
+  areMeterValueUnitsCompatible,
+  getMeterValueUnitFamily,
+  resolveMeterValueUnitScale,
+} from '../../meter-values/index.js'
 import { resolveSampledValueFields } from '../OCPPServiceUtils.js'
 import {
   generateSignedMeterData,
@@ -69,7 +74,7 @@ export const buildOCPP20BootNotificationRequest = (
 /**
  * Builds an OCPP 2.0.1 sampled value from a template and measurement data.
  * @param sampledValueTemplate - The sampled value template to use.
- * @param value - The measured value.
+ * @param value - The measured value expressed in the template's flat/default unit.
  * @param context - The reading context.
  * @param phase - The phase of the measurement.
  * @param signingConfig - Optional signing configuration for generating signedMeterValue.
@@ -99,14 +104,33 @@ export function buildOCPP20SampledValue (
     'measurand'
   )
   const resolvedPhase = requireOCPP20EnumValue(OCPP20PhaseEnumType, fields.phase, 'phase')
+  const sourceUnit = fields.unit
+  const emittedUnit = sampledValueTemplate.unitOfMeasure?.unit ?? sourceUnit
+  if (
+    sourceUnit != null &&
+    emittedUnit != null &&
+    sourceUnit !== emittedUnit &&
+    !areMeterValueUnitsCompatible(fields.measurand, sourceUnit, emittedUnit)
+  ) {
+    throw new BaseError(
+      `Cannot convert OCPP 2.0.x sampled value unit '${sourceUnit}' to '${emittedUnit}'`
+    )
+  }
   const unitOfMeasure =
-    sampledValueTemplate.unitOfMeasure != null || fields.unit != null
+    sampledValueTemplate.unitOfMeasure != null || sourceUnit != null
       ? {
           ...sampledValueTemplate.unitOfMeasure,
           ...(sampledValueTemplate.unitOfMeasure?.unit == null &&
-            fields.unit != null && { unit: fields.unit }),
+            sourceUnit != null && { unit: sourceUnit }),
         }
       : undefined
+  const emittedScale = resolveMeterValueUnitScale(
+    fields.measurand,
+    emittedUnit,
+    unitOfMeasure?.multiplier
+  )
+  const emittedValue =
+    (convertToFloat(fields.value) * resolveMeterValueUnitScale(fields.measurand, sourceUnit)) / emittedScale
   const sampledValue: OCPP20SampledValue = {
     ...(sampledValueTemplate.customData != null && {
       customData: sampledValueTemplate.customData,
@@ -115,7 +139,7 @@ export function buildOCPP20SampledValue (
     ...(resolvedLocation != null && { location: resolvedLocation }),
     ...(resolvedMeasurand != null && { measurand: resolvedMeasurand }),
     ...(unitOfMeasure != null && { unitOfMeasure }),
-    value: fields.value,
+    value: emittedValue,
     ...(resolvedPhase != null && { phase: resolvedPhase }),
   }
 
@@ -129,11 +153,12 @@ export function buildOCPP20SampledValue (
       signingConfig.publicKeyWithSignedMeterValue,
       signingConfig.publicKeySentInTransaction
     )
+    const unitFamily = getMeterValueUnitFamily(fields.measurand, emittedUnit)
     const signedMeterDataParams: SignedMeterDataParams = {
       context: fields.context,
       meterSerialNumber: signingConfig.meterSerialNumber,
-      meterValue: fields.value,
-      meterValueUnit: getEnumStringValue(MeterValueUnit, unitOfMeasure?.unit),
+      meterValue: emittedValue * emittedScale,
+      meterValueUnit: getEnumStringValue(MeterValueUnit, unitFamily?.baseUnit ?? emittedUnit),
       timestamp: signingConfig.timestamp ?? new Date(),
       transactionId: signingConfig.transactionId,
     }

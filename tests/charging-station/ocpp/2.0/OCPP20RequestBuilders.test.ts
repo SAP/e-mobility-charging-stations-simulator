@@ -17,6 +17,9 @@ import { BaseError } from '../../../../src/exception/index.js'
 import {
   OCPP16MeterValueMeasurand,
   OCPP16StopTransactionReason,
+  OCPP20MeasurandEnumType,
+  OCPP20UnitEnumType,
+  PublicKeyWithSignedMeterValueEnumType,
   type SampledValueTemplate,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -49,6 +52,36 @@ await describe('OCPP20RequestBuilders', async () => {
       const { sampledValue } = buildOCPP20SampledValue({ unit: 'custom-unit' }, 1)
 
       assert.deepStrictEqual(sampledValue.unitOfMeasure, { unit: 'custom-unit' })
+    })
+
+    await it('should preserve physical quantity across nested unit and multiplier conversion', () => {
+      const { sampledValue } = buildOCPP20SampledValue(
+        {
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: OCPP20UnitEnumType.WATT_HOUR,
+          unitOfMeasure: { multiplier: -1, unit: OCPP20UnitEnumType.KILO_WATT_HOUR },
+        },
+        2500,
+        undefined,
+        undefined,
+        {
+          enabled: true,
+          meterSerialNumber: 'SIM-METER-001',
+          publicKeySentInTransaction: false,
+          publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType.Never,
+          transactionId: 'tx-1',
+        }
+      )
+
+      assert.strictEqual(sampledValue.value, 25)
+      assert.deepStrictEqual(sampledValue.unitOfMeasure, {
+        multiplier: -1,
+        unit: OCPP20UnitEnumType.KILO_WATT_HOUR,
+      })
+      assert.match(
+        Buffer.from(sampledValue.signedMeterValue?.signedMeterData ?? '', 'base64').toString('utf8'),
+        /"RV":2\.5/u
+      )
     })
   })
 

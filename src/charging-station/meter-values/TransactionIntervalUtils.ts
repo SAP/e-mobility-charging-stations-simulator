@@ -1,5 +1,6 @@
 import { type ConnectorStatus, CurrentType, MeterValueMeasurand } from '../../types/index.js'
-import { Constants, isEmpty } from '../../utils/index.js'
+import { isEmpty } from '../../utils/index.js'
+import { resolveMeterValueUnitScale } from './MeterValueUtils.js'
 
 export interface TransactionIntervalState {
   consumed: number
@@ -112,15 +113,17 @@ export const getRepresentedTransactionIntervalEnergyWh = (
         : Number.parseFloat(sampledValue.value)
     if (!Number.isFinite(value)) continue
     const unit = sampledValue.unitOfMeasure?.unit ?? sampledValue.unit
-    const unitMultiplier =
-      unit === 'kWh' ? Constants.UNIT_DIVIDER_KILO : unit === 'MWh' ? 1_000_000 : 1
-    const decimalMultiplier = 10 ** (sampledValue.unitOfMeasure?.multiplier ?? 0)
+    const unitScale = resolveMeterValueUnitScale(
+      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL,
+      unit,
+      sampledValue.unitOfMeasure?.multiplier
+    )
     const phaseMultiplier = /^L[123](?:-N)?$/.test(sampledValue.phase ?? '') ? numberOfPhases : 1
     const locationMultiplier =
       sampledValue.location === 'Inlet' && inletToOutputEfficiency > 0 ? inletToOutputEfficiency : 1
     representedEnergyWh = Math.max(
       representedEnergyWh,
-      value * unitMultiplier * decimalMultiplier * phaseMultiplier * locationMultiplier
+      value * unitScale * phaseMultiplier * locationMultiplier
     )
   }
   return representedEnergyWh
