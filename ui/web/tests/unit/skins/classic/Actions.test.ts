@@ -36,7 +36,7 @@ const mockPush = vi.fn().mockResolvedValue(undefined)
 const mockRoute = ref<{
   name: string
   params: Record<string, string>
-  query: Record<string, string>
+  query: Record<string, string | string[]>
 }>({
   name: 'start-transaction',
   params: { chargingStationId: TEST_STATION_ID, connectorId: '1', hashId: TEST_HASH_ID },
@@ -361,6 +361,37 @@ describe('Actions', () => {
           idTag: 'RFID-001',
           ocppVersion: OCPPVersion.VERSION_16,
         })
+      )
+    })
+
+    for (const invalidVersion of ['invalid', ['1.6', '2.0']]) {
+      it(`should reject the present invalid OCPP version ${JSON.stringify(invalidVersion)}`, async () => {
+        mockRoute.value.query = { evseId: '1', ocppVersion: invalidVersion }
+        const wrapper = mountStartTx()
+        await wrapper.find('input[name="idtag"]').setValue('RFID-001')
+
+        await wrapper.findComponent(ButtonStub).trigger('click')
+        await flushPromises()
+
+        expect(toastMock.error).toHaveBeenCalledWith('Error at authorizing RFID tag')
+        expect(mockClient.authorize).not.toHaveBeenCalled()
+        expect(mockClient.startTransaction).not.toHaveBeenCalled()
+      })
+    }
+
+    it('should preserve the legacy OCPP 1.6 fallback when version is absent', async () => {
+      mockRoute.value.query = { evseId: '1' }
+      const wrapper = mountStartTx()
+      await wrapper.find('input[type="checkbox"]').setValue(false)
+      await wrapper.find('input[name="idtag"]').setValue('RFID-001')
+
+      await wrapper.findComponent(ButtonStub).trigger('click')
+      await flushPromises()
+
+      expect(mockClient.authorize).not.toHaveBeenCalled()
+      expect(mockClient.startTransaction).toHaveBeenCalledWith(
+        TEST_HASH_ID,
+        expect.objectContaining({ ocppVersion: undefined })
       )
     })
 

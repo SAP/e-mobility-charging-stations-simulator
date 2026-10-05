@@ -3547,8 +3547,7 @@ export class ChargingStation extends EventEmitter {
             break
           // Unknown Message
           default:
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            errorMsg = `Wrong message type ${messageType}`
+            errorMsg = `Wrong message type ${String(parsedMessageType)}`
             logger.error(`${this.logPrefix()} ${moduleName}.onMessage: ${errorMsg}`)
             throw new OCPPError(
               this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16

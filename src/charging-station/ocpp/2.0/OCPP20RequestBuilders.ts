@@ -1,5 +1,6 @@
 import type { StopTransactionReason } from '../../../types/index.js'
 
+import { BaseError } from '../../../exception/index.js'
 import {
   BootReasonEnumType,
   type ChargingStationInfo,
@@ -28,6 +29,19 @@ import {
   shouldIncludePublicKey,
   type SignedSampledValueResult,
 } from '../OCPPSignedMeterValueUtils.js'
+
+const requireOCPP20EnumValue = <T extends string> (
+  enumObject: Readonly<Record<string, T>>,
+  value: string | undefined,
+  fieldName: string
+): T | undefined => {
+  if (value == null) return undefined
+  const resolvedValue = getEnumStringValue(enumObject, value)
+  if (resolvedValue == null) {
+    throw new BaseError(`Invalid OCPP 2.0.x sampled value ${fieldName} '${value}'`)
+  }
+  return resolvedValue
+}
 
 export const buildOCPP20BootNotificationRequest = (
   stationInfo: ChargingStationInfo,
@@ -69,10 +83,22 @@ export function buildOCPP20SampledValue (
   signingConfig?: SampledValueSigningConfig
 ): SignedSampledValueResult<OCPP20SampledValue> {
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
-  const resolvedContext = getEnumStringValue(OCPP20ReadingContextEnumType, fields.context)
-  const resolvedLocation = getEnumStringValue(OCPP20LocationEnumType, fields.location)
-  const resolvedMeasurand = getEnumStringValue(OCPP20MeasurandEnumType, fields.measurand)
-  const resolvedPhase = getEnumStringValue(OCPP20PhaseEnumType, fields.phase)
+  const resolvedContext = requireOCPP20EnumValue(
+    OCPP20ReadingContextEnumType,
+    fields.context,
+    'context'
+  )
+  const resolvedLocation = requireOCPP20EnumValue(
+    OCPP20LocationEnumType,
+    fields.location,
+    'location'
+  )
+  const resolvedMeasurand = requireOCPP20EnumValue(
+    OCPP20MeasurandEnumType,
+    fields.measurand,
+    'measurand'
+  )
+  const resolvedPhase = requireOCPP20EnumValue(OCPP20PhaseEnumType, fields.phase, 'phase')
   const sampledValue: OCPP20SampledValue = {
     ...(sampledValueTemplate.customData != null && {
       customData: sampledValueTemplate.customData,

@@ -70,7 +70,6 @@ import {
   RequestCommand,
   type SampledValue,
   type SampledValueTemplate,
-  SigningMethodEnumType,
   StandardParametersKey,
   VendorParametersKey,
 } from '../../types/index.js'
@@ -1203,16 +1202,13 @@ const createVersionedSampledValueDispatcher = (
               chargingStation,
               buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.PublicKey)
             )?.value
-            const configuredSigningMethod = getEnumStringValue(
-              SigningMethodEnumType,
-              getConfigurationKey(
-                chargingStation,
-                buildConfigKey(
-                  OCPP20ComponentName.FiscalMetering,
-                  VendorParametersKey.SigningMethod
-                )
-              )?.value
-            )
+            const configuredSigningMethod = getConfigurationKey(
+              chargingStation,
+              buildConfigKey(
+                OCPP20ComponentName.FiscalMetering,
+                VendorParametersKey.SigningMethod
+              )
+            )?.value
 
             const prerequisiteResult = validateSigningPrerequisites(
               publicKeyHex,

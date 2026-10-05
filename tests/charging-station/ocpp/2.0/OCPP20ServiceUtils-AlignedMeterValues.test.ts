@@ -3167,6 +3167,26 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(energySample.value, 1234)
     })
 
+    await it('should not sign active aligned samples when the configured signing method is invalid', async () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, SIGN_UPDATED_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, FISCAL_PUBLIC_KEY, TEST_PUBLIC_KEY_HEX)
+      upsertConfigurationKey(mockStation, FISCAL_SIGNING_METHOD, 'invalid')
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-invalid-method' })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const samples = sentTransactionEvents(requestHandlerMock).flatMap(transactionEvent =>
+        (transactionEvent.meterValue ?? []).flatMap(meterValue => meterValue.sampledValue)
+      )
+      assert.ok(samples.length > 0)
+      assert.ok(samples.every(sample => sample.signedMeterValue == null))
+    })
+
     await it('should not sign active aligned samples when SignUpdatedReadings is disabled', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')

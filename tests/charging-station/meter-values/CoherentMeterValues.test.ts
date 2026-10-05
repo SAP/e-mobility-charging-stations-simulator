@@ -859,7 +859,6 @@ await describe('CoherentMeterValues', async () => {
         {
           fluctuationPercent: 0,
           measurand: MeterValueMeasurand.FREQUENCY,
-          unit: MeterValueUnit.HERTZ,
           value: '50',
         },
         {

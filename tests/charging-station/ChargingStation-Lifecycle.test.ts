@@ -38,7 +38,7 @@ import {
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
 } from '../../src/types/index.js'
-import { AsyncLock, AsyncLockType, Constants } from '../../src/utils/index.js'
+import { AsyncLock, AsyncLockType, Constants, logger } from '../../src/utils/index.js'
 import {
   flushMicrotasks,
   setupConnectorWithTransaction,
@@ -2117,6 +2117,43 @@ await describe('ChargingStation Lifecycle', async () => {
       }
 
       assert.strictEqual(closeConnection.mock.callCount(), 1)
+    })
+
+    await it('should report the parsed unknown OCPP message type', async t => {
+      const { station: activeStation } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_20,
+        started: true,
+      })
+      station = activeStation
+      const errorMock = t.mock.method(logger, 'error', () => undefined)
+      const stationLifecycle = activeStation as unknown as {
+        onMessage: (
+          data: string,
+          sourceConnection?: NonNullable<typeof activeStation.wsConnection>
+        ) => Promise<void>
+      }
+      stationLifecycle.onMessage = (
+        ChargingStation.prototype as unknown as {
+          onMessage: typeof stationLifecycle.onMessage
+        }
+      ).onMessage
+      const sourceConnection = activeStation.wsConnection
+      assert.ok(sourceConnection != null)
+
+      await stationLifecycle.onMessage.call(
+        activeStation,
+        JSON.stringify([99, 'unknown-message-type', {}]),
+        sourceConnection
+      )
+
+      assert.ok(
+        errorMock.mock.calls.some(call => {
+          const loggedMessage: unknown = call.arguments[0]
+          return (
+            typeof loggedMessage === 'string' && loggedMessage.includes('Wrong message type 99')
+          )
+        })
+      )
     })
 
     await it('should drop a late CALL at the websocket boundary without buffering and accepts it after restart', async () => {

@@ -175,6 +175,20 @@ await describe('SignedMeterValueUtils', async () => {
       assert.strictEqual(result.enabled, true)
     })
 
+    await it('should return disabled when configured method is invalid', () => {
+      const result = validateSigningPrerequisites(TEST_PUBLIC_KEY_HEX, 'invalid-signing-method')
+
+      assert.strictEqual(result.enabled, false)
+      assert.ok((result as { reason: string }).reason.includes('invalid'))
+    })
+
+    await it('should return disabled when configured method is empty', () => {
+      const result = validateSigningPrerequisites(TEST_PUBLIC_KEY_HEX, '')
+
+      assert.strictEqual(result.enabled, false)
+      assert.ok((result as { reason: string }).reason.includes('invalid'))
+    })
+
     await it('should return disabled when public key is undefined', () => {
       const result = validateSigningPrerequisites(undefined, undefined)
       assert.strictEqual(result.enabled, false)

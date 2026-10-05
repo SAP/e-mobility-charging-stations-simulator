@@ -60,7 +60,15 @@ const evseId = computed(() =>
 )
 const ocppVersion = computed(() => {
   const raw = $route.query.ocppVersion
-  return getEnumStringValue(OCPPVersion, raw)
+  if (raw == null) return undefined
+  if (typeof raw !== 'string') {
+    throw new Error('Invalid OCPP version query parameter')
+  }
+  const parsedVersion = getEnumStringValue(OCPPVersion, raw)
+  if (parsedVersion == null) {
+    throw new Error(`Invalid OCPP version query parameter '${raw}'`)
+  }
+  return parsedVersion
 })
 
 const toggleButtonId = computed(

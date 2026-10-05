@@ -147,8 +147,16 @@ export interface SigningPrerequisiteSuccess {
 
 export const validateSigningPrerequisites = (
   publicKeyHex: string | undefined,
-  configuredSigningMethod: SigningMethodEnumType | undefined
+  configuredSigningMethod: string | undefined
 ): SigningPrerequisiteResult | SigningPrerequisiteSuccess => {
+  const signingMethod = getEnumStringValue(SigningMethodEnumType, configuredSigningMethod)
+  if (configuredSigningMethod !== undefined && signingMethod == null) {
+    return {
+      enabled: false,
+      reason: `SigningMethod '${configuredSigningMethod}' is invalid`,
+    }
+  }
+
   if (!isNotEmptyString(publicKeyHex)) {
     return { enabled: false, reason: 'Public key is not configured' }
   }
@@ -162,16 +170,16 @@ export const validateSigningPrerequisites = (
     }
   }
 
-  if (configuredSigningMethod != null && configuredSigningMethod !== derivedMethod) {
+  if (signingMethod != null && signingMethod !== derivedMethod) {
     return {
       enabled: false,
       reason:
-        `SigningMethod mismatch: configured '${configuredSigningMethod}' ` +
+        `SigningMethod mismatch: configured '${signingMethod}' ` +
         `but public key uses '${derivedMethod}'`,
     }
   }
 
-  return { enabled: true, signingMethod: configuredSigningMethod ?? derivedMethod }
+  return { enabled: true, signingMethod: signingMethod ?? derivedMethod }
 }
 
 export const parsePublicKeyWithSignedMeterValue = (

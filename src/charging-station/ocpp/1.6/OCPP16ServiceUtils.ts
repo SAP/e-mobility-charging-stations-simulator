@@ -61,7 +61,6 @@ import {
   PublicKeyWithSignedMeterValueEnumType,
   RequestCommand,
   type RequestParams,
-  SigningMethodEnumType,
   type StartTransactionRequest,
   type StartTransactionResponse,
   type StopTransactionReason,
@@ -1339,6 +1338,18 @@ export class OCPP16ServiceUtils {
       )
     }
 
+    const rawStopReason = reason ?? requestOverrides.reason
+    const validatedStopReason = getEnumStringValue(OCPP16StopTransactionReason, rawStopReason)
+    if (rawStopReason !== undefined && validatedStopReason == null) {
+      return Promise.reject(
+        new OCPPError(
+          ErrorType.FORMAT_VIOLATION,
+          `${moduleName}.stopTransactionOnConnector: Invalid StopTransaction reason '${rawStopReason}'`,
+          RequestCommand.STOP_TRANSACTION
+        )
+      )
+    }
+
     let transactionEndingOwned = true
     const periodicMeterValuesWasRunning =
       connectorStatus.transactionUpdatedMeterValuesSetInterval != null
@@ -1507,7 +1518,6 @@ export class OCPP16ServiceUtils {
             terminalMeterValuesHasPublicKey &&
             !stopTransactionHasPublicKey
 
-          const stopReason = getEnumStringValue(OCPP16StopTransactionReason, reason)
           stopTransactionSnapshot = Object.freeze({
             ...snapshotOverrides,
             idTag,
@@ -1515,7 +1525,7 @@ export class OCPP16ServiceUtils {
             timestamp,
             transactionData,
             transactionId,
-            ...(stopReason != null && { reason: stopReason }),
+            ...(validatedStopReason != null && { reason: validatedStopReason }),
           })
           if (
             strictEndMeterValueIsSolePublicKeyCarrier &&
@@ -2247,10 +2257,10 @@ export class OCPP16ServiceUtils {
       chargingStation,
       `${OCPP16VendorParametersKey.MeterPublicKey}${connectorId.toString()}`
     )?.value
-    const configuredSigningMethod = getEnumStringValue(
-      SigningMethodEnumType,
-      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SigningMethod)?.value
-    )
+    const configuredSigningMethod = getConfigurationKey(
+      chargingStation,
+      OCPP16VendorParametersKey.SigningMethod
+    )?.value
 
     const prerequisiteResult = validateSigningPrerequisites(publicKeyHex, configuredSigningMethod)
     if (!prerequisiteResult.enabled) {
