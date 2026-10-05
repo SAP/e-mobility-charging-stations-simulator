@@ -9,7 +9,7 @@ import type {
   IncomingRequestCommand,
   JsonType,
   MessageType,
-  RequestCommand,
+  OCPPCommandName,
 } from '../types/index.js'
 
 import { logger } from './Logger.js'
@@ -104,7 +104,7 @@ export const handleFileException = (
 
 export const handleSendMessageError = (
   chargingStation: ChargingStation,
-  commandName: IncomingRequestCommand | RequestCommand | string,
+  commandName: OCPPCommandName,
   messageType: MessageType,
   error: Error,
   params?: HandleErrorParams<EmptyObject>

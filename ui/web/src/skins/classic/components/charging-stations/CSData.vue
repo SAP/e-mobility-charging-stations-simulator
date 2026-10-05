@@ -47,24 +47,8 @@
       />
       <ToggleButton
         :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
-        :off="
-          () => {
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
-          }
-        "
-        :on="
-          () => {
-            $router
-              .push({
-                name: ROUTE_NAMES.SET_SUPERVISION_URL,
-                params: {
-                  hashId: chargingStation.stationInfo.hashId,
-                  chargingStationId: chargingStation.stationInfo.chargingStationId,
-                },
-              })
-              .catch(() => undefined)
-          }
-        "
+        :off="showChargingStations"
+        :on="showSupervisionUrl"
         :shared="true"
         @clicked="$emit('need-refresh')"
       >
@@ -72,24 +56,8 @@
       </ToggleButton>
       <ToggleButton
         :id="`${chargingStation.stationInfo.hashId}-change-configuration`"
-        :off="
-          () => {
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
-          }
-        "
-        :on="
-          () => {
-            $router
-              .push({
-                name: ROUTE_NAMES.CHANGE_CONFIGURATION,
-                params: {
-                  hashId: chargingStation.stationInfo.hashId,
-                  chargingStationId: chargingStation.stationInfo.chargingStationId,
-                },
-              })
-              .catch(() => undefined)
-          }
-        "
+        :off="showChargingStations"
+        :on="showChangeConfiguration"
         :shared="true"
         @clicked="$emit('need-refresh')"
       >
@@ -97,24 +65,8 @@
       </ToggleButton>
       <ToggleButton
         :id="`${chargingStation.stationInfo.hashId}-show-details`"
-        :off="
-          () => {
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
-          }
-        "
-        :on="
-          () => {
-            $router
-              .push({
-                name: ROUTE_NAMES.SHOW_DETAILS,
-                params: {
-                  hashId: chargingStation.stationInfo.hashId,
-                  chargingStationId: chargingStation.stationInfo.chargingStationId,
-                },
-              })
-              .catch(() => undefined)
-          }
-        "
+        :off="showChargingStations"
+        :on="showDetails"
         :shared="true"
         @clicked="$emit('need-refresh')"
       >
@@ -173,6 +125,7 @@ import {
   WebSocketReadyState,
 } from 'ui-common'
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 import {
   deleteLocalStorageByKeyPattern,
@@ -192,6 +145,36 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ 'need-refresh': [] }>()
+
+const $router = useRouter()
+
+const showChargingStations = (): void => {
+  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
+}
+
+const showStationAction = (name: typeof ROUTE_NAMES.CHANGE_CONFIGURATION | typeof ROUTE_NAMES.SET_SUPERVISION_URL | typeof ROUTE_NAMES.SHOW_DETAILS): void => {
+  $router
+    .push({
+      name,
+      params: {
+        chargingStationId: props.chargingStation.stationInfo.chargingStationId,
+        hashId: props.chargingStation.stationInfo.hashId,
+      },
+    })
+    .catch(() => undefined)
+}
+
+const showSupervisionUrl = (): void => {
+  showStationAction(ROUTE_NAMES.SET_SUPERVISION_URL)
+}
+
+const showChangeConfiguration = (): void => {
+  showStationAction(ROUTE_NAMES.CHANGE_CONFIGURATION)
+}
+
+const showDetails = (): void => {
+  showStationAction(ROUTE_NAMES.SHOW_DETAILS)
+}
 
 const isWebSocketOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 

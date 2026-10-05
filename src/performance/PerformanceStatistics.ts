@@ -10,11 +10,9 @@ import { parentPort } from 'node:worker_threads'
 import { BaseError } from '../exception/index.js'
 import {
   ConfigurationSection,
-  type IncomingRequestCommand,
   type LogConfiguration,
   MapStringifyFormat,
   MessageType,
-  type RequestCommand,
   type Statistics,
   type StatisticsData,
   type StorageConfiguration,
@@ -127,10 +125,7 @@ export class PerformanceStatistics {
     return logPrefix(' Performance statistics')
   }
 
-  public addRequestStatistic (
-    command: IncomingRequestCommand | RequestCommand | string,
-    messageType: MessageType
-  ): void {
+  public addRequestStatistic (command: string, messageType: MessageType): void {
     switch (messageType) {
       case MessageType.CALL_ERROR_MESSAGE: {
         const commandStatisticsData = this.statistics.statisticsData.get(command)
@@ -282,7 +277,7 @@ export class PerformanceStatistics {
       ...this.statistics,
       statisticsData: JSON.parse(
         JSONStringify(this.statistics.statisticsData, undefined, MapStringifyFormat.object)
-      ) as Map<IncomingRequestCommand | RequestCommand | string, StatisticsData>,
+      ) as Map<string, StatisticsData>,
     })
   }
 

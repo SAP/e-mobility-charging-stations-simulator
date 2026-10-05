@@ -8,7 +8,9 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ResetRequest } from '../../../../src/types/index.js'
 
+import { OCPPError } from '../../../../src/exception/index.js'
 import {
+  ErrorType,
   GenericStatus,
   OCPP16IncomingRequestCommand,
   ResetType,
@@ -70,6 +72,17 @@ await describe('OCPP16IncomingRequestService — Reset', async () => {
     assert.strictEqual(typeof response, 'object')
     assert.notStrictEqual(response.status, undefined)
     assert.strictEqual(response.status, GenericStatus.Accepted)
+  })
+
+  await it('should reject an invalid reset type before scheduling a reset', () => {
+    const { testableService } = testContext
+    const station = ResetFixtures.createStandardStation(0)
+    const resetRequest = { type: 'Invalid' } as unknown as ResetRequest
+
+    assert.throws(
+      () => testableService.handleRequestReset(station, resetRequest),
+      (error: unknown) => error instanceof OCPPError && error.code === ErrorType.FORMAT_VIOLATION
+    )
   })
 
   // @spec §5.13 — TC_024_CS: Hard reset with active transaction

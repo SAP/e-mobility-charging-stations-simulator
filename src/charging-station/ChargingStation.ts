@@ -43,7 +43,7 @@ import {
   type HeartbeatRequest,
   type HeartbeatResponse,
   type IncomingRequest,
-  type IncomingRequestCommand,
+  IncomingRequestCommand,
   type JsonType,
   MapStringifyFormat,
   MessageType,
@@ -52,6 +52,7 @@ import {
   OCPP20ReadingContextEnumType,
   OCPP20RequiredVariableName,
   type OCPP20TransactionEventRequest,
+  type OCPPCommandName,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -97,6 +98,7 @@ import {
   ensureError,
   formatDurationMilliSeconds,
   formatDurationSeconds,
+  getEnumStringValue,
   getErrorMessage,
   getMessageTypeString,
   getWebSocketCloseEventStatusString,
@@ -1437,7 +1439,7 @@ export class ChargingStation extends EventEmitter {
    * @param messageType - Message type of the recorded exchange.
    */
   public recordRequestStatistic (
-    command: IncomingRequestCommand | RequestCommand | string,
+    command: OCPPCommandName,
     messageType: MessageType
   ): void {
     if (this.stationInfo?.enableStatistics === true) {
@@ -3530,16 +3532,24 @@ export class ChargingStation extends EventEmitter {
             this.handleErrorMessage(request)
             break
           // Incoming Message
-          case MessageType.CALL_MESSAGE:
+          case MessageType.CALL_MESSAGE: {
             messageType = MessageType.CALL_MESSAGE
             if (!messageLifecycleIsCurrent()) return
+            const commandName = getEnumStringValue(IncomingRequestCommand, request[2])
+            if (commandName == null) {
+              throw new OCPPError(
+                ErrorType.NOT_SUPPORTED,
+                `Unknown OCPP command '${request[2]}'`
+              )
+            }
             await this.handleIncomingMessage(
-              request,
+              [parsedMessageType, request[1], commandName, request[3]],
               messageLifecycleSignal,
               messageLifecycleIsCurrent,
               messageSourceIsCurrent
             )
             break
+          }
           // Response Message
           case MessageType.CALL_RESULT_MESSAGE:
             messageType = MessageType.CALL_RESULT_MESSAGE
@@ -3630,7 +3640,7 @@ export class ChargingStation extends EventEmitter {
             this,
             messageId,
             ocppError,
-            commandName ?? OCPPConstants.UNKNOWN_OCPP_COMMAND
+            ocppError.command
           )
           break
         }

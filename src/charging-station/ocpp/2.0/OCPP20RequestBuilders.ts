@@ -99,6 +99,14 @@ export function buildOCPP20SampledValue (
     'measurand'
   )
   const resolvedPhase = requireOCPP20EnumValue(OCPP20PhaseEnumType, fields.phase, 'phase')
+  const unitOfMeasure =
+    sampledValueTemplate.unitOfMeasure != null || fields.unit != null
+      ? {
+          ...sampledValueTemplate.unitOfMeasure,
+          ...(sampledValueTemplate.unitOfMeasure?.unit == null &&
+            fields.unit != null && { unit: fields.unit }),
+        }
+      : undefined
   const sampledValue: OCPP20SampledValue = {
     ...(sampledValueTemplate.customData != null && {
       customData: sampledValueTemplate.customData,
@@ -106,7 +114,7 @@ export function buildOCPP20SampledValue (
     ...(resolvedContext != null && { context: resolvedContext }),
     ...(resolvedLocation != null && { location: resolvedLocation }),
     ...(resolvedMeasurand != null && { measurand: resolvedMeasurand }),
-    ...(fields.unit != null && { unitOfMeasure: { unit: fields.unit } }),
+    ...(unitOfMeasure != null && { unitOfMeasure }),
     value: fields.value,
     ...(resolvedPhase != null && { phase: resolvedPhase }),
   }
@@ -125,7 +133,7 @@ export function buildOCPP20SampledValue (
       context: fields.context,
       meterSerialNumber: signingConfig.meterSerialNumber,
       meterValue: fields.value,
-      meterValueUnit: getEnumStringValue(MeterValueUnit, fields.unit),
+      meterValueUnit: getEnumStringValue(MeterValueUnit, unitOfMeasure?.unit),
       timestamp: signingConfig.timestamp ?? new Date(),
       transactionId: signingConfig.transactionId,
     }

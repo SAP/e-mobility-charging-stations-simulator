@@ -1,13 +1,12 @@
 import type { CircularBuffer } from 'mnemonist'
 
 import type { WorkerData } from '../worker/index.js'
-import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests.js'
 
 export interface Statistics extends WorkerData {
   createdAt: Date
   id: string
   name: string
-  statisticsData: Map<IncomingRequestCommand | RequestCommand | string, StatisticsData>
+  statisticsData: Map<string, StatisticsData>
   updatedAt?: Date
   uri: string
 }

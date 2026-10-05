@@ -1896,9 +1896,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
   ): GenericResponse {
-    const { type } = commandPayload
+    const resetType = getEnumStringValue(ResetType, commandPayload.type)
+    if (resetType == null) {
+      throw new OCPPError(
+        ErrorType.FORMAT_VIOLATION,
+        `Invalid Reset type '${commandPayload.type}'`,
+        OCPP16IncomingRequestCommand.RESET
+      )
+    }
     const reason =
-      type === ResetType.HARD
+      resetType === ResetType.HARD
         ? OCPP16StopTransactionReason.HARD_RESET
         : OCPP16StopTransactionReason.SOFT_RESET
     const graceful = reason === OCPP16StopTransactionReason.SOFT_RESET
@@ -1909,7 +1916,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       await chargingStation.reset(reason, graceful)
     })
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: ${type} reset request received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: ${resetType} reset request received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
         chargingStation.stationInfo?.resetTime ?? 0
       )}`
     )

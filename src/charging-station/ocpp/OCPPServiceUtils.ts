@@ -40,6 +40,7 @@ import {
   type ConfigurationKeyType,
   type ConnectorStatus,
   CurrentType,
+  type CustomDataType,
   ErrorType,
   FileType,
   IncomingRequestCommand,
@@ -57,6 +58,7 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   OCPP16MeterValueFormat,
+  type OCPP16MeterValueUnit,
   OCPP20ComponentName,
   OCPP20LocationEnumType,
   OCPP20MeasurandEnumType,
@@ -66,6 +68,7 @@ import {
   OCPP20ReadingContextEnumType,
   type OCPP20SampledValue,
   OCPP20UnitEnumType,
+  type OCPP20UnitOfMeasure,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
@@ -1914,13 +1917,17 @@ const expandClockAlignedSnapshotSamples = (
   )
 }
 
-const getSampledValueUnit = (sampledValue: SampledValue): string | undefined =>
+const getSampledValueUnit = (
+  sampledValue: SampledValue
+): NonNullable<OCPP20UnitOfMeasure['unit']> | OCPP16MeterValueUnit | undefined =>
   isOCPP20SampledValue(sampledValue) ? sampledValue.unitOfMeasure?.unit : sampledValue.unit
 
-const getSampledValueCustomData = (sampledValue: SampledValue): unknown =>
+const getSampledValueCustomData = (sampledValue: SampledValue): CustomDataType | undefined =>
   isOCPP20SampledValue(sampledValue) ? sampledValue.customData : undefined
 
-const getSampledValueFormat = (sampledValue: SampledValue): string | undefined =>
+const getSampledValueFormat = (
+  sampledValue: SampledValue
+): OCPP16MeterValueFormat | undefined =>
   isOCPP20SampledValue(sampledValue) ? undefined : sampledValue.format
 
 const applyClockAlignedVoltageControls = (
@@ -1959,14 +1966,15 @@ const applyClockAlignedVoltageControls = (
     )
     const template: SampledValueTemplate = {
       ...(isOCPP20SampledValue(aggregateVoltage)
-        ? { customData: aggregateVoltage.customData }
-        : { format: aggregateVoltage.format }),
+        ? {
+            customData: aggregateVoltage.customData,
+            unitOfMeasure: aggregateVoltage.unitOfMeasure,
+          }
+        : { format: aggregateVoltage.format, unit: aggregateVoltage.unit }),
       context: aggregateVoltage.context,
       location: aggregateVoltage.location,
       measurand: aggregateVoltage.measurand,
       phase: aggregateVoltage.phase,
-      unit: getSampledValueUnit(aggregateVoltage),
-      value: aggregateVoltage.value,
     }
     const addPhase = (phase: MeterValuePhase, value: number): void => {
       if (!configuredPhases.has(phase)) {

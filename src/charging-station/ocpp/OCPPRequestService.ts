@@ -13,6 +13,7 @@ import {
   IncomingRequestCommand,
   type JsonType,
   MessageType,
+  type OCPPCommandName,
   type OCPPVersion,
   type OutgoingRequest,
   type PendingRequestCancellationCallback,
@@ -427,7 +428,7 @@ export abstract class OCPPRequestService {
     chargingStation: ChargingStation,
     messageId: string,
     ocppError: OCPPError,
-    commandName: IncomingRequestCommand | RequestCommand | string
+    commandName: OCPPCommandName
   ): Promise<ResponseType> {
     try {
       return await this.internalSendMessage(
@@ -603,7 +604,7 @@ export abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
-    commandName: IncomingRequestCommand | RequestCommand | string
+    commandName: OCPPCommandName
   ): string {
     let messageToSend: string
     // Type of message
@@ -687,7 +688,7 @@ export abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
-    commandName: IncomingRequestCommand | RequestCommand | string,
+    commandName: OCPPCommandName,
     params: RequestParams,
     responseTimeoutMs: number
   ): PendingSendOperation {
@@ -1231,7 +1232,7 @@ export abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
-    commandName: IncomingRequestCommand | RequestCommand | string,
+    commandName: OCPPCommandName,
     params?: RequestParams,
     cancellationGenerationAtRequestStart?: number
   ): Promise<ResponseType> {

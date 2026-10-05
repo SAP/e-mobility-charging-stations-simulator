@@ -52,25 +52,8 @@
       <ToggleButton
         v-if="connector.transactionStarted !== true"
         :id="`${hashId}-${evseId ?? 0}-${connectorId}-start-transaction`"
-        :off="
-          () => {
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
-          }
-        "
-        :on="
-          () => {
-            $router
-              .push({
-                name: ROUTE_NAMES.START_TRANSACTION,
-                params: { hashId, chargingStationId, connectorId },
-                query: {
-                  ...(evseId != null ? { evseId: String(evseId) } : {}),
-                  ...(ocppVersion != null ? { ocppVersion } : {}),
-                },
-              })
-              .catch(() => undefined)
-          }
-        "
+        :off="showChargingStations"
+        :on="showStartTransaction"
         :shared="true"
         @clicked="$emit('need-refresh')"
       >
@@ -126,6 +109,27 @@ const props = defineProps<{
 defineEmits<{ 'need-refresh': [] }>()
 
 const $router = useRouter()
+
+const showChargingStations = (): void => {
+  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
+}
+
+const showStartTransaction = (): void => {
+  $router
+    .push({
+      name: ROUTE_NAMES.START_TRANSACTION,
+      params: {
+        chargingStationId: props.chargingStationId,
+        connectorId: props.connectorId,
+        hashId: props.hashId,
+      },
+      query: {
+        ...(props.evseId != null ? { evseId: String(props.evseId) } : {}),
+        ...(props.ocppVersion != null ? { ocppVersion: props.ocppVersion } : {}),
+      },
+    })
+    .catch(() => undefined)
+}
 
 const {
   lockConnector,

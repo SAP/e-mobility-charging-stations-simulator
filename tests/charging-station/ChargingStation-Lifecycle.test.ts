@@ -19,8 +19,10 @@ import { OCPP20RequestService } from '../../src/charging-station/ocpp/2.0/OCPP20
 import { OCPP20ResponseService } from '../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { stopRunningTransactions } from '../../src/charging-station/ocpp/OCPPServiceOperations.js'
+import { OCPPError } from '../../src/exception/index.js'
 import {
   AvailabilityType,
+  ErrorType,
   MessageType,
   OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
@@ -2117,6 +2119,40 @@ await describe('ChargingStation Lifecycle', async () => {
       }
 
       assert.strictEqual(closeConnection.mock.callCount(), 1)
+    })
+
+    await it('should reject an unknown OCPP command before typed dispatch', async () => {
+      const sendError = mock.fn((..._args: unknown[]): Promise<void> => Promise.resolve())
+      const { station: activeStation } = createMockChargingStation({
+        ocppRequestService: { sendError },
+        ocppVersion: OCPPVersion.VERSION_20,
+        started: true,
+      })
+      station = activeStation
+      const stationLifecycle = activeStation as unknown as {
+        onMessage: (
+          data: string,
+          sourceConnection?: NonNullable<typeof activeStation.wsConnection>
+        ) => Promise<void>
+      }
+      stationLifecycle.onMessage = (
+        ChargingStation.prototype as unknown as {
+          onMessage: typeof stationLifecycle.onMessage
+        }
+      ).onMessage
+      const sourceConnection = activeStation.wsConnection
+      assert.ok(sourceConnection != null)
+
+      await stationLifecycle.onMessage.call(
+        activeStation,
+        JSON.stringify([MessageType.CALL_MESSAGE, 'unknown-command', 'UnknownCommand', {}]),
+        sourceConnection
+      )
+
+      assert.strictEqual(sendError.mock.callCount(), 1)
+      const error: unknown = sendError.mock.calls[0]?.arguments[2]
+      assert.ok(error instanceof OCPPError)
+      assert.strictEqual(error.code, ErrorType.NOT_SUPPORTED)
     })
 
     await it('should report the parsed unknown OCPP message type', async t => {

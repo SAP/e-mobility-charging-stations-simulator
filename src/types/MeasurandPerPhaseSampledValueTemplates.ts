@@ -1,13 +1,19 @@
 import type { JsonObject } from './JsonType.js'
-import type { OCPP16MeterValueFormat } from './ocpp/1.6/MeterValues.js'
+import type {
+  OCPP16MeterValueFormat,
+  OCPP16SampledValue,
+} from './ocpp/1.6/MeterValues.js'
 import type { CustomDataType } from './ocpp/2.0/Common.js'
-import type { OCPP20SignedMeterValue, OCPP20UnitOfMeasure } from './ocpp/2.0/MeterValues.js'
+import type {
+  OCPP20SampledValue,
+  OCPP20SignedMeterValue,
+  OCPP20UnitOfMeasure,
+} from './ocpp/2.0/MeterValues.js'
 import type {
   MeterValueContext,
   MeterValueLocation,
   MeterValueMeasurand,
   MeterValuePhase,
-  MeterValueUnit,
 } from './ocpp/MeterValues.js'
 
 export interface MeasurandPerPhaseSampledValueTemplates {
@@ -26,7 +32,7 @@ export interface SampledValueTemplate extends JsonObject {
   minimumValue?: number
   phase?: MeterValuePhase
   signedMeterValue?: OCPP20SignedMeterValue
-  unit?: MeterValueUnit | string
+  unit?: NonNullable<OCPP16SampledValue['unit'] | OCPP20UnitOfMeasure['unit']>
   unitOfMeasure?: OCPP20UnitOfMeasure
-  value?: number | string
+  value?: OCPP16SampledValue['value'] | OCPP20SampledValue['value']
 }

@@ -27,11 +27,9 @@ export const isOCPP20SampledValue = (
   sampledValue: OCPP16SampledValue | OCPP20SampledValue
 ): sampledValue is OCPP20SampledValue => typeof sampledValue.value === 'number'
 
-export const isOCPP16MeterValue = (meterValue: MeterValue): meterValue is OCPP16MeterValue =>
-  meterValue.sampledValue.every(isOCPP16SampledValue)
+export const isOCPP16MeterValue = (meterValue: MeterValue): meterValue is OCPP16MeterValue => meterValue.sampledValue.length === 0 || meterValue.sampledValue.every(isOCPP16SampledValue)
 
-export const isOCPP20MeterValue = (meterValue: MeterValue): meterValue is OCPP20MeterValue =>
-  meterValue.sampledValue.every(isOCPP20SampledValue)
+export const isOCPP20MeterValue = (meterValue: MeterValue): meterValue is OCPP20MeterValue => meterValue.sampledValue.length > 0 && meterValue.sampledValue.every(isOCPP20SampledValue)
 
 export const MeterValueUnit = {
   ...OCPP16MeterValueUnit,

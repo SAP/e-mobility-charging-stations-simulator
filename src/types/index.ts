@@ -396,6 +396,8 @@ export {
   type IncomingRequestHandler,
   MessageTrigger,
   type MeterValuesRequest,
+  type OCPPCommand,
+  type OCPPCommandName,
   type OutgoingRequest,
   type PendingRequestCancellationCallback,
   type PendingRequestCancellationOptions,
