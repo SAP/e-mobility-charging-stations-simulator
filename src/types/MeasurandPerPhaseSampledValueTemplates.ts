@@ -1,8 +1,5 @@
 import type { JsonObject } from './JsonType.js'
-import type {
-  OCPP16MeterValueFormat,
-  OCPP16SampledValue,
-} from './ocpp/1.6/MeterValues.js'
+import type { OCPP16MeterValueFormat, OCPP16SampledValue } from './ocpp/1.6/MeterValues.js'
 import type { CustomDataType } from './ocpp/2.0/Common.js'
 import type {
   OCPP20SampledValue,

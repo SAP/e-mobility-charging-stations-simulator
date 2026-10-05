@@ -1925,9 +1925,7 @@ const getSampledValueUnit = (
 const getSampledValueCustomData = (sampledValue: SampledValue): CustomDataType | undefined =>
   isOCPP20SampledValue(sampledValue) ? sampledValue.customData : undefined
 
-const getSampledValueFormat = (
-  sampledValue: SampledValue
-): OCPP16MeterValueFormat | undefined =>
+const getSampledValueFormat = (sampledValue: SampledValue): OCPP16MeterValueFormat | undefined =>
   isOCPP20SampledValue(sampledValue) ? undefined : sampledValue.format
 
 const applyClockAlignedVoltageControls = (

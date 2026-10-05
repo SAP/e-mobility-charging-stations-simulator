@@ -12,12 +12,7 @@ export class OCPPError extends BaseError {
   details?: JsonType
   public override readonly name = 'OCPPError' as const
 
-  constructor (
-    code: ErrorType,
-    message: string,
-    command?: OCPPCommandName,
-    details?: JsonType
-  ) {
+  constructor (code: ErrorType, message: string, command?: OCPPCommandName, details?: JsonType) {
     super(message)
 
     this.code = code

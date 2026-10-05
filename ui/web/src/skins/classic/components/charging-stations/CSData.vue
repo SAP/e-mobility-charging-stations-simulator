@@ -152,7 +152,12 @@ const showChargingStations = (): void => {
   $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
 }
 
-const showStationAction = (name: typeof ROUTE_NAMES.CHANGE_CONFIGURATION | typeof ROUTE_NAMES.SET_SUPERVISION_URL | typeof ROUTE_NAMES.SHOW_DETAILS): void => {
+const showStationAction = (
+  name:
+    | typeof ROUTE_NAMES.CHANGE_CONFIGURATION
+    | typeof ROUTE_NAMES.SET_SUPERVISION_URL
+    | typeof ROUTE_NAMES.SHOW_DETAILS
+): void => {
   $router
     .push({
       name,

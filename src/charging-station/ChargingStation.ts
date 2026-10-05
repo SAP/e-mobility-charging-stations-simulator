@@ -1438,10 +1438,7 @@ export class ChargingStation extends EventEmitter {
    * @param command - OCPP command the statistic is recorded against.
    * @param messageType - Message type of the recorded exchange.
    */
-  public recordRequestStatistic (
-    command: OCPPCommandName,
-    messageType: MessageType
-  ): void {
+  public recordRequestStatistic (command: OCPPCommandName, messageType: MessageType): void {
     if (this.stationInfo?.enableStatistics === true) {
       this.performanceStatistics?.addRequestStatistic(command, messageType)
     }
@@ -3537,10 +3534,7 @@ export class ChargingStation extends EventEmitter {
             if (!messageLifecycleIsCurrent()) return
             const commandName = getEnumStringValue(IncomingRequestCommand, request[2])
             if (commandName == null) {
-              throw new OCPPError(
-                ErrorType.NOT_SUPPORTED,
-                `Unknown OCPP command '${request[2]}'`
-              )
+              throw new OCPPError(ErrorType.NOT_SUPPORTED, `Unknown OCPP command '${request[2]}'`)
             }
             await this.handleIncomingMessage(
               [parsedMessageType, request[1], commandName, request[3]],
@@ -3636,12 +3630,7 @@ export class ChargingStation extends EventEmitter {
           if (!messageLifecycleIsCurrent() || !messageSourceIsCurrent()) return
           const [, , rawCommandName] = request
           commandName = typeof rawCommandName === 'string' ? rawCommandName : undefined
-          await this.ocppRequestService.sendError(
-            this,
-            messageId,
-            ocppError,
-            ocppError.command
-          )
+          await this.ocppRequestService.sendError(this, messageId, ocppError, ocppError.command)
           break
         }
       }
