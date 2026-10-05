@@ -298,8 +298,11 @@ await describe('StrategyDispatch', async () => {
       )
       assert.deepStrictEqual(
         energySamples.map(sample => [
-          (sample as { unitOfMeasure?: { customData?: { vendorId?: string }; multiplier?: number } })
-            .unitOfMeasure?.customData?.vendorId,
+          (
+            sample as {
+              unitOfMeasure?: { customData?: { vendorId?: string }; multiplier?: number }
+            }
+          ).unitOfMeasure?.customData?.vendorId,
           (sample as { unitOfMeasure?: { multiplier?: number } }).unitOfMeasure?.multiplier,
           sample.phase,
         ]),

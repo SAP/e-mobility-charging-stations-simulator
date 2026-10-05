@@ -130,7 +130,8 @@ export function buildOCPP20SampledValue (
     unitOfMeasure?.multiplier
   )
   const emittedValue =
-    (convertToFloat(fields.value) * resolveMeterValueUnitScale(fields.measurand, sourceUnit)) / emittedScale
+    (convertToFloat(fields.value) * resolveMeterValueUnitScale(fields.measurand, sourceUnit)) /
+    emittedScale
   const sampledValue: OCPP20SampledValue = {
     ...(sampledValueTemplate.customData != null && {
       customData: sampledValueTemplate.customData,

@@ -79,7 +79,9 @@ await describe('OCPP20RequestBuilders', async () => {
         unit: OCPP20UnitEnumType.KILO_WATT_HOUR,
       })
       assert.match(
-        Buffer.from(sampledValue.signedMeterValue?.signedMeterData ?? '', 'base64').toString('utf8'),
+        Buffer.from(sampledValue.signedMeterValue?.signedMeterData ?? '', 'base64').toString(
+          'utf8'
+        ),
         /"RV":2\.5/u
       )
     })

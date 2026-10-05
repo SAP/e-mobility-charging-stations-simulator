@@ -162,10 +162,7 @@ export function assertMeterValueBuilderResult (
  * @param version - OCPP version expected by the caller.
  * @throws {BaseError} When a non-empty result contains a sample from another OCPP version.
  */
-export function assertMeterValueBuilderResult (
-  meterValue: MeterValue,
-  version: OCPPVersion
-): void {
+export function assertMeterValueBuilderResult (meterValue: MeterValue, version: OCPPVersion): void {
   const matchesVersion =
     meterValue.sampledValue.length === 0 ||
     (version === OCPPVersion.VERSION_16
@@ -1686,8 +1683,7 @@ const expandClockAlignedSnapshotSamples = (
     const templatesByIdentity = new Map<string, SampledValueTemplate>()
     for (const template of templatesWithIntervalFallback) {
       const identity = resolveSampledValueFields(template, 0, context, template.phase)
-      const isOcpp16 =
-        chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
+      const isOcpp16 = chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
       const key = JSON.stringify([
         identity.phase,
         buildSampledValueFamilyKey({
@@ -2322,7 +2318,10 @@ const buildIdentifiedMeterValue = (
         buildSignedVersionedSampledValue,
         context
       )
-      const controlledMeterValue = { ...coherentMeterValue, sampledValue: controlledSampledValues } as MeterValue
+      const controlledMeterValue = {
+        ...coherentMeterValue,
+        sampledValue: controlledSampledValues,
+      } as MeterValue
       if (version === OCPPVersion.VERSION_16) {
         assertMeterValueBuilderResult(controlledMeterValue, OCPPVersion.VERSION_16)
       } else {
