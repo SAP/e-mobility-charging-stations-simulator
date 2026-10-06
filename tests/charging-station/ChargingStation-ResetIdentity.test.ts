@@ -13,6 +13,7 @@ import type { ChargingStation } from '../../src/charging-station/ChargingStation
 import type { ChargingStationOptions } from '../../src/types/index.js'
 
 import { SharedLRUCache } from '../../src/charging-station/SharedLRUCache.js'
+import { BaseError } from '../../src/exception/index.js'
 import { sleep } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
@@ -202,5 +203,67 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
     internalsOf(station).initialize(internalsOf(station).creationOptions)
 
     assert.strictEqual(station.wsConnectionUrl.host, 'localhost:7777')
+  })
+
+  await it('should reject a malformed supervision URL with a field-naming configuration error', () => {
+    // A template with a relative or malformed supervision URL must surface a
+    // structured configuration error, never the bare `TypeError` from `new URL()`.
+    for (const malformedUrl of ['/relative', 'not a url']) {
+      assert.throws(
+        () =>
+          createStationFromTemplate(copyStationTemplate({ supervisionUrls: malformedUrl }), {
+            supervisionUrls: malformedUrl,
+          }),
+        (error: unknown) =>
+          error instanceof BaseError &&
+          error.message.includes(malformedUrl) &&
+          error.message.includes('supervisionUrls')
+      )
+    }
+  })
+
+  await it('should revert stationInfo.supervisionUrls when setSupervisionUrl rejects the URL', () => {
+    const station = createStationFromTemplate(copyStationTemplate())
+    const initialSupervisionUrls = station.stationInfo?.supervisionUrls
+
+    assert.throws(
+      () => {
+        station.setSupervisionUrl('not a url')
+      },
+      (error: unknown) => error instanceof BaseError && error.message.includes('supervisionUrls')
+    )
+    assert.strictEqual(station.stationInfo?.supervisionUrls, initialSupervisionUrls)
+    // The retained creation options are only mirrored on success, so a rejected
+    // update must not leak into the reset/template-reload path either.
+    assert.strictEqual(
+      internalsOf(station).creationOptions?.supervisionUrls,
+      initialSupervisionUrls
+    )
+  })
+
+  await it('should reject a malformed URL on the OCPP-configuration supervision branch', () => {
+    // This branch writes the URL into an OCPP configuration key and never calls
+    // getConfiguredSupervisionUrl, so it needs its own validation: a value that
+    // is not checked here would surface later as a bare TypeError from
+    // wsConnectionUrl.
+    const supervisionUrlOcppKey = 'ocppcentraladdress'
+    const station = createStationFromTemplate(
+      copyStationTemplate({
+        supervisionUrlOcppConfiguration: true,
+        supervisionUrlOcppKey,
+      }),
+      { supervisionUrlOcppConfiguration: true, supervisionUrlOcppKey }
+    )
+    const initialWsConnectionUrl = station.wsConnectionUrl.href
+
+    assert.throws(
+      () => {
+        station.setSupervisionUrl('not a url')
+      },
+      (error: unknown) =>
+        error instanceof BaseError && error.message.includes(supervisionUrlOcppKey)
+    )
+    // The rejected value must not have reached the OCPP configuration key.
+    assert.strictEqual(station.wsConnectionUrl.href, initialWsConnectionUrl)
   })
 })

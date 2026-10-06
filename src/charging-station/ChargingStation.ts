@@ -245,19 +245,24 @@ export class ChargingStation extends EventEmitter {
   }
 
   public get wsConnectionUrl (): URL {
-    const wsConnectionBaseUrlStr = `${
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    const supervisionUrlOcppKey =
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
-      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
-      isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value)
-        ? getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value
-        : this.configuredSupervisionUrl.href
-    }`
-    return new URL(
+      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
+        ? this.stationInfo.supervisionUrlOcppKey
+        : undefined
+    const configuredSupervisionUrl =
+      supervisionUrlOcppKey != null
+        ? getConfigurationKey(this, supervisionUrlOcppKey)?.value
+        : undefined
+    const wsConnectionBaseUrlStr = isNotEmptyString(configuredSupervisionUrl)
+      ? configuredSupervisionUrl
+      : this.configuredSupervisionUrl.href
+    return this.parseSupervisionUrl(
       `${wsConnectionBaseUrlStr}${
         !wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }${this.stationInfo?.chargingStationId}`
+      }${this.stationInfo?.chargingStationId}`,
+      supervisionUrlOcppKey ?? 'supervisionUrls'
     )
   }
 
@@ -1846,6 +1851,7 @@ export class ChargingStation extends EventEmitter {
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
     ) {
+      this.parseSupervisionUrl(url, this.stationInfo.supervisionUrlOcppKey)
       setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
     } else if (this.stationInfo != null) {
       const prevSupervisionUrls = this.stationInfo.supervisionUrls
@@ -2472,16 +2478,7 @@ export class ChargingStation extends EventEmitter {
       configuredSupervisionUrl = supervisionUrls
     }
     if (isNotEmptyString(configuredSupervisionUrl)) {
-      try {
-        return new URL(configuredSupervisionUrl)
-      } catch (error) {
-        const errorMsg = `Invalid supervision url '${configuredSupervisionUrl}' configured`
-        logger.error(
-          `${this.logPrefix()} ${moduleName}.getConfiguredSupervisionUrl: ${errorMsg}`,
-          error
-        )
-        throw new BaseError(errorMsg, { cause: error })
-      }
+      return this.parseSupervisionUrl(configuredSupervisionUrl, 'supervisionUrls')
     }
     const errorMsg = 'No supervision url(s) configured'
     logger.error(`${this.logPrefix()} ${moduleName}.getConfiguredSupervisionUrl: ${errorMsg}`)
@@ -3741,6 +3738,24 @@ export class ChargingStation extends EventEmitter {
     logger.debug(
       `${this.logPrefix()} ${moduleName}.onPong: Received a WS pong (rfc6455) from the server`
     )
+  }
+
+  /**
+   * Parses a supervision URL, raising a structured configuration error naming
+   * the offending field and station instead of leaking the `TypeError` thrown
+   * by `new URL()`. The original error is logged with its stack.
+   * @param supervisionUrl - Supervision URL string to parse.
+   * @param field - Configuration field or OCPP configuration key holding it.
+   * @returns The parsed supervision URL.
+   */
+  private parseSupervisionUrl (supervisionUrl: string, field: string): URL {
+    try {
+      return new URL(supervisionUrl)
+    } catch (error) {
+      const errorMsg = `Invalid supervision url '${supervisionUrl}' configured in '${field}'`
+      logger.error(`${this.logPrefix()} ${moduleName}.parseSupervisionUrl: ${errorMsg}`, error)
+      throw new BaseError(errorMsg)
+    }
   }
 
   private async performDelete (): Promise<void> {
