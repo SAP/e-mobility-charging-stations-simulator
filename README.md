@@ -80,21 +80,21 @@ brew install node
 
 ### Development prerequisites (optional)
 
-Install [volta](https://volta.sh/) for managing automatically the node.js runtime and package manager version:
+Install [mise](https://mise.jdx.dev/) for managing automatically the node.js runtime and package manager version:
 
 #### Unix
 
 ```shell
-curl https://get.volta.sh | bash
+curl -fsSL https://mise.run | sh
 ```
 
 #### Windows
 
 ```powershell
-choco install -y volta
+winget install jdx.mise
 ```
 
-Setup [volta](https://volta.sh/) with [pnpm](https://github.com/pnpm/pnpm) package manager support: https://docs.volta.sh/advanced/pnpm
+Then [activate mise](https://mise.jdx.dev/getting-started.html#activate-mise) in your shell and run `mise install` from the repository root to install the development tools.
 
 ### Branching model
 
@@ -104,11 +104,11 @@ The `vX.Y` branches are the maintenance branches for the corresponding major and
 
 ### Dependencies
 
-Enable corepack, if [volta](https://volta.sh/) is not installed and configured, and install latest pnpm version:
+From the repository root, enable Corepack and install the pnpm version declared in `package.json` if [mise](https://mise.jdx.dev/) is not installed and configured. If Corepack is not available, install it with `npm install --global corepack` first.
 
 ```shell
 corepack enable
-corepack prepare pnpm@latest --activate
+corepack install
 ```
 
 In the repository root, run the following command:
