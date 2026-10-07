@@ -32,7 +32,6 @@ try {
       fixedName: true,
       persistentConfiguration: true,
       supervisionPassword: 'old-password',
-      supervisionUrls: 'ws://localhost:9999/',
       supervisionUser: 'old-user',
     })
     await station.pendingConfigurationSave

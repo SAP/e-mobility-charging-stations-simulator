@@ -10,28 +10,38 @@ import { afterEach, describe, it } from 'node:test'
 import { Worker } from 'node:worker_threads'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
-import type { ChargingStationOptions } from '../../src/types/index.js'
 
 import { BaseError } from '../../src/exception/BaseError.js'
+import {
+  type ChargingStationConfiguration,
+  type ChargingStationData,
+  type ChargingStationOptions,
+  type ChargingStationWorkerMessage,
+  ChargingStationWorkerMessageEvents,
+} from '../../src/types/index.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_SUPERVISION_URL_ALT_PORT } from '../utils/TestNetworkConstants.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
 import {
   cleanupStationTemplates,
   copyStationTemplate,
   createStationFromTemplate,
 } from './helpers/StationHelpers.realStation.js'
 
-// OCPP configuration key used by the shipped station templates that route the
-// supervision URL through the OCPP configuration (`supervisionUrlOcppConfiguration`).
+// Shipped templates use this custom key instead of the default ConnectionUrl;
+// retain it to verify diagnostics name the configured key, not the default.
 const OCPP_SUPERVISION_URL_KEY = 'ocppcentraladdress'
 const MALFORMED_SUPERVISION_URL = 'not a url'
-// Fixed identity so the getter diagnostic (base URL plus station identity) is
-// independent of the worker index.
-const FIXED_STATION_NAME = 'CS-URL'
 
 const stationInternalsOf = (
   station: ChargingStation
 ): { creationOptions?: ChargingStationOptions } =>
   station as unknown as { creationOptions?: ChargingStationOptions }
+
+type SupervisionUrlWorkerMessage =
+  | ChargingStationWorkerMessage<ChargingStationData>
+  | { data: Pick<Error, 'message' | 'stack'>; event: 'supervisionUrlFailure' }
+  | { data: SupervisionUrlWorkerScenario[]; event: 'supervisionUrlResult' }
 
 interface SupervisionUrlWorkerScenario {
   accepted: SupervisionUrlWorkerState
@@ -68,13 +78,13 @@ await describe('ChargingStation supervision URL validation', async () => {
       assert.throws(
         () =>
           createStationFromTemplate(copyStationTemplate({ supervisionUrls: malformedUrl }), {
-            baseName: FIXED_STATION_NAME,
+            baseName: TEST_CHARGING_STATION_BASE_NAME,
             fixedName: true,
             persistentConfiguration: false,
             supervisionUrls: malformedUrl,
           }),
         {
-          message: `${FIXED_STATION_NAME}: Invalid supervision url '${malformedUrl}' configured in 'supervisionUrls'`,
+          message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${malformedUrl}' configured in 'supervisionUrls'`,
           name: 'BaseError',
         }
       )
@@ -83,7 +93,7 @@ await describe('ChargingStation supervision URL validation', async () => {
 
   await it('should revert stationInfo.supervisionUrls when setSupervisionUrl rejects the URL', () => {
     const station = createStationFromTemplate(copyStationTemplate(), {
-      baseName: FIXED_STATION_NAME,
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       fixedName: true,
       persistentConfiguration: false,
     })
@@ -94,7 +104,7 @@ await describe('ChargingStation supervision URL validation', async () => {
         station.setSupervisionUrl(MALFORMED_SUPERVISION_URL)
       },
       {
-        message: `${FIXED_STATION_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in 'supervisionUrls'`,
+        message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in 'supervisionUrls'`,
         name: 'BaseError',
       }
     )
@@ -117,7 +127,7 @@ await describe('ChargingStation supervision URL validation', async () => {
         supervisionUrlOcppConfiguration: true,
         supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
       }),
-      { baseName: FIXED_STATION_NAME, fixedName: true, persistentConfiguration: false }
+      { baseName: TEST_CHARGING_STATION_BASE_NAME, fixedName: true, persistentConfiguration: false }
     )
     const initialWsConnectionUrl = station.wsConnectionUrl.href
 
@@ -126,7 +136,7 @@ await describe('ChargingStation supervision URL validation', async () => {
         station.setSupervisionUrl(MALFORMED_SUPERVISION_URL)
       },
       {
-        message: `${FIXED_STATION_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
+        message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
         name: 'BaseError',
       }
     )
@@ -153,11 +163,11 @@ await describe('ChargingStation supervision URL validation', async () => {
         supervisionUrlOcppConfiguration: true,
         supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
       }),
-      { baseName: FIXED_STATION_NAME, fixedName: true, persistentConfiguration: false }
+      { baseName: TEST_CHARGING_STATION_BASE_NAME, fixedName: true, persistentConfiguration: false }
     )
 
     assert.throws(() => station.wsConnectionUrl, {
-      message: `${FIXED_STATION_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
+      message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
       name: 'BaseError',
     })
   })
@@ -168,21 +178,24 @@ await describe('ChargingStation supervision URL validation', async () => {
     const updatedUrls: string[] = []
     const worker = new Worker(new URL('./fixtures/supervisionUrlWorker.mjs', import.meta.url), {
       execArgv: [],
-      workerData: { key: OCPP_SUPERVISION_URL_KEY, stationId: FIXED_STATION_NAME, url },
+      workerData: {
+        key: OCPP_SUPERVISION_URL_KEY,
+        stationId: TEST_CHARGING_STATION_BASE_NAME,
+        url,
+      },
     })
     try {
       // Act: the fixture performs a valid update, then a rejected update, and drains persistence.
       const scenarios = await new Promise<SupervisionUrlWorkerScenario[]>((resolve, reject) => {
-        worker.on('message', (message: { data: unknown; event: string }) => {
+        worker.on('message', (message: SupervisionUrlWorkerMessage) => {
           if (message.event === 'supervisionUrlResult') {
-            resolve(message.data as SupervisionUrlWorkerScenario[])
+            resolve(message.data)
           } else if (message.event === 'supervisionUrlFailure') {
-            const failure = message.data as Pick<Error, 'message' | 'stack'>
-            const error = new BaseError(failure.message)
-            error.stack = failure.stack
+            const error = new BaseError(message.data.message)
+            error.stack = message.data.stack
             reject(error)
-          } else if (message.event === 'updated') {
-            updatedUrls.push((message.data as { supervisionUrl: string }).supervisionUrl)
+          } else if (message.event === ChargingStationWorkerMessageEvents.updated) {
+            updatedUrls.push(message.data.supervisionUrl)
           }
         })
         worker.once('error', reject)
@@ -201,8 +214,8 @@ await describe('ChargingStation supervision URL validation', async () => {
         [false, true]
       )
       assert.deepStrictEqual(updatedUrls, [
-        `wss://example.org/${FIXED_STATION_NAME}`,
-        `wss://example.org/${FIXED_STATION_NAME}`,
+        `wss://example.org/${TEST_CHARGING_STATION_BASE_NAME}`,
+        `wss://example.org/${TEST_CHARGING_STATION_BASE_NAME}`,
       ])
       for (const scenario of scenarios) {
         const field = scenario.supervisionUrlOcppConfiguration
@@ -210,17 +223,14 @@ await describe('ChargingStation supervision URL validation', async () => {
           : 'supervisionUrls'
         assert.strictEqual(
           scenario.accepted.connectionUrl,
-          `wss://example.org/${FIXED_STATION_NAME}`
+          `wss://example.org/${TEST_CHARGING_STATION_BASE_NAME}`
         )
         assert.strictEqual(scenario.accepted.creationOptions?.supervisionUrls, url)
         assert.strictEqual(scenario.accepted.creationOptions.supervisionUser, 'new-user')
         assert.strictEqual(scenario.accepted.creationOptions.supervisionPassword, '')
         assert.strictEqual(scenario.accepted.stationInfo.supervisionUser, 'new-user')
         assert.strictEqual(scenario.accepted.stationInfo.supervisionPassword, '')
-        const persisted = JSON.parse(scenario.persistedBefore) as {
-          configurationKey?: { key: string; value: string }[]
-          stationInfo?: ChargingStationOptions
-        }
+        const persisted = JSON.parse(scenario.persistedBefore) as ChargingStationConfiguration
         assert.strictEqual(persisted.stationInfo?.supervisionUser, 'new-user')
         assert.strictEqual(persisted.stationInfo.supervisionPassword, '')
         if (scenario.supervisionUrlOcppConfiguration) {
@@ -234,7 +244,7 @@ await describe('ChargingStation supervision URL validation', async () => {
           assert.strictEqual(persisted.stationInfo.supervisionUrls, url)
         }
         assert.deepStrictEqual(scenario.rejection, {
-          message: `${FIXED_STATION_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${field}'`,
+          message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${field}'`,
           name: 'BaseError',
         })
         assert.deepStrictEqual(scenario.rejected, scenario.accepted)
@@ -246,12 +256,15 @@ await describe('ChargingStation supervision URL validation', async () => {
   })
   await it('should accept a valid supervision URL on every entry path', () => {
     const station = createStationFromTemplate(copyStationTemplate(), {
-      baseName: FIXED_STATION_NAME,
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       fixedName: true,
       persistentConfiguration: false,
     })
 
-    station.setSupervisionUrl('ws://localhost:8888/')
-    assert.strictEqual(station.wsConnectionUrl.href, `ws://localhost:8888/${FIXED_STATION_NAME}`)
+    station.setSupervisionUrl(TEST_SUPERVISION_URL_ALT_PORT)
+    assert.strictEqual(
+      station.wsConnectionUrl.href,
+      `${TEST_SUPERVISION_URL_ALT_PORT}/${TEST_CHARGING_STATION_BASE_NAME}`
+    )
   })
 })

@@ -1130,7 +1130,6 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `supervisionPassword?`: string  
   }  
   `url` is required and must be an absolute URL. `supervisionUser` must not contain `:` (RFC 7617). `supervisionUser` and `supervisionPassword` are each optional and independent: a string (including `""`, which clears the field) updates the value; omitting the field preserves the existing value. Changes take effect on the next WebSocket (re)connect.
-  When the supervision URL is stored in an OCPP configuration key, the key contains the normalized absolute URL (for example, `"ws://example.org "` becomes `"ws://example.org/"`). A URL parsing failure leaves the previous URL, credentials, retained creation options, and persistent configuration unchanged.
 
 - Response:  
   `PDU`: {  
