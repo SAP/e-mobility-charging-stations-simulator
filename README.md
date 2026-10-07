@@ -94,7 +94,7 @@ curl -fsSL https://mise.run | sh
 winget install jdx.mise
 ```
 
-Then [activate mise](https://mise.jdx.dev/getting-started.html#activate-mise) in your shell. [.mise.toml](./.mise.toml) enables version discovery from `package.json`: Node.js uses the root `devEngines.runtime` declaration, inherited by the UI packages, and pnpm uses each package's `packageManager` field. Mise installs and selects these versions automatically when you enter the repository. The `engines` ranges describe supported versions; `devEngines.runtime.onFail` is `ignore` so pnpm preserves runtimes selected explicitly or by CI.
+Then [activate mise](https://mise.jdx.dev/getting-started.html#activate-mise) in your shell and run `mise install` from the repository root to install the development tools.
 
 ### Branching model
 
