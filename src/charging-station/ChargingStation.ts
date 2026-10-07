@@ -265,12 +265,20 @@ export class ChargingStation extends EventEmitter {
     const wsConnectionBaseUrlStr = isNotEmptyString(configuredSupervisionUrl)
       ? configuredSupervisionUrl
       : this.configuredSupervisionUrl.href
+    // Only the OCPP configuration key is labelled as such when it actually
+    // supplied the value; an absent or empty key falls back to the configured
+    // supervision URL, so the diagnostic must not name the OCPP key.
+    const supervisionUrlField =
+      supervisionUrlOcppKey != null && isNotEmptyString(configuredSupervisionUrl)
+        ? supervisionUrlOcppKey
+        : 'supervisionUrls'
     return this.parseSupervisionUrl(
       `${wsConnectionBaseUrlStr}${
         !wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }${this.stationInfo?.chargingStationId}`,
-      supervisionUrlOcppKey ?? 'supervisionUrls'
+      supervisionUrlField,
+      wsConnectionBaseUrlStr
     )
   }
 
@@ -3751,13 +3759,23 @@ export class ChargingStation extends EventEmitter {
    * by `new URL()`. The original error is logged with its stack.
    * @param supervisionUrl - Supervision URL string to parse.
    * @param field - Configuration field or OCPP configuration key holding it.
+   * @param reportedUrl - Configured value quoted in the diagnostic; defaults to
+   *   `supervisionUrl`. The `wsConnectionUrl` getter passes the configured base
+   *   URL because it parses a derived URL (base plus charging station identity).
    * @returns The parsed supervision URL.
    */
-  private parseSupervisionUrl (supervisionUrl: string, field: string): URL {
+  private parseSupervisionUrl (
+    supervisionUrl: string,
+    field: string,
+    reportedUrl = supervisionUrl
+  ): URL {
     try {
       return new URL(supervisionUrl)
     } catch (error) {
-      const errorMsg = `Invalid supervision url '${supervisionUrl}' configured in '${field}'`
+      const chargingStationId = this.stationInfo?.chargingStationId
+      const errorMsg = `${
+        isNotEmptyString(chargingStationId) ? `${chargingStationId}: ` : ''
+      }Invalid supervision url '${reportedUrl}' configured in '${field}'`
       logger.error(`${this.logPrefix()} ${moduleName}.parseSupervisionUrl: ${errorMsg}`, error)
       throw new BaseError(errorMsg)
     }
