@@ -6,7 +6,7 @@
     "node": ">=22.0.0",
     "pnpm": ">=10.9.0"
   },
-  "packageManager": "pnpm@12.9.0",
+  "packageManager": "pnpm@12.9.1",
   "type": "module",
   "exports": "./src/index.ts",
   "scripts": {
