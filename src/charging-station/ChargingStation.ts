@@ -1864,8 +1864,8 @@ export class ChargingStation extends EventEmitter {
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
     ) {
-      this.parseSupervisionUrl(url, this.stationInfo.supervisionUrlOcppKey)
-      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
+      const supervisionUrl = this.parseSupervisionUrl(url, this.stationInfo.supervisionUrlOcppKey)
+      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, supervisionUrl.href)
     } else if (this.stationInfo != null) {
       const prevSupervisionUrls = this.stationInfo.supervisionUrls
       this.stationInfo.supervisionUrls = url
@@ -1878,14 +1878,9 @@ export class ChargingStation extends EventEmitter {
     }
     if (this.stationInfo != null) {
       applyCredentials(this.stationInfo)
-      // Mirror the update into the retained creation options so a later reset() or
-      // template reload re-applies this URL, not the creation-time one — for BOTH
-      // branches above. On a cache-cold reinitialization (reload) a non-persistent
-      // station's supervisionUrlOcppKey is absent and re-seeded from
-      // configuredSupervisionUrl (i.e. stationInfo.supervisionUrls, written from
-      // these options), so without the mirror the reload would restore the old URL.
-      // (A warm reset() reuses the cached template whose in-place key mutation
-      // already carries it.) In-memory only: a full restart reverts to the originals.
+      // Retain the caller's URL and credentials for non-persistent resets and
+      // template reloads, which rebuild OCPP configuration from these options.
+      // getConfiguredSupervisionUrl normalizes the URL again before reseeding the key.
       if (this.creationOptions != null) {
         this.creationOptions.supervisionUrls = url
         applyCredentials(this.creationOptions)

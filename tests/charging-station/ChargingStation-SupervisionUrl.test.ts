@@ -7,10 +7,12 @@
  */
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
+import { Worker } from 'node:worker_threads'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import type { ChargingStationOptions } from '../../src/types/index.js'
 
+import { BaseError } from '../../src/exception/BaseError.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   cleanupStationTemplates,
@@ -31,6 +33,24 @@ const stationInternalsOf = (
 ): { creationOptions?: ChargingStationOptions } =>
   station as unknown as { creationOptions?: ChargingStationOptions }
 
+interface SupervisionUrlWorkerScenario {
+  accepted: SupervisionUrlWorkerState
+  persistedAfter: string
+  persistedBefore: string
+  rejected: SupervisionUrlWorkerState
+  rejection?: Pick<Error, 'message' | 'name'>
+  supervisionUrlOcppConfiguration: boolean
+}
+
+interface SupervisionUrlWorkerState {
+  connectionUrl: string
+  creationOptions?: ChargingStationOptions
+  ocppUrl?: string
+  stationInfo: Pick<
+    ChargingStationOptions,
+    'supervisionPassword' | 'supervisionUrls' | 'supervisionUser'
+  >
+}
 await describe('ChargingStation supervision URL validation', async () => {
   afterEach(async () => {
     // A station built with persistence writes its configuration from an
@@ -142,6 +162,88 @@ await describe('ChargingStation supervision URL validation', async () => {
     })
   })
 
+  await it('should normalize supervision URLs in a worker and preserve persisted state on rejection', async () => {
+    // Arrange: a real worker exercises the updated event and both storage branches.
+    const url = 'wss://EXAMPLE.org:443 '
+    const updatedUrls: string[] = []
+    const worker = new Worker(new URL('./fixtures/supervisionUrlWorker.mjs', import.meta.url), {
+      execArgv: [],
+      workerData: { key: OCPP_SUPERVISION_URL_KEY, stationId: FIXED_STATION_NAME, url },
+    })
+    try {
+      // Act: the fixture performs a valid update, then a rejected update, and drains persistence.
+      const scenarios = await new Promise<SupervisionUrlWorkerScenario[]>((resolve, reject) => {
+        worker.on('message', (message: { data: unknown; event: string }) => {
+          if (message.event === 'supervisionUrlResult') {
+            resolve(message.data as SupervisionUrlWorkerScenario[])
+          } else if (message.event === 'supervisionUrlFailure') {
+            const failure = message.data as Pick<Error, 'message' | 'stack'>
+            const error = new BaseError(failure.message)
+            error.stack = failure.stack
+            reject(error)
+          } else if (message.event === 'updated') {
+            updatedUrls.push((message.data as { supervisionUrl: string }).supervisionUrl)
+          }
+        })
+        worker.once('error', reject)
+        worker.once('exit', code => {
+          reject(
+            new BaseError(
+              `Supervision URL worker exited before returning results (code ${code.toString()})`
+            )
+          )
+        })
+      })
+
+      // Assert: successful normalization preserves raw reset options and rejected updates change nothing.
+      assert.deepStrictEqual(
+        scenarios.map(scenario => scenario.supervisionUrlOcppConfiguration),
+        [false, true]
+      )
+      assert.deepStrictEqual(updatedUrls, [
+        `wss://example.org/${FIXED_STATION_NAME}`,
+        `wss://example.org/${FIXED_STATION_NAME}`,
+      ])
+      for (const scenario of scenarios) {
+        const field = scenario.supervisionUrlOcppConfiguration
+          ? OCPP_SUPERVISION_URL_KEY
+          : 'supervisionUrls'
+        assert.strictEqual(
+          scenario.accepted.connectionUrl,
+          `wss://example.org/${FIXED_STATION_NAME}`
+        )
+        assert.strictEqual(scenario.accepted.creationOptions?.supervisionUrls, url)
+        assert.strictEqual(scenario.accepted.creationOptions.supervisionUser, 'new-user')
+        assert.strictEqual(scenario.accepted.creationOptions.supervisionPassword, '')
+        assert.strictEqual(scenario.accepted.stationInfo.supervisionUser, 'new-user')
+        assert.strictEqual(scenario.accepted.stationInfo.supervisionPassword, '')
+        const persisted = JSON.parse(scenario.persistedBefore) as {
+          configurationKey?: { key: string; value: string }[]
+          stationInfo?: ChargingStationOptions
+        }
+        assert.strictEqual(persisted.stationInfo?.supervisionUser, 'new-user')
+        assert.strictEqual(persisted.stationInfo.supervisionPassword, '')
+        if (scenario.supervisionUrlOcppConfiguration) {
+          assert.strictEqual(scenario.accepted.ocppUrl, 'wss://example.org/')
+          assert.strictEqual(
+            persisted.configurationKey?.find(key => key.key === OCPP_SUPERVISION_URL_KEY)?.value,
+            'wss://example.org/'
+          )
+        } else {
+          assert.strictEqual(scenario.accepted.stationInfo.supervisionUrls, url)
+          assert.strictEqual(persisted.stationInfo.supervisionUrls, url)
+        }
+        assert.deepStrictEqual(scenario.rejection, {
+          message: `${FIXED_STATION_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${field}'`,
+          name: 'BaseError',
+        })
+        assert.deepStrictEqual(scenario.rejected, scenario.accepted)
+        assert.strictEqual(scenario.persistedAfter, scenario.persistedBefore)
+      }
+    } finally {
+      await worker.terminate()
+    }
+  })
   await it('should accept a valid supervision URL on every entry path', () => {
     const station = createStationFromTemplate(copyStationTemplate(), {
       baseName: FIXED_STATION_NAME,

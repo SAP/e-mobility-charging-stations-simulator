@@ -357,22 +357,6 @@ await describe('ChargingStation Configuration Management', async () => {
       cleanupChargingStation(station2)
     })
 
-    await it('should support setSupervisionUrl method if available', () => {
-      // Arrange
-      const result = createMockChargingStation()
-      station = result.station
-
-      // Act & Assert - setSupervisionUrl should be a function if available
-      if ('setSupervisionUrl' in station && typeof station.setSupervisionUrl === 'function') {
-        assert.doesNotThrow(() => {
-          station?.setSupervisionUrl('ws://new-server:8080')
-        })
-      } else {
-        // Mock station may not have setSupervisionUrl, which is expected
-        assert.notStrictEqual(station, undefined)
-      }
-    })
-
     // === Configuration Loading & Persistence ===
 
     await it('should have template file reference', () => {
