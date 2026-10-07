@@ -85,7 +85,7 @@ Install [mise](https://mise.jdx.dev/) for managing automatically the node.js run
 #### Unix
 
 ```shell
-curl https://mise.run | sh
+curl -fsSL https://mise.run | sh
 ```
 
 #### Windows
@@ -94,7 +94,7 @@ curl https://mise.run | sh
 winget install jdx.mise
 ```
 
-Then [activate mise](https://mise.jdx.dev/getting-started.html#activate-mise) in your shell. The tool versions are declared in [.mise.toml](./.mise.toml); mise installs and selects them automatically when you enter the repository.
+Then [activate mise](https://mise.jdx.dev/getting-started.html#activate-mise) in your shell. [.mise.toml](./.mise.toml) enables version discovery from `package.json`: Node.js uses the root `devEngines.runtime` declaration, inherited by the UI packages, and pnpm uses each package's `packageManager` field. Mise installs and selects these versions automatically when you enter the repository. The `engines` ranges describe supported versions; `devEngines.runtime.onFail` is `ignore` so pnpm preserves runtimes selected explicitly or by CI.
 
 ### Branching model
 
@@ -104,11 +104,11 @@ The `vX.Y` branches are the maintenance branches for the corresponding major and
 
 ### Dependencies
 
-Enable corepack and install the pnpm version declared in `package.json`, if [mise](https://mise.jdx.dev/) is not installed and configured:
+From the repository root, enable Corepack and install the pnpm version declared in `package.json` if [mise](https://mise.jdx.dev/) is not installed and configured. If Corepack is not available, install it with `npm install --global corepack` first.
 
 ```shell
 corepack enable
-corepack prepare pnpm@latest --activate
+corepack install
 ```
 
 In the repository root, run the following command:

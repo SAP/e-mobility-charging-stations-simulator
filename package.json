@@ -6,6 +6,13 @@
     "node": ">=22.0.0",
     "pnpm": ">=10.9.0"
   },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.21.0",
+      "onFail": "ignore"
+    }
+  },
   "packageManager": "pnpm@12.9.0",
   "repository": {
     "type": "git",

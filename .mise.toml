@@ -1,3 +1,5 @@
-[tools]
-node = "24.21.0"
-pnpm = "12.9.0"
+min_version = "2026.9.18"
+
+[settings]
+# Read development tool versions from package.json.
+idiomatic_version_file_enable_tools = ["node", "pnpm"]
