@@ -43,7 +43,7 @@ import {
   type HeartbeatRequest,
   type HeartbeatResponse,
   type IncomingRequest,
-  type IncomingRequestCommand,
+  IncomingRequestCommand,
   type JsonType,
   MapStringifyFormat,
   MessageType,
@@ -52,6 +52,7 @@ import {
   OCPP20ReadingContextEnumType,
   OCPP20RequiredVariableName,
   type OCPP20TransactionEventRequest,
+  type OCPPCommandName,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -98,6 +99,7 @@ import {
   ensureError,
   formatDurationMilliSeconds,
   formatDurationSeconds,
+  getEnumStringValue,
   getErrorMessage,
   getMessageTypeString,
   getWebSocketCloseEventStatusString,
@@ -218,6 +220,12 @@ class TransactionEventQueuePersistenceDiscardedError extends BaseError {}
 class TransactionEventQueuePersistenceSupersededError extends BaseError {}
 
 export class ChargingStation extends EventEmitter {
+  private static readonly normalWebSocketCloseEventStatusCodes: ReadonlySet<number> =
+    new Set<number>([
+      WebSocketCloseEventStatusCode.CLOSE_NO_STATUS,
+      WebSocketCloseEventStatusCode.CLOSE_NORMAL,
+    ])
+
   public automaticTransactionGenerator?: AutomaticTransactionGenerator
   public bootNotificationRequest?: BootNotificationRequest
   public bootNotificationResponse?: BootNotificationResponse
@@ -1442,10 +1450,7 @@ export class ChargingStation extends EventEmitter {
    * @param command - OCPP command the statistic is recorded against.
    * @param messageType - Message type of the recorded exchange.
    */
-  public recordRequestStatistic (
-    command: IncomingRequestCommand | RequestCommand,
-    messageType: MessageType
-  ): void {
+  public recordRequestStatistic (command: OCPPCommandName, messageType: MessageType): void {
     if (this.stationInfo?.enableStatistics === true) {
       this.performanceStatistics?.addRequestStatistic(command, messageType)
     }
@@ -3451,11 +3456,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private onClose (
-    wsConnection: WebSocket,
-    code: WebSocketCloseEventStatusCode,
-    reason: Buffer
-  ): void {
+  private onClose (wsConnection: WebSocket, code: number, reason: Buffer): void {
     const closedByRequest = this.wsConnectionsClosedByRequest.delete(wsConnection)
     if (wsConnection !== this.wsConnection) {
       return
@@ -3470,24 +3471,14 @@ export class ChargingStation extends EventEmitter {
     )
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
-    switch (code) {
-      // Normal close
-      case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
-      case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
-        logger.info(
-          `${this.logPrefix()} ${moduleName}.onClose: WebSocket normally closed with status '${getWebSocketCloseEventStatusString(
-            code
-          )}' and reason '${reason.toString()}'`
-        )
-        break
-      // Abnormal close
-      default:
-        logger.error(
-          `${this.logPrefix()} ${moduleName}.onClose: WebSocket abnormally closed with status '${getWebSocketCloseEventStatusString(
-            code
-          )}' and reason '${reason.toString()}'`
-        )
-        break
+    if (ChargingStation.normalWebSocketCloseEventStatusCodes.has(code)) {
+      logger.info(
+        `${this.logPrefix()} ${moduleName}.onClose: WebSocket normally closed with status '${getWebSocketCloseEventStatusString(code)}' and reason '${reason.toString()}'`
+      )
+    } else {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.onClose: WebSocket abnormally closed with status '${getWebSocketCloseEventStatusString(code)}' and reason '${reason.toString()}'`
+      )
     }
     // Reconnect on any close we did not request while still started: a
     // server-initiated drop, or an internal close wanting a fresh connection
@@ -3532,37 +3523,49 @@ export class ChargingStation extends EventEmitter {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       request = JSON.parse(data.toString()) as ErrorResponse | IncomingRequest | Response
       if (Array.isArray(request)) {
-        ;[messageType] = request
+        const [parsedMessageType] = request
         if (
           this.isStopping() &&
-          messageType !== MessageType.CALL_RESULT_MESSAGE &&
-          messageType !== MessageType.CALL_ERROR_MESSAGE
+          parsedMessageType !== MessageType.CALL_RESULT_MESSAGE &&
+          parsedMessageType !== MessageType.CALL_ERROR_MESSAGE
         ) {
           return
         }
-        switch (messageType) {
+        switch (parsedMessageType) {
           // Error Message
           case MessageType.CALL_ERROR_MESSAGE:
-            this.handleErrorMessage(request as ErrorResponse)
+            messageType = MessageType.CALL_ERROR_MESSAGE
+            this.handleErrorMessage(request)
             break
           // Incoming Message
-          case MessageType.CALL_MESSAGE:
+          case MessageType.CALL_MESSAGE: {
+            messageType = MessageType.CALL_MESSAGE
             if (!messageLifecycleIsCurrent()) return
+            const commandName = getEnumStringValue(IncomingRequestCommand, request[2])
+            if (commandName == null) {
+              throw new OCPPError(
+                ErrorType.NOT_IMPLEMENTED,
+                `Unknown OCPP command '${request[2]}'`,
+                OCPPConstants.UNKNOWN_OCPP_COMMAND,
+                { command: request[2] }
+              )
+            }
             await this.handleIncomingMessage(
-              request as IncomingRequest,
+              [parsedMessageType, request[1], commandName, request[3]],
               messageLifecycleSignal,
               messageLifecycleIsCurrent,
               messageSourceIsCurrent
             )
             break
+          }
           // Response Message
           case MessageType.CALL_RESULT_MESSAGE:
-            this.handleResponseMessage(request as Response)
+            messageType = MessageType.CALL_RESULT_MESSAGE
+            this.handleResponseMessage(request)
             break
           // Unknown Message
           default:
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            errorMsg = `Wrong message type ${messageType}`
+            errorMsg = `Wrong message type ${String(parsedMessageType)}`
             logger.error(`${this.logPrefix()} ${moduleName}.onMessage: ${errorMsg}`)
             throw new OCPPError(
               this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16
@@ -3615,8 +3618,8 @@ export class ChargingStation extends EventEmitter {
         }
         return
       }
-      let commandName: IncomingRequestCommand | undefined
-      let requestCommandName: IncomingRequestCommand | RequestCommand | undefined
+      let commandName: string | undefined
+      let requestCommandName: string | undefined
       let errorCallback: ErrorCallback
       const [, messageId] = request
       const ocppError =
@@ -3637,11 +3640,13 @@ export class ChargingStation extends EventEmitter {
             this.requests.delete(messageId)
           }
           break
-        case MessageType.CALL_MESSAGE:
+        case MessageType.CALL_MESSAGE: {
           if (!messageLifecycleIsCurrent() || !messageSourceIsCurrent()) return
-          ;[, , commandName] = request as IncomingRequest
-          await this.ocppRequestService.sendError(this, messageId, ocppError, commandName)
+          const [, , rawCommandName] = request
+          commandName = typeof rawCommandName === 'string' ? rawCommandName : undefined
+          await this.ocppRequestService.sendError(this, messageId, ocppError, ocppError.command)
           break
+        }
       }
       if (!(error instanceof OCPPError)) {
         logger.warn(
@@ -4352,8 +4357,8 @@ export class ChargingStation extends EventEmitter {
         onCompleteCallback()
         return
       }
-      if (isRequest) {
-        ;[, messageId, commandName] = parsedMessage as OutgoingRequest
+      if (parsedMessage[0] === MessageType.CALL_MESSAGE) {
+        ;[, messageId, commandName] = parsedMessage
       }
       const bufferedMessageInFlight: {
         entry: BufferedMessageEntry

@@ -9,6 +9,7 @@ import {
   type SampledValue,
   SigningMethodEnumType,
 } from '../../types/index.js'
+import { getEnumStringValue } from '../../utils/index.js'
 import { getErrorMessage, isJsonObject, isNotEmptyString, logger } from '../../utils/index.js'
 
 export const getOCPP16SignedMeterValuePublicKey = (
@@ -146,8 +147,16 @@ export interface SigningPrerequisiteSuccess {
 
 export const validateSigningPrerequisites = (
   publicKeyHex: string | undefined,
-  configuredSigningMethod: SigningMethodEnumType | undefined
+  configuredSigningMethod: string | undefined
 ): SigningPrerequisiteResult | SigningPrerequisiteSuccess => {
+  const signingMethod = getEnumStringValue(SigningMethodEnumType, configuredSigningMethod)
+  if (configuredSigningMethod !== undefined && signingMethod == null) {
+    return {
+      enabled: false,
+      reason: `SigningMethod '${configuredSigningMethod}' is invalid`,
+    }
+  }
+
   if (!isNotEmptyString(publicKeyHex)) {
     return { enabled: false, reason: 'Public key is not configured' }
   }
@@ -161,28 +170,23 @@ export const validateSigningPrerequisites = (
     }
   }
 
-  if (configuredSigningMethod != null && configuredSigningMethod !== derivedMethod) {
+  if (signingMethod != null && signingMethod !== derivedMethod) {
     return {
       enabled: false,
       reason:
-        `SigningMethod mismatch: configured '${configuredSigningMethod}' ` +
+        `SigningMethod mismatch: configured '${signingMethod}' ` +
         `but public key uses '${derivedMethod}'`,
     }
   }
 
-  return { enabled: true, signingMethod: configuredSigningMethod ?? derivedMethod }
+  return { enabled: true, signingMethod: signingMethod ?? derivedMethod }
 }
-
-const PUBLIC_KEY_WITH_SIGNED_METER_VALUE_VALUES = new Set<string>(
-  Object.values(PublicKeyWithSignedMeterValueEnumType)
-)
 
 export const parsePublicKeyWithSignedMeterValue = (
   value: string | undefined
 ): PublicKeyWithSignedMeterValueEnumType =>
-  value != null && PUBLIC_KEY_WITH_SIGNED_METER_VALUE_VALUES.has(value)
-    ? (value as PublicKeyWithSignedMeterValueEnumType)
-    : PublicKeyWithSignedMeterValueEnumType.Never
+  getEnumStringValue(PublicKeyWithSignedMeterValueEnumType, value) ??
+  PublicKeyWithSignedMeterValueEnumType.Never
 
 export const shouldIncludePublicKey = (
   config: PublicKeyWithSignedMeterValueEnumType,

@@ -167,7 +167,7 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
   })
 
   await it('should reject SetVariables on an unknown component and confirm GetVariables returns UnknownComponent', () => {
-    const unknownComponent = { name: 'NonExistentComponent' as OCPP20ComponentName }
+    const unknownComponent = { name: 'NonExistentComponent' as unknown as OCPP20ComponentName }
     const variableName = 'SomeVariable'
 
     // Attempt to set a variable on a component that does not exist in the registry

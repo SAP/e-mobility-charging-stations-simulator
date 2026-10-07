@@ -2,8 +2,10 @@ import { Command, Option } from 'commander'
 import {
   buildAuthorizePayload,
   buildStatusNotificationPayload,
-  type ChargePointStatus,
-  type OCPP16ChargePointErrorCode,
+  getEnumStringValue,
+  OCPP16ChargePointErrorCode,
+  OCPP16ChargePointStatus,
+  OCPP20ConnectorStatusEnumType,
   OCPPVersion,
   ProcedureName,
   type RequestPayload,
@@ -191,16 +193,25 @@ export const createOcppCommands = (program: Command): Command => {
             if (ocppVersion === OCPPVersion.VERSION_16 && options.errorCode == null) {
               throw new Error('--error-code is required for OCPP 1.6 stations')
             }
+            const status =
+              ocppVersion === OCPPVersion.VERSION_16
+                ? getEnumStringValue(OCPP16ChargePointStatus, options.status)
+                : getEnumStringValue(OCPP20ConnectorStatusEnumType, options.status)
+            if (status == null) {
+              throw new Error(`Unsupported connector status '${options.status}'`)
+            }
+            const errorCode =
+              options.errorCode == null
+                ? undefined
+                : getEnumStringValue(OCPP16ChargePointErrorCode, options.errorCode)
+            if (options.errorCode != null && errorCode == null) {
+              throw new Error(`Unsupported OCPP 1.6 error code '${options.errorCode}'`)
+            }
             payload = {
-              ...buildStatusNotificationPayload(
-                options.connectorId,
-                options.status as ChargePointStatus,
-                ocppVersion,
-                {
-                  errorCode: options.errorCode as OCPP16ChargePointErrorCode | undefined,
-                  evseId: options.evseId,
-                }
-              ),
+              ...buildStatusNotificationPayload(options.connectorId, status, ocppVersion, {
+                errorCode,
+                evseId: options.evseId,
+              }),
               ...buildHashIdsPayload(resolvedHashIds),
             }
             await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, undefined, config)

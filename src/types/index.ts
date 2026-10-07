@@ -347,6 +347,7 @@ export {
   ChargingRateUnitType,
   type ChargingSchedule,
   type ChargingSchedulePeriod,
+  isOCPP16ChargingProfile,
   RecurrencyKindType,
 } from './ocpp/ChargingProfile.js'
 export { type GenericResponse, GenericStatus, RegistrationStatusEnumType } from './ocpp/Common.js'
@@ -366,6 +367,10 @@ export { ConnectorStatusEnum, type ConnectorStatusTransition } from './ocpp/Conn
 export { ErrorType } from './ocpp/ErrorType.js'
 export { MessageType } from './ocpp/MessageType.js'
 export {
+  isOCPP16MeterValue,
+  isOCPP16SampledValue,
+  isOCPP20MeterValue,
+  isOCPP20SampledValue,
   type MeterValue,
   MeterValueContext,
   MeterValueLocation,
@@ -391,6 +396,8 @@ export {
   type IncomingRequestHandler,
   MessageTrigger,
   type MeterValuesRequest,
+  type OCPPCommand,
+  type OCPPCommandName,
   type OutgoingRequest,
   type PendingRequestCancellationCallback,
   type PendingRequestCancellationOptions,
@@ -400,6 +407,7 @@ export {
   type ResponseType,
   type StatusNotificationOptions,
   type StatusNotificationRequest,
+  UNKNOWN_OCPP_COMMAND,
 } from './ocpp/Requests.js'
 export {
   type Reservation,

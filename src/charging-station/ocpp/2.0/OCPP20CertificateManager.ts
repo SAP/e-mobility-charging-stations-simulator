@@ -20,6 +20,7 @@ import {
 import {
   atomicWriteFile,
   convertToDate,
+  getEnumStringValue,
   getErrorMessage,
   isEmpty,
   isNotEmptyArray,
@@ -288,10 +289,14 @@ export class OCPP20CertificateManager {
         .map(dirent => dirent.name)
 
       for (const certType of certTypes) {
-        if (filterTypes != null && isNotEmptyArray(filterTypes)) {
-          if (!filterTypes.includes(certType as InstallCertificateUseEnumType)) {
-            continue
-          }
+        const certificateType = getEnumStringValue(InstallCertificateUseEnumType, certType)
+        if (certificateType == null) continue
+        if (
+          filterTypes != null &&
+          isNotEmptyArray(filterTypes) &&
+          !filterTypes.includes(certificateType)
+        ) {
+          continue
         }
 
         const certTypeDir = join(basePath, certType)
@@ -307,9 +312,7 @@ export class OCPP20CertificateManager {
 
             certificateHashDataChain.push({
               certificateHashData: hashData,
-              certificateType: this.mapInstallTypeToGetType(
-                certType as InstallCertificateUseEnumType
-              ),
+              certificateType: this.mapInstallTypeToGetType(certificateType),
             })
           } catch {
             // Skip unreadable or unparsable certificate file

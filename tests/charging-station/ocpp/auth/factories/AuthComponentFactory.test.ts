@@ -52,7 +52,7 @@ await describe('AuthComponentFactory', async () => {
 
     await it('should throw error for unsupported version', () => {
       const { station: chargingStation } = createMockChargingStation({
-        stationInfo: { ocppVersion: 'VERSION_15' as OCPPVersion },
+        stationInfo: { ocppVersion: 'VERSION_15' as unknown as OCPPVersion },
       })
 
       assert.throws(() => AuthComponentFactory.createAdapter(chargingStation), {

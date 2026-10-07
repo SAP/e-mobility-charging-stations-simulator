@@ -34,16 +34,8 @@
         <ToggleButton
           :id="'add-charging-stations'"
           :key="state.renderAddChargingStations"
-          :off="
-            () => {
-              $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
-            }
-          "
-          :on="
-            () => {
-              $router.push({ name: ROUTE_NAMES.ADD_CHARGING_STATIONS }).catch(() => undefined)
-            }
-          "
+          :off="showChargingStations"
+          :on="showAddChargingStations"
           :shared="true"
         >
           Add Charging Stations
@@ -153,6 +145,14 @@ const clearToggleButtons = (): void => {
 const $chargingStations = useChargingStations()
 const $route = useRoute()
 const $router = useRouter()
+
+const showChargingStations = (): void => {
+  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
+}
+
+const showAddChargingStations = (): void => {
+  $router.push({ name: ROUTE_NAMES.ADD_CHARGING_STATIONS }).catch(() => undefined)
+}
 
 const { activeSkinId, availableSkins: skins, switchSkin } = useSkin()
 const { activeThemeId, availableThemes, switchTheme } = useTheme()

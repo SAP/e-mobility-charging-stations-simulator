@@ -35,6 +35,7 @@ import {
   standardCleanup,
   withMockTimers,
 } from '../../helpers/TestLifecycleHelpers.js'
+import { WebSocketReadyState } from '../mocks/MockWebSocket.js'
 import { TEST_HASH_ID, TEST_UUID, TEST_UUID_2 } from './UIServerTestConstants.js'
 import {
   awaitFinish,
@@ -193,7 +194,7 @@ await describe('UIWebSocketServer', async () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const ws = createMockUIWebSocket()
-    ws.readyState = 0
+    ws.readyState = WebSocketReadyState.CONNECTING
 
     server.addResponseHandler(TEST_UUID, ws)
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
@@ -206,7 +207,7 @@ await describe('UIWebSocketServer', async () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const ws = createMockUIWebSocket()
-    ws.readyState = 1
+    ws.readyState = WebSocketReadyState.OPEN
     ws.send = (): void => {
       throw new Error('WebSocket send error')
     }

@@ -175,7 +175,11 @@ await describe('AbstractUIService', async () => {
 
     const service = server.getUIService(ProtocolVersion['0.0.1'])
 
-    const request = createProtocolRequest(TEST_UUID, 'UnknownProcedure' as ProcedureName, {})
+    const request = createProtocolRequest(
+      TEST_UUID,
+      'UnknownProcedure' as unknown as ProcedureName,
+      {}
+    )
 
     assert.notStrictEqual(service, undefined)
     if (service != null) {

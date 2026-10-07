@@ -52,25 +52,8 @@
       <ToggleButton
         v-if="connector.transactionStarted !== true"
         :id="`${hashId}-${evseId ?? 0}-${connectorId}-start-transaction`"
-        :off="
-          () => {
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
-          }
-        "
-        :on="
-          () => {
-            $router
-              .push({
-                name: ROUTE_NAMES.START_TRANSACTION,
-                params: { hashId, chargingStationId, connectorId },
-                query: {
-                  ...(evseId != null ? { evseId: String(evseId) } : {}),
-                  ...(ocppVersion != null ? { ocppVersion } : {}),
-                },
-              })
-              .catch(() => undefined)
-          }
-        "
+        :off="showChargingStations"
+        :on="showStartTransaction"
         :shared="true"
         @clicked="$emit('need-refresh')"
       >
@@ -97,6 +80,7 @@
 import type { ChargePointStatus, ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
 import {
+  getEnumStringValue,
   isOCPP20x,
   OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
@@ -126,6 +110,27 @@ defineEmits<{ 'need-refresh': [] }>()
 
 const $router = useRouter()
 
+const showChargingStations = (): void => {
+  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
+}
+
+const showStartTransaction = (): void => {
+  $router
+    .push({
+      name: ROUTE_NAMES.START_TRANSACTION,
+      params: {
+        chargingStationId: props.chargingStationId,
+        connectorId: props.connectorId,
+        hashId: props.hashId,
+      },
+      query: {
+        ...(props.evseId != null ? { evseId: String(props.evseId) } : {}),
+        ...(props.ocppVersion != null ? { ocppVersion: props.ocppVersion } : {}),
+      },
+    })
+    .catch(() => undefined)
+}
+
 const {
   lockConnector,
   setConnectorStatus,
@@ -148,9 +153,9 @@ const statusOptions = computed(() =>
 const errorCodeOptions = Object.values(OCPP16ChargePointErrorCode)
 const selectedStatus = ref<ChargePointStatus>(
   isOCPP20x(props.ocppVersion)
-    ? ((props.connector.status as OCPP20ConnectorStatusEnumType | undefined) ??
+    ? (getEnumStringValue(OCPP20ConnectorStatusEnumType, props.connector.status) ??
         OCPP20ConnectorStatusEnumType.AVAILABLE)
-    : ((props.connector.status as OCPP16ChargePointStatus | undefined) ??
+    : (getEnumStringValue(OCPP16ChargePointStatus, props.connector.status) ??
         OCPP16ChargePointStatus.AVAILABLE)
 )
 const selectedErrorCode = ref<OCPP16ChargePointErrorCode>(OCPP16ChargePointErrorCode.NO_ERROR)

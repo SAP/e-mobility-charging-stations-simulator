@@ -11,6 +11,7 @@ import { RegistrationStatusEnumType, RequestCommand } from '../../src/types/inde
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
+import { WebSocketReadyState } from './mocks/MockWebSocket.js'
 
 await describe('ChargingStation Resilience', async () => {
   await describe('Error Recovery and Resilience', async () => {
@@ -45,7 +46,7 @@ await describe('ChargingStation Resilience', async () => {
       mocks.webSocket.simulateClose(1006, 'Connection lost')
 
       // Assert - WebSocket should be in CLOSED state
-      assert.strictEqual(mocks.webSocket.readyState, 3) // CLOSED
+      assert.strictEqual(mocks.webSocket.readyState, WebSocketReadyState.CLOSED)
     })
 
     await it('should track connection retry count', () => {
@@ -183,7 +184,7 @@ await describe('ChargingStation Resilience', async () => {
 
       // Assert - Station should remain in valid state
       assert.strictEqual(station.getNumberOfConnectors() > 0, true)
-      assert.strictEqual(mocks.webSocket.readyState, 3) // CLOSED
+      assert.strictEqual(mocks.webSocket.readyState, WebSocketReadyState.CLOSED)
     })
 
     await it('should handle boot notification rejected state', () => {
@@ -319,7 +320,7 @@ await describe('ChargingStation Resilience', async () => {
       const testMessage = '[2,"test-msg-1","BootNotification",{}]'
 
       // Ensure WebSocket is closed
-      mocks.webSocket.readyState = 3 // CLOSED
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
       // Act - Buffer a message
       station.bufferMessage(testMessage)
@@ -339,7 +340,7 @@ await describe('ChargingStation Resilience', async () => {
       const testMessage = '[2,"test-msg-2","Heartbeat",{}]'
 
       // Ensure WebSocket is open
-      mocks.webSocket.readyState = 1 // OPEN
+      mocks.webSocket.readyState = WebSocketReadyState.OPEN
       mocks.webSocket.simulateOpen()
 
       // Act - Send message
@@ -361,7 +362,7 @@ await describe('ChargingStation Resilience', async () => {
       const msg3 = '[2,"msg-3","StatusNotification",{}]'
 
       // Simulate offline: close the connection
-      mocks.webSocket.readyState = 3 // CLOSED
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
       // Act - Buffer multiple messages
       station.bufferMessage(msg1)
@@ -390,7 +391,7 @@ await describe('ChargingStation Resilience', async () => {
         '[2,"m5","Cmd5",{}]',
       ]
 
-      mocks.webSocket.readyState = 3 // CLOSED
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
       // Act - Buffer all messages
       for (const msg of messages) {
@@ -412,7 +413,7 @@ await describe('ChargingStation Resilience', async () => {
       const mocks = result.mocks
       const messageCount = 100
 
-      mocks.webSocket.readyState = 3 // CLOSED
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
       // Act - Buffer many messages
       for (let i = 0; i < messageCount; i++) {
@@ -445,7 +446,7 @@ await describe('ChargingStation Resilience', async () => {
       const mocks = result.mocks
       const testMessage = '[2,"offline-msg","Test",{}]'
 
-      mocks.webSocket.readyState = 3 // CLOSED
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
       // Act - Buffer message
       station.bufferMessage(testMessage)
@@ -466,7 +467,7 @@ await describe('ChargingStation Resilience', async () => {
       const mocks = result.mocks
       const testMessage = '[2,"clear-test","Command",{}]'
 
-      mocks.webSocket.readyState = 3 // CLOSED
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
       // Act - Buffer message
       station.bufferMessage(testMessage)
@@ -497,7 +498,7 @@ await describe('ChargingStation Resilience', async () => {
       // Act - Perform multiple buffer/disconnect cycles
       for (let cycle = 0; cycle < cycleCount; cycle++) {
         // Simulate disconnection
-        mocks.webSocket.readyState = 3 // CLOSED
+        mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
         // Buffer messages in this cycle
         for (let i = 0; i < messagesPerCycle; i++) {

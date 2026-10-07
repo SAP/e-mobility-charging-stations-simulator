@@ -13,6 +13,7 @@ import { Constants } from '../../src/utils/index.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS, TEST_ONE_HOUR_MS } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
+import { WebSocketReadyState } from './mocks/MockWebSocket.js'
 
 await describe('ChargingStation Configuration Management', async () => {
   // ===== B02/B03 BOOT NOTIFICATION BEHAVIOR TESTS =====
@@ -460,7 +461,7 @@ await describe('ChargingStation Configuration Management', async () => {
       assert.strictEqual(station.isWebSocketConnectionOpened(), true)
 
       // Act - change ready state to CLOSED
-      mocks.webSocket.readyState = 3 // WebSocketReadyState.CLOSED
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
       // Assert
       assert.strictEqual(station.isWebSocketConnectionOpened(), false)
@@ -473,7 +474,7 @@ await describe('ChargingStation Configuration Management', async () => {
       const mocks = result.mocks
 
       // Act
-      mocks.webSocket.readyState = 0 // WebSocketReadyState.CONNECTING
+      mocks.webSocket.readyState = WebSocketReadyState.CONNECTING
 
       // Assert
       assert.strictEqual(station.isWebSocketConnectionOpened(), false)
@@ -486,7 +487,7 @@ await describe('ChargingStation Configuration Management', async () => {
       const mocks = result.mocks
 
       // Act
-      mocks.webSocket.readyState = 2 // WebSocketReadyState.CLOSING
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSING
 
       // Assert
       assert.strictEqual(station.isWebSocketConnectionOpened(), false)
@@ -632,7 +633,7 @@ await describe('ChargingStation Configuration Management', async () => {
       let openEventFired = false
 
       // First close the connection to test opening
-      mocks.webSocket.readyState = 3 // CLOSED
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
       // Set up listener
       mocks.webSocket.on('open', () => {
@@ -644,7 +645,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
       // Assert
       assert.strictEqual(openEventFired, true)
-      assert.strictEqual(mocks.webSocket.readyState, 1) // WebSocketReadyState.OPEN
+      assert.strictEqual(mocks.webSocket.readyState, WebSocketReadyState.OPEN)
     })
 
     await it('should emit close event and set readyState via simulateClose()', () => {
@@ -664,7 +665,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
       // Assert
       assert.strictEqual(closeCode, 1001)
-      assert.strictEqual(mocks.webSocket.readyState, 3) // WebSocketReadyState.CLOSED
+      assert.strictEqual(mocks.webSocket.readyState, WebSocketReadyState.CLOSED)
     })
 
     await it('should emit error event via simulateError()', () => {
@@ -741,7 +742,7 @@ await describe('ChargingStation Configuration Management', async () => {
       const mocks = result.mocks
 
       // Close the WebSocket
-      mocks.webSocket.readyState = 3 // WebSocketReadyState.CLOSED
+      mocks.webSocket.readyState = WebSocketReadyState.CLOSED
 
       // Act & Assert
       assert.throws(

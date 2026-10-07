@@ -1,17 +1,34 @@
+import { BaseError } from '../../../exception/index.js'
 import {
   type ChargingStationInfo,
   type MeterValueContext,
   type MeterValuePhase,
   type OCPP16BootNotificationRequest,
-  type OCPP16MeterValueContext,
+  OCPP16MeterValueContext,
   OCPP16MeterValueFormat,
   OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
+  OCPP16MeterValuePhase,
+  OCPP16MeterValueUnit,
   type OCPP16SampledValue,
   type OCPP16SignedMeterValue,
   type SampledValueTemplate,
 } from '../../../types/index.js'
+import { getEnumStringValue } from '../../../utils/index.js'
 import { resolveSampledValueFields } from '../OCPPServiceUtils.js'
+
+const resolveOCPP16EnumValue = <T extends string>(
+  enumObject: Readonly<Record<string, T>>,
+  value: string | undefined,
+  fieldName: string,
+  providedValue: string | undefined
+): T | undefined => {
+  const resolvedValue = getEnumStringValue(enumObject, value)
+  if (providedValue != null && resolvedValue == null) {
+    throw new BaseError(`Invalid OCPP 1.6 sampled value ${fieldName} '${providedValue}'`)
+  }
+  return resolvedValue
+}
 
 export const buildOCPP16BootNotificationRequest = (
   stationInfo: ChargingStationInfo
@@ -51,15 +68,48 @@ export function buildOCPP16SampledValue (
   context?: MeterValueContext,
   phase?: MeterValuePhase
 ): OCPP16SampledValue {
+  if (sampledValueTemplate.unitOfMeasure != null) {
+    throw new BaseError('Invalid OCPP 1.6 sampled value unitOfMeasure')
+  }
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
+  const resolvedContext = resolveOCPP16EnumValue(
+    OCPP16MeterValueContext,
+    fields.context,
+    'context',
+    context ?? sampledValueTemplate.context
+  )
+  const resolvedLocation = resolveOCPP16EnumValue(
+    OCPP16MeterValueLocation,
+    fields.location,
+    'location',
+    sampledValueTemplate.location
+  )
+  const resolvedMeasurand = resolveOCPP16EnumValue(
+    OCPP16MeterValueMeasurand,
+    fields.measurand,
+    'measurand',
+    sampledValueTemplate.measurand
+  )
+  const resolvedPhase = resolveOCPP16EnumValue(
+    OCPP16MeterValuePhase,
+    fields.phase,
+    'phase',
+    phase ?? sampledValueTemplate.phase
+  )
+  const resolvedUnit = resolveOCPP16EnumValue(
+    OCPP16MeterValueUnit,
+    fields.unit,
+    'unit',
+    sampledValueTemplate.unit
+  )
   return {
-    context: fields.context,
-    location: fields.location,
-    measurand: fields.measurand,
-    ...(fields.unit != null && { unit: fields.unit }),
+    ...(resolvedContext != null && { context: resolvedContext }),
+    ...(resolvedLocation != null && { location: resolvedLocation }),
+    ...(resolvedMeasurand != null && { measurand: resolvedMeasurand }),
+    ...(resolvedUnit != null && { unit: resolvedUnit }),
     value: fields.value.toString(),
-    ...(fields.phase != null && { phase: fields.phase }),
-  } as OCPP16SampledValue
+    ...(resolvedPhase != null && { phase: resolvedPhase }),
+  }
 }
 
 /**

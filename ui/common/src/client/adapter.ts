@@ -1,6 +1,6 @@
-import type { DataConverter, WebSocketReadyState } from './types.js'
+import type { DataConverter } from './types.js'
 
-import { type WebSocketLike } from './types.js'
+import { type WebSocketLike, WebSocketReadyState } from './types.js'
 
 interface RawWebSocket {
   close(code?: number, reason?: string): void
@@ -86,7 +86,18 @@ export const createWsAdapter = (ws: RawWebSocket, options: WsAdapterOptions): We
     },
 
     get readyState (): WebSocketReadyState {
-      return ws.readyState
+      switch (ws.readyState) {
+        case 0:
+          return WebSocketReadyState.CONNECTING
+        case 1:
+          return WebSocketReadyState.OPEN
+        case 2:
+          return WebSocketReadyState.CLOSING
+        case 3:
+          return WebSocketReadyState.CLOSED
+        default:
+          throw new RangeError(`Unknown WebSocket ready state: ${ws.readyState.toString()}`)
+      }
     },
 
     send (data: string): void {

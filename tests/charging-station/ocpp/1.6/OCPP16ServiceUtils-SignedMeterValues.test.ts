@@ -198,6 +198,33 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       assert.strictEqual(signedSamples[0].context, OCPP16MeterValueContext.TRANSACTION_BEGIN)
     })
 
+    await it('should not sign when the configured signing method is invalid', () => {
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionId = 42
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+      upsertConfigurationKey(
+        station,
+        OCPP16VendorParametersKey.SampledDataSignStartedReadings,
+        'true'
+      )
+      upsertConfigurationKey(
+        station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SigningMethod, 'invalid')
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 5000)
+
+      assert.strictEqual(
+        meterValue.sampledValue.some(
+          sampledValue => sampledValue.format === OCPP16MeterValueFormat.SIGNED_DATA
+        ),
+        false
+      )
+    })
+
     await it('should project only the ordinary DC Inlet begin sample while signing the raw Outlet reading', () => {
       assert.ok(station.stationInfo != null)
       station.stationInfo.conversionEfficiency = 0.8
