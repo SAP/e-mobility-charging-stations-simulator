@@ -13,7 +13,7 @@
       "onFail": "ignore"
     }
   },
-  "packageManager": "pnpm@12.9.1",
+  "packageManager": "pnpm@12.10.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -79,7 +79,7 @@
     "@mikro-orm/core": "^6.6.17",
     "@mikro-orm/mariadb": "^6.6.17",
     "@mikro-orm/reflection": "^6.6.17",
-    "@modelcontextprotocol/sdk": "~1.32.0",
+    "@modelcontextprotocol/sdk": "~1.32.1",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^6.2.2",
