@@ -6,7 +6,7 @@
     "node": ">=22.0.0",
     "pnpm": ">=10.9.0"
   },
-  "packageManager": "pnpm@12.9.1",
+  "packageManager": "pnpm@12.10.0",
   "type": "module",
   "bin": {
     "evse-cli": "./dist/cli.js"
