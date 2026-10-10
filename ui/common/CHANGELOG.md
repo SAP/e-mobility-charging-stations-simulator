@@ -2,30 +2,28 @@
 
 ## [4.13.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.12.0...ui-common@v4.13.0) (2026-10-10)
 
-
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#2097](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2097)) ([37a9f16](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/37a9f166373dccded61c7281a6ebd9dba18db33b))
-* **deps:** update all non-major dependencies ([#2099](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2099)) ([3c77f0e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3c77f0eb9d53c8b0f9f6e5ed6a5753bdbaee80e1))
-* **deps:** update all non-major dependencies ([#2101](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2101)) ([33772c9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/33772c9ed44e78cc1bb241d7ee6e999557b580b3))
-* **deps:** update all non-major dependencies ([#2104](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2104)) ([48957a1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/48957a16226d7baf6a4269b5622c996c17906b02))
-* **deps:** update all non-major dependencies ([#2113](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2113)) ([e9ff526](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e9ff526ff97b7b3c9ec4f701df9b38948e1374c0))
-* **deps:** update all non-major dependencies ([#2114](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2114)) ([95b5394](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/95b5394d3d8437ab7dbebbed131f9c2cc46cf128))
-* **deps:** update all non-major dependencies ([#2117](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2117)) ([6304d02](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6304d0294cdfba0b4ccc04a68861b5596848a981))
-* **deps:** update all non-major dependencies ([#2118](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2118)) ([e13b903](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e13b903b23427290b54e7fa3a0865c0600ad57a4))
-* **deps:** update all non-major dependencies ([#2125](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2125)) ([3dd745d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3dd745db6fb03c655e59a43c51498d180364f72c))
-* **deps:** update all non-major dependencies ([#2132](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2132)) ([e970a4a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e970a4a64c1da79613362083be3e5dbb26f7e272))
-* **deps:** update all non-major dependencies ([#2133](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2133)) ([cedfb45](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cedfb459e948e1e68f2718f730b2c654e45c2342))
-* **deps:** update all non-major dependencies ([#2135](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2135)) ([e5269d7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e5269d73a2abc96a132be067c43ba11f75d39dbe))
-* **deps:** update all non-major dependencies ([#2140](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2140)) ([1968d3a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1968d3a19616d99fd52554fda24fd4bea8da644a))
-* **deps:** update all non-major dependencies ([#2144](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2144)) ([3c5b406](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3c5b4065adf6dcc876c1f0c034122c3d71de38f9))
-* **deps:** update dependency zod to ^4.5.2 ([#2103](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2103)) ([d01cb51](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d01cb51ec4ba9e82a80d7ec4d90b554d0408fada))
-* validate protocol inputs after dependency refresh ([#2128](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2128)) ([47e9f8f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/47e9f8f695b8a258c552b9ee1d306fbb80995780))
-
+- **deps:** update all non-major dependencies ([#2097](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2097)) ([37a9f16](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/37a9f166373dccded61c7281a6ebd9dba18db33b))
+- **deps:** update all non-major dependencies ([#2099](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2099)) ([3c77f0e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3c77f0eb9d53c8b0f9f6e5ed6a5753bdbaee80e1))
+- **deps:** update all non-major dependencies ([#2101](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2101)) ([33772c9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/33772c9ed44e78cc1bb241d7ee6e999557b580b3))
+- **deps:** update all non-major dependencies ([#2104](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2104)) ([48957a1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/48957a16226d7baf6a4269b5622c996c17906b02))
+- **deps:** update all non-major dependencies ([#2113](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2113)) ([e9ff526](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e9ff526ff97b7b3c9ec4f701df9b38948e1374c0))
+- **deps:** update all non-major dependencies ([#2114](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2114)) ([95b5394](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/95b5394d3d8437ab7dbebbed131f9c2cc46cf128))
+- **deps:** update all non-major dependencies ([#2117](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2117)) ([6304d02](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6304d0294cdfba0b4ccc04a68861b5596848a981))
+- **deps:** update all non-major dependencies ([#2118](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2118)) ([e13b903](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e13b903b23427290b54e7fa3a0865c0600ad57a4))
+- **deps:** update all non-major dependencies ([#2125](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2125)) ([3dd745d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3dd745db6fb03c655e59a43c51498d180364f72c))
+- **deps:** update all non-major dependencies ([#2132](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2132)) ([e970a4a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e970a4a64c1da79613362083be3e5dbb26f7e272))
+- **deps:** update all non-major dependencies ([#2133](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2133)) ([cedfb45](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cedfb459e948e1e68f2718f730b2c654e45c2342))
+- **deps:** update all non-major dependencies ([#2135](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2135)) ([e5269d7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e5269d73a2abc96a132be067c43ba11f75d39dbe))
+- **deps:** update all non-major dependencies ([#2140](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2140)) ([1968d3a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1968d3a19616d99fd52554fda24fd4bea8da644a))
+- **deps:** update all non-major dependencies ([#2144](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2144)) ([3c5b406](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3c5b4065adf6dcc876c1f0c034122c3d71de38f9))
+- **deps:** update dependency zod to ^4.5.2 ([#2103](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2103)) ([d01cb51](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d01cb51ec4ba9e82a80d7ec4d90b554d0408fada))
+- validate protocol inputs after dependency refresh ([#2128](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2128)) ([47e9f8f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/47e9f8f695b8a258c552b9ee1d306fbb80995780))
 
 ### ✨ Polish
 
-* adopt canonical helpers over reimplementations ([#2120](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2120)) ([bbe3e3b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bbe3e3b6581b1e44eadaec06230687233c37c5b2))
+- adopt canonical helpers over reimplementations ([#2120](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2120)) ([bbe3e3b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bbe3e3b6581b1e44eadaec06230687233c37c5b2))
 
 ## [4.12.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.11.0...ui-common@v4.12.0) (2026-08-23)
 
