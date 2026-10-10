@@ -7,7 +7,7 @@
     "node": ">=22.0.0",
     "pnpm": ">=10.9.0"
   },
-  "packageManager": "pnpm@12.10.0",
+  "packageManager": "pnpm@12.10.1",
   "type": "module",
   "scripts": {
     "build": "vite build",
