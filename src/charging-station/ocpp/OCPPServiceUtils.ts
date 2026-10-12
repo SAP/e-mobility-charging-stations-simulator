@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import type { ChargingStation } from '../../charging-station/index.js'
 import type {
   BootReasonEnumType,
   OCPP20RequiredVariableName,
@@ -14,9 +15,8 @@ import type {
 
 import {
   buildConfigKey,
-  type ChargingStation,
   getConfigurationKey,
-} from '../../charging-station/index.js'
+} from '../../charging-station/core/index.js'
 import {
   advanceStationEnergyRegister,
   areMeterValueUnitsCompatible,

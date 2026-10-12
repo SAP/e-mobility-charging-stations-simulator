@@ -15,9 +15,10 @@ import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import { create } from 'tar'
 
+import type { ChargingStation } from '../../../charging-station/index.js'
+
 import {
   canProceedChargingProfile,
-  type ChargingStation,
   checkChargingStationState,
   getConfigurationKey,
   getConnectorChargingProfiles,
@@ -26,7 +27,7 @@ import {
   removeExpiredReservations,
   resetAuthorizeConnectorStatus,
   setConfigurationKeyValue,
-} from '../../../charging-station/index.js'
+} from '../../../charging-station/core/index.js'
 import {
   captureTransactionIntervalState,
   completeTransactionIntervalState,
