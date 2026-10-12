@@ -7,8 +7,8 @@ export {
   STATE_FILE_VERSION,
   writeStateFile,
 } from './BootstrapStateUtils.js'
-export * from './core/index.js'
 export type { ChargingStation } from './ChargingStation.js'
+export * from './core/index.js'
 export type { IBootstrap } from './IBootstrap.js'
 export { IdTagsCache } from './IdTagsCache.js'
 export { SharedLRUCache } from './SharedLRUCache.js'

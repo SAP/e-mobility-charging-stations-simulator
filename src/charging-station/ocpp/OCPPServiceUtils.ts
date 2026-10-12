@@ -13,10 +13,7 @@ import type {
   OCPP20VendorVariableName,
 } from '../../types/index.js'
 
-import {
-  buildConfigKey,
-  getConfigurationKey,
-} from '../../charging-station/core/index.js'
+import { buildConfigKey, getConfigurationKey } from '../../charging-station/core/index.js'
 import {
   advanceStationEnergyRegister,
   areMeterValueUnitsCompatible,
