@@ -7,7 +7,7 @@
     "node": ">=22.0.0",
     "pnpm": ">=10.9.0"
   },
-  "packageManager": "pnpm@12.10.1",
+  "packageManager": "pnpm@12.11.2",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -34,7 +34,7 @@
   "devDependencies": {
     "@tsconfig/node24": "^24.0.5",
     "@types/jsdom": "^30.0.0",
-    "@vitejs/plugin-vue": "^6.0.9",
+    "@vitejs/plugin-vue": "^6.0.10",
     "@vitejs/plugin-vue-jsx": "^5.1.6",
     "@vitest/coverage-v8": "^5.0.3",
     "@vue/test-utils": "^2.5.1",
