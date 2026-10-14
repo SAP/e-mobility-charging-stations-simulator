@@ -227,7 +227,7 @@ importers:
         specifier: ^8.22.0
         version: 8.22.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       zod:
-        specifier: ^4.6.5
+        specifier: ^4.6.6
         version: 4.6.6
     devDependencies:
       '@commitlint/cli':
@@ -270,7 +270,7 @@ importers:
         specifier: ^10.12.0
         version: 10.12.0(jiti@2.6.1)(supports-color@7.2.0)
       eslint-plugin-jsdoc:
-        specifier: ^65.2.4
+        specifier: ^65.3.0
         version: 65.3.1(eslint@10.12.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       eslint-plugin-perfectionist:
         specifier: ^5.12.1
@@ -356,7 +356,7 @@ importers:
   ui/common:
     dependencies:
       zod:
-        specifier: ^4.6.5
+        specifier: ^4.6.6
         version: 4.6.6
 
   ui/web:
@@ -411,7 +411,7 @@ importers:
         specifier: ^5.0.3
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(@vitest/coverage-v8@5.0.4)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.6.1)(tsx@4.23.15)(yaml@2.9.1))
       vue-tsc:
-        specifier: ^3.3.12
+        specifier: ^3.3.13
         version: 3.3.13(typescript@6.0.3)
 
 packages:
