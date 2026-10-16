@@ -2,15 +2,15 @@ import type { ValidateFunction } from 'ajv'
 
 import { secondsToMilliseconds } from 'date-fns'
 
+import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPP16IncomingRequestCommand } from '../../../types/index.js'
 
 import {
   addConfigurationKey,
-  type ChargingStation,
   getConfigurationKey,
   hasReservationExpired,
   resetConnectorStatus,
-} from '../../../charging-station/index.js'
+} from '../../../charging-station/core/index.js'
 import {
   AvailabilityType,
   ChargingStationEvents,

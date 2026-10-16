@@ -4,7 +4,8 @@ import { dirname, join } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import { BaseError } from '../exception/index.js'
+// Direct path: the exception/index.js barrel re-exports OCPPError, causing a TDZ cycle.
+import { BaseError } from '../exception/BaseError.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,

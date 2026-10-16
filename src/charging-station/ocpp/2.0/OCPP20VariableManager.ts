@@ -1,5 +1,7 @@
 import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
 
+import type { ChargingStation } from '../../index.js'
+
 import { BaseError } from '../../../exception/index.js'
 import {
   AttributeEnumType,
@@ -27,10 +29,9 @@ import {
 import {
   addConfigurationKey,
   buildConfigKey,
-  type ChargingStation,
   getConfigurationKey,
   setConfigurationKeyValue,
-} from '../../index.js'
+} from '../../core/index.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 import {
   applyPostProcess,
