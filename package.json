@@ -9,7 +9,7 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "24.22.0",
+      "version": "24.22.1",
       "onFail": "ignore"
     }
   },
@@ -102,8 +102,8 @@
     "utf-8-validate": "^6.0.6"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.3",
-    "@commitlint/config-conventional": "^21.2.3",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "@cspell/eslint-plugin": "^10.4.0",
     "@eslint/js": "^10.0.1",
     "@mikro-orm/cli": "^6.6.17",
@@ -114,8 +114,8 @@
     "esbuild": "^0.28.2",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
-    "eslint": "^10.12.0",
-    "eslint-plugin-jsdoc": "^65.3.6",
+    "eslint": "^10.13.0",
+    "eslint-plugin-jsdoc": "^65.3.12",
     "eslint-plugin-perfectionist": "^5.12.1",
     "eslint-plugin-vue": "^10.11.1",
     "husky": "^9.1.7",
