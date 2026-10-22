@@ -838,12 +838,7 @@ export class OCPP16ServiceUtils {
    * @returns Factory options object for OCPP 1.6 validators
    */
   public static createPayloadOptions = (moduleName: string, methodName: string) =>
-    PayloadValidatorOptions(
-      OCPPVersion.VERSION_16,
-      'json-schemas/ocpp/1.6',
-      moduleName,
-      methodName
-    )
+    PayloadValidatorOptions(OCPPVersion.VERSION_16, 'json-schemas/ocpp/1.6', moduleName, methodName)
 
   /**
    * OCPP 1.6 Request Service validator configurations
