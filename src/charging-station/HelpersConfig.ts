@@ -49,10 +49,7 @@ const moduleName = 'HelpersConfig'
  */
 export const buildTemplateName = (templateFile: string): string => {
   if (isAbsolute(templateFile)) {
-    templateFile = relative(
-      resolve(join(resolveAssetsDir(), 'station-templates')),
-      templateFile
-    )
+    templateFile = relative(resolve(join(resolveAssetsDir(), 'station-templates')), templateFile)
   }
   const templateFileParsedPath = parse(templateFile)
   return join(templateFileParsedPath.dir, templateFileParsedPath.name)
