@@ -110,7 +110,7 @@ export class Configuration {
     } else {
       console.error(
         `${chalk.green(configurationLogPrefix())} ${chalk.red(
-          "Configuration file './src/assets/config.json' not found, using default configuration"
+          `Configuration file '${configurationFile}' not found, using default configuration`
         )}`
       )
       Configuration.configurationData = {

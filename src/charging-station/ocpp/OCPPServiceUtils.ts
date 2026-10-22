@@ -3,8 +3,7 @@ import _ajvFormats from 'ajv-formats'
 import { isDate } from 'date-fns'
 import { randomInt } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 
 import type {
   BootReasonEnumType,
@@ -35,6 +34,7 @@ import {
   truncateTransactionIntervalValue,
 } from '../../charging-station/meter-values/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
+import { resolveAssetsDir } from '../../resolveAssetsDir.js'
 import {
   type BootNotificationRequest,
   type ChargingStationInfo,
@@ -3344,7 +3344,7 @@ export const PayloadValidatorOptions = (
 /**
  * Parses and loads a JSON schema file for OCPP payload validation.
  * Handles file reading and JSON parsing for schema validation.
- * @param relativePath - Path to the schema file relative to the OCPP utils directory
+ * @param relativePath - Path to the schema file relative to the assets directory
  * @param ocppVersion - The OCPP version for error logging context
  * @param moduleName - Optional module name for error logging
  * @param methodName - Optional method name for error logging
@@ -3357,26 +3357,18 @@ function parseJsonSchemaFile<T extends JsonType> (
   moduleName?: string,
   methodName?: string
 ): JSONSchemaType<T> {
-  const baseDir = dirname(fileURLToPath(import.meta.url))
-  // Primary: resolve from file directory (production esbuild bundle)
-  const primaryPath = join(baseDir, relativePath)
+  const schemaPath = join(resolveAssetsDir(), relativePath)
   try {
-    return JSON.parse(readFileSync(primaryPath, 'utf8')) as JSONSchemaType<T>
-  } catch (primaryError) {
-    // Fallback: resolve from source root (development/test with tsx)
-    const fallbackPath = join(baseDir, '..', '..', relativePath)
-    try {
-      return JSON.parse(readFileSync(fallbackPath, 'utf8')) as JSONSchemaType<T>
-    } catch {
-      handleFileException(
-        primaryPath,
-        FileType.JsonSchema,
-        primaryError as NodeJS.ErrnoException,
-        ocppServiceUtilsLogPrefix(ocppVersion, moduleName, methodName)
-      )
-      // handleFileException throws by default; this satisfies the compiler
-      throw primaryError
-    }
+    return JSON.parse(readFileSync(schemaPath, 'utf8')) as JSONSchemaType<T>
+  } catch (error) {
+    handleFileException(
+      schemaPath,
+      FileType.JsonSchema,
+      error as NodeJS.ErrnoException,
+      ocppServiceUtilsLogPrefix(ocppVersion, moduleName, methodName)
+    )
+    // handleFileException throws by default; this satisfies the compiler
+    throw error
   }
 }
 

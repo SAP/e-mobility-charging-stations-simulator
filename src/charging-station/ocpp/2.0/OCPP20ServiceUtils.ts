@@ -1922,7 +1922,7 @@ export class OCPP20ServiceUtils {
   public static createPayloadOptions = (moduleName: string, methodName: string) =>
     PayloadValidatorOptions(
       OCPPVersion.VERSION_201,
-      'assets/json-schemas/ocpp/2.0',
+      'json-schemas/ocpp/2.0',
       moduleName,
       methodName
     )

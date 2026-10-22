@@ -1,10 +1,10 @@
 import { type McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readdir, readFile } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join, resolve } from 'node:path'
 
 import type { AbstractUIServer } from '../AbstractUIServer.js'
 
+import { resolveAssetsDir } from '../../../resolveAssetsDir.js'
 import { MapStringifyFormat, OCPPVersion } from '../../../types/index.js'
 import { JSONStringify } from '../../../utils/index.js'
 
@@ -73,8 +73,7 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
 const OCPP_SCHEMA_VERSIONS = [OCPPVersion.VERSION_16, OCPPVersion.VERSION_20] as const
 
 const getSchemaBaseDir = (): string => {
-  const currentDir = dirname(fileURLToPath(import.meta.url))
-  return join(currentDir, 'assets', 'json-schemas', 'ocpp')
+  return join(resolveAssetsDir(), 'json-schemas', 'ocpp')
 }
 
 // Path traversal guard: validate that the resolved path stays within the expected base directory.

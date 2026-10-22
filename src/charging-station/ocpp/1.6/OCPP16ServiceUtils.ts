@@ -840,7 +840,7 @@ export class OCPP16ServiceUtils {
   public static createPayloadOptions = (moduleName: string, methodName: string) =>
     PayloadValidatorOptions(
       OCPPVersion.VERSION_16,
-      'assets/json-schemas/ocpp/1.6',
+      'json-schemas/ocpp/1.6',
       moduleName,
       methodName
     )
