@@ -5,13 +5,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 
 import type { IBootstrap } from '../IBootstrap.js'
 import type { AbstractUIService } from './ui-services/AbstractUIService.js'
 
 import { BaseError } from '../../exception/index.js'
+import { resolveAssetsDir } from '../../resolveAssetsDir.js'
 import {
   OCPPVersion,
   type ProcedureName,
@@ -156,7 +156,7 @@ export class UIMCPServer extends AbstractUIServer {
   }
 
   protected getSchemaBaseDir (): string {
-    return join(dirname(fileURLToPath(import.meta.url)), 'assets', 'json-schemas', 'ocpp')
+    return join(resolveAssetsDir(), 'json-schemas', 'ocpp')
   }
 
   private checkVersionCompatibility (

@@ -17,12 +17,12 @@
  *   (`import { validateStationInfo, ... } from './Helpers.js'`).
  */
 
-import { basename, dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { basename, isAbsolute, join, parse, relative, resolve } from 'node:path'
 
 import type { ChargingStation } from './ChargingStation.js'
 
 import { BaseError } from '../exception/index.js'
+import { resolveAssetsDir } from '../resolveAssetsDir.js'
 import {
   AmpereUnits,
   type ChargingStationConfiguration,
@@ -50,7 +50,7 @@ const moduleName = 'HelpersConfig'
 export const buildTemplateName = (templateFile: string): string => {
   if (isAbsolute(templateFile)) {
     templateFile = relative(
-      resolve(join(dirname(fileURLToPath(import.meta.url)), 'assets', 'station-templates')),
+      resolve(join(resolveAssetsDir(), 'station-templates')),
       templateFile
     )
   }
@@ -357,7 +357,7 @@ export const getDefaultVoltageOut = (
  */
 export const getIdTagsFile = (stationInfo: ChargingStationInfo): string | undefined => {
   return stationInfo.idTagsFile != null
-    ? join(dirname(fileURLToPath(import.meta.url)), 'assets', basename(stationInfo.idTagsFile))
+    ? join(resolveAssetsDir(), basename(stationInfo.idTagsFile))
     : undefined
 }
 
@@ -369,6 +369,6 @@ export const getIdTagsFile = (stationInfo: ChargingStationInfo): string | undefi
  */
 export const getEvProfilesFile = (stationInfo: ChargingStationInfo): string | undefined => {
   return stationInfo.evProfilesFile != null
-    ? join(dirname(fileURLToPath(import.meta.url)), 'assets', basename(stationInfo.evProfilesFile))
+    ? join(resolveAssetsDir(), basename(stationInfo.evProfilesFile))
     : undefined
 }

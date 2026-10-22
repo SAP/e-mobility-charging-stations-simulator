@@ -14,6 +14,7 @@ import type { IBootstrap } from './IBootstrap.js'
 import packageJson from '../../package.json' with { type: 'json' }
 import { BaseError, TimeoutError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
+import { resolveAssetsDir } from '../resolveAssetsDir.js'
 import {
   type ChargingStationData,
   type ChargingStationInfo,
@@ -165,7 +166,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     this.shuttingDown = false
     this.uiServerStarted = false
     this.templateStatistics = new Map<string, TemplateStatistics>()
-    this.assetsDir = join(dirname(fileURLToPath(import.meta.url)), 'assets')
+    this.assetsDir = resolveAssetsDir()
     this.configurationsDir = join(this.assetsDir, 'configurations')
     this.stateFilePath = join(this.configurationsDir, '.simulator-state.json')
     this.warnPersistStateWithoutUIServerOnce = once(() => {
