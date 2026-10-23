@@ -1182,6 +1182,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
         }
       }
+      // The supervision URL key is read as a URL by `wsConnectionUrl`; reject a
+      // value it cannot parse instead of persisting it and failing on reconnect.
+      if (
+        chargingStation.stationInfo?.supervisionUrlOcppConfiguration === true &&
+        keyToChange.key === chargingStation.stationInfo.supervisionUrlOcppKey &&
+        !URL.canParse(value)
+      ) {
+        return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
+      }
       let valueChanged = false
       if (keyToChange.value !== value) {
         setConfigurationKeyValue(chargingStation, key, value, true)
