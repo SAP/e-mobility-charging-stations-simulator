@@ -285,6 +285,19 @@ export const StationTemplateUrlSchema = z
   })
   .strict()
 
+/**
+ * Supervision URL — a URL whose scheme the `ws` WebSocket client can dial
+ * (`ws:`, `wss:`, `http:`, `https:` and `ws+unix:`). A scheme-less
+ * `host:port/path` string parses as a URL with the host as its scheme, so
+ * syntax validation alone would accept a value that fails at connection time.
+ * Shared by the configuration file and the UI request payload gate so a value
+ * is accepted by both or neither.
+ */
+export const SupervisionUrlSchema = z.url({
+  error: 'must be a WebSocket URL (ws://, wss://, http://, https:// or ws+unix://)',
+  protocol: /^(?:wss?|https?|ws\+unix)$/,
+})
+
 // ---------------------------------------------------------------
 // Top-level configuration schema
 // ---------------------------------------------------------------
@@ -356,7 +369,7 @@ export const ConfigurationSchema = z
       .union([z.string(), z.array(z.string())])
       .optional()
       .describe("@deprecated: use 'supervisionUrls' instead"),
-    supervisionUrls: z.union([z.string(), z.array(z.string())]).optional(),
+    supervisionUrls: z.union([SupervisionUrlSchema, z.array(SupervisionUrlSchema)]).optional(),
     uiServer: UIServerConfigurationSchema.optional(),
     uiWebSocketServer: z.unknown().optional().describe("@deprecated: use 'uiServer' instead"),
     useWorkerPool: z.boolean().optional().describe("@deprecated: use 'worker.processType' instead"),
