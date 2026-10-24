@@ -5,7 +5,8 @@ import chalk from 'chalk'
 import type { ConfigurationData } from '../types/index.js'
 import type { FieldError } from './FieldError.js'
 
-import { BaseError } from '../exception/index.js'
+// Direct path: the exception/index.js barrel re-exports OCPPError, causing a TDZ cycle.
+import { BaseError } from '../exception/BaseError.js'
 import {
   applyConfigurationMigration,
   coerceConfigurationVersion,

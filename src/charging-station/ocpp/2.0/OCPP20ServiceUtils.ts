@@ -1,8 +1,9 @@
 import { secondsToMilliseconds } from 'date-fns'
 
+import type { ChargingStation } from '../../../charging-station/index.js'
+
 import {
   buildConfigKey,
-  type ChargingStation,
   clearTransactionEventQueueInFlight,
   enqueueBoundedTransactionEvent,
   getConfigurationKey,
@@ -23,7 +24,7 @@ import {
   setTransactionEventQueueStaged,
   shiftBoundedTransactionEvent,
   transferDiscardedTransactionEventIntervalEnergy,
-} from '../../../charging-station/index.js'
+} from '../../../charging-station/core/index.js'
 import {
   advanceConnectorEnergyRegister,
   advanceStationEnergyRegister,

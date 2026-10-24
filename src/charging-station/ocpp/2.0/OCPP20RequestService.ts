@@ -3,7 +3,7 @@ import type { ValidateFunction } from 'ajv'
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
-import { getConfigurationKey } from '../../../charging-station/index.js'
+import { getConfigurationKey } from '../../../charging-station/core/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   type CertificateSigningUseEnumType,

@@ -1,12 +1,13 @@
 import type { ValidateFunction } from 'ajv'
 
+import type { ChargingStation } from '../../../charging-station/index.js'
+
 import {
   addConfigurationKey,
   buildConfigKey,
-  type ChargingStation,
   hasQueuedEndedTransactionEvent,
   shiftBoundedTransactionEvent,
-} from '../../../charging-station/index.js'
+} from '../../../charging-station/core/index.js'
 import {
   ChargingStationEvents,
   ConnectorStatusEnum,
