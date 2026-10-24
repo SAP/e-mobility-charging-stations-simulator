@@ -1,10 +1,10 @@
 import chalk from 'chalk'
 import { existsSync, type FSWatcher, readFileSync, watch } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { env } from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { BaseError } from '../exception/index.js'
+import { resolveAssetsDir } from '../resolveAssetsDir.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
@@ -104,13 +104,13 @@ export class Configuration {
   private static configurationSectionCache: Map<ConfigurationSection, ConfigurationSectionType>
 
   static {
-    const configurationFile = join(dirname(fileURLToPath(import.meta.url)), 'assets', 'config.json')
+    const configurationFile = join(resolveAssetsDir(), 'config.json')
     if (existsSync(configurationFile)) {
       Configuration.configurationFile = configurationFile
     } else {
       console.error(
         `${chalk.green(configurationLogPrefix())} ${chalk.red(
-          "Configuration file './src/assets/config.json' not found, using default configuration"
+          `Configuration file '${configurationFile}' not found, using default configuration`
         )}`
       )
       Configuration.configurationData = {
