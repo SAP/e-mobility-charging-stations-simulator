@@ -42,8 +42,8 @@ const moduleName = 'HelpersConfig'
 
 /**
  * Derives the template basename (path without extension) relative to the
- * `assets/station-templates` directory. Absolute paths are converted to
- * paths relative to that directory first.
+ * `station-templates` subdirectory of the assets directory. Absolute paths are
+ * converted to paths relative to that directory first.
  * @param templateFile - Template file path (absolute or relative).
  * @returns Template basename without extension.
  */
@@ -348,7 +348,7 @@ export const getDefaultVoltageOut = (
 
 /**
  * Resolves the on-disk path to the RFID id-tags file referenced by
- * `stationInfo.idTagsFile`, rooted at the bundled `assets` directory.
+ * `stationInfo.idTagsFile`, rooted at the `assets` directory.
  * @param stationInfo - Station-info carrying `idTagsFile`.
  * @returns Absolute path, or `undefined` when `idTagsFile` is not set.
  */
@@ -360,7 +360,7 @@ export const getIdTagsFile = (stationInfo: ChargingStationInfo): string | undefi
 
 /**
  * Resolves the on-disk path to the EV profiles file referenced by
- * `stationInfo.evProfilesFile`, rooted at the bundled `assets` directory.
+ * `stationInfo.evProfilesFile`, rooted at the `assets` directory.
  * @param stationInfo - Station-info carrying `evProfilesFile`.
  * @returns Absolute path, or `undefined` when `evProfilesFile` is not set.
  */
