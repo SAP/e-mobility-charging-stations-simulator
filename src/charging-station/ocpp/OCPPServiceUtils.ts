@@ -3349,7 +3349,7 @@ export const PayloadValidatorOptions = (
  * @param moduleName - Optional module name for error logging
  * @param methodName - Optional method name for error logging
  * @returns Parsed JSON schema object
- * @throws {NodeJS.ErrnoException} If the schema file cannot be read or parsed
+ * @throws {NodeJS.ErrnoException | SyntaxError} If the schema file cannot be read (ErrnoException) or the JSON is invalid (SyntaxError)
  */
 function parseJsonSchemaFile<T extends JsonType> (
   relativePath: string,

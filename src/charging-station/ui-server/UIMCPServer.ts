@@ -11,7 +11,7 @@ import type { IBootstrap } from '../IBootstrap.js'
 import type { AbstractUIService } from './ui-services/AbstractUIService.js'
 
 import { BaseError } from '../../exception/index.js'
-import { resolveAssetsDir } from '../../resolveAssetsDir.js'
+import { getOcppSchemaBaseDir } from '../../resolveAssetsDir.js'
 import {
   OCPPVersion,
   type ProcedureName,
@@ -156,7 +156,7 @@ export class UIMCPServer extends AbstractUIServer {
   }
 
   protected getSchemaBaseDir (): string {
-    return join(resolveAssetsDir(), 'json-schemas', 'ocpp')
+    return getOcppSchemaBaseDir()
   }
 
   private checkVersionCompatibility (

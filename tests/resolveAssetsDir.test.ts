@@ -5,8 +5,7 @@
  * the current working directory) and the `<module-dir>/assets` fallback.
  */
 import assert from 'node:assert/strict'
-import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { resolveAssetsDir } from '../src/resolveAssetsDir.js'
@@ -33,9 +32,7 @@ afterEach(() => {
 
 await describe('resolveAssetsDir', async () => {
   await it('should fall back to the module-side assets directory when no override is set', () => {
-    const dir = resolveAssetsDir()
-    assert.ok(dir.endsWith('assets'))
-    assert.ok(existsSync(dir), 'the resolved assets directory must exist on disk')
+    assert.strictEqual(resolveAssetsDir(), join(import.meta.dirname, '..', 'src', 'assets'))
   })
 
   await it('should return an absolute override as-is', () => {
@@ -58,8 +55,6 @@ await describe('resolveAssetsDir', async () => {
 
   await it('should treat an empty override as unset', () => {
     process.env[OVERRIDE_KEY] = ''
-    const dir = resolveAssetsDir()
-    assert.ok(dir.endsWith('assets'))
-    assert.ok(existsSync(dir), 'the resolved assets directory must exist on disk')
+    assert.strictEqual(resolveAssetsDir(), join(import.meta.dirname, '..', 'src', 'assets'))
   })
 })

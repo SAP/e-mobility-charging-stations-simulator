@@ -9,7 +9,9 @@
  * The lookup order is:
  * 1. `EVSE_ASSETS_DIR` — explicit override, used for packaging and tests.
  *    Absolute paths are used as-is; relative paths are resolved against the
- *    current working directory.
+ *    current working directory. Some consumers resolve the directory once at
+ *    module load or process start, so set this variable before starting the
+ *    process.
  * 2. `<this-module-dir>/assets` — the `assets/` folder that sits beside this
  *    module.
  *
@@ -35,3 +37,10 @@ export function resolveAssetsDir (): string {
   }
   return join(dirname(fileURLToPath(import.meta.url)), 'assets')
 }
+
+/**
+ * Resolves the directory that holds the OCPP JSON command schemas.
+ * @returns `<assets-dir>/json-schemas/ocpp`
+ */
+export const getOcppSchemaBaseDir = (): string =>
+  join(resolveAssetsDir(), 'json-schemas', 'ocpp')
