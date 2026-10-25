@@ -5,7 +5,7 @@
 
 import assert from 'node:assert/strict'
 import { rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { OCPP20CertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
@@ -367,10 +367,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       )
 
       assert.notStrictEqual(path, undefined)
-      const filename = path.split('/').pop()
-      if (filename == null) {
-        assert.fail('Expected filename to be defined')
-      }
+      const filename = basename(path)
       assert.ok(!filename.includes(':'))
       assert.ok(!filename.includes('/'))
     })

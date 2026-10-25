@@ -39,14 +39,16 @@ await describe('resolveAssetsDir', async () => {
   })
 
   await it('should return an absolute override as-is', () => {
-    process.env[OVERRIDE_KEY] = '/tmp/evse-stubs'
-    assert.strictEqual(resolveAssetsDir(), '/tmp/evse-stubs')
+    const absPath = resolve(process.cwd(), 'evse-stubs')
+    process.env[OVERRIDE_KEY] = absPath
+    assert.strictEqual(resolveAssetsDir(), absPath)
   })
 
   await it('should keep a trailing slash on an absolute override', () => {
     // Contract: absolute paths are used as-is; consumers normalize via join/resolve.
-    process.env[OVERRIDE_KEY] = '/tmp/evse-stubs/'
-    assert.strictEqual(resolveAssetsDir(), '/tmp/evse-stubs/')
+    const absPath = resolve(process.cwd(), 'evse-stubs')
+    process.env[OVERRIDE_KEY] = `${absPath}/`
+    assert.strictEqual(resolveAssetsDir(), `${absPath}/`)
   })
 
   await it('should resolve a relative override against the current working directory', () => {
