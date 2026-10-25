@@ -146,7 +146,7 @@ All configuration files are using the JSON standard syntax.
 
 - charging stations simulator configuration: [src/assets/config.json](./src/assets/config.json);
 - charging station configuration templates: [src/assets/station-templates](./src/assets/station-templates);
-- charging station configurations: [dist/assets/configurations](./dist/assets/configurations);
+- charging station configurations: `<assets-dir>/configurations` (where `<assets-dir>` is `dist/assets` in production and `src/assets` in development);
 - charging station RFID tags lists: [src/assets](./src/assets).
 
 The charging stations simulator's configuration parameters must be within the `src/assets/config.json` file. A charging station simulator configuration template file is available at [src/assets/config-template.json](./src/assets/config-template.json).
@@ -157,7 +157,7 @@ A list of RFID tags must be defined for the automatic transaction generator in a
 
 **Configuration files hierarchy and priority**:
 
-1. charging station configuration: [dist/assets/configurations](./dist/assets/configurations);
+1. charging station configuration: `<assets-dir>/configurations`;
 2. charging station configuration template: [src/assets/station-templates](./src/assets/station-templates);
 3. charging stations simulator configuration: [src/assets/config.json](./src/assets/config.json).
 
@@ -501,7 +501,7 @@ A template file is available at [src/assets/ev-profiles-template.json](./src/ass
 
 ### Charging station configuration
 
-**dist/assets/configurations/\<hashId\>.json**:
+**`<assets-dir>`/configurations/\<hashId\>.json**:
 
 The charging station configuration file is automatically generated at startup from the charging station configuration template file and is persistent.
 

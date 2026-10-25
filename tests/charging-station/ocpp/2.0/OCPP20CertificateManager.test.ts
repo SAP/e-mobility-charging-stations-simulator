@@ -5,9 +5,11 @@
 
 import assert from 'node:assert/strict'
 import { rm } from 'node:fs/promises'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { OCPP20CertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
+import { resolveAssetsDir } from '../../../../src/resolveAssetsDir.js'
 import {
   type CertificateHashDataType,
   DeleteCertificateStatusEnumType,
@@ -31,15 +33,15 @@ const TEST_CERT_TYPE = InstallCertificateUseEnumType.CSMSRootCertificate
 
 await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   afterEach(async () => {
-    await rm(`dist/assets/configurations/${TEST_CHARGING_STATION_HASH_ID}`, {
+    await rm(join(resolveAssetsDir(), 'configurations', TEST_CHARGING_STATION_HASH_ID), {
       force: true,
       recursive: true,
     })
-    await rm('dist/assets/configurations/empty-station-hash-id', {
+    await rm(join(resolveAssetsDir(), 'configurations', 'empty-station-hash-id'), {
       force: true,
       recursive: true,
     })
-    await rm('dist/assets/configurations/invalid-station-id', {
+    await rm(join(resolveAssetsDir(), 'configurations', 'invalid-station-id'), {
       force: true,
       recursive: true,
     })
