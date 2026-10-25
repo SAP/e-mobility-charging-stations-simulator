@@ -9,8 +9,8 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import { resolveAssetsDir } from '../../src/resolveAssetsDir.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { resolveAssetsDir } from '../src/resolveAssetsDir.js'
+import { standardCleanup } from './helpers/TestLifecycleHelpers.js'
 
 const OVERRIDE_KEY = 'EVSE_ASSETS_DIR'
 
