@@ -140,14 +140,46 @@ await describe('ConfigurationValidation', async () => {
       )
     })
 
-    await it('should accept string "$schemaVersion": "1" (no-migration path)', () => {
-      const parsed = buildMinimalConfiguration({ $schemaVersion: '1' })
+    await it('should accept string "$schemaVersion" equal to CURRENT (no-migration path)', () => {
+      const parsed = buildMinimalConfiguration({
+        $schemaVersion: CURRENT_CONFIGURATION_SCHEMA_VERSION.toString(),
+      })
 
       const result = validateConfiguration(parsed, 'string-version.json')
 
       assert.strictEqual(
         (result as unknown as Record<string, unknown>).$schemaVersion,
         CURRENT_CONFIGURATION_SCHEMA_VERSION
+      )
+    })
+
+    await it('should migrate a valid v1 configuration to the current schema version', () => {
+      const parsed = buildMinimalConfiguration({
+        $schemaVersion: 1,
+        supervisionUrls: 'ws://localhost:8010/OCPP16',
+      })
+
+      const result = validateConfiguration(parsed, 'v1.json')
+
+      assert.strictEqual(
+        (result as unknown as Record<string, unknown>).$schemaVersion,
+        CURRENT_CONFIGURATION_SCHEMA_VERSION
+      )
+      assert.strictEqual(result.supervisionUrls, 'ws://localhost:8010/OCPP16')
+    })
+
+    await it('should report a v1 supervisionUrls value the ws client cannot dial', () => {
+      const parsed = buildMinimalConfiguration({
+        $schemaVersion: 1,
+        supervisionUrls: 'localhost:8010/OCPP16',
+      })
+
+      assert.throws(
+        () => validateConfiguration(parsed, 'v1-invalid.json'),
+        (error: unknown) =>
+          error instanceof ConfigurationValidationError &&
+          error.migratedFrom === 1 &&
+          error.fieldErrors.some(fieldError => fieldError.path === 'supervisionUrls')
       )
     })
 
@@ -482,7 +514,7 @@ await describe('ConfigurationValidation', async () => {
   await describe('error message snapshot', async () => {
     await it('should match error message snapshot', () => {
       try {
-        validateConfiguration({ $schemaVersion: 1 }, 'test.json')
+        validateConfiguration({ $schemaVersion: CURRENT_CONFIGURATION_SCHEMA_VERSION }, 'test.json')
         assert.fail('Expected ConfigurationValidationError')
       } catch (error) {
         assert.ok(error instanceof ConfigurationValidationError)
