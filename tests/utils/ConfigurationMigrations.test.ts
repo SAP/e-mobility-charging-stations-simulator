@@ -30,7 +30,7 @@ await describe('ConfigurationMigrations', async () => {
   await describe('CURRENT_CONFIGURATION_SCHEMA_VERSION', async () => {
     await it('should be a positive integer', () => {
       assert.ok(Number.isInteger(CURRENT_CONFIGURATION_SCHEMA_VERSION))
-      assert.strictEqual(CURRENT_CONFIGURATION_SCHEMA_VERSION, 1)
+      assert.strictEqual(CURRENT_CONFIGURATION_SCHEMA_VERSION, 2)
     })
   })
 
@@ -303,6 +303,17 @@ await describe('ConfigurationMigrations', async () => {
       const result = applyConfigurationMigration(0, { foo: 'bar' }, 'test.json')
       assert.strictEqual(result.$schemaVersion, CURRENT_CONFIGURATION_SCHEMA_VERSION)
       assert.strictEqual(result.foo, 'bar')
+    })
+
+    await it('should migrate a v1 configuration to CURRENT without changing its values', () => {
+      const result = applyConfigurationMigration(
+        1,
+        { foo: 'bar', supervisionUrls: 'ws://localhost:8010/OCPP16' },
+        'test.json'
+      )
+      assert.strictEqual(result.$schemaVersion, CURRENT_CONFIGURATION_SCHEMA_VERSION)
+      assert.strictEqual(result.foo, 'bar')
+      assert.strictEqual(result.supervisionUrls, 'ws://localhost:8010/OCPP16')
     })
 
     await it('should not mutate the input config (immutability boundary)', () => {
