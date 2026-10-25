@@ -15,6 +15,15 @@
  * 2. `<this-module-dir>/assets` — the `assets/` folder that sits beside this
  *    module.
  *
+ * The resolved directory must contain the expected asset layout: a
+ * `config.json` file (if absent, the simulator falls back to its built-in
+ * default configuration), a `station-templates/` subdirectory with the
+ * charging station configuration templates, a `json-schemas/` subdirectory
+ * with the OCPP JSON schemas, and optionally RFID tags or ev-profiles
+ * files. It must also be writable: the runtime creates a `configurations/`
+ * subdirectory in it to persist per-station charging station
+ * configuration, OCPP 2.0 certificates, and the simulator state.
+ *
  * When the code is bundled (`pnpm build`), esbuild evaluates `import.meta.url`
  * to the output bundle, so this resolves to `dist/assets` for code bundled into
  * `dist/start.js`. When running directly from TypeScript sources via `tsx`
