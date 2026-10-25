@@ -157,6 +157,17 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16IncomingRequestService'
 
+/** URL schemes the `ws` client can dial for a supervision connection. */
+const SUPERVISION_URL_PROTOCOLS = new Set(['http:', 'https:', 'ws+unix:', 'ws:', 'wss:'])
+
+/**
+ * Whether a value is a URL the supervision WebSocket client can dial.
+ * @param value - Candidate supervision URL.
+ * @returns `true` when the value parses and uses a supported scheme.
+ */
+const isSupportedSupervisionUrl = (value: string): boolean =>
+  URL.canParse(value) && SUPERVISION_URL_PROTOCOLS.has(new URL(value).protocol)
+
 const requireOCPP16ChargePointStatus = (status: string | undefined): OCPP16ChargePointStatus => {
   const ocpp16Status = getEnumStringValue(OCPP16ChargePointStatus, status)
   if (ocpp16Status == null) {
@@ -1182,12 +1193,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
         }
       }
-      // The supervision URL key is read as a URL by `wsConnectionUrl`; reject a
-      // value it cannot parse instead of persisting it and failing on reconnect.
+      // The supervision URL key is dialed by the WebSocket client on reconnect;
+      // reject a value it cannot dial instead of persisting it.
       if (
         chargingStation.stationInfo?.supervisionUrlOcppConfiguration === true &&
         keyToChange.key === chargingStation.stationInfo.supervisionUrlOcppKey &&
-        !URL.canParse(value)
+        !isSupportedSupervisionUrl(value)
       ) {
         return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
       }
