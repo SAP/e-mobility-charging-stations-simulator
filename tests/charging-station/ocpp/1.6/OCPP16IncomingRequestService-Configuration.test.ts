@@ -241,6 +241,46 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
         'ws://localhost:8888/'
       )
     })
+
+    await it('should reject a URL whose scheme the WebSocket client cannot dial', () => {
+      // Arrange
+      const { station, testableService } = testContext
+      const request: ChangeConfigurationRequest = {
+        key: supervisionUrlOcppKey,
+        value: 'ftp://localhost:8888/',
+      }
+
+      // Act
+      const response = testableService.handleRequestChangeConfiguration(station, request)
+
+      // Assert
+      assert.strictEqual(response.status, OCPP16ConfigurationStatus.REJECTED)
+      assert.strictEqual(getConfigurationKey(station, supervisionUrlOcppKey)?.value, supervisionUrl)
+    })
+
+    await it('should accept every scheme the WebSocket client can dial', () => {
+      // Arrange
+      const { station, testableService } = testContext
+      const urls = [
+        'ws://localhost:8888/',
+        'wss://localhost:8888/',
+        'http://localhost:8888/',
+        'https://localhost:8888/',
+        'ws+unix:///tmp/simulator.sock',
+      ]
+
+      for (const value of urls) {
+        // Act
+        const response = testableService.handleRequestChangeConfiguration(station, {
+          key: supervisionUrlOcppKey,
+          value,
+        })
+
+        // Assert
+        assert.strictEqual(response.status, OCPP16ConfigurationStatus.ACCEPTED, value)
+        assert.strictEqual(getConfigurationKey(station, supervisionUrlOcppKey)?.value, value)
+      }
+    })
   })
 
   // ---------------------------------------------------------------------------
