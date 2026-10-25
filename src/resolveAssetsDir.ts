@@ -42,5 +42,4 @@ export function resolveAssetsDir (): string {
  * Resolves the directory that holds the OCPP JSON command schemas.
  * @returns `<assets-dir>/json-schemas/ocpp`
  */
-export const getOcppSchemaBaseDir = (): string =>
-  join(resolveAssetsDir(), 'json-schemas', 'ocpp')
+export const getOcppSchemaBaseDir = (): string => join(resolveAssetsDir(), 'json-schemas', 'ocpp')
