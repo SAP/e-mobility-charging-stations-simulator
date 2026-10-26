@@ -10,6 +10,8 @@
  * - getSupervisionUrlDistribution — returns distribution strategy
  * - workerPoolInUse / workerDynamicPoolInUse — pool type checks
  */
+
+import '../stubs/testEnvBootstrap.mjs'
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 

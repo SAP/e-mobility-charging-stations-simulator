@@ -46,6 +46,7 @@ import {
   truncateTransactionIntervalValue,
 } from '../../../charging-station/meter-values/index.js'
 import { BaseError, OCPPError } from '../../../exception/index.js'
+import { OCPP_SCHEMA_DIR } from '../../../resolveAssetsDir.js'
 import {
   AvailabilityType,
   type ConfigurationKeyType,
@@ -1922,7 +1923,7 @@ export class OCPP20ServiceUtils {
   public static createPayloadOptions = (moduleName: string, methodName: string) =>
     PayloadValidatorOptions(
       OCPPVersion.VERSION_201,
-      'json-schemas/ocpp/2.0',
+      `${OCPP_SCHEMA_DIR}/2.0`,
       moduleName,
       methodName
     )

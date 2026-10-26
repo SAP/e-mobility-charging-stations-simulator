@@ -3,6 +3,7 @@
  * @description Unit tests for OCPP 2.0 certificate management and validation
  */
 
+import '../../../stubs/testEnvBootstrap.mjs'
 import assert from 'node:assert/strict'
 import { rm } from 'node:fs/promises'
 import { basename, join } from 'node:path'
