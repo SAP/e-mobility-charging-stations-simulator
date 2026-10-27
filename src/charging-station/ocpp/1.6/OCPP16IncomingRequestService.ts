@@ -163,10 +163,20 @@ const SUPERVISION_URL_PROTOCOLS = new Set(['http:', 'https:', 'ws+unix:', 'ws:',
 /**
  * Whether a value is a URL the supervision WebSocket client can dial.
  * @param value - Candidate supervision URL.
- * @returns `true` when the value parses and uses a supported scheme.
+ * @returns `true` when the value parses, uses a supported scheme, has no
+ * fragment identifier and, for `ws+unix:`, includes a socket path.
  */
-const isSupportedSupervisionUrl = (value: string): boolean =>
-  URL.canParse(value) && SUPERVISION_URL_PROTOCOLS.has(new URL(value).protocol)
+const isSupportedSupervisionUrl = (value: string): boolean => {
+  if (!URL.canParse(value)) {
+    return false
+  }
+  const url = new URL(value)
+  return (
+    SUPERVISION_URL_PROTOCOLS.has(url.protocol) &&
+    url.hash === '' &&
+    (url.protocol !== 'ws+unix:' || url.pathname !== '')
+  )
+}
 
 const requireOCPP16ChargePointStatus = (status: string | undefined): OCPP16ChargePointStatus => {
   const ocpp16Status = getEnumStringValue(OCPP16ChargePointStatus, status)
