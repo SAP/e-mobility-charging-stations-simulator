@@ -17,7 +17,7 @@
  *
  * Effects (all idempotent — the test runner may evaluate this module once per
  * test file, in the per-file child processes of `--test-isolation=process`):
- * 1. Sets `EVSE_ASSETS_DIR` to the absolute fixture path when unset, so
+ * 1. Sets `EVSE_ASSETS_DIR` to the absolute fixture path when unset or empty, so
  *    `resolveAssetsDir()` returns the fixture. An explicit user override is
  *    honored.
  * 2. Sets `NODE_ENV` to `test` unconditionally, mirroring the `cross-env`
@@ -28,6 +28,10 @@
  *    per-run full regeneration is performed by the
  *    `node tests/stubs/setupAssetsFixture.mjs` step that precedes `node` in
  *    the package.json scripts.
+ * A manual run skips that destructive step, so a full-suite run started that
+ * way may observe stale persisted content (`configurations/*.json`) left by a
+ * previous run: use `pnpm test` for full-suite runs, or run the setup step
+ * first.
  */
 import { isAbsolute, resolve } from 'node:path'
 import process from 'node:process'
@@ -50,6 +54,8 @@ process.env.NODE_ENV = 'test'
 const assetsDir = process.env.EVSE_ASSETS_DIR
 const assetsTarget = isAbsolute(assetsDir) ? assetsDir : resolve(process.cwd(), assetsDir)
 
+// String equality: a symlinked override pointing at the fixture does not
+// match, and ensureAssetsFixture() is skipped for it.
 if (assetsTarget === fixtureDir) {
   ensureAssetsFixture()
 }

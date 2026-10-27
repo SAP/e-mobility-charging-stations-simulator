@@ -11,6 +11,8 @@
  * - workerPoolInUse / workerDynamicPoolInUse — pool type checks
  */
 
+// First import by contract: project modules capture asset paths at module
+// load, so the bootstrap must set EVSE_ASSETS_DIR before any of them loads.
 import '../stubs/testEnvBootstrap.mjs'
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'

@@ -25,7 +25,7 @@ import {
   TransactionMeterValueDeliveryBarrier,
 } from '../../../charging-station/meter-values/index.js'
 import { BaseError, OCPPError } from '../../../exception/index.js'
-import { OCPP_SCHEMA_DIR } from '../../../resolveAssetsDir.js'
+import { OCPP_SCHEMA_SUBDIR } from '../../../resolveAssetsDir.js'
 import {
   type ConfigurationKey,
   type ConnectorStatus,
@@ -841,7 +841,7 @@ export class OCPP16ServiceUtils {
   public static createPayloadOptions = (moduleName: string, methodName: string) =>
     PayloadValidatorOptions(
       OCPPVersion.VERSION_16,
-      `${OCPP_SCHEMA_DIR}/1.6`,
+      `${OCPP_SCHEMA_SUBDIR}/1.6`,
       moduleName,
       methodName
     )

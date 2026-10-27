@@ -6,8 +6,6 @@ import process from 'node:process'
 
 import { AssetsDirError } from './exception/AssetsDirError.js'
 
-export { AssetsDirError }
-
 /**
  * @file Single source of truth for locating the project assets directory.
  *
@@ -31,13 +29,17 @@ export { AssetsDirError }
  * `config.json` file (if absent, the simulator falls back to its built-in
  * default configuration), a `station-templates/` subdirectory with the
  * charging station configuration templates, a `json-schemas/` subdirectory
- * with the OCPP JSON schemas, a `ui-protocol/` subdirectory with UI protocol
- * documentation artifacts (present in the source assets tree, consumed by the
- * web UI; not read by the simulator runtime), and optionally RFID tags or
- * ev-profiles files. It must also be writable: the runtime creates a
- * `configurations/` subdirectory in it (lazily, on the first persistence
- * write) to persist per-station charging station configuration, OCPP 2.0
- * certificates, and the simulator state.
+ * with the OCPP JSON schemas, and optionally RFID tags or ev-profiles files.
+ * It must also be writable: the runtime creates a `configurations/`
+ * subdirectory in it (lazily, on the first persistence write) to persist
+ * per-station charging station configuration, OCPP 2.0 certificates, and the
+ * simulator state. The expected layout is a contract, not validated: the
+ * resolver asserts that an override target exists and is a directory, and
+ * never checks the content, so a wrong layout fails at the scattered
+ * downstream readers. The source tree additionally holds a `ui-protocol/`
+ * subdirectory with Insomnia WebSocket request collections (see the README);
+ * it is an artifact for humans: no code reads it, and `pnpm build` removes
+ * it from `dist/assets`.
  *
  * When the code is bundled (`pnpm build`), `import.meta.dirname` evaluates to
  * the output bundle directory, so this resolves to `dist/assets` for code
@@ -82,13 +84,13 @@ function assertAssetsDir (override: string, dir: string): void {
 }
 
 /**
- * OCPP JSON schemas directory, relative to the assets directory. It holds one
- * subdirectory per OCPP schema version (`1.6`, `2.0`).
+ * OCPP JSON schemas subdirectory, relative to the assets directory. It holds
+ * one subdirectory per OCPP schema version (`1.6`, `2.0`).
  */
-export const OCPP_SCHEMA_DIR = 'json-schemas/ocpp'
+export const OCPP_SCHEMA_SUBDIR = 'json-schemas/ocpp'
 
 /**
  * Resolves the directory that holds the OCPP JSON command schemas.
  * @returns `<assets-dir>/json-schemas/ocpp`
  */
-export const getOcppSchemaBaseDir = (): string => join(resolveAssetsDir(), OCPP_SCHEMA_DIR)
+export const getOcppSchemaBaseDir = (): string => join(resolveAssetsDir(), OCPP_SCHEMA_SUBDIR)
