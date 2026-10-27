@@ -861,6 +861,8 @@ await describe('ConfigurationSchema', async () => {
       'http://localhost:8010/OCPP16',
       'https://localhost:8010/OCPP16',
       'ws+unix:///tmp/simulator.sock',
+      'ws+unix:///tmp/simulator.sock:/OCPP16',
+      'ws:///OCPP16',
     ]
     const rejectedUrls = [
       'localhost:8010/OCPP16',
@@ -886,8 +888,36 @@ await describe('ConfigurationSchema', async () => {
       }
     })
 
-    await it('should match the schemes accepted by the ws client', () => {
-      for (const url of [...acceptedUrls, ...rejectedUrls.filter(url => URL.canParse(url))]) {
+    await it('should reject a URL with a fragment identifier', () => {
+      const result = SupervisionUrlSchema.safeParse('ws://localhost:8010/OCPP16#fragment')
+      if (result.success) {
+        assert.fail('Expected a URL with a fragment identifier to be rejected')
+      }
+      assert.match(result.error.issues[0].message, /fragment identifier/)
+    })
+
+    await it('should reject a ws+unix URL without a socket path', () => {
+      for (const url of ['ws+unix://', 'ws+unix:']) {
+        const result = SupervisionUrlSchema.safeParse(url)
+        if (result.success) {
+          assert.fail(`Expected '${url}' to be rejected`)
+        }
+        assert.match(result.error.issues[0].message, /socket path/)
+      }
+    })
+
+    await it('should match the URLs accepted by the ws client', () => {
+      const edgeCaseUrls = [
+        'ws://localhost:8010/OCPP16#fragment',
+        'wss://localhost:8010/OCPP16#',
+        'ws+unix://',
+        'ws+unix:',
+      ]
+      for (const url of [
+        ...acceptedUrls,
+        ...rejectedUrls.filter(url => URL.canParse(url)),
+        ...edgeCaseUrls,
+      ]) {
         let wsAccepts = true
         try {
           const webSocket = new WebSocket(url)
