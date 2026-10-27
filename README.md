@@ -146,7 +146,7 @@ All configuration files are using the JSON standard syntax.
 
 - charging stations simulator configuration: [src/assets/config.json](./src/assets/config.json);
 - charging station configuration templates: [src/assets/station-templates](./src/assets/station-templates);
-- charging station configurations: `<assets-dir>/configurations` (where `<assets-dir>` is `dist/assets` in production and `src/assets` in development);
+- charging station configurations: `<assets-dir>/configurations` (where `<assets-dir>` is `dist/assets` in production and `src/assets` in development, or the directory pointed to by the `EVSE_ASSETS_DIR` environment variable, absolute or relative to the working directory);
 - charging station RFID tags lists: [src/assets](./src/assets).
 
 The charging stations simulator's configuration parameters must be within the `src/assets/config.json` file. A charging station simulator configuration template file is available at [src/assets/config-template.json](./src/assets/config-template.json).
