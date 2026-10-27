@@ -103,7 +103,11 @@ await describe('resolveAssetsDir', async () => {
     try {
       process.chdir(fixtureDir)
       process.env[OVERRIDE_KEY] = 'missing-sub'
-      assertAssetsDirError(() => resolveAssetsDir(), 'missing-sub', join(process.cwd(), 'missing-sub'))
+      assertAssetsDirError(
+        () => resolveAssetsDir(),
+        'missing-sub',
+        join(process.cwd(), 'missing-sub')
+      )
     } finally {
       process.chdir(originalCwd)
     }
