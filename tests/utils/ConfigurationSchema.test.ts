@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, it } from 'node:test'
+import { WebSocket } from 'ws'
 
 import {
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
@@ -13,6 +14,7 @@ import {
 } from '../../src/utils/index.js'
 import {
   ConfigurationSchema,
+  SupervisionUrlSchema,
   UI_SERVER_ACCESS_POLICY_DEFAULTS,
   WorkerConfigurationSchema,
 } from '../../src/utils/index.js'
@@ -852,6 +854,83 @@ await describe('ConfigurationSchema', async () => {
     })
   })
 
+  await describe('SupervisionUrlSchema', async () => {
+    const acceptedUrls = [
+      'ws://localhost:8010/OCPP16',
+      'wss://localhost:8010/OCPP16',
+      'http://localhost:8010/OCPP16',
+      'https://localhost:8010/OCPP16',
+      'ws+unix:///tmp/simulator.sock',
+      'ws+unix:///tmp/simulator.sock:/OCPP16',
+      'ws:///OCPP16',
+    ]
+    const rejectedUrls = [
+      'localhost:8010/OCPP16',
+      'ftp://localhost:8010/OCPP16',
+      'file:///tmp/simulator.sock',
+      'not-a-url',
+      '/relative',
+    ]
+
+    await it('should accept every scheme the ws client can dial', () => {
+      for (const url of acceptedUrls) {
+        assert.strictEqual(SupervisionUrlSchema.safeParse(url).success, true, url)
+      }
+    })
+
+    await it('should reject values the ws client cannot dial with a message naming the accepted schemes', () => {
+      for (const url of rejectedUrls) {
+        const result = SupervisionUrlSchema.safeParse(url)
+        if (result.success) {
+          assert.fail(`Expected '${url}' to be rejected`)
+        }
+        assert.match(result.error.issues[0].message, /ws:\/\/, wss:\/\//)
+      }
+    })
+
+    await it('should reject a URL with a fragment identifier', () => {
+      const result = SupervisionUrlSchema.safeParse('ws://localhost:8010/OCPP16#fragment')
+      if (result.success) {
+        assert.fail('Expected a URL with a fragment identifier to be rejected')
+      }
+      assert.match(result.error.issues[0].message, /fragment identifier/)
+    })
+
+    await it('should reject a ws+unix URL without a socket path', () => {
+      for (const url of ['ws+unix://', 'ws+unix:']) {
+        const result = SupervisionUrlSchema.safeParse(url)
+        if (result.success) {
+          assert.fail(`Expected '${url}' to be rejected`)
+        }
+        assert.match(result.error.issues[0].message, /socket path/)
+      }
+    })
+
+    await it('should match the URLs accepted by the ws client', () => {
+      const edgeCaseUrls = [
+        'ws://localhost:8010/OCPP16#fragment',
+        'wss://localhost:8010/OCPP16#',
+        'ws+unix://',
+        'ws+unix:',
+      ]
+      for (const url of [
+        ...acceptedUrls,
+        ...rejectedUrls.filter(url => URL.canParse(url)),
+        ...edgeCaseUrls,
+      ]) {
+        let wsAccepts = true
+        try {
+          const webSocket = new WebSocket(url)
+          webSocket.on('error', () => undefined)
+          webSocket.terminate()
+        } catch {
+          wsAccepts = false
+        }
+        assert.strictEqual(SupervisionUrlSchema.safeParse(url).success, wsAccepts, url)
+      }
+    })
+  })
+
   await describe('mixed-type fields', async () => {
     await it('should accept supervisionUrls as string', () => {
       const result = ConfigurationSchema.safeParse(
@@ -867,6 +946,22 @@ await describe('ConfigurationSchema', async () => {
         })
       )
       assert.ok(result.success)
+    })
+
+    await it('should reject a scheme-less supervisionUrls string', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({ supervisionUrls: 'localhost:8010/OCPP16' })
+      )
+      assert.strictEqual(result.success, false)
+    })
+
+    await it('should reject a supervisionUrls array entry with an unsupported scheme', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          supervisionUrls: [TEST_SUPERVISION_URL, 'ftp://localhost:8010/OCPP16'],
+        })
+      )
+      assert.strictEqual(result.success, false)
     })
 
     await it('should accept worker.elementsPerWorker as auto', () => {

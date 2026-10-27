@@ -252,6 +252,25 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     }
   })
 
+  await it('should reject a supervision url whose scheme the WebSocket client cannot dial', async () => {
+    const { service } = createServiceContext(2)
+
+    try {
+      for (const url of ['localhost:8010/OCPP16', 'ftp://localhost:8010/OCPP16']) {
+        assertRejectedWith(
+          await dispatchUntrustedPayload(service, ProcedureName.SET_SUPERVISION_URL, {
+            hashIds: [TEST_HASH_ID],
+            url,
+          }),
+          /url.*must be a WebSocket URL/
+        )
+      }
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
   await it('should accept a websocket supervision url', async () => {
     const { service } = createServiceContext(2)
 
