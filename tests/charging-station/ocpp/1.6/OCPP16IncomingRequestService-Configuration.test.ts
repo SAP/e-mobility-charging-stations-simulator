@@ -258,6 +258,28 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
       assert.strictEqual(getConfigurationKey(station, supervisionUrlOcppKey)?.value, supervisionUrl)
     })
 
+    await it('should reject a URL the WebSocket client cannot dial despite a supported scheme', () => {
+      // Arrange
+      const { station, testableService } = testContext
+      const urls = ['ws://localhost:8888/#fragment', 'ws+unix://', 'ws+unix:']
+
+      for (const value of urls) {
+        // Act
+        const response = testableService.handleRequestChangeConfiguration(station, {
+          key: supervisionUrlOcppKey,
+          value,
+        })
+
+        // Assert
+        assert.strictEqual(response.status, OCPP16ConfigurationStatus.REJECTED, value)
+        assert.strictEqual(
+          getConfigurationKey(station, supervisionUrlOcppKey)?.value,
+          supervisionUrl,
+          value
+        )
+      }
+    })
+
     await it('should accept every scheme the WebSocket client can dial', () => {
       // Arrange
       const { station, testableService } = testContext
@@ -267,6 +289,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
         'http://localhost:8888/',
         'https://localhost:8888/',
         'ws+unix:///tmp/simulator.sock',
+        'ws+unix:///tmp/simulator.sock:/OCPP16',
       ]
 
       for (const value of urls) {
