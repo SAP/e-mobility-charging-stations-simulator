@@ -4,7 +4,9 @@ import { statSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 
-import { BaseError } from './exception/BaseError.js'
+import { AssetsDirError } from './exception/AssetsDirError.js'
+
+export { AssetsDirError }
 
 /**
  * @file Single source of truth for locating the project assets directory.
@@ -45,14 +47,6 @@ import { BaseError } from './exception/BaseError.js'
  */
 
 /**
- * Thrown when `EVSE_ASSETS_DIR` is set to a path that does not exist or is
- * not a directory.
- */
-export class AssetsDirError extends BaseError {
-  public override readonly name = 'AssetsDirError' as const
-}
-
-/**
  * Resolves the directory that holds the project assets.
  * @throws {AssetsDirError} When `EVSE_ASSETS_DIR` is set but does not point to an existing directory.
  * @returns Absolute path to the assets directory (see the module docs for the lookup order).
@@ -69,9 +63,11 @@ export function resolveAssetsDir (): string {
 
 /**
  * Asserts that the directory an `EVSE_ASSETS_DIR` override resolves to exists
- * and is a directory. Validated on every call (no memoization): the
- * call sites are startup/low-frequency, and a directory created or removed
- * after a first call must be observable.
+ * and is a directory. Validated on every call (no memoization) so that a
+ * directory created or removed after a first call stays observable. Call
+ * sites span process startup, per-station setup, and per-transaction paths,
+ * so the per-call cost must stay negligible: one `statSync` when an override
+ * is set, no syscall on the no-override fallback.
  * @param override - The raw `EVSE_ASSETS_DIR` value, for the error message.
  * @param dir - The resolved directory to assert.
  * @throws {AssetsDirError} When the directory does not exist or is not a directory.

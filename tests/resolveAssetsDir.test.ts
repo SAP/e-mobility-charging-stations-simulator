@@ -11,10 +11,13 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import { AssetsDirError, resolveAssetsDir } from '../src/resolveAssetsDir.js'
+import { resolveAssetsDir } from '../src/resolveAssetsDir.js'
 import { standardCleanup } from './helpers/TestLifecycleHelpers.js'
 
 const OVERRIDE_KEY = 'EVSE_ASSETS_DIR'
+
+const expectedOverrideMessage = (override: string) =>
+  `EVSE_ASSETS_DIR is set to '${override}', which resolves to '${override}', but that path does not exist or is not a directory. Check the path, or unset EVSE_ASSETS_DIR to use the built-in assets directory.`
 
 let originalOverride: string | undefined
 let fixtureDir: string
@@ -71,13 +74,19 @@ await describe('resolveAssetsDir', async () => {
 
   await it('should throw AssetsDirError when the override points to a missing directory', () => {
     process.env[OVERRIDE_KEY] = join(fixtureDir, 'missing')
-    assert.throws(() => resolveAssetsDir(), AssetsDirError)
+    assert.throws(() => resolveAssetsDir(), {
+      message: expectedOverrideMessage(join(fixtureDir, 'missing')),
+      name: 'AssetsDirError',
+    })
   })
 
   await it('should throw AssetsDirError when the override points to a file', () => {
     const filePath = join(fixtureDir, 'file.json')
     writeFileSync(filePath, '')
     process.env[OVERRIDE_KEY] = filePath
-    assert.throws(() => resolveAssetsDir(), AssetsDirError)
+    assert.throws(() => resolveAssetsDir(), {
+      message: expectedOverrideMessage(filePath),
+      name: 'AssetsDirError',
+    })
   })
 })
