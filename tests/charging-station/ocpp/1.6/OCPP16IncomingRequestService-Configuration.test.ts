@@ -261,7 +261,13 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     await it('should reject a URL the WebSocket client cannot dial despite a supported scheme', () => {
       // Arrange
       const { station, testableService } = testContext
-      const urls = ['ws://localhost:8888/#fragment', 'ws+unix://', 'ws+unix:']
+      const urls = [
+        'ws://localhost:8888/#fragment',
+        'ws://localhost:8888/#',
+        'ws+unix://',
+        'ws+unix:',
+        'ws+unix:///tmp/simulator.sock',
+      ]
 
       for (const value of urls) {
         // Act
@@ -288,8 +294,8 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
         'wss://localhost:8888/',
         'http://localhost:8888/',
         'https://localhost:8888/',
-        'ws+unix:///tmp/simulator.sock',
         'ws+unix:///tmp/simulator.sock:/OCPP16',
+        'ws+unix:///tmp/simulator.sock:/',
       ]
 
       for (const value of urls) {
