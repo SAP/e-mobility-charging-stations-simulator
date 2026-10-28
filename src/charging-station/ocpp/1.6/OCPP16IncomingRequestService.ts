@@ -161,10 +161,14 @@ const moduleName = 'OCPP16IncomingRequestService'
 const SUPERVISION_URL_PROTOCOLS = new Set(['http:', 'https:', 'ws+unix:', 'ws:', 'wss:'])
 
 /**
- * Whether a value is a URL the supervision WebSocket client can dial.
+ * Whether a value is a URL the supervision WebSocket client can dial once the
+ * charging station identity is appended to it.
  * @param value - Candidate supervision URL.
  * @returns `true` when the value parses, uses a supported scheme, has no
- * fragment identifier and, for `ws+unix:`, includes a socket path.
+ * fragment delimiter (`#`, even with an empty fragment: the appended identity
+ * would become a fragment) and, for `ws+unix:`, separates the socket path from
+ * the request path with `:` (otherwise the identity is appended to the socket
+ * path).
  */
 const isSupportedSupervisionUrl = (value: string): boolean => {
   if (!URL.canParse(value)) {
@@ -173,8 +177,8 @@ const isSupportedSupervisionUrl = (value: string): boolean => {
   const url = new URL(value)
   return (
     SUPERVISION_URL_PROTOCOLS.has(url.protocol) &&
-    url.hash === '' &&
-    (url.protocol !== 'ws+unix:' || url.pathname !== '')
+    !url.href.includes('#') &&
+    (url.protocol !== 'ws+unix:' || url.pathname.indexOf(':') > 0)
   )
 }
 
