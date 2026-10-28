@@ -1115,26 +1115,49 @@ await describe('ConfigurationSchema', async () => {
       }
     })
 
-    await it('should reject a performanceStorage.uri that is not an absolute URL', () => {
-      for (const uri of ['not a url', 'performance/records.json', '/tmp/perf.json', '']) {
-        assert.throws(() => new URL(uri), TypeError, uri)
-        const result = ConfigurationSchema.safeParse(
-          buildMinimalConfiguration({ performanceStorage: { type: 'jsonfile', uri } })
-        )
-        assert.ok(!result.success, uri)
-        assert.ok(
-          result.error.issues.some(i => i.path.join('.') === 'performanceStorage.uri'),
-          uri
-        )
+    await it('should reject a performanceStorage.uri that is not an absolute URL where it is parsed', () => {
+      const parsedSections = [
+        { type: 'jsonfile' },
+        { type: 'sqlite' },
+        { enabled: false, type: 'jsonfile' },
+        { enabled: true, type: 'mongodb' },
+        { enabled: true, type: 'mysql' },
+      ]
+      for (const section of parsedSections) {
+        for (const uri of ['not a url', 'performance/records.json', '/tmp/perf.json', '']) {
+          assert.throws(() => new URL(uri), TypeError, uri)
+          const result = ConfigurationSchema.safeParse(
+            buildMinimalConfiguration({ performanceStorage: { ...section, uri } })
+          )
+          assert.ok(!result.success, `${JSON.stringify(section)} ${uri}`)
+          assert.ok(
+            result.error.issues.some(i => i.path.join('.') === 'performanceStorage.uri'),
+            `${JSON.stringify(section)} ${uri}`
+          )
+        }
       }
     })
 
-    await it('should reject a performanceStorage.URI deprecated alias that is not an absolute URL', () => {
+    await it('should leave a performanceStorage.uri the simulator never parses unchanged', () => {
+      for (const section of [
+        { type: 'none' },
+        { enabled: true, type: 'none' },
+        { enabled: false, type: 'mongodb' },
+        { type: 'mysql' },
+        {},
+      ]) {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({ performanceStorage: { ...section, uri: 'not a url' } })
+        )
+        assert.ok(result.success, JSON.stringify(section))
+      }
+    })
+
+    await it('should leave the unused performanceStorage.URI deprecated alias unchanged', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({ performanceStorage: { type: 'jsonfile', URI: 'not a url' } })
       )
-      assert.ok(!result.success)
-      assert.ok(result.error.issues.some(i => i.path.join('.') === 'performanceStorage.URI'))
+      assert.ok(result.success)
     })
   })
 
