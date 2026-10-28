@@ -68,6 +68,15 @@ export const WorkerConfigurationSchema = z
   .strict()
 
 /**
+ * StorageUriSchema — performance storage URI. The simulator parses it with
+ * `new URL()`, so a value that is not an absolute URL (including a relative
+ * file path) is rejected here instead of throwing a bare `TypeError` at startup.
+ */
+const StorageUriSchema = z.string().refine(value => URL.canParse(value), {
+  message: 'must be an absolute URL (e.g. file:///path/to/records.json or mongodb://host:27017/db)',
+})
+
+/**
  * StorageConfiguration — performance storage configuration section.
  * Legacy `URI` (uppercase) is accepted but not auto-migrated; canonical key is `uri`.
  */
@@ -75,8 +84,8 @@ export const StorageConfigurationSchema = z
   .object({
     enabled: z.boolean().optional(),
     type: z.enum(StorageType).optional(),
-    uri: z.string().optional(),
-    URI: z.string().optional().describe("@deprecated: use 'uri' instead"),
+    uri: StorageUriSchema.optional(),
+    URI: StorageUriSchema.optional().describe("@deprecated: use 'uri' instead"),
   })
   .strict()
 
