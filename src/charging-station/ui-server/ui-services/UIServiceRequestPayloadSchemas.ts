@@ -11,7 +11,7 @@
 import { z } from 'zod'
 
 import { ProcedureName } from '../../../types/index.js'
-import { isEmpty } from '../../../utils/index.js'
+import { isEmpty, SupervisionUrlSchema } from '../../../utils/index.js'
 
 /**
  * Omit to broadcast. An explicit empty array targets no station and is rejected
@@ -65,11 +65,11 @@ export const connectorIdsField = z
   .describe('Target physical connector IDs')
 
 /**
- * Validate URL syntax here; the supervision transport checks scheme support
- * at connection time. Avoid throwing refinements so malformed URLs remain
- * validation failures rather than exceptions.
+ * Validate URL syntax and scheme here so a value the supervision transport
+ * cannot dial is rejected at the gate instead of failing per station at
+ * connection time. Shared with the configuration file `supervisionUrls`.
  */
-export const urlField = z.url()
+export const urlField = SupervisionUrlSchema
 
 /** Supervision URL(s) of a charging station, single or array form. */
 const supervisionUrlsField = z.union([urlField, z.array(urlField)])
