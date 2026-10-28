@@ -7,7 +7,7 @@ import { join, resolve, sep } from 'node:path'
 import type { ChargingStation } from '../../index.js'
 
 import { BaseError } from '../../../exception/index.js'
-import { resolveAssetsDir } from '../../../resolveAssetsDir.js'
+import { getConfigurationsDir } from '../../../resolveAssetsDir.js'
 import {
   type CertificateHashDataChainType,
   type CertificateHashDataType,
@@ -105,7 +105,7 @@ export interface ValidateCertificateX509Result {
  * - Manage certificate storage paths
  */
 export class OCPP20CertificateManager {
-  private static readonly BASE_CERT_PATH = join(resolveAssetsDir(), 'configurations')
+  private static readonly BASE_CERT_PATH = getConfigurationsDir()
   private static readonly CERT_FOLDER = 'certs'
   private static readonly PEM_BEGIN_MARKER = '-----BEGIN CERTIFICATE-----'
   private static readonly PEM_END_MARKER = '-----END CERTIFICATE-----'

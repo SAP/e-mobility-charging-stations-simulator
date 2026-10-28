@@ -2,30 +2,17 @@
 
 import { statSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
-import process from 'node:process'
+import { env } from 'node:process'
 
 import { AssetsDirError } from './exception/AssetsDirError.js'
 
 /**
  * @file Single source of truth for locating the project assets directory.
  *
- * Every on-disk asset path is derived from this helper so that there is only
+ * Every on-disk asset path is derived from this module so that there is only
  * one place describing how the `assets/` directory is resolved.
  *
- * The lookup order is:
- * 1. `EVSE_ASSETS_DIR` — explicit override, set by the test scripts, and
- *    available for packaging or custom deployments. An empty value is treated
- *    as unset. A non-empty value must point to an existing directory,
- *    otherwise {@link AssetsDirError} is thrown. Absolute paths are used as-is;
- *    relative paths are resolved against the current working directory. Some
- *    consumers resolve the directory once at module load or process start, so
- *    set this variable before starting the process.
- * 2. `<this-module-dir>/assets` — the `assets/` folder that sits beside this
- *    module. It is never validated, as it exists by construction (`src/assets`
- *    is tracked in the repository and `dist/assets` is created by
- *    `pnpm build`).
- *
- * The resolved directory must contain the expected asset layout: a
+ * Contract: the resolved directory must contain the expected asset layout: a
  * `config.json` file (if absent, the simulator falls back to its built-in
  * default configuration), a `station-templates/` subdirectory with the
  * charging station configuration templates, a `json-schemas/` subdirectory
@@ -41,20 +28,32 @@ import { AssetsDirError } from './exception/AssetsDirError.js'
  * it is an artifact for humans: no code reads it, and `pnpm build` removes
  * it from `dist/assets`.
  *
- * When the code is bundled (`pnpm build`), `import.meta.dirname` evaluates to
- * the output bundle directory, so this resolves to `dist/assets` for code
- * bundled into `dist/start.js`. When running directly from TypeScript sources
- * via `tsx` (development and tests), it resolves to `src/assets`, which is the
- * single, editable source of truth.
+ * Bundle: when the code is bundled (`pnpm build`), `import.meta.dirname`
+ * evaluates to the output bundle directory, so this resolves to `dist/assets`
+ * for code bundled into `dist/start.js`. When running directly from TypeScript
+ * sources via `tsx` (development and tests), it resolves to `src/assets`, which
+ * is the single, editable source of truth.
  */
 
 /**
  * Resolves the directory that holds the project assets.
+ *
+ * Lookup order:
+ * 1. `EVSE_ASSETS_DIR` — explicit override, set by the test scripts, and
+ *    available for packaging or custom deployments. An empty value is treated
+ *    as unset. A non-empty value must point to an existing directory,
+ *    otherwise {@link AssetsDirError} is thrown. Absolute paths are used as-is;
+ *    relative paths are resolved against the current working directory. Some
+ *    consumers resolve the directory once at module load or process start, so
+ *    set this variable before starting the process.
+ * 2. `<this-module-dir>/assets` — the `assets/` folder that sits beside this
+ *    module. It is never validated, as it exists by construction (`src/assets`
+ *    is tracked in the repository and `dist/assets` is created by `pnpm build`).
  * @throws {AssetsDirError} When `EVSE_ASSETS_DIR` is set but does not point to an existing directory.
- * @returns Absolute path to the assets directory (see the module docs for the lookup order).
+ * @returns Absolute path to the assets directory.
  */
 export function resolveAssetsDir (): string {
-  const override = process.env.EVSE_ASSETS_DIR
+  const override = env.EVSE_ASSETS_DIR
   if (override) {
     const dir = isAbsolute(override) ? override : resolve(process.cwd(), override)
     assertAssetsDir(override, dir)
@@ -84,6 +83,33 @@ function assertAssetsDir (override: string, dir: string): void {
 }
 
 /**
+ * Builds an absolute asset file path from a subpath relative to the assets
+ * directory. Single join primitive shared by every derived asset path so that
+ * the `<assets-dir>/<subpath>` layout stays in one place.
+ * @param subpath - Asset path relative to the assets directory (e.g. `configurations`, `station-templates`).
+ * @returns Absolute path to the asset file.
+ */
+export const getAssetFilePath = (subpath: string): string => join(resolveAssetsDir(), subpath)
+
+/**
+ * Resolves the directory that holds the charging station configurations.
+ * @returns `<assets-dir>/configurations`
+ */
+export const getConfigurationsDir = (): string => getAssetFilePath('configurations')
+
+/**
+ * Resolves the directory that holds the charging station configuration templates.
+ * @returns `<assets-dir>/station-templates`
+ */
+export const getStationTemplatesDir = (): string => getAssetFilePath('station-templates')
+
+/**
+ * Resolves the path of the simulator configuration file.
+ * @returns `<assets-dir>/config.json`
+ */
+export const getConfigFilePath = (): string => getAssetFilePath('config.json')
+
+/**
  * OCPP JSON schemas subdirectory, relative to the assets directory. It holds
  * one subdirectory per OCPP schema version (`1.6`, `2.0`).
  */
@@ -93,4 +119,4 @@ export const OCPP_SCHEMA_SUBDIR = 'json-schemas/ocpp'
  * Resolves the directory that holds the OCPP JSON command schemas.
  * @returns `<assets-dir>/json-schemas/ocpp`
  */
-export const getOcppSchemaBaseDir = (): string => join(resolveAssetsDir(), OCPP_SCHEMA_SUBDIR)
+export const getOcppSchemaBaseDir = (): string => getAssetFilePath(OCPP_SCHEMA_SUBDIR)

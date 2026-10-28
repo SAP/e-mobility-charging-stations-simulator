@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import { resolveAssetsDir } from '../src/resolveAssetsDir.js'
+import { getOcppSchemaBaseDir, resolveAssetsDir } from '../src/resolveAssetsDir.js'
 import { standardCleanup } from './helpers/TestLifecycleHelpers.js'
 
 const OVERRIDE_KEY = 'EVSE_ASSETS_DIR'
@@ -118,5 +118,17 @@ await describe('resolveAssetsDir', async () => {
     writeFileSync(filePath, '')
     process.env[OVERRIDE_KEY] = filePath
     assertAssetsDirError(() => resolveAssetsDir(), filePath)
+  })
+
+  await it('should return the OCPP schemas subdirectory when no override is set', () => {
+    assert.strictEqual(
+      getOcppSchemaBaseDir(),
+      join(import.meta.dirname, '..', 'src', 'assets', 'json-schemas', 'ocpp')
+    )
+  })
+
+  await it('should return the OCPP schemas subdirectory for an override assets directory', () => {
+    process.env[OVERRIDE_KEY] = fixtureDir
+    assert.strictEqual(getOcppSchemaBaseDir(), join(fixtureDir, 'json-schemas', 'ocpp'))
   })
 })
