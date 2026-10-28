@@ -286,11 +286,14 @@ export const StationTemplateUrlSchema = z
   .strict()
 
 /**
- * Supervision URL — a URL that the `ws` WebSocket client can dial: scheme
- * `ws:`, `wss:`, `http:`, `https:` or `ws+unix:`, no fragment identifier, and
- * a socket path for `ws+unix:`. A scheme-less `host:port/path` string parses
- * as a URL with the host as its scheme, so syntax validation alone would
- * accept a value that fails at connection time.
+ * Supervision URL — a URL that the `ws` WebSocket client can dial once the
+ * charging station identity is appended to it: scheme `ws:`, `wss:`, `http:`,
+ * `https:` or `ws+unix:`, no fragment delimiter (`#`, even with an empty
+ * fragment: the appended identity would become a fragment), and for `ws+unix:`
+ * a `:` separating the socket path from the request path (otherwise the
+ * identity is appended to the socket path). A scheme-less `host:port/path`
+ * string parses as a URL with the host as its scheme, so syntax validation
+ * alone would accept a value that fails at connection time.
  * Shared by the configuration file and the UI request payload gate so a value
  * is accepted by both or neither.
  */
@@ -299,7 +302,7 @@ export const SupervisionUrlSchema = z
     error: 'must be a WebSocket URL (ws://, wss://, http://, https:// or ws+unix://)',
     protocol: /^(?:wss?|https?|ws\+unix)$/,
   })
-  .refine(value => !URL.canParse(value) || new URL(value).hash === '', {
+  .refine(value => !URL.canParse(value) || !new URL(value).href.includes('#'), {
     message: 'must not contain a fragment identifier (#...)',
   })
   .refine(
@@ -308,10 +311,11 @@ export const SupervisionUrlSchema = z
         return true
       }
       const url = new URL(value)
-      return url.protocol !== 'ws+unix:' || url.pathname !== ''
+      return url.protocol !== 'ws+unix:' || url.pathname.indexOf(':') > 0
     },
     {
-      message: 'ws+unix:// URLs must include the socket path',
+      message:
+        "ws+unix:// URLs must include the socket path and a ':' before the request path (ws+unix:///path/to/socket.sock:/path)",
     }
   )
 
