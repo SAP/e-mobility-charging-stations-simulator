@@ -860,8 +860,8 @@ await describe('ConfigurationSchema', async () => {
       'wss://localhost:8010/OCPP16',
       'http://localhost:8010/OCPP16',
       'https://localhost:8010/OCPP16',
-      'ws+unix:///tmp/simulator.sock',
       'ws+unix:///tmp/simulator.sock:/OCPP16',
+      'ws+unix:///tmp/simulator.sock:/',
       'ws:///OCPP16',
     ]
     const rejectedUrls = [
@@ -888,16 +888,18 @@ await describe('ConfigurationSchema', async () => {
       }
     })
 
-    await it('should reject a URL with a fragment identifier', () => {
-      const result = SupervisionUrlSchema.safeParse('ws://localhost:8010/OCPP16#fragment')
-      if (result.success) {
-        assert.fail('Expected a URL with a fragment identifier to be rejected')
+    await it('should reject a URL with a fragment delimiter, even with an empty fragment', () => {
+      for (const url of ['ws://localhost:8010/OCPP16#fragment', 'ws://localhost:8010/OCPP16#']) {
+        const result = SupervisionUrlSchema.safeParse(url)
+        if (result.success) {
+          assert.fail(`Expected '${url}' to be rejected`)
+        }
+        assert.match(result.error.issues[0].message, /fragment identifier/)
       }
-      assert.match(result.error.issues[0].message, /fragment identifier/)
     })
 
-    await it('should reject a ws+unix URL without a socket path', () => {
-      for (const url of ['ws+unix://', 'ws+unix:']) {
+    await it('should reject a ws+unix URL without a socket path and request path separator', () => {
+      for (const url of ['ws+unix://', 'ws+unix:', 'ws+unix:///tmp/simulator.sock']) {
         const result = SupervisionUrlSchema.safeParse(url)
         if (result.success) {
           assert.fail(`Expected '${url}' to be rejected`)
@@ -906,27 +908,37 @@ await describe('ConfigurationSchema', async () => {
       }
     })
 
-    await it('should match the URLs accepted by the ws client', () => {
+    await it('should match the connection URLs the ws client can dial', () => {
       const edgeCaseUrls = [
         'ws://localhost:8010/OCPP16#fragment',
         'wss://localhost:8010/OCPP16#',
         'ws+unix://',
         'ws+unix:',
+        'ws+unix:///tmp/simulator.sock',
       ]
       for (const url of [
         ...acceptedUrls,
         ...rejectedUrls.filter(url => URL.canParse(url)),
         ...edgeCaseUrls,
       ]) {
-        let wsAccepts = true
+        // The charging station dials the supervision URL with its identity
+        // appended (see ChargingStation.wsConnectionUrl).
+        const connectionUrl = `${url}${url.endsWith('/') ? '' : '/'}CS-1`
+        let wsCanDial = true
         try {
-          const webSocket = new WebSocket(url)
+          const webSocket = new WebSocket(connectionUrl)
           webSocket.on('error', () => undefined)
           webSocket.terminate()
+          // ws splits a ws+unix pathname at ':' into socket path and request
+          // path; without ':' the identity ends up in the socket path.
+          const { pathname, protocol } = new URL(connectionUrl)
+          if (protocol === 'ws+unix:' && pathname.indexOf(':') <= 0) {
+            wsCanDial = false
+          }
         } catch {
-          wsAccepts = false
+          wsCanDial = false
         }
-        assert.strictEqual(SupervisionUrlSchema.safeParse(url).success, wsAccepts, url)
+        assert.strictEqual(SupervisionUrlSchema.safeParse(url).success, wsCanDial, url)
       }
     })
   })
