@@ -288,12 +288,14 @@ export const StationTemplateUrlSchema = z
 /**
  * Supervision URL — a URL that the `ws` WebSocket client can dial once the
  * charging station identity is appended to it: scheme `ws:`, `wss:`, `http:`,
- * `https:` or `ws+unix:`, no fragment delimiter (`#`, even with an empty
- * fragment: the appended identity would become a fragment), and for `ws+unix:`
- * a `:` separating the socket path from the request path (otherwise the
- * identity is appended to the socket path). A scheme-less `host:port/path`
- * string parses as a URL with the host as its scheme, so syntax validation
- * alone would accept a value that fails at connection time.
+ * `https:` or `ws+unix:`; no fragment delimiter (`#`, even with an empty
+ * fragment) and no query delimiter (`?`), since the appended identity would
+ * end up in the fragment or the query; and for `ws+unix:` exactly one `:`
+ * separating a socket path from the request path (`ws` splits the pathname at
+ * `:`, so without it the identity is appended to the socket path). A
+ * scheme-less `host:port/path` string parses as a URL with the host as its
+ * scheme, so syntax validation alone would accept a value that fails at
+ * connection time.
  * Shared by the configuration file and the UI request payload gate so a value
  * is accepted by both or neither.
  */
@@ -305,17 +307,24 @@ export const SupervisionUrlSchema = z
   .refine(value => !URL.canParse(value) || !new URL(value).href.includes('#'), {
     message: 'must not contain a fragment identifier (#...)',
   })
+  .refine(value => !URL.canParse(value) || !new URL(value).href.includes('?'), {
+    message: 'must not contain a query string (?...)',
+  })
   .refine(
     value => {
       if (!URL.canParse(value)) {
         return true
       }
       const url = new URL(value)
-      return url.protocol !== 'ws+unix:' || url.pathname.indexOf(':') > 0
+      if (url.protocol !== 'ws+unix:') {
+        return true
+      }
+      const [socketPath, ...requestPath] = url.pathname.split(':')
+      return requestPath.length === 1 && socketPath.length > 1
     },
     {
       message:
-        "ws+unix:// URLs must include the socket path and a ':' before the request path (ws+unix:///path/to/socket.sock:/path)",
+        "ws+unix:// URLs must include the socket path and exactly one ':' before the request path (ws+unix:///path/to/socket.sock:/path)",
     }
   )
 
