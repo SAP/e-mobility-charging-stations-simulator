@@ -1101,6 +1101,41 @@ await describe('ConfigurationSchema', async () => {
       )
       assert.ok(result.success)
     })
+
+    await it('should accept performanceStorage.uri values the storage backends can parse', () => {
+      for (const uri of [
+        'file:///tmp/perf.json',
+        'file:///tmp/e-mobility-charging-stations-simulator.db',
+        'mongodb://localhost:27017/e-mobility-charging-stations-simulator',
+      ]) {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({ performanceStorage: { type: 'jsonfile', uri } })
+        )
+        assert.ok(result.success, uri)
+      }
+    })
+
+    await it('should reject a performanceStorage.uri that is not an absolute URL', () => {
+      for (const uri of ['not a url', 'performance/records.json', '/tmp/perf.json', '']) {
+        assert.throws(() => new URL(uri), TypeError, uri)
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({ performanceStorage: { type: 'jsonfile', uri } })
+        )
+        assert.ok(!result.success, uri)
+        assert.ok(
+          result.error.issues.some(i => i.path.join('.') === 'performanceStorage.uri'),
+          uri
+        )
+      }
+    })
+
+    await it('should reject a performanceStorage.URI deprecated alias that is not an absolute URL', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({ performanceStorage: { type: 'jsonfile', URI: 'not a url' } })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.') === 'performanceStorage.URI'))
+    })
   })
 
   await describe('round-trip on real config-template.json', async () => {
