@@ -264,9 +264,16 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
       const urls = [
         'ws://localhost:8888/#fragment',
         'ws://localhost:8888/#',
+        'ws://localhost:8888/OCPP16?token=secret',
+        'ws://localhost:8888/OCPP16?',
+        'ws://localhost:8888 ',
+        ' ws://localhost:8888/',
+        'ws://localhost:8888/OC\tPP16',
         'ws+unix://',
         'ws+unix:',
         'ws+unix:///tmp/simulator.sock',
+        'ws+unix:///:/OCPP16',
+        'ws+unix:///tmp/simulator.sock:/OC:PP16',
       ]
 
       for (const value of urls) {
@@ -296,6 +303,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
         'https://localhost:8888/',
         'ws+unix:///tmp/simulator.sock:/OCPP16',
         'ws+unix:///tmp/simulator.sock:/',
+        'ws+unix:///tmp/simulator.sock:',
       ]
 
       for (const value of urls) {
