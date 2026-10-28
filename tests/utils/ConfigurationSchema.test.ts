@@ -862,6 +862,7 @@ await describe('ConfigurationSchema', async () => {
       'https://localhost:8010/OCPP16',
       'ws+unix:///tmp/simulator.sock:/OCPP16',
       'ws+unix:///tmp/simulator.sock:/',
+      'ws+unix:///tmp/simulator.sock:',
       'ws:///OCPP16',
     ]
     const rejectedUrls = [
@@ -898,8 +899,27 @@ await describe('ConfigurationSchema', async () => {
       }
     })
 
-    await it('should reject a ws+unix URL without a socket path and request path separator', () => {
-      for (const url of ['ws+unix://', 'ws+unix:', 'ws+unix:///tmp/simulator.sock']) {
+    await it('should reject a URL with a query string delimiter, even with an empty query', () => {
+      for (const url of [
+        'ws://localhost:8010/OCPP16?token=secret',
+        'ws://localhost:8010/OCPP16?',
+      ]) {
+        const result = SupervisionUrlSchema.safeParse(url)
+        if (result.success) {
+          assert.fail(`Expected '${url}' to be rejected`)
+        }
+        assert.match(result.error.issues[0].message, /query string/)
+      }
+    })
+
+    await it('should reject a ws+unix URL without exactly one socket path and request path separator', () => {
+      for (const url of [
+        'ws+unix://',
+        'ws+unix:',
+        'ws+unix:///tmp/simulator.sock',
+        'ws+unix:///:/OCPP16',
+        'ws+unix:///tmp/simulator.sock:/OC:PP16',
+      ]) {
         const result = SupervisionUrlSchema.safeParse(url)
         if (result.success) {
           assert.fail(`Expected '${url}' to be rejected`)
@@ -916,6 +936,17 @@ await describe('ConfigurationSchema', async () => {
         'ws+unix:',
         'ws+unix:///tmp/simulator.sock',
       ]
+      // URLs the ws client accepts but that do not reach the intended
+      // endpoint once the identity is appended (checked against real servers).
+      const wrongEndpointUrls = [
+        'ws://localhost:8010/OCPP16?token=secret',
+        'ws://localhost:8010/OCPP16?',
+        'ws+unix:///:/OCPP16',
+        'ws+unix:///tmp/simulator.sock:/OC:PP16',
+      ]
+      for (const url of wrongEndpointUrls) {
+        assert.strictEqual(SupervisionUrlSchema.safeParse(url).success, false, url)
+      }
       for (const url of [
         ...acceptedUrls,
         ...rejectedUrls.filter(url => URL.canParse(url)),
