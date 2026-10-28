@@ -19,6 +19,7 @@ export {
   LogConfigurationSchema,
   StationTemplateUrlSchema,
   StorageConfigurationSchema,
+  SupervisionUrlSchema,
   UI_SERVER_ACCESS_POLICY_DEFAULTS,
   UIServerConfigurationSchema,
   UIServerMetricsConfigurationSchema,

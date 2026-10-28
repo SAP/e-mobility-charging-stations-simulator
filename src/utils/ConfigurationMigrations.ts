@@ -54,7 +54,7 @@ export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, null | string>> 
  * Bump only on breaking changes (field rename, removal, type narrowing).
  * Single authoritative location — concurrent bumps force git merge conflict.
  */
-export const CURRENT_CONFIGURATION_SCHEMA_VERSION = 1
+export const CURRENT_CONFIGURATION_SCHEMA_VERSION = 2
 
 export type MigrationFn = (
   config: Record<string, unknown>,
@@ -225,11 +225,22 @@ export const remapDeprecatedKeys = (config: Record<string, unknown>): RemapDepre
 const migrateV0ToV1: MigrationFn = (config, _filePath) => clone(config)
 
 /**
+ * v1 → v2: pure version-bump. v2 narrows `supervisionUrls` to URLs whose
+ * scheme the `ws` client can dial; values outside that set cannot be
+ * rewritten automatically and are reported by schema validation.
+ * `$schemaVersion` is stamped by `applyConfigurationMigration`.
+ * @param config - source configuration object
+ * @param _filePath - configuration file path (unused)
+ * @returns new configuration object
+ */
+const migrateV1ToV2: MigrationFn = (config, _filePath) => clone(config)
+
+/**
  * Sequential migration chain. Index `i` migrates a v`i` configuration to v`i+1`.
  * To add schema version N+1: append one `migrateV{N}ToV{N+1}` function and
  * bump `CURRENT_CONFIGURATION_SCHEMA_VERSION`.
  */
-export const migrationChain: readonly MigrationFn[] = [migrateV0ToV1]
+export const migrationChain: readonly MigrationFn[] = [migrateV0ToV1, migrateV1ToV2]
 
 /**
  * Strict integer-string pattern for `$schemaVersion`. Rejects permissive
