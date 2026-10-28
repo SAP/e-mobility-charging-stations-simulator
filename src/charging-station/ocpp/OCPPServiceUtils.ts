@@ -3,7 +3,6 @@ import _ajvFormats from 'ajv-formats'
 import { isDate } from 'date-fns'
 import { randomInt } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 
 import type {
   BootReasonEnumType,
@@ -34,7 +33,7 @@ import {
   truncateTransactionIntervalValue,
 } from '../../charging-station/meter-values/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
-import { resolveAssetsDir } from '../../resolveAssetsDir.js'
+import { getAssetFilePath } from '../../resolveAssetsDir.js'
 import {
   type BootNotificationRequest,
   type ChargingStationInfo,
@@ -3357,7 +3356,7 @@ function parseJsonSchemaFile<T extends JsonType> (
   moduleName?: string,
   methodName?: string
 ): JSONSchemaType<T> {
-  const schemaPath = join(resolveAssetsDir(), relativePath)
+  const schemaPath = getAssetFilePath(relativePath)
   try {
     return JSON.parse(readFileSync(schemaPath, 'utf8')) as JSONSchemaType<T>
   } catch (error) {
