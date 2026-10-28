@@ -79,7 +79,7 @@
     "@mikro-orm/core": "^6.6.17",
     "@mikro-orm/mariadb": "^6.6.17",
     "@mikro-orm/reflection": "^6.6.17",
-    "@modelcontextprotocol/sdk": "~1.32.1",
+    "@modelcontextprotocol/sdk": "~1.32.2",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^6.2.3",
