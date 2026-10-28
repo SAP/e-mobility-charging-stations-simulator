@@ -68,26 +68,36 @@ export const WorkerConfigurationSchema = z
   .strict()
 
 /**
- * StorageUriSchema — performance storage URI. The simulator parses it with
- * `new URL()`, so a value that is not an absolute URL (including a relative
- * file path) is rejected here instead of throwing a bare `TypeError` at startup.
- */
-const StorageUriSchema = z.string().refine(value => URL.canParse(value), {
-  message: 'must be an absolute URL (e.g. file:///path/to/records.json or mongodb://host:27017/db)',
-})
-
-/**
  * StorageConfiguration — performance storage configuration section.
  * Legacy `URI` (uppercase) is accepted but not auto-migrated; canonical key is `uri`.
+ * `uri` is parsed with `new URL()` when the configuration is loaded for the
+ * `jsonfile` and `sqlite` types, and when the storage is opened if `enabled`
+ * is true, so it must then be an absolute URL: a relative file path would
+ * otherwise throw a bare `TypeError` at startup. Values the simulator never
+ * parses are left as they are.
  */
 export const StorageConfigurationSchema = z
   .object({
     enabled: z.boolean().optional(),
     type: z.enum(StorageType).optional(),
-    uri: StorageUriSchema.optional(),
-    URI: StorageUriSchema.optional().describe("@deprecated: use 'uri' instead"),
+    uri: z.string().optional(),
+    URI: z.string().optional().describe("@deprecated: use 'uri' instead"),
   })
   .strict()
+  .superRefine((value, ctx) => {
+    if (value.uri == null || URL.canParse(value.uri)) return
+    const parsedAtLoad = value.type === StorageType.JSON_FILE || value.type === StorageType.SQLITE
+    const parsedAtOpen =
+      value.enabled === true && value.type != null && value.type !== StorageType.NONE
+    if (parsedAtLoad || parsedAtOpen) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'must be an absolute URL (e.g. file:///path/to/records.json or mongodb://host:27017/db)',
+        path: ['uri'],
+      })
+    }
+  })
 
 /**
  * UIServerAuthentication — credentials for the UI server. `username` is a

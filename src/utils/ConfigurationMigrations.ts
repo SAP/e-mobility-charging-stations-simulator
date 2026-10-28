@@ -226,9 +226,9 @@ const migrateV0ToV1: MigrationFn = (config, _filePath) => clone(config)
 
 /**
  * v1 → v2: pure version-bump. v2 narrows `supervisionUrls` to URLs whose
- * scheme the `ws` client can dial and `performanceStorage.uri` (and its
- * deprecated `URI` alias) to absolute URLs; values outside those sets cannot
- * be rewritten automatically and are reported by schema validation.
+ * scheme the `ws` client can dial and `performanceStorage.uri` to absolute
+ * URLs where the simulator parses it; values outside those sets cannot be
+ * rewritten automatically and are reported by schema validation.
  * `$schemaVersion` is stamped by `applyConfigurationMigration`.
  * @param config - source configuration object
  * @param _filePath - configuration file path (unused)
