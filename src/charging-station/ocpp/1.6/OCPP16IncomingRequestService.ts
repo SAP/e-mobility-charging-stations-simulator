@@ -162,24 +162,34 @@ const SUPERVISION_URL_PROTOCOLS = new Set(['http:', 'https:', 'ws+unix:', 'ws:',
 
 /**
  * Whether a value is a URL the supervision WebSocket client can dial once the
- * charging station identity is appended to it.
+ * charging station identity is appended to it. The key value is stored as
+ * sent, so it must not rely on URL parsing normalization.
  * @param value - Candidate supervision URL.
- * @returns `true` when the value parses, uses a supported scheme, has no
- * fragment delimiter (`#`, even with an empty fragment: the appended identity
- * would become a fragment) and, for `ws+unix:`, separates the socket path from
- * the request path with `:` (otherwise the identity is appended to the socket
- * path).
+ * @returns `true` when the value has no whitespace or control characters
+ * (URL parsing strips them, but the stored value keeps them), parses, uses a
+ * supported scheme, has no fragment (`#`) or query (`?`) delimiter (the
+ * appended identity would end up in them) and, for `ws+unix:`, has exactly
+ * one `:` separating a socket path from the request path (`ws` splits the
+ * pathname at `:`).
  */
 const isSupportedSupervisionUrl = (value: string): boolean => {
-  if (!URL.canParse(value)) {
+  // eslint-disable-next-line no-control-regex -- control characters are rejected on purpose
+  if (/[\s\u0000-\u001F\u007F]/.test(value) || !URL.canParse(value)) {
     return false
   }
   const url = new URL(value)
-  return (
-    SUPERVISION_URL_PROTOCOLS.has(url.protocol) &&
-    !url.href.includes('#') &&
-    (url.protocol !== 'ws+unix:' || url.pathname.indexOf(':') > 0)
-  )
+  if (
+    !SUPERVISION_URL_PROTOCOLS.has(url.protocol) ||
+    url.href.includes('#') ||
+    url.href.includes('?')
+  ) {
+    return false
+  }
+  if (url.protocol !== 'ws+unix:') {
+    return true
+  }
+  const [socketPath, ...requestPath] = url.pathname.split(':')
+  return requestPath.length === 1 && socketPath.length > 1
 }
 
 const requireOCPP16ChargePointStatus = (status: string | undefined): OCPP16ChargePointStatus => {
