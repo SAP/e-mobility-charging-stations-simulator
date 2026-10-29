@@ -863,6 +863,8 @@ await describe('ConfigurationSchema', async () => {
       'ws+unix:///tmp/simulator.sock:/OCPP16',
       'ws+unix:///tmp/simulator.sock:/',
       'ws+unix:///tmp/simulator.sock:',
+      'ws+unix:s:/OCPP16',
+      'ws+unix:./s:/OCPP16',
       'ws:///OCPP16',
     ]
     const rejectedUrls = [
@@ -912,13 +914,15 @@ await describe('ConfigurationSchema', async () => {
       }
     })
 
-    await it('should reject a ws+unix URL without exactly one socket path and request path separator', () => {
+    await it("should reject a ws+unix URL without a socket path, exactly one ':' and a request path starting with '/'", () => {
       for (const url of [
         'ws+unix://',
         'ws+unix:',
         'ws+unix:///tmp/simulator.sock',
         'ws+unix:///:/OCPP16',
         'ws+unix:///tmp/simulator.sock:/OC:PP16',
+        'ws+unix:///tmp/simulator.sock:OCPP16',
+        'ws+unix:s:OCPP16',
       ]) {
         const result = SupervisionUrlSchema.safeParse(url)
         if (result.success) {
@@ -943,6 +947,7 @@ await describe('ConfigurationSchema', async () => {
         'ws://localhost:8010/OCPP16?',
         'ws+unix:///:/OCPP16',
         'ws+unix:///tmp/simulator.sock:/OC:PP16',
+        'ws+unix:s:OCPP16',
       ]
       for (const url of wrongEndpointUrls) {
         assert.strictEqual(SupervisionUrlSchema.safeParse(url).success, false, url)
