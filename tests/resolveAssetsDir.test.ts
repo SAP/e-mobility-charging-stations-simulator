@@ -6,7 +6,7 @@
  * `<module-dir>/assets` fallback.
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
@@ -197,24 +197,28 @@ await describe('resolveAssetsDir', async () => {
     // Arrange
     const originalCwd = process.cwd()
     const firstCwd = join(fixtureDir, 'first')
+    const firstCwdAlias = join(fixtureDir, 'first-alias')
     const secondCwd = join(fixtureDir, 'second')
     const missingCwd = join(fixtureDir, 'missing')
     mkdirSync(join(firstCwd, 'assets'), { recursive: true })
     mkdirSync(join(secondCwd, 'assets'), { recursive: true })
     mkdirSync(missingCwd)
+    symlinkSync(firstCwd, firstCwdAlias, 'junction')
     process.env[OVERRIDE_KEY] = 'assets'
 
     try {
       // Act and assert
-      for (const cwd of [firstCwd, secondCwd, firstCwd]) {
+      for (const cwd of [firstCwdAlias, secondCwd, firstCwdAlias]) {
         process.chdir(cwd)
-        assert.strictEqual(resolveAssetsDir(), join(cwd, 'assets'))
-        assert.strictEqual(getConfigFilePath(), join(cwd, 'assets', 'config.json'))
+        const expectedAssetsDir = join(process.cwd(), 'assets')
+        assert.strictEqual(resolveAssetsDir(), expectedAssetsDir)
+        assert.strictEqual(getConfigFilePath(), join(expectedAssetsDir, 'config.json'))
       }
       process.chdir(missingCwd)
-      assertAssetsDirError(() => getOcppSchemaBaseDir(), 'assets', join(missingCwd, 'assets'))
-      mkdirSync(join(missingCwd, 'assets'))
-      assert.strictEqual(resolveAssetsDir(), join(missingCwd, 'assets'))
+      const missingAssetsDir = join(process.cwd(), 'assets')
+      assertAssetsDirError(() => getOcppSchemaBaseDir(), 'assets', missingAssetsDir)
+      mkdirSync(missingAssetsDir)
+      assert.strictEqual(resolveAssetsDir(), missingAssetsDir)
     } finally {
       process.chdir(originalCwd)
     }
