@@ -85,7 +85,9 @@ jobs:
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node }}
+          # SemVer '*' excludes prereleases; the 'latest' alias does not.
+          node-version: ${{ matrix.node == 'latest' && '*' || matrix.node }}
+          check-latest: ${{ matrix.node == 'latest' }}
           cache: 'pnpm'
       - name: pnpm install
         run: pnpm install --ignore-scripts --frozen-lockfile
@@ -183,7 +185,8 @@ jobs:
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node == 'latest' && '*' || matrix.node }}
+          check-latest: ${{ matrix.node == 'latest' }}
           cache: 'pnpm'
       - name: pnpm install
         run: pnpm install --ignore-scripts --frozen-lockfile
@@ -238,7 +241,8 @@ jobs:
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node == 'latest' && '*' || matrix.node }}
+          check-latest: ${{ matrix.node == 'latest' }}
           cache: 'pnpm'
       - name: pnpm install
         run: pnpm install --ignore-scripts --frozen-lockfile
