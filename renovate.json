@@ -9,7 +9,8 @@
     "group:allNonMajor",
     "schedule:daily",
     ":maintainLockFilesWeekly",
-    "security:minimumReleaseAgeNpm"
+    "security:minimumReleaseAgeNpm",
+    "security:minimumReleaseAgePypi"
   ],
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
