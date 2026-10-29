@@ -274,6 +274,8 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
         'ws+unix:///tmp/simulator.sock',
         'ws+unix:///:/OCPP16',
         'ws+unix:///tmp/simulator.sock:/OC:PP16',
+        'ws+unix:///tmp/simulator.sock:OCPP16',
+        'ws+unix:s:OCPP16',
       ]
 
       for (const value of urls) {
@@ -304,6 +306,8 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
         'ws+unix:///tmp/simulator.sock:/OCPP16',
         'ws+unix:///tmp/simulator.sock:/',
         'ws+unix:///tmp/simulator.sock:',
+        'ws+unix:s:/OCPP16',
+        'ws+unix:./s:/OCPP16',
       ]
 
       for (const value of urls) {
