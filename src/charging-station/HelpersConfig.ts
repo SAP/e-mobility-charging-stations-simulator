@@ -17,12 +17,12 @@
  *   (`import { validateStationInfo, ... } from './Helpers.js'`).
  */
 
-import { basename, isAbsolute, join, parse, relative } from 'node:path'
+import { basename, isAbsolute, join, parse } from 'node:path'
 
 import type { ChargingStation } from './ChargingStation.js'
 
 import { BaseError } from '../exception/index.js'
-import { getAssetFilePath, getStationTemplatesDir } from '../resolveAssetsDir.js'
+import { getAssetFilePath, getStationTemplateRelativePath } from '../resolveAssetsDir.js'
 import {
   AmpereUnits,
   type ChargingStationConfiguration,
@@ -49,7 +49,7 @@ const moduleName = 'HelpersConfig'
  */
 export const buildTemplateName = (templateFile: string): string => {
   if (isAbsolute(templateFile)) {
-    templateFile = relative(getStationTemplatesDir(), templateFile)
+    templateFile = getStationTemplateRelativePath(templateFile)
   }
   const templateFileParsedPath = parse(templateFile)
   return join(templateFileParsedPath.dir, templateFileParsedPath.name)

@@ -1,7 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
-import { statSync } from 'node:fs'
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { realpathSync, statSync } from 'node:fs'
+import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path'
 import { env } from 'node:process'
 
 import { AssetsDirError } from './exception/AssetsDirError.js'
@@ -10,7 +10,9 @@ const DEFAULT_ASSETS_DIR = join(import.meta.dirname, 'assets')
 const CONFIGURATIONS_DIR_NAME = 'configurations'
 const STATION_TEMPLATES_DIR_NAME = 'station-templates'
 
-let cachedSelection: undefined | { cwd?: string; dir: string; override: string }
+let cachedSelection:
+  | undefined
+  | { canonicalDir: string; cwd?: string; dir: string; lexicalDir?: string; override: string }
 
 /**
  * @file Single source of truth for locating the project assets directory.
@@ -52,10 +54,13 @@ let cachedSelection: undefined | { cwd?: string; dir: string; override: string }
  *    relative paths are resolved against the current working directory. Some
  *    consumers resolve the directory once at module load or process start, so
  *    set this variable before starting the process.
- *    Each successful selection is validated once until the override changes,
- *    the working directory changes for a relative override, or the override is
- *    unset. Downstream readers handle later removal or replacement of that
- *    directory. Failed selections are not cached.
+ *    Each successful selection is validated and its physical root cached until
+ *    a lookup observes a changed override, a changed working directory for a
+ *    relative override, or an unset override. Derived paths stay anchored to
+ *    that physical root; retargeting a symlink alone does not refresh them.
+ *    The public return value retains the original absolute spelling.
+ *    Downstream readers handle later removal or replacement of the selected
+ *    physical directory. Failed selections are not cached.
  * 2. `<this-module-dir>/assets` — the `assets/` folder that sits beside this
  *    module. It is never validated, as it exists by construction (`src/assets`
  *    is tracked in the repository and `dist/assets` is created by `pnpm build`).
@@ -78,7 +83,14 @@ export function resolveAssetsDir (): string {
   cachedSelection = undefined
   const dir = cwd === undefined ? override : resolve(cwd, override)
   assertAssetsDir(override, dir)
-  cachedSelection = { cwd, dir, override }
+  const canonicalDir = realpathSync.native(dir)
+  cachedSelection = {
+    canonicalDir,
+    cwd,
+    dir,
+    lexicalDir: getEquivalentLexicalDir(dir, canonicalDir),
+    override,
+  }
   return dir
 }
 
@@ -100,13 +112,49 @@ function assertAssetsDir (override: string, dir: string): void {
 }
 
 /**
+ * Retains a normalized alias only when it denotes the selected physical root.
+ * Lexical normalization can otherwise select a different directory when a
+ * parent segment follows a symlink.
+ * @param dir - Selected directory before lexical normalization.
+ * @param canonicalDir - Selected physical directory.
+ * @returns An equivalent lexical alias, or undefined when none is needed or proven.
+ */
+function getEquivalentLexicalDir (dir: string, canonicalDir: string): string | undefined {
+  const lexicalDir = normalize(dir)
+  if (lexicalDir === canonicalDir) {
+    return
+  }
+  if (lexicalDir === dir) {
+    return lexicalDir
+  }
+  try {
+    if (realpathSync.native(lexicalDir) === canonicalDir) {
+      return lexicalDir
+    }
+  } catch {
+    // The normalized spelling is optional; the selected physical root is valid.
+  }
+}
+
+/**
+ * Checks whether a relative path stays inside its base directory.
+ * @param subpath - Path relative to the base directory.
+ * @returns Whether the path names the base or one of its descendants.
+ */
+const isRelativeSubpath = (subpath: string): boolean =>
+  subpath !== '..' && !subpath.startsWith(`..${sep}`) && !isAbsolute(subpath)
+
+/**
  * Builds an absolute asset file path from a subpath relative to the assets
  * directory. Single join primitive shared by every derived asset path so that
  * the `<assets-dir>/<subpath>` layout stays in one place.
  * @param subpath - Asset path relative to the assets directory (e.g. `configurations`, `station-templates`).
  * @returns Absolute path to the asset file.
  */
-export const getAssetFilePath = (subpath: string): string => join(resolveAssetsDir(), subpath)
+export const getAssetFilePath = (subpath: string): string => {
+  const dir = resolveAssetsDir()
+  return join(cachedSelection?.canonicalDir ?? dir, subpath)
+}
 
 /**
  * Resolves the directory that holds the charging station configurations.
@@ -121,6 +169,30 @@ export const getConfigurationsDir = (): string => getAssetFilePath(CONFIGURATION
 export const getStationTemplatesDir = (): string => getAssetFilePath(STATION_TEMPLATES_DIR_NAME)
 
 /**
+ * Resolves a template path relative to the selected templates directory.
+ * Equivalent selected-root aliases retain their logical subpaths, including
+ * child junctions. The most specific matching root wins when aliases overlap.
+ * Paths outside that tree retain lexical relative semantics.
+ * @param templatePath - Template file or directory path.
+ * @returns Path relative to the selected templates directory.
+ */
+export const getStationTemplateRelativePath = (templatePath: string): string => {
+  const templatesDir = getStationTemplatesDir()
+  const subpath = relative(templatesDir, templatePath)
+  if (cachedSelection?.lexicalDir !== undefined) {
+    const lexicalTemplatesDir = join(cachedSelection.lexicalDir, STATION_TEMPLATES_DIR_NAME)
+    const lexicalSubpath = relative(lexicalTemplatesDir, templatePath)
+    if (
+      isRelativeSubpath(lexicalSubpath) &&
+      (!isRelativeSubpath(subpath) || lexicalTemplatesDir.length > templatesDir.length)
+    ) {
+      return lexicalSubpath
+    }
+  }
+  return subpath
+}
+
+/**
  * Resolves the persistence directory for a charging station template, preserving
  * its parent subpath under the canonical templates directory. External template
  * trees use the nearest exact `station-templates` ancestor; templates without one
@@ -130,12 +202,8 @@ export const getStationTemplatesDir = (): string => getAssetFilePath(STATION_TEM
  */
 export const getStationConfigurationDir = (templateFile: string): string => {
   const templateParent = dirname(resolve(templateFile))
-  const templateSubpath = relative(getStationTemplatesDir(), templateParent)
-  if (
-    templateSubpath !== '..' &&
-    !templateSubpath.startsWith(`..${sep}`) &&
-    !isAbsolute(templateSubpath)
-  ) {
+  const templateSubpath = getStationTemplateRelativePath(templateParent)
+  if (isRelativeSubpath(templateSubpath)) {
     return join(getConfigurationsDir(), templateSubpath)
   }
   let ancestor = templateParent

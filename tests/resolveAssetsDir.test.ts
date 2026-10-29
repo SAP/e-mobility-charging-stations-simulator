@@ -6,17 +6,15 @@
  * `<module-dir>/assets` fallback.
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
-  getAssetFilePath,
   getConfigFilePath,
   getConfigurationsDir,
   getOcppSchemaBaseDir,
-  getStationTemplatesDir,
   resolveAssetsDir,
 } from '../src/resolveAssetsDir.js'
 import { standardCleanup } from './helpers/TestLifecycleHelpers.js'
@@ -127,29 +125,19 @@ await describe('resolveAssetsDir', async () => {
     assertAssetsDirError(() => resolveAssetsDir(), filePath)
   })
 
-  await it('should return the OCPP schemas subdirectory when no override is set', () => {
-    assert.strictEqual(
-      getOcppSchemaBaseDir(),
-      join(import.meta.dirname, '..', 'src', 'assets', 'json-schemas', 'ocpp')
-    )
-  })
-
-  await it('should return the OCPP schemas subdirectory for an override assets directory', () => {
-    process.env[OVERRIDE_KEY] = fixtureDir
-    assert.strictEqual(getOcppSchemaBaseDir(), join(fixtureDir, 'json-schemas', 'ocpp'))
-  })
-
   await it('should follow absolute override transitions from one directory to another and back', () => {
     const secondDir = join(fixtureDir, 'second')
     mkdirSync(secondDir)
-    for (const directory of [fixtureDir, secondDir, fixtureDir]) {
+    writeFileSync(join(fixtureDir, 'config.json'), 'first')
+    writeFileSync(join(secondDir, 'config.json'), 'second')
+    for (const [directory, marker] of [
+      [fixtureDir, 'first'],
+      [secondDir, 'second'],
+      [fixtureDir, 'first'],
+    ]) {
       process.env[OVERRIDE_KEY] = directory
       assert.strictEqual(resolveAssetsDir(), directory)
-      assert.strictEqual(getAssetFilePath('idtags.json'), join(directory, 'idtags.json'))
-      assert.strictEqual(getConfigFilePath(), join(directory, 'config.json'))
-      assert.strictEqual(getConfigurationsDir(), join(directory, 'configurations'))
-      assert.strictEqual(getStationTemplatesDir(), join(directory, 'station-templates'))
-      assert.strictEqual(getOcppSchemaBaseDir(), join(directory, 'json-schemas', 'ocpp'))
+      assert.strictEqual(readFileSync(getConfigFilePath(), 'utf8'), marker)
     }
   })
 
@@ -189,8 +177,9 @@ await describe('resolveAssetsDir', async () => {
     process.env[OVERRIDE_KEY] = missingDir
     assertAssetsDirError(() => resolveAssetsDir(), missingDir)
     mkdirSync(missingDir)
+    writeFileSync(join(missingDir, 'config.json'), 'created')
     assert.strictEqual(resolveAssetsDir(), missingDir)
-    assert.strictEqual(getStationTemplatesDir(), join(missingDir, 'station-templates'))
+    assert.strictEqual(readFileSync(getConfigFilePath(), 'utf8'), 'created')
   })
 
   await it('should follow cwd changes for the same relative override including missing targets', () => {
@@ -202,17 +191,23 @@ await describe('resolveAssetsDir', async () => {
     const missingCwd = join(fixtureDir, 'missing')
     mkdirSync(join(firstCwd, 'assets'), { recursive: true })
     mkdirSync(join(secondCwd, 'assets'), { recursive: true })
+    writeFileSync(join(firstCwd, 'assets', 'config.json'), 'first')
+    writeFileSync(join(secondCwd, 'assets', 'config.json'), 'second')
     mkdirSync(missingCwd)
     symlinkSync(firstCwd, firstCwdAlias, 'junction')
     process.env[OVERRIDE_KEY] = 'assets'
 
     try {
       // Act and assert
-      for (const cwd of [firstCwdAlias, secondCwd, firstCwdAlias]) {
+      for (const [cwd, marker] of [
+        [firstCwdAlias, 'first'],
+        [secondCwd, 'second'],
+        [firstCwdAlias, 'first'],
+      ]) {
         process.chdir(cwd)
         const expectedAssetsDir = join(process.cwd(), 'assets')
         assert.strictEqual(resolveAssetsDir(), expectedAssetsDir)
-        assert.strictEqual(getConfigFilePath(), join(expectedAssetsDir, 'config.json'))
+        assert.strictEqual(readFileSync(getConfigFilePath(), 'utf8'), marker)
       }
       process.chdir(missingCwd)
       const missingAssetsDir = join(process.cwd(), 'assets')
@@ -240,5 +235,61 @@ await describe('resolveAssetsDir', async () => {
 
     // Assert
     assertAssetsDirError(() => resolveAssetsDir(), firstDir)
+  })
+
+  await it('should read and persist in the filesystem-selected root with a parent segment', () => {
+    // Arrange
+    const physicalRoot = join(fixtureDir, 'physical', 'assets')
+    const lexicalRoot = join(fixtureDir, 'assets')
+    const alias = join(fixtureDir, 'alias')
+    mkdirSync(join(fixtureDir, 'physical', 'child'), { recursive: true })
+    mkdirSync(physicalRoot)
+    mkdirSync(lexicalRoot)
+    symlinkSync(join(fixtureDir, 'physical', 'child'), alias, 'junction')
+    writeFileSync(join(physicalRoot, 'config.json'), 'physical')
+    writeFileSync(join(lexicalRoot, 'config.json'), 'lexical')
+    const override = `${alias}${sep}..${sep}assets${sep}`
+    process.env[OVERRIDE_KEY] = override
+
+    // Act and assert: use native filesystem traversal as the expected identity,
+    // including Windows, where parent segments can be normalized before junctions.
+    assert.strictEqual(resolveAssetsDir(), override)
+    assert.strictEqual(
+      readFileSync(getConfigFilePath(), 'utf8'),
+      readFileSync(`${override}config.json`, 'utf8')
+    )
+    mkdirSync(getConfigurationsDir())
+    writeFileSync(join(getConfigurationsDir(), 'state.json'), '{"persisted":true}')
+    assert.deepStrictEqual(
+      JSON.parse(readFileSync(`${override}configurations${sep}state.json`, 'utf8')),
+      { persisted: true }
+    )
+  })
+
+  await it('should retain a selected physical root until the selection is invalidated', () => {
+    // Arrange
+    const firstRoot = join(fixtureDir, 'first')
+    const secondRoot = join(fixtureDir, 'second')
+    const alias = join(fixtureDir, 'alias')
+    mkdirSync(firstRoot)
+    mkdirSync(secondRoot)
+    writeFileSync(join(firstRoot, 'config.json'), 'first')
+    writeFileSync(join(secondRoot, 'config.json'), 'second')
+    symlinkSync(firstRoot, alias, 'junction')
+    const override = `${alias}${sep}`
+    process.env[OVERRIDE_KEY] = override
+    assert.strictEqual(resolveAssetsDir(), override)
+
+    // Act
+    rmSync(alias, { force: true, recursive: true })
+    symlinkSync(secondRoot, alias, 'junction')
+
+    // Assert
+    assert.strictEqual(readFileSync(getConfigFilePath(), 'utf8'), 'first')
+    Reflect.deleteProperty(process.env, OVERRIDE_KEY)
+    resolveAssetsDir()
+    process.env[OVERRIDE_KEY] = override
+    assert.strictEqual(resolveAssetsDir(), override)
+    assert.strictEqual(readFileSync(getConfigFilePath(), 'utf8'), 'second')
   })
 })

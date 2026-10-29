@@ -93,6 +93,21 @@ await describe('ChargingStation configuration persistence', async () => {
       parent: join('vendor', 'station-templates', 'model'),
     },
     {
+      assetsAlias: true,
+      assetsName: 'selected-assets',
+      canonical: true,
+      name: 'a selected assets alias with linked templates and vendor directories',
+      parent: join('vendor', 'linked', 'station-templates', 'model'),
+    },
+    {
+      aliasInTemplates: true,
+      assetsAlias: true,
+      assetsName: 'selected-assets',
+      canonical: true,
+      name: 'an assets alias nested under the selected templates directory',
+      parent: 'vendor',
+    },
+    {
       canonical: false,
       name: 'the nearest external station-templates directory',
       parent: join('vendor', 'station-templates', 'model'),
@@ -114,16 +129,32 @@ await describe('ChargingStation configuration persistence', async () => {
       const root = dirname(dirname(sourceTemplate))
       const assetsDir =
         persistenceCase.assetsName == null ? root : join(root, persistenceCase.assetsName)
+      const selectedAssetsDir =
+        persistenceCase.assetsAlias === true
+          ? persistenceCase.aliasInTemplates === true
+            ? join(assetsDir, 'station-templates', 'assets-alias')
+            : join(root, 'assets-alias')
+          : assetsDir
+      if (persistenceCase.assetsAlias === true) {
+        const templatesDir = join(root, 'templates-storage')
+        const vendorDir = join(root, 'vendor-target')
+        mkdirSync(join(templatesDir, 'vendor'), { recursive: true })
+        mkdirSync(vendorDir)
+        mkdirSync(assetsDir)
+        symlinkSync(templatesDir, join(assetsDir, 'station-templates'), 'junction')
+        symlinkSync(vendorDir, join(templatesDir, 'vendor', 'linked'), 'junction')
+        symlinkSync(assetsDir, selectedAssetsDir, 'junction')
+      }
       const templateParent =
         persistenceCase.outsideTemplates === true
           ? join(root, 'external', persistenceCase.parent)
-          : join(assetsDir, 'station-templates', persistenceCase.parent)
+          : join(selectedAssetsDir, 'station-templates', persistenceCase.parent)
       mkdirSync(templateParent, { recursive: true })
       const templateFile = join(templateParent, 'model.json')
       copyFileSync(sourceTemplate, templateFile)
       if (persistenceCase.canonical) {
         symlinkSync(getAssetFilePath('json-schemas'), join(assetsDir, 'json-schemas'), 'junction')
-        process.env[OVERRIDE_KEY] = assetsDir
+        process.env[OVERRIDE_KEY] = selectedAssetsDir
       }
       const template = JSON.parse(readFileSync(templateFile, 'utf8')) as ChargingStationTemplate
       const expectedConfigurationDir =
@@ -146,6 +177,9 @@ await describe('ChargingStation configuration persistence', async () => {
 
       // Assert
       assert.strictEqual(existsSync(expectedConfigurationFile), true)
+      if (persistenceCase.assetsAlias === true) {
+        assert.strictEqual(station.stationInfo?.templateName, join(persistenceCase.parent, 'model'))
+      }
       if (persistenceCase.canonical) {
         assert.strictEqual(
           existsSync(join(assetsDir, 'station-templates', 'configurations')),
