@@ -109,7 +109,8 @@ export class OCPP20CertificateManager {
   private static readonly BASE_CERT_PATH = (() => {
     const configurationsDir = getConfigurationsDir()
     // Canonicalize the existing assets root without creating the lazy configurations directory.
-    return join(realpathSync(dirname(configurationsDir)), basename(configurationsDir))
+    // Match the native semantics used by fs.promises.realpath during containment checks.
+    return join(realpathSync.native(dirname(configurationsDir)), basename(configurationsDir))
   })()
 
   private static readonly CERT_FOLDER = 'certs'
