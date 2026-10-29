@@ -8,12 +8,13 @@ import {
   isWithinInterval,
 } from 'date-fns'
 
+import type { ChargingStation } from '../../../charging-station/index.js'
+
 import {
-  type ChargingStation,
   getConfigurationKey,
   hasFeatureProfile,
   hasReservationExpired,
-} from '../../../charging-station/index.js'
+} from '../../../charging-station/core/index.js'
 import {
   captureTransactionIntervalState,
   completeTransactionIntervalState,
