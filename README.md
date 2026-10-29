@@ -144,7 +144,9 @@ All configuration files are using the JSON standard syntax.
 
 **Configuration files locations**:
 
-`<assets-dir>` is `dist/assets` in production and `src/assets` in development. Setting `EVSE_ASSETS_DIR` selects a different directory, using an absolute path or a path relative to the working directory.
+`<assets-dir>` is `dist/assets` in production and `src/assets` in development. Setting `EVSE_ASSETS_DIR` replaces the entire assets root, using an absolute path or a path relative to the working directory.
+
+Before starting the simulator with `EVSE_ASSETS_DIR`, populate the selected directory with the required assets, including `station-templates/` and the complete `json-schemas/ocpp/` tree.
 
 - charging stations simulator configuration: `<assets-dir>/config.json`;
 - charging station configuration templates: `<assets-dir>/station-templates`;
