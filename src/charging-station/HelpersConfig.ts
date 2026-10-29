@@ -17,7 +17,7 @@
  *   (`import { validateStationInfo, ... } from './Helpers.js'`).
  */
 
-import { basename, isAbsolute, join, parse } from 'node:path'
+import { basename, join, parse } from 'node:path'
 
 import type { ChargingStation } from './ChargingStation.js'
 
@@ -42,16 +42,14 @@ const moduleName = 'HelpersConfig'
 
 /**
  * Derives the template basename (path without extension) relative to the
- * `station-templates` subdirectory of the assets directory. Absolute paths are
- * converted to paths relative to that directory first.
+ * `station-templates` subdirectory of the assets directory. Relative paths are
+ * interpreted against that subdirectory; absolute paths are converted to paths
+ * relative to it. Both forms share selected-root alias normalization.
  * @param templateFile - Template file path (absolute or relative).
  * @returns Template basename without extension.
  */
 export const buildTemplateName = (templateFile: string): string => {
-  if (isAbsolute(templateFile)) {
-    templateFile = getStationTemplateRelativePath(templateFile)
-  }
-  const templateFileParsedPath = parse(templateFile)
+  const templateFileParsedPath = parse(getStationTemplateRelativePath(templateFile))
   return join(templateFileParsedPath.dir, templateFileParsedPath.name)
 }
 

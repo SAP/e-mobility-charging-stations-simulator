@@ -172,16 +172,21 @@ export const getStationTemplatesDir = (): string => getAssetFilePath(STATION_TEM
  * Resolves a template path relative to the selected templates directory.
  * Equivalent selected-root aliases retain their logical subpaths, including
  * child junctions. The most specific matching root wins when aliases overlap.
- * Paths outside that tree retain lexical relative semantics.
+ * Paths outside that tree retain lexical relative semantics. Relative inputs
+ * are interpreted against the selected templates directory, matching template
+ * file dispatch.
  * @param templatePath - Template file or directory path.
  * @returns Path relative to the selected templates directory.
  */
 export const getStationTemplateRelativePath = (templatePath: string): string => {
   const templatesDir = getStationTemplatesDir()
-  const subpath = relative(templatesDir, templatePath)
+  const absoluteTemplatePath = isAbsolute(templatePath)
+    ? templatePath
+    : join(templatesDir, templatePath)
+  const subpath = relative(templatesDir, absoluteTemplatePath)
   if (cachedSelection?.lexicalDir !== undefined) {
     const lexicalTemplatesDir = join(cachedSelection.lexicalDir, STATION_TEMPLATES_DIR_NAME)
-    const lexicalSubpath = relative(lexicalTemplatesDir, templatePath)
+    const lexicalSubpath = relative(lexicalTemplatesDir, absoluteTemplatePath)
     if (
       isRelativeSubpath(lexicalSubpath) &&
       (!isRelativeSubpath(subpath) || lexicalTemplatesDir.length > templatesDir.length)
