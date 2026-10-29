@@ -1122,6 +1122,11 @@ await describe('ConfigurationSchema', async () => {
         { enabled: false, type: 'jsonfile' },
         { enabled: true, type: 'mongodb' },
         { enabled: true, type: 'mysql' },
+        { enabled: true, type: 'mariadb' },
+        // `enabled` omitted: inherited as true for the remote backends.
+        { type: 'mongodb' },
+        { type: 'mysql' },
+        { type: 'mariadb' },
       ]
       for (const section of parsedSections) {
         for (const uri of ['not a url', 'performance/records.json', '/tmp/perf.json', '']) {
@@ -1143,8 +1148,10 @@ await describe('ConfigurationSchema', async () => {
         { type: 'none' },
         { enabled: true, type: 'none' },
         { enabled: false, type: 'mongodb' },
-        { type: 'mysql' },
+        { enabled: false, type: 'mysql' },
+        { enabled: false, type: 'mariadb' },
         {},
+        { enabled: true },
       ]) {
         const result = ConfigurationSchema.safeParse(
           buildMinimalConfiguration({ performanceStorage: { ...section, uri: 'not a url' } })
