@@ -13,6 +13,7 @@ import type { CoherentSession } from './meter-values/index.js'
 
 import { BaseError, OCPPError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
+import { getStationConfigurationDir } from '../resolveAssetsDir.js'
 import {
   type AutomaticTransactionGeneratorConfiguration,
   AvailabilityType,
@@ -2874,14 +2875,8 @@ export class ChargingStation extends EventEmitter {
       logger.error(`${this.logPrefix()} ${moduleName}.initialize: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
-    // `templateFile` is `<assets-dir>/station-templates/<file>` (see Bootstrap): the
-    // per-station configuration file lives in the sibling `configurations/` directory
-    // of the assets directory, derived from the template file's parent so that
-    // `EVSE_ASSETS_DIR` overrides containing `station-templates` in their path still
-    // resolve correctly (the previous string `replace` did not).
     this.configurationFile = join(
-      dirname(dirname(this.templateFile)),
-      'configurations',
+      getStationConfigurationDir(this.templateFile),
       `${getHashId(this.index, stationTemplate)}.json`
     )
     const stationConfiguration = this.getConfigurationFromFile()

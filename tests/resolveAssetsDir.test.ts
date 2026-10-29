@@ -11,7 +11,14 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import { getOcppSchemaBaseDir, resolveAssetsDir } from '../src/resolveAssetsDir.js'
+import {
+  getAssetFilePath,
+  getConfigFilePath,
+  getConfigurationsDir,
+  getOcppSchemaBaseDir,
+  getStationTemplatesDir,
+  resolveAssetsDir,
+} from '../src/resolveAssetsDir.js'
 import { standardCleanup } from './helpers/TestLifecycleHelpers.js'
 
 const OVERRIDE_KEY = 'EVSE_ASSETS_DIR'
@@ -44,7 +51,7 @@ let originalOverride: string | undefined
 let fixtureDir: string
 
 beforeEach(() => {
-  originalOverride ??= process.env[OVERRIDE_KEY]
+  originalOverride = process.env[OVERRIDE_KEY]
   Reflect.deleteProperty(process.env, OVERRIDE_KEY)
   fixtureDir = mkdtempSync(join(tmpdir(), 'evse-assets-'))
   standardCleanup()
@@ -130,5 +137,104 @@ await describe('resolveAssetsDir', async () => {
   await it('should return the OCPP schemas subdirectory for an override assets directory', () => {
     process.env[OVERRIDE_KEY] = fixtureDir
     assert.strictEqual(getOcppSchemaBaseDir(), join(fixtureDir, 'json-schemas', 'ocpp'))
+  })
+
+  await it('should follow absolute override transitions from one directory to another and back', () => {
+    const secondDir = join(fixtureDir, 'second')
+    mkdirSync(secondDir)
+    for (const directory of [fixtureDir, secondDir, fixtureDir]) {
+      process.env[OVERRIDE_KEY] = directory
+      assert.strictEqual(resolveAssetsDir(), directory)
+      assert.strictEqual(getAssetFilePath('idtags.json'), join(directory, 'idtags.json'))
+      assert.strictEqual(getConfigFilePath(), join(directory, 'config.json'))
+      assert.strictEqual(getConfigurationsDir(), join(directory, 'configurations'))
+      assert.strictEqual(getStationTemplatesDir(), join(directory, 'station-templates'))
+      assert.strictEqual(getOcppSchemaBaseDir(), join(directory, 'json-schemas', 'ocpp'))
+    }
+  })
+
+  for (const unsetOverride of [undefined, '']) {
+    await it(`should fall back after clearing an override with ${String(unsetOverride)}`, () => {
+      // Arrange
+      process.env[OVERRIDE_KEY] = fixtureDir
+      assert.strictEqual(resolveAssetsDir(), fixtureDir)
+
+      // Act
+      if (unsetOverride === undefined) {
+        Reflect.deleteProperty(process.env, OVERRIDE_KEY)
+      } else {
+        process.env[OVERRIDE_KEY] = unsetOverride
+      }
+      const fallbackDir = join(import.meta.dirname, '..', 'src', 'assets')
+
+      // Assert
+      assert.strictEqual(resolveAssetsDir(), fallbackDir)
+      assert.strictEqual(getConfigurationsDir(), join(fallbackDir, 'configurations'))
+      rmSync(fixtureDir, { recursive: true })
+      process.env[OVERRIDE_KEY] = fixtureDir
+      assertAssetsDirError(() => resolveAssetsDir(), fixtureDir)
+    })
+  }
+
+  await it('should reject an invalid override after a successful selection', () => {
+    process.env[OVERRIDE_KEY] = fixtureDir
+    assert.strictEqual(resolveAssetsDir(), fixtureDir)
+    const missingDir = join(fixtureDir, 'missing')
+    process.env[OVERRIDE_KEY] = missingDir
+    assertAssetsDirError(() => getConfigurationsDir(), missingDir)
+  })
+
+  await it('should retry a missing override after its directory is created', () => {
+    const missingDir = join(fixtureDir, 'created-later')
+    process.env[OVERRIDE_KEY] = missingDir
+    assertAssetsDirError(() => resolveAssetsDir(), missingDir)
+    mkdirSync(missingDir)
+    assert.strictEqual(resolveAssetsDir(), missingDir)
+    assert.strictEqual(getStationTemplatesDir(), join(missingDir, 'station-templates'))
+  })
+
+  await it('should follow cwd changes for the same relative override including missing targets', () => {
+    // Arrange
+    const originalCwd = process.cwd()
+    const firstCwd = join(fixtureDir, 'first')
+    const secondCwd = join(fixtureDir, 'second')
+    const missingCwd = join(fixtureDir, 'missing')
+    mkdirSync(join(firstCwd, 'assets'), { recursive: true })
+    mkdirSync(join(secondCwd, 'assets'), { recursive: true })
+    mkdirSync(missingCwd)
+    process.env[OVERRIDE_KEY] = 'assets'
+
+    try {
+      // Act and assert
+      for (const cwd of [firstCwd, secondCwd, firstCwd]) {
+        process.chdir(cwd)
+        assert.strictEqual(resolveAssetsDir(), join(cwd, 'assets'))
+        assert.strictEqual(getConfigFilePath(), join(cwd, 'assets', 'config.json'))
+      }
+      process.chdir(missingCwd)
+      assertAssetsDirError(() => getOcppSchemaBaseDir(), 'assets', join(missingCwd, 'assets'))
+      mkdirSync(join(missingCwd, 'assets'))
+      assert.strictEqual(resolveAssetsDir(), join(missingCwd, 'assets'))
+    } finally {
+      process.chdir(originalCwd)
+    }
+  })
+
+  await it('should discard a successful selection before rejecting a different override', () => {
+    // Arrange
+    const firstDir = join(fixtureDir, 'first')
+    const missingDir = join(fixtureDir, 'missing')
+    mkdirSync(firstDir)
+    process.env[OVERRIDE_KEY] = firstDir
+    assert.strictEqual(resolveAssetsDir(), firstDir)
+
+    // Act
+    process.env[OVERRIDE_KEY] = missingDir
+    assertAssetsDirError(() => resolveAssetsDir(), missingDir)
+    rmSync(firstDir, { recursive: true })
+    process.env[OVERRIDE_KEY] = firstDir
+
+    // Assert
+    assertAssetsDirError(() => resolveAssetsDir(), firstDir)
   })
 })

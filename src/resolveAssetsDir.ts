@@ -1,10 +1,16 @@
 // Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import { statSync } from 'node:fs'
-import { isAbsolute, join, resolve } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { env } from 'node:process'
 
 import { AssetsDirError } from './exception/AssetsDirError.js'
+
+const DEFAULT_ASSETS_DIR = join(import.meta.dirname, 'assets')
+const CONFIGURATIONS_DIR_NAME = 'configurations'
+const STATION_TEMPLATES_DIR_NAME = 'station-templates'
+
+let cachedSelection: undefined | { cwd?: string; dir: string; override: string }
 
 /**
  * @file Single source of truth for locating the project assets directory.
@@ -46,6 +52,10 @@ import { AssetsDirError } from './exception/AssetsDirError.js'
  *    relative paths are resolved against the current working directory. Some
  *    consumers resolve the directory once at module load or process start, so
  *    set this variable before starting the process.
+ *    Each successful selection is validated once until the override changes,
+ *    the working directory changes for a relative override, or the override is
+ *    unset. Downstream readers handle later removal or replacement of that
+ *    directory. Failed selections are not cached.
  * 2. `<this-module-dir>/assets` — the `assets/` folder that sits beside this
  *    module. It is never validated, as it exists by construction (`src/assets`
  *    is tracked in the repository and `dist/assets` is created by `pnpm build`).
@@ -54,21 +64,28 @@ import { AssetsDirError } from './exception/AssetsDirError.js'
  */
 export function resolveAssetsDir (): string {
   const override = env.EVSE_ASSETS_DIR
-  if (override) {
-    const dir = isAbsolute(override) ? override : resolve(process.cwd(), override)
-    assertAssetsDir(override, dir)
-    return dir
+  if (!override) {
+    cachedSelection = undefined
+    return DEFAULT_ASSETS_DIR
   }
-  return join(import.meta.dirname, 'assets')
+  if (cachedSelection?.override === override && cachedSelection.cwd === undefined) {
+    return cachedSelection.dir
+  }
+  const cwd = isAbsolute(override) ? undefined : process.cwd()
+  if (cachedSelection?.override === override && cachedSelection.cwd === cwd) {
+    return cachedSelection.dir
+  }
+  cachedSelection = undefined
+  const dir = cwd === undefined ? override : resolve(cwd, override)
+  assertAssetsDir(override, dir)
+  cachedSelection = { cwd, dir, override }
+  return dir
 }
 
 /**
- * Asserts that the directory an `EVSE_ASSETS_DIR` override resolves to exists
- * and is a directory. Validated on every call (no memoization) so that a
- * directory created or removed after a first call stays observable. Call
- * sites span process startup, per-station setup, and per-transaction paths,
- * so the per-call cost must stay negligible: one `statSync` when an override
- * is set, no syscall on the no-override fallback.
+ * Asserts that a new `EVSE_ASSETS_DIR` selection exists and is a directory
+ * before caching it. Repeated calls for that selection need no filesystem
+ * access; a failed assertion leaves no cached selection.
  * @param override - The raw `EVSE_ASSETS_DIR` value, for the error message.
  * @param dir - The resolved directory to assert.
  * @throws {AssetsDirError} When the directory does not exist or is not a directory.
@@ -95,13 +112,44 @@ export const getAssetFilePath = (subpath: string): string => join(resolveAssetsD
  * Resolves the directory that holds the charging station configurations.
  * @returns `<assets-dir>/configurations`
  */
-export const getConfigurationsDir = (): string => getAssetFilePath('configurations')
+export const getConfigurationsDir = (): string => getAssetFilePath(CONFIGURATIONS_DIR_NAME)
 
 /**
  * Resolves the directory that holds the charging station configuration templates.
  * @returns `<assets-dir>/station-templates`
  */
-export const getStationTemplatesDir = (): string => getAssetFilePath('station-templates')
+export const getStationTemplatesDir = (): string => getAssetFilePath(STATION_TEMPLATES_DIR_NAME)
+
+/**
+ * Resolves the persistence directory for a charging station template, preserving
+ * its parent subpath under the canonical templates directory. External template
+ * trees use the nearest exact `station-templates` ancestor; templates without one
+ * retain storage beside the template file.
+ * @param templateFile - Charging station template file path.
+ * @returns Absolute directory for the template's per-station configuration files.
+ */
+export const getStationConfigurationDir = (templateFile: string): string => {
+  const templateParent = dirname(resolve(templateFile))
+  const templateSubpath = relative(getStationTemplatesDir(), templateParent)
+  if (
+    templateSubpath !== '..' &&
+    !templateSubpath.startsWith(`..${sep}`) &&
+    !isAbsolute(templateSubpath)
+  ) {
+    return join(getConfigurationsDir(), templateSubpath)
+  }
+  let ancestor = templateParent
+  for (;;) {
+    if (basename(ancestor) === STATION_TEMPLATES_DIR_NAME) {
+      return join(dirname(ancestor), CONFIGURATIONS_DIR_NAME, relative(ancestor, templateParent))
+    }
+    const parent = dirname(ancestor)
+    if (parent === ancestor) {
+      return templateParent
+    }
+    ancestor = parent
+  }
+}
 
 /**
  * Resolves the path of the simulator configuration file.

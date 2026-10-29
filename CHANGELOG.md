@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Bug Fixes
+
+- **simulator:** preserve persisted charging station configuration for nested templates.
+- **simulator:** reduce asset path lookup overhead when using `EVSE_ASSETS_DIR`.
+
 ## [4.12.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.11.0...simulator@v4.12.0) (2026-08-23)
 
 ### 🚀 Features
