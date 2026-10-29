@@ -4,11 +4,17 @@
     "config:recommended",
     "abandonments:recommended",
     ":configMigration",
+    "helpers:pinGitHubActionDigests",
+    ":pinDevDependencies",
     "group:allNonMajor",
     "schedule:daily",
     ":maintainLockFilesWeekly",
     "security:minimumReleaseAgeNpm"
   ],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": ["security"]
+  },
   "ignorePresets": [":ignoreModulesAndTests"],
   "ignorePaths": [
     "**/node_modules/**",
@@ -22,8 +28,9 @@
   "packageRules": [
     {
       "matchFileNames": ["**/package.json"],
-      "matchDepTypes": ["dependencies", "devDependencies", "optionalDependencies"],
+      "matchDepTypes": ["dependencies", "optionalDependencies"],
       "rangeStrategy": "bump"
     }
-  ]
+  ],
+  "postUpdateOptions": ["pnpmDedupe"]
 }
