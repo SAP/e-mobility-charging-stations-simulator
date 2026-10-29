@@ -3,16 +3,29 @@
 import { realpathSync, statSync } from 'node:fs'
 import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path'
 import { env } from 'node:process'
+import { getEnvironmentData, isMainThread, setEnvironmentData } from 'node:worker_threads'
 
 import { AssetsDirError } from './exception/AssetsDirError.js'
 
+interface AssetsDirSelection {
+  readonly canonicalDir: string
+  readonly cwd?: string
+  readonly dir: string
+  readonly lexicalDir?: string
+  readonly override: string
+}
+
+const ASSETS_DIR_SELECTION_KEY = 'evse.assetsDirSelection'
 const DEFAULT_ASSETS_DIR = join(import.meta.dirname, 'assets')
 const CONFIGURATIONS_DIR_NAME = 'configurations'
 const STATION_TEMPLATES_DIR_NAME = 'station-templates'
 
-let cachedSelection:
-  | undefined
-  | { canonicalDir: string; cwd?: string; dir: string; lexicalDir?: string; override: string }
+let cachedSelection: AssetsDirSelection | undefined = isMainThread
+  ? undefined
+  : (getEnvironmentData(ASSETS_DIR_SELECTION_KEY) as AssetsDirSelection | undefined)
+if (cachedSelection !== undefined) {
+  Object.freeze(cachedSelection)
+}
 
 /**
  * @file Single source of truth for locating the project assets directory.
@@ -61,6 +74,10 @@ let cachedSelection:
  *    The public return value retains the original absolute spelling.
  *    Downstream readers handle later removal or replacement of the selected
  *    physical directory. Failed selections are not cached.
+ *    New workers inherit the selecting thread's immutable physical root and
+ *    logical alias context before asset consumers initialize. An inherited
+ *    selection still follows the worker's own override and cwd checks below.
+ *    Workers created before any selection resolve from their environment.
  * 2. `<this-module-dir>/assets` — the `assets/` folder that sits beside this
  *    module. It is never validated, as it exists by construction (`src/assets`
  *    is tracked in the repository and `dist/assets` is created by `pnpm build`).
@@ -70,7 +87,10 @@ let cachedSelection:
 export function resolveAssetsDir (): string {
   const override = env.EVSE_ASSETS_DIR
   if (!override) {
-    cachedSelection = undefined
+    if (cachedSelection !== undefined) {
+      cachedSelection = undefined
+      setEnvironmentData(ASSETS_DIR_SELECTION_KEY, undefined)
+    }
     return DEFAULT_ASSETS_DIR
   }
   if (cachedSelection?.override === override && cachedSelection.cwd === undefined) {
@@ -80,17 +100,21 @@ export function resolveAssetsDir (): string {
   if (cachedSelection?.override === override && cachedSelection.cwd === cwd) {
     return cachedSelection.dir
   }
-  cachedSelection = undefined
+  if (cachedSelection !== undefined) {
+    cachedSelection = undefined
+    setEnvironmentData(ASSETS_DIR_SELECTION_KEY, undefined)
+  }
   const dir = cwd === undefined ? override : resolve(cwd, override)
   assertAssetsDir(override, dir)
   const canonicalDir = realpathSync.native(dir)
-  cachedSelection = {
+  cachedSelection = Object.freeze({
     canonicalDir,
     cwd,
     dir,
     lexicalDir: getEquivalentLexicalDir(dir, canonicalDir),
     override,
-  }
+  })
+  setEnvironmentData(ASSETS_DIR_SELECTION_KEY, cachedSelection)
   return dir
 }
 

@@ -6,10 +6,21 @@
  * `<module-dir>/assets` fallback.
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { once } from 'node:events'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
+import { Worker } from 'node:worker_threads'
 
 import {
   getConfigFilePath,
@@ -20,6 +31,63 @@ import {
 import { standardCleanup } from './helpers/TestLifecycleHelpers.js'
 
 const OVERRIDE_KEY = 'EVSE_ASSETS_DIR'
+
+interface WorkerAssetsResult {
+  config: string
+  relativeTemplatePath: string
+  template: string
+}
+
+/**
+ * Reads selected assets and persists configuration through a fresh real worker.
+ * @param templateFile - Template path used for logical namespace resolution.
+ * @returns The configuration and template actually read by the worker.
+ */
+const readAssetsInWorker = async (templateFile: string): Promise<WorkerAssetsResult> => {
+  const workerFile = join(fixtureDir, 'assets-worker.mjs')
+  writeFileSync(
+    workerFile,
+    `
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { parentPort, workerData } from 'node:worker_threads'
+import { register } from ${JSON.stringify(import.meta.resolve('tsx/esm/api'))}
+
+const unregister = register()
+// Registration must precede loading the TypeScript resolver in this fresh isolate.
+const {
+  getConfigFilePath,
+  getStationConfigurationDir,
+  getStationTemplateRelativePath,
+  getStationTemplatesDir,
+} = await import(${JSON.stringify(new URL('../src/resolveAssetsDir.ts', import.meta.url).href)})
+try {
+  const config = readFileSync(getConfigFilePath(), 'utf8')
+  const template = readFileSync(join(getStationTemplatesDir(), 'vendor', 'model.json'), 'utf8')
+  const configurationDir = getStationConfigurationDir(workerData.templateFile)
+  mkdirSync(configurationDir, { recursive: true })
+  writeFileSync(join(configurationDir, 'worker-state.json'), config)
+  parentPort.postMessage({
+    config,
+    relativeTemplatePath: getStationTemplateRelativePath(workerData.templateFile),
+    template,
+  })
+} finally {
+  unregister()
+}
+`,
+    'utf8'
+  )
+  const worker = new Worker(workerFile, { execArgv: [], workerData: { templateFile } })
+  try {
+    const [result] = (await once(worker, 'message', {
+      signal: AbortSignal.timeout(30_000),
+    })) as [WorkerAssetsResult]
+    return result
+  } finally {
+    await worker.terminate()
+  }
+}
 
 /**
  * Asserts that `fn` throws an `AssetsDirError` whose message names each of
@@ -291,5 +359,82 @@ await describe('resolveAssetsDir', async () => {
     process.env[OVERRIDE_KEY] = override
     assert.strictEqual(resolveAssetsDir(), override)
     assert.strictEqual(readFileSync(getConfigFilePath(), 'utf8'), 'second')
+  })
+
+  await it('should preserve pinned reads, writes and logical namespaces in later workers', async () => {
+    // Arrange: native spelling makes the selected-root alias overlap the physical tree.
+    const firstRoot = join(realpathSync.native(fixtureDir), 'first')
+    const secondRoot = join(realpathSync.native(fixtureDir), 'second')
+    for (const [root, marker] of [
+      [firstRoot, 'first'],
+      [secondRoot, 'second'],
+    ]) {
+      mkdirSync(join(root, 'station-templates', 'vendor'), { recursive: true })
+      writeFileSync(join(root, 'config.json'), marker)
+      writeFileSync(join(root, 'station-templates', 'vendor', 'model.json'), marker)
+    }
+    const alias = join(firstRoot, 'station-templates', 'active')
+    symlinkSync(firstRoot, alias, 'junction')
+    process.env[OVERRIDE_KEY] = alias
+    assert.strictEqual(readFileSync(getConfigFilePath(), 'utf8'), 'first')
+    rmSync(alias, { recursive: true })
+    symlinkSync(secondRoot, alias, 'junction')
+    const templateFile = join(alias, 'station-templates', 'vendor', 'model.json')
+    const firstState = join(firstRoot, 'configurations', 'vendor', 'worker-state.json')
+    const secondState = join(secondRoot, 'configurations', 'vendor', 'worker-state.json')
+
+    // Act and assert: a new isolate must inherit both the physical root and logical alias.
+    assert.deepStrictEqual(await readAssetsInWorker(templateFile), {
+      config: 'first',
+      relativeTemplatePath: join('vendor', 'model.json'),
+      template: 'first',
+    })
+    assert.strictEqual(readFileSync(firstState, 'utf8'), 'first')
+    assert.strictEqual(existsSync(secondState), false)
+
+    // An observed unset revokes inheritance. Do not resolve again before the next spawn.
+    Reflect.deleteProperty(process.env, OVERRIDE_KEY)
+    resolveAssetsDir()
+    process.env[OVERRIDE_KEY] = alias
+    assert.deepStrictEqual(await readAssetsInWorker(templateFile), {
+      config: 'second',
+      relativeTemplatePath: join('vendor', 'model.json'),
+      template: 'second',
+    })
+    assert.strictEqual(readFileSync(firstState, 'utf8'), 'first')
+    assert.strictEqual(readFileSync(secondState, 'utf8'), 'second')
+  })
+
+  await it('should honor a changed worker override before the parent resolves it', async () => {
+    // Arrange
+    const firstRoot = join(fixtureDir, 'first')
+    const secondRoot = join(fixtureDir, 'second')
+    for (const [root, marker] of [
+      [firstRoot, 'first'],
+      [secondRoot, 'second'],
+    ]) {
+      mkdirSync(join(root, 'station-templates', 'vendor'), { recursive: true })
+      writeFileSync(join(root, 'config.json'), marker)
+      writeFileSync(join(root, 'station-templates', 'vendor', 'model.json'), marker)
+    }
+    process.env[OVERRIDE_KEY] = firstRoot
+    assert.strictEqual(readFileSync(getConfigFilePath(), 'utf8'), 'first')
+
+    // Act: the inherited selection is stale, but the worker's explicit override wins.
+    process.env[OVERRIDE_KEY] = secondRoot
+    const result = await readAssetsInWorker(
+      join(secondRoot, 'station-templates', 'vendor', 'model.json')
+    )
+
+    // Assert
+    assert.deepStrictEqual(result, {
+      config: 'second',
+      relativeTemplatePath: join('vendor', 'model.json'),
+      template: 'second',
+    })
+    assert.strictEqual(
+      readFileSync(join(secondRoot, 'configurations', 'vendor', 'worker-state.json'), 'utf8'),
+      'second'
+    )
   })
 })
