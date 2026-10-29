@@ -15,6 +15,7 @@
  * bootstrap: it creates only missing layout parts without removing content,
  * which makes it safe to run concurrently from the test runner's per-file
  * child processes.
+ * Unusable existing entries are rejected; explicit serial setup owns repair.
  */
 import {
   existsSync,
@@ -41,9 +42,27 @@ export const fixtureDir = join(thisDir, 'assets')
 // 'junction' creates a directory junction on Windows (no elevation needed) and a
 // directory symlink on POSIX.
 /**
+ * Checks whether an existing fixture entry is a symbolic link with a live target.
+ * @param linkPath - The fixture entry to inspect.
+ * @returns Whether the entry can be reused without replacing it.
+ */
+const isUsableFixtureLink = linkPath => {
+  try {
+    // `lstatSync` does not follow the link; `existsSync` verifies its target.
+    return lstatSync(linkPath).isSymbolicLink() && existsSync(linkPath)
+  } catch (err) {
+    if (!(err instanceof Error) || err.code !== 'ENOENT') {
+      throw err
+    }
+    return false
+  }
+}
+
+/**
  * Ensures the fixture layout exists, creating only missing parts.
  * Non-destructive and concurrency-safe: existing content is left in place,
  * so it is safe to call from multiple test-runner child processes.
+ * Unusable conflicts are preserved and require explicit serial setup.
  */
 export const ensureAssetsFixture = () => {
   // Create the fixture root, then the read-side junctions first and the write
@@ -56,24 +75,14 @@ export const ensureAssetsFixture = () => {
 
   for (const sub of ['json-schemas', 'station-templates']) {
     const linkPath = join(fixtureDir, sub)
-    let valid = false
-    try {
-      // `lstatSync` does not follow the link; `existsSync` verifies its target.
-      valid = lstatSync(linkPath).isSymbolicLink() && existsSync(linkPath)
-    } catch (err) {
-      if (!(err instanceof Error) || err.code !== 'ENOENT') {
-        throw err
-      }
-    }
-    if (valid) {
+    if (isUsableFixtureLink(linkPath)) {
       continue
     }
-    rmSync(linkPath, { force: true, recursive: true })
     try {
       symlinkSync(join(srcAssetsDir, sub), linkPath, 'junction')
     } catch (err) {
-      // Lost a create race against another process: the junction now exists.
-      if (!(err instanceof Error) || err.code !== 'EEXIST') {
+      // A peer may have won creation. Accept only a still-usable entry.
+      if (!(err instanceof Error) || err.code !== 'EEXIST' || !isUsableFixtureLink(linkPath)) {
         throw err
       }
     }
@@ -84,8 +93,8 @@ export const ensureAssetsFixture = () => {
 }
 
 /**
- * Regenerates the fixture from scratch, removing any stale content first
- * (idempotent).
+ * Regenerates the fixture from scratch, removing any stale content first.
+ * Run serially, before starting readers or concurrent initializers (idempotent).
  */
 export const setupAssetsFixture = () => {
   if (!existsSync(fixtureDir)) {
