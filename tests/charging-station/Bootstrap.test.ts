@@ -8,7 +8,15 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { EventEmitter } from 'node:events'
-import { copyFileSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import {
+  copyFileSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
@@ -142,7 +150,8 @@ await describe('Bootstrap lifecycle state machine', async () => {
 
   await it('should preserve aliased template identity across the real worker lifecycle', async () => {
     // Arrange
-    const assetsDir = join(testDir, 'assets')
+    // Resolve aliased temp parents so the selected-root alias overlaps the canonical tree.
+    const assetsDir = join(realpathSync.native(testDir), 'assets')
     const templatesDir = join(assetsDir, 'station-templates')
     const aliasDir = join(templatesDir, 'assets-alias')
     mkdirSync(join(templatesDir, 'vendor'), { recursive: true })
