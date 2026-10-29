@@ -71,8 +71,10 @@ export const WorkerConfigurationSchema = z
  * StorageConfiguration — performance storage configuration section.
  * Legacy `URI` (uppercase) is accepted but not auto-migrated; canonical key is `uri`.
  * `uri` is parsed with `new URL()` when the configuration is loaded for the
- * `jsonfile` and `sqlite` types, and when the storage is opened if `enabled`
- * is true, so it must then be an absolute URL: a relative file path would
+ * `jsonfile` and `sqlite` types, and when the storage is opened at startup:
+ * the `mongodb`, `mysql` and `mariadb` backends are enabled unless `enabled` is
+ * false, since they inherit `enabled: true` from the default storage
+ * configuration. It must then be an absolute URL: a relative file path would
  * otherwise throw a bare `TypeError` at startup. Values the simulator never
  * parses are left as they are.
  */
@@ -87,8 +89,9 @@ export const StorageConfigurationSchema = z
   .superRefine((value, ctx) => {
     if (value.uri == null || URL.canParse(value.uri)) return
     const parsedAtLoad = value.type === StorageType.JSON_FILE || value.type === StorageType.SQLITE
+    // An omitted `enabled` inherits `true` from the default storage configuration.
     const parsedAtOpen =
-      value.enabled === true && value.type != null && value.type !== StorageType.NONE
+      value.enabled !== false && value.type != null && value.type !== StorageType.NONE
     if (parsedAtLoad || parsedAtOpen) {
       ctx.addIssue({
         code: 'custom',
