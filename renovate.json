@@ -13,7 +13,7 @@
   ],
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
-    "labels": ["security"]
+    "addLabels": ["security"]
   },
   "ignorePresets": [":ignoreModulesAndTests"],
   "ignorePaths": [
