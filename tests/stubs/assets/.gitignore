@@ -1,0 +1,9 @@
+# Hermetic test assets fixture. Content is (re)generated on every test run by
+# tests/stubs/setupAssetsFixture.mjs and referenced through EVSE_ASSETS_DIR:
+# a `configurations/` directory (write target for the OCPP 2.0 certificate
+# manager and the Bootstrap state file) plus directory junctions to the
+# tracked, read-only `src/assets` sub-trees (`json-schemas`, `station-templates`).
+# No `config.json` on purpose: its absence reproduces the CI baseline (fresh
+# checkout) and forces the hardcoded fallback in src/utils/Configuration.ts.
+*
+!.gitignore

@@ -17,12 +17,12 @@
  *   (`import { validateStationInfo, ... } from './Helpers.js'`).
  */
 
-import { basename, dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { basename, join, parse } from 'node:path'
 
 import type { ChargingStation } from './ChargingStation.js'
 
 import { BaseError } from '../exception/index.js'
+import { getAssetFilePath, getStationTemplateRelativePath } from '../resolveAssetsDir.js'
 import {
   AmpereUnits,
   type ChargingStationConfiguration,
@@ -42,19 +42,14 @@ const moduleName = 'HelpersConfig'
 
 /**
  * Derives the template basename (path without extension) relative to the
- * `assets/station-templates` directory. Absolute paths are converted to
- * paths relative to that directory first.
+ * `station-templates` subdirectory of the assets directory. Relative paths are
+ * interpreted against that subdirectory; absolute paths are converted to paths
+ * relative to it. Both forms share selected-root alias normalization.
  * @param templateFile - Template file path (absolute or relative).
  * @returns Template basename without extension.
  */
 export const buildTemplateName = (templateFile: string): string => {
-  if (isAbsolute(templateFile)) {
-    templateFile = relative(
-      resolve(join(dirname(fileURLToPath(import.meta.url)), 'assets', 'station-templates')),
-      templateFile
-    )
-  }
-  const templateFileParsedPath = parse(templateFile)
+  const templateFileParsedPath = parse(getStationTemplateRelativePath(templateFile))
   return join(templateFileParsedPath.dir, templateFileParsedPath.name)
 }
 
@@ -351,24 +346,24 @@ export const getDefaultVoltageOut = (
 
 /**
  * Resolves the on-disk path to the RFID id-tags file referenced by
- * `stationInfo.idTagsFile`, rooted at the bundled `assets` directory.
+ * `stationInfo.idTagsFile`, rooted at the `assets` directory.
  * @param stationInfo - Station-info carrying `idTagsFile`.
  * @returns Absolute path, or `undefined` when `idTagsFile` is not set.
  */
 export const getIdTagsFile = (stationInfo: ChargingStationInfo): string | undefined => {
   return stationInfo.idTagsFile != null
-    ? join(dirname(fileURLToPath(import.meta.url)), 'assets', basename(stationInfo.idTagsFile))
+    ? getAssetFilePath(basename(stationInfo.idTagsFile))
     : undefined
 }
 
 /**
  * Resolves the on-disk path to the EV profiles file referenced by
- * `stationInfo.evProfilesFile`, rooted at the bundled `assets` directory.
+ * `stationInfo.evProfilesFile`, rooted at the `assets` directory.
  * @param stationInfo - Station-info carrying `evProfilesFile`.
  * @returns Absolute path, or `undefined` when `evProfilesFile` is not set.
  */
 export const getEvProfilesFile = (stationInfo: ChargingStationInfo): string | undefined => {
   return stationInfo.evProfilesFile != null
-    ? join(dirname(fileURLToPath(import.meta.url)), 'assets', basename(stationInfo.evProfilesFile))
+    ? getAssetFilePath(basename(stationInfo.evProfilesFile))
     : undefined
 }
