@@ -133,6 +133,7 @@ import {
   isValidRandomIntBounds,
   logger,
   sleep,
+  SupervisionUrlSchema,
   truncateId,
 } from '../../../utils/index.js'
 import { AuthContext, type DifferentialAuthEntry, OCPPAuthServiceFactory } from '../auth/index.js'
@@ -158,46 +159,20 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16IncomingRequestService'
 
-/** URL schemes the `ws` client can dial for a supervision connection. */
-const SUPERVISION_URL_PROTOCOLS = new Set(['http:', 'https:', 'ws+unix:', 'ws:', 'wss:'])
-
 /**
  * Whether a value is a URL the supervision WebSocket client can dial once the
- * charging station identity is appended to it. The key value is stored as
- * sent, so it must not rely on URL parsing normalization.
+ * charging station identity is appended to it. The endpoint policy (schemes,
+ * fragment and query delimiters, `ws+unix:` socket and request path) is the
+ * shared `SupervisionUrlSchema`. The OCPP key stores the value as sent, so
+ * whitespace and control characters are rejected here first: `z.url()` strips
+ * them from its output, but the raw value would still be dialed with them.
  * @param value - Candidate supervision URL.
- * @returns `true` when the value has no whitespace or control characters
- * (URL parsing strips them, but the stored value keeps them), parses, uses a
- * supported scheme, has no fragment (`#`) or query (`?`) delimiter (the
- * appended identity would end up in them) and, for `ws+unix:`, has a socket
- * path other than `/`, then exactly one `:`, then an empty request path or one
- * starting with `/` (`ws` splits the pathname at `:`, and a request path
- * without a leading `/` is not a valid HTTP request target).
+ * @returns `true` when the raw value has no whitespace or control characters
+ * and satisfies `SupervisionUrlSchema`.
  */
-const isSupportedSupervisionUrl = (value: string): boolean => {
+const isSupportedSupervisionUrl = (value: string): boolean =>
   // eslint-disable-next-line no-control-regex -- control characters are rejected on purpose
-  if (/[\s\u0000-\u001F\u007F]/.test(value) || !URL.canParse(value)) {
-    return false
-  }
-  const url = new URL(value)
-  if (
-    !SUPERVISION_URL_PROTOCOLS.has(url.protocol) ||
-    url.href.includes('#') ||
-    url.href.includes('?')
-  ) {
-    return false
-  }
-  if (url.protocol !== 'ws+unix:') {
-    return true
-  }
-  const [socketPath, ...requestPath] = url.pathname.split(':')
-  return (
-    requestPath.length === 1 &&
-    socketPath !== '' &&
-    socketPath !== '/' &&
-    (requestPath[0] === '' || requestPath[0].startsWith('/'))
-  )
-}
+  !/[\s\u0000-\u001F\u007F]/.test(value) && SupervisionUrlSchema.safeParse(value).success
 
 const requireOCPP16ChargePointStatus = (status: string | undefined): OCPP16ChargePointStatus => {
   const ocpp16Status = getEnumStringValue(OCPP16ChargePointStatus, status)
