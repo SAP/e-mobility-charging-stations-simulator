@@ -180,6 +180,46 @@ describe('Dialogs', () => {
       expect(input.value).toBe('wss://host:9000')
     })
 
+    it.each([
+      ['CS+1', 'CS%2B1'],
+      ['CS@1', 'CS%401'],
+      ['CS 1', 'CS%201'],
+      ['FRESH#1', 'FRESH%231'],
+    ])(
+      'should prefill URL stripped of the percent-encoded identity %s',
+      (chargingStationId, encodedChargingStationId) => {
+        const wrapper = mountDialog([
+          createChargingStationData({
+            stationInfo: createStationInfo({ chargingStationId }),
+            supervisionUrl: `wss://host:9000/OCPP16/${encodedChargingStationId}`,
+          }),
+        ])
+        const input = wrapper.find<HTMLInputElement>('#modern-sup-url').element
+        expect(input.value).toBe('wss://host:9000/OCPP16')
+      }
+    )
+
+    it('should resend the base URL unchanged when only credentials are edited', async () => {
+      const chargingStationId = 'CS+1'
+      const wrapper = mountDialog([
+        createChargingStationData({
+          started: false,
+          stationInfo: createStationInfo({ chargingStationId }),
+          supervisionUrl: `wss://host:9000/OCPP16/${encodeURIComponent(chargingStationId)}`,
+        }),
+      ])
+      await wrapper.find('#modern-sup-user').setValue('alice')
+      await wrapper.find('#modern-sup-pass').setValue('pw')
+      await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
+      await flushPromises()
+      expect(mockClient.setSupervisionUrl).toHaveBeenCalledWith(
+        TEST_HASH_ID,
+        'wss://host:9000/OCPP16',
+        'alice',
+        'pw'
+      )
+    })
+
     it('should prefill username and password from stationInfo', () => {
       const wrapper = mountDialog([
         createChargingStationData({
