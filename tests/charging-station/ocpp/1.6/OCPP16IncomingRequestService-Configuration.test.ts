@@ -178,6 +178,152 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     assert.deepStrictEqual(restartedConnectorIds, [1, 3])
   })
 
+  await describe('supervision URL OCPP configuration key', async () => {
+    const supervisionUrlOcppKey = 'ConnectionUrl'
+    const supervisionUrl = 'ws://localhost:9999/'
+
+    beforeEach(() => {
+      const { station } = testContext
+      if (station.stationInfo != null) {
+        station.stationInfo.supervisionUrlOcppConfiguration = true
+        station.stationInfo.supervisionUrlOcppKey = supervisionUrlOcppKey
+      }
+      upsertConfigurationKey(station, supervisionUrlOcppKey, supervisionUrl)
+    })
+
+    await it('should reject a non-URL value without mutating the key', () => {
+      // Arrange
+      const { station, testableService } = testContext
+      const request: ChangeConfigurationRequest = {
+        key: supervisionUrlOcppKey,
+        value: 'not a url',
+      }
+
+      // Act
+      const response = testableService.handleRequestChangeConfiguration(station, request)
+
+      // Assert
+      assert.strictEqual(response.status, OCPP16ConfigurationStatus.REJECTED)
+      assert.strictEqual(getConfigurationKey(station, supervisionUrlOcppKey)?.value, supervisionUrl)
+    })
+
+    await it('should reject a non-URL value via the changeConfiguration seam', () => {
+      // Arrange
+      const { incomingRequestService, station } = testContext
+
+      // Act
+      const status = incomingRequestService.changeConfiguration(
+        station,
+        supervisionUrlOcppKey,
+        'not a url'
+      )
+
+      // Assert
+      assert.strictEqual(status, OCPP16ConfigurationStatus.REJECTED)
+      assert.strictEqual(getConfigurationKey(station, supervisionUrlOcppKey)?.value, supervisionUrl)
+    })
+
+    await it('should accept a valid URL value', () => {
+      // Arrange
+      const { station, testableService } = testContext
+      const request: ChangeConfigurationRequest = {
+        key: supervisionUrlOcppKey,
+        value: 'ws://localhost:8888/',
+      }
+
+      // Act
+      const response = testableService.handleRequestChangeConfiguration(station, request)
+
+      // Assert
+      assert.strictEqual(response.status, OCPP16ConfigurationStatus.ACCEPTED)
+      assert.strictEqual(
+        getConfigurationKey(station, supervisionUrlOcppKey)?.value,
+        'ws://localhost:8888/'
+      )
+    })
+
+    await it('should reject a URL whose scheme the WebSocket client cannot dial', () => {
+      // Arrange
+      const { station, testableService } = testContext
+      const request: ChangeConfigurationRequest = {
+        key: supervisionUrlOcppKey,
+        value: 'ftp://localhost:8888/',
+      }
+
+      // Act
+      const response = testableService.handleRequestChangeConfiguration(station, request)
+
+      // Assert
+      assert.strictEqual(response.status, OCPP16ConfigurationStatus.REJECTED)
+      assert.strictEqual(getConfigurationKey(station, supervisionUrlOcppKey)?.value, supervisionUrl)
+    })
+
+    await it('should reject a URL the WebSocket client cannot dial despite a supported scheme', () => {
+      // Arrange
+      const { station, testableService } = testContext
+      const urls = [
+        'ws://localhost:8888/#fragment',
+        'ws://localhost:8888/#',
+        'ws://localhost:8888/OCPP16?token=secret',
+        'ws://localhost:8888/OCPP16?',
+        'ws://localhost:8888 ',
+        ' ws://localhost:8888/',
+        'ws://localhost:8888/OC\tPP16',
+        'ws+unix://',
+        'ws+unix:',
+        'ws+unix:///tmp/simulator.sock',
+        'ws+unix:///:/OCPP16',
+        'ws+unix:///tmp/simulator.sock:/OC:PP16',
+        'ws+unix:///tmp/simulator.sock:OCPP16',
+        'ws+unix:s:OCPP16',
+      ]
+
+      for (const value of urls) {
+        // Act
+        const response = testableService.handleRequestChangeConfiguration(station, {
+          key: supervisionUrlOcppKey,
+          value,
+        })
+
+        // Assert
+        assert.strictEqual(response.status, OCPP16ConfigurationStatus.REJECTED, value)
+        assert.strictEqual(
+          getConfigurationKey(station, supervisionUrlOcppKey)?.value,
+          supervisionUrl,
+          value
+        )
+      }
+    })
+
+    await it('should accept every scheme the WebSocket client can dial', () => {
+      // Arrange
+      const { station, testableService } = testContext
+      const urls = [
+        'ws://localhost:8888/',
+        'wss://localhost:8888/',
+        'http://localhost:8888/',
+        'https://localhost:8888/',
+        'ws+unix:///tmp/simulator.sock:/OCPP16',
+        'ws+unix:///tmp/simulator.sock:/',
+        'ws+unix:///tmp/simulator.sock:',
+        'ws+unix:s:/OCPP16',
+        'ws+unix:./s:/OCPP16',
+      ]
+
+      for (const value of urls) {
+        // Act
+        const response = testableService.handleRequestChangeConfiguration(station, {
+          key: supervisionUrlOcppKey,
+          value,
+        })
+
+        // Assert
+        assert.strictEqual(response.status, OCPP16ConfigurationStatus.ACCEPTED, value)
+        assert.strictEqual(getConfigurationKey(station, supervisionUrlOcppKey)?.value, value)
+      }
+    })
+  })
+
   // ---------------------------------------------------------------------------
   // changeConfiguration (local Web UI seam over §5.4)
   // ---------------------------------------------------------------------------
