@@ -101,46 +101,53 @@ await describe('ChargingStation wsConnectionUrl identity encoding', async () => 
   })
 
   for (const transport of ['tcp', 'unix'] as const) {
-    await it(`should let a real ${transport} WebSocket server receive one encoded identity segment`, async () => {
-      const server = createServer()
-      const wss = new WebSocketServer({ server })
-      const seen: string[] = []
-      wss.on('connection', (socket, request) => {
-        seen.push(request.url ?? '')
-        socket.close()
-      })
-      const socketPath = join(tmpdir(), `sim-${String(process.pid)}-${String(Date.now())}.sock`)
-      await new Promise<void>(resolve => {
-        if (transport === 'unix') {
-          server.listen(socketPath, resolve)
-        } else {
-          server.listen(0, '127.0.0.1', resolve)
-        }
-      })
-      try {
-        const address = server.address()
-        const supervisionUrl =
-          transport === 'unix' || address == null || typeof address === 'string'
-            ? `ws+unix://${socketPath}:/OCPP16`
-            : `ws://127.0.0.1:${String(address.port)}/OCPP16`
-        for (const identity of Object.keys(RESERVED_IDENTITIES)) {
-          const station = createStationNamed(identity, supervisionUrl)
-          const ws = new WebSocket(station.wsConnectionUrl)
-          await new Promise<void>((resolve, reject) => {
-            ws.once('open', resolve)
-            ws.once('error', reject)
-          })
-          ws.terminate()
-          assert.strictEqual(seen.at(-1), `/OCPP16/${RESERVED_IDENTITIES[identity]}`, identity)
-        }
-      } finally {
-        wss.close()
-        await new Promise<void>(resolve => {
-          server.close(() => {
-            resolve()
-          })
+    // Unix domain sockets are not a filesystem path on Windows (`listen EACCES`); only
+    // the Unix transport case is skipped there, the TCP case runs everywhere.
+    const skip = transport === 'unix' && process.platform === 'win32'
+    await it(
+      `should let a real ${transport} WebSocket server receive one encoded identity segment`,
+      { skip },
+      async () => {
+        const server = createServer()
+        const wss = new WebSocketServer({ server })
+        const seen: string[] = []
+        wss.on('connection', (socket, request) => {
+          seen.push(request.url ?? '')
+          socket.close()
         })
+        const socketPath = join(tmpdir(), `sim-${String(process.pid)}-${String(Date.now())}.sock`)
+        await new Promise<void>(resolve => {
+          if (transport === 'unix') {
+            server.listen(socketPath, resolve)
+          } else {
+            server.listen(0, '127.0.0.1', resolve)
+          }
+        })
+        try {
+          const address = server.address()
+          const supervisionUrl =
+            transport === 'unix' || address == null || typeof address === 'string'
+              ? `ws+unix://${socketPath}:/OCPP16`
+              : `ws://127.0.0.1:${String(address.port)}/OCPP16`
+          for (const identity of Object.keys(RESERVED_IDENTITIES)) {
+            const station = createStationNamed(identity, supervisionUrl)
+            const ws = new WebSocket(station.wsConnectionUrl)
+            await new Promise<void>((resolve, reject) => {
+              ws.once('open', resolve)
+              ws.once('error', reject)
+            })
+            ws.terminate()
+            assert.strictEqual(seen.at(-1), `/OCPP16/${RESERVED_IDENTITIES[identity]}`, identity)
+          }
+        } finally {
+          wss.close()
+          await new Promise<void>(resolve => {
+            server.close(() => {
+              resolve()
+            })
+          })
+        }
       }
-    })
+    )
   }
 })
