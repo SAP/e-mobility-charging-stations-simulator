@@ -1,21 +1,38 @@
 /**
  * @file Tests for Bootstrap lifecycle state machine
  * @description Verifies start/stop idempotency, in-flight transition memoization,
- * signal handler re-entrancy, state-file consistency on no-op stop, and idempotent
- * guard log levels. Covers the contract documented in
- * `.hermes/findings/bootstrap-state-machine-race.md`.
+ * signal handler re-entrancy, state-file consistency on no-op stop, idempotent
+ * guard log levels, and template identity across the real worker lifecycle.
+ * Covers the contract documented in `.hermes/findings/bootstrap-state-machine-race.md`.
  */
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { EventEmitter } from 'node:events'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  copyFileSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import { Bootstrap, STATE_FILE_VERSION } from '../../src/charging-station/index.js'
+import { getAssetFilePath } from '../../src/resolveAssetsDir.js'
+import { ApplicationProtocolVersion } from '../../src/types/ConfigurationData.js'
+import { ApplicationProtocol } from '../../src/types/UIProtocol.js'
 import { logger, sleep } from '../../src/utils/index.js'
+import { WorkerProcessType } from '../../src/worker/WorkerTypes.js'
 import { resetSingleton, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_HEARTBEAT_INTERVAL_SECONDS } from './ChargingStationTestConstants.js'
+import {
+  cleanupStationTemplates,
+  copyStationTemplate,
+} from './helpers/StationHelpers.realStation.js'
 
 interface Barrier {
   promise: Promise<void>
@@ -124,10 +141,186 @@ await describe('Bootstrap lifecycle state machine', async () => {
   })
 
   afterEach(() => {
+    cleanupStationTemplates()
     rmSync(testDir, { force: true, recursive: true })
     resetSingleton(Bootstrap)
     mock.restoreAll()
     standardCleanup()
+  })
+
+  await it('should preserve aliased template identity across the real worker lifecycle', async () => {
+    // Arrange
+    // Resolve aliased temp parents so the selected-root alias overlaps the canonical tree.
+    const assetsDir = join(realpathSync.native(testDir), 'assets')
+    const templatesDir = join(assetsDir, 'station-templates')
+    const aliasDir = join(templatesDir, 'assets-alias')
+    mkdirSync(join(templatesDir, 'vendor'), { recursive: true })
+    symlinkSync(assetsDir, aliasDir, 'junction')
+    symlinkSync(getAssetFilePath('json-schemas'), join(assetsDir, 'json-schemas'), 'junction')
+    copyFileSync(
+      copyStationTemplate({ idTagsFile: undefined }),
+      join(templatesDir, 'vendor', 'model.station-template.json')
+    )
+    const configuration = {
+      $schemaVersion: 2,
+      log: {
+        enabled: false,
+        errorFile: join(testDir, 'error.log'),
+        file: join(testDir, 'combined.log'),
+        statisticsInterval: 0,
+      },
+      performanceStorage: { enabled: false },
+      persistState: false,
+      stationTemplateUrls: [
+        {
+          file: join('assets-alias', 'station-templates', 'vendor', 'model.station-template.json'),
+          numberOfStations: 1,
+        },
+      ],
+      uiServer: {
+        enabled: true,
+        options: { host: '127.0.0.1', port: 0 },
+        type: ApplicationProtocol.WS,
+        version: ApplicationProtocolVersion.VERSION_11,
+      },
+      worker: {
+        elementAddDelay: 0,
+        elementsPerWorker: 2,
+        processType: WorkerProcessType.workerSet,
+        startDelay: 0,
+      },
+    }
+    const moduleUrl = (relativePath: string): string =>
+      JSON.stringify(new URL(relativePath, import.meta.url).href)
+    const fixturePath = join(testDir, 'template-identity.mjs')
+    writeFileSync(
+      fixturePath,
+      String.raw`
+import assert from 'node:assert/strict'
+import { once } from 'node:events'
+import { writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { WebSocketServer } from ${JSON.stringify(import.meta.resolve('ws'))}
+
+const csms = new WebSocketServer({ host: '127.0.0.1', port: 0 })
+await once(csms, 'listening')
+const configuration = ${JSON.stringify(configuration)}
+configuration.supervisionUrls = ['ws://127.0.0.1:' + csms.address().port + '/ocpp']
+await writeFile(${JSON.stringify(join(assetsDir, 'config.json'))}, JSON.stringify(configuration))
+// Static imports would capture configuration before this fixture writes it.
+const { Bootstrap } = await import(${moduleUrl('../../src/charging-station/Bootstrap.ts')})
+const { Configuration } = await import(${moduleUrl('../../src/utils/Configuration.ts')})
+const { generateUUID } = await import(${moduleUrl('../../src/utils/Utils.ts')})
+const { ChargingStationWorkerMessageEvents } = await import(${moduleUrl('../../src/types/ChargingStationWorker.ts')})
+const { ProcedureName, ResponseStatus } = await import(${moduleUrl('../../src/types/UIProtocol.ts')})
+const { OCPP16RequestCommand } = await import(${moduleUrl('../../src/types/ocpp/1.6/Requests.ts')})
+const { RegistrationStatusEnumType } = await import(${moduleUrl('../../src/types/ocpp/Common.ts')})
+const expectedName = join('vendor', 'model.station-template')
+const bootstrap = Bootstrap.getInstance()
+const uiServer = Reflect.get(bootstrap, 'uiServer')
+const nextEvent = event => once(bootstrap, event, { signal: AbortSignal.timeout(90_000) })
+const request = async (procedure, payload = {}) => {
+  const result = await uiServer.sendInternalRequest(
+    uiServer.buildProtocolRequest(generateUUID(), procedure, payload)
+  )
+  // Broadcast requests complete through worker events, not return values.
+  if (result === undefined) return
+  const [, response] = result
+  assert.strictEqual(response.status, ResponseStatus.SUCCESS, JSON.stringify(response))
+  return response
+}
+const assertStatistics = (added, started, indexes) => {
+  const state = bootstrap.getState()
+  assert.deepStrictEqual([...state.templateStatistics.keys()], [expectedName])
+  const statistics = state.templateStatistics.get(expectedName)
+  assert.strictEqual(statistics.configured, 1)
+  assert.strictEqual(statistics.added, added)
+  assert.strictEqual(statistics.started, started)
+  assert.deepStrictEqual([...statistics.indexes].sort((a, b) => a - b), indexes)
+  assert.strictEqual(bootstrap.getLastContiguousIndex(expectedName), indexes.at(-1) ?? 0)
+}
+csms.on('connection', socket => socket.on('message', raw => {
+  const [kind, id, action] = JSON.parse(String(raw))
+  if (kind !== 2) return
+  const response = action === OCPP16RequestCommand.BOOT_NOTIFICATION
+    ? { status: RegistrationStatusEnumType.ACCEPTED, currentTime: new Date().toISOString(), interval: ${TEST_HEARTBEAT_INTERVAL_SECONDS} }
+    : action === OCPP16RequestCommand.HEARTBEAT ? { currentTime: new Date().toISOString() } : {}
+  socket.send(JSON.stringify([3, id, response]))
+}))
+try {
+  const initialStarted = nextEvent(ChargingStationWorkerMessageEvents.started)
+  const [, [initial]] = await Promise.all([bootstrap.start(), initialStarted])
+  assert.strictEqual(initial.stationInfo.templateName, expectedName)
+  assertStatistics(1, 1, [1])
+  assert.deepStrictEqual((await request(ProcedureName.LIST_TEMPLATES)).templates, [expectedName])
+
+  const secondStarted = nextEvent(ChargingStationWorkerMessageEvents.started)
+  await request(ProcedureName.ADD_CHARGING_STATIONS, { template: expectedName, numberOfStations: 1 })
+  const [second] = await secondStarted
+  assert.strictEqual(second.stationInfo.templateName, expectedName)
+  assert.strictEqual(second.stationInfo.templateIndex, 2)
+  assertStatistics(2, 2, [1, 2])
+
+  const hashIds = [second.stationInfo.hashId]
+  const secondStopped = nextEvent(ChargingStationWorkerMessageEvents.stopped)
+  await request(ProcedureName.STOP_CHARGING_STATION, { hashIds })
+  await secondStopped
+  assertStatistics(2, 1, [1, 2])
+
+  const secondDeleted = nextEvent(ChargingStationWorkerMessageEvents.deleted)
+  await request(ProcedureName.DELETE_CHARGING_STATIONS, { hashIds })
+  await secondDeleted
+  assertStatistics(1, 1, [1])
+
+  const replacementStarted = nextEvent(ChargingStationWorkerMessageEvents.started)
+  await request(ProcedureName.ADD_CHARGING_STATIONS, { template: expectedName, numberOfStations: 1 })
+  const [replacement] = await replacementStarted
+  assert.strictEqual(replacement.stationInfo.templateIndex, 2)
+  assert.strictEqual(replacement.stationInfo.templateName, expectedName)
+  assertStatistics(2, 2, [1, 2])
+
+  await bootstrap.stop()
+  assert.strictEqual(bootstrap.getState().started, false)
+  assertStatistics(2, 0, [1, 2])
+} catch (error) {
+  console.error(error)
+  process.exitCode = 1
+} finally {
+  await bootstrap.stop()
+  const httpServer = Reflect.get(uiServer, 'httpServer')
+  const wasListening = httpServer.listening
+  uiServer.stop()
+  if (wasListening) await once(httpServer, 'close')
+  Reflect.get(Configuration, 'configurationFileWatcher')?.close()
+  for (const socket of csms.clients) socket.terminate()
+  await new Promise(resolve => csms.close(resolve))
+}
+process.exit(process.exitCode ?? 0)
+`,
+      'utf8'
+    )
+
+    // Act
+    const child = spawn(process.execPath, ['--import', 'tsx', fixturePath], {
+      env: { ...process.env, EVSE_ASSETS_DIR: aliasDir },
+      killSignal: 'SIGKILL',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 120_000,
+    })
+    let diagnostics = ''
+    child.stdout.setEncoding('utf8').on('data', (chunk: string) => {
+      diagnostics += chunk
+    })
+    child.stderr.setEncoding('utf8').on('data', (chunk: string) => {
+      diagnostics += chunk
+    })
+    const exitCode = await new Promise<null | number>((resolve, reject) => {
+      child.once('error', reject)
+      child.once('close', resolve)
+    })
+
+    // Assert: the isolated child checks actual worker events and UI allocation.
+    assert.strictEqual(exitCode, 0, diagnostics)
   })
 
   await describe('concurrent stop() callers', async () => {

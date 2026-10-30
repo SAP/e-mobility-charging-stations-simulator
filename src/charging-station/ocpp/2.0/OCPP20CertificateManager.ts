@@ -1,12 +1,14 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import { hash, X509Certificate } from 'node:crypto'
+import { realpathSync } from 'node:fs'
 import { readdir, readFile, realpath, rm, stat } from 'node:fs/promises'
-import { join, resolve, sep } from 'node:path'
+import { basename, dirname, join, resolve, sep } from 'node:path'
 
 import type { ChargingStation } from '../../index.js'
 
 import { BaseError } from '../../../exception/index.js'
+import { getConfigurationsDir } from '../../../resolveAssetsDir.js'
 import {
   type CertificateHashDataChainType,
   type CertificateHashDataType,
@@ -104,7 +106,13 @@ export interface ValidateCertificateX509Result {
  * - Manage certificate storage paths
  */
 export class OCPP20CertificateManager {
-  private static readonly BASE_CERT_PATH = 'dist/assets/configurations'
+  private static readonly BASE_CERT_PATH = (() => {
+    const configurationsDir = getConfigurationsDir()
+    // Canonicalize the existing assets root without creating the lazy configurations directory.
+    // Match the native semantics used by fs.promises.realpath during containment checks.
+    return join(realpathSync.native(dirname(configurationsDir)), basename(configurationsDir))
+  })()
+
   private static readonly CERT_FOLDER = 'certs'
   private static readonly PEM_BEGIN_MARKER = '-----BEGIN CERTIFICATE-----'
   private static readonly PEM_END_MARKER = '-----END CERTIFICATE-----'

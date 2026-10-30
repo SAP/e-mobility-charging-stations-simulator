@@ -14,6 +14,7 @@ import type { IBootstrap } from './IBootstrap.js'
 import packageJson from '../../package.json' with { type: 'json' }
 import { BaseError, TimeoutError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
+import { getConfigurationsDir, getStationTemplatesDir } from '../resolveAssetsDir.js'
 import {
   type ChargingStationData,
   type ChargingStationInfo,
@@ -105,7 +106,6 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     )
   }
 
-  private readonly assetsDir: string
   private readonly configurationsDir: string
   private shuttingDown: boolean
   private started: boolean
@@ -165,8 +165,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     this.shuttingDown = false
     this.uiServerStarted = false
     this.templateStatistics = new Map<string, TemplateStatistics>()
-    this.assetsDir = join(dirname(fileURLToPath(import.meta.url)), 'assets')
-    this.configurationsDir = join(this.assetsDir, 'configurations')
+    this.configurationsDir = getConfigurationsDir()
     this.stateFilePath = join(this.configurationsDir, '.simulator-state.json')
     this.warnPersistStateWithoutUIServerOnce = once(() => {
       logger.warn(
@@ -206,7 +205,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     const stationInfo = await this.workerImplementation?.addElement({
       index,
       options,
-      templateFile: join(this.assetsDir, 'station-templates', templateFile),
+      templateFile: join(getStationTemplatesDir(), templateFile),
     })
     const templateStatistics = this.templateStatistics.get(buildTemplateName(templateFile))
     if (stationInfo != null && templateStatistics != null) {

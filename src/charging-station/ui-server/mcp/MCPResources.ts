@@ -1,10 +1,10 @@
 import { type McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readdir, readFile } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join, resolve, sep } from 'node:path'
 
 import type { AbstractUIServer } from '../AbstractUIServer.js'
 
+import { getOcppSchemaBaseDir } from '../../../resolveAssetsDir.js'
 import { MapStringifyFormat, OCPPVersion } from '../../../types/index.js'
 import { JSONStringify } from '../../../utils/index.js'
 
@@ -72,16 +72,11 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
 
 const OCPP_SCHEMA_VERSIONS = [OCPPVersion.VERSION_16, OCPPVersion.VERSION_20] as const
 
-const getSchemaBaseDir = (): string => {
-  const currentDir = dirname(fileURLToPath(import.meta.url))
-  return join(currentDir, 'assets', 'json-schemas', 'ocpp')
-}
-
 // Path traversal guard: validate that the resolved path stays within the expected base directory.
 const isPathWithinBase = (candidatePath: string, baseDir: string): boolean => {
   const resolvedBase = resolve(baseDir)
   const resolvedCandidate = resolve(candidatePath)
-  return resolvedCandidate.startsWith(`${resolvedBase}/`) || resolvedCandidate === resolvedBase
+  return resolvedCandidate.startsWith(resolvedBase + sep) || resolvedCandidate === resolvedBase
 }
 
 export const registerMCPSchemaResources = (server: McpServer): void => {
@@ -95,7 +90,7 @@ export const registerMCPSchemaResources = (server: McpServer): void => {
       },
       async _uri => {
         try {
-          const baseDir = getSchemaBaseDir()
+          const baseDir = getOcppSchemaBaseDir()
           const schemaDir = join(baseDir, version)
           if (!isPathWithinBase(schemaDir, baseDir)) {
             return {
@@ -149,7 +144,7 @@ export const registerMCPSchemaResources = (server: McpServer): void => {
       try {
         const versionStr = version as string
         const commandStr = command as string
-        const baseDir = getSchemaBaseDir()
+        const baseDir = getOcppSchemaBaseDir()
         const schemaPath = join(baseDir, versionStr, `${commandStr}.json`)
         if (!isPathWithinBase(schemaPath, baseDir)) {
           return {
