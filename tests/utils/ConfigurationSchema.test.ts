@@ -1149,6 +1149,71 @@ await describe('ConfigurationSchema', async () => {
       )
       assert.ok(result.success)
     })
+
+    await it('should accept performanceStorage.uri values the storage backends can parse', () => {
+      for (const uri of [
+        'file:///tmp/perf.json',
+        'file:///tmp/e-mobility-charging-stations-simulator.db',
+        'mongodb://localhost:27017/e-mobility-charging-stations-simulator',
+      ]) {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({ performanceStorage: { type: 'jsonfile', uri } })
+        )
+        assert.ok(result.success, uri)
+      }
+    })
+
+    await it('should reject a performanceStorage.uri that is not an absolute URL where it is parsed', () => {
+      const parsedSections = [
+        { type: 'jsonfile' },
+        { type: 'sqlite' },
+        { enabled: false, type: 'jsonfile' },
+        { enabled: true, type: 'mongodb' },
+        { enabled: true, type: 'mysql' },
+        { enabled: true, type: 'mariadb' },
+        // `enabled` omitted: inherited as true for the remote backends.
+        { type: 'mongodb' },
+        { type: 'mysql' },
+        { type: 'mariadb' },
+      ]
+      for (const section of parsedSections) {
+        for (const uri of ['not a url', 'performance/records.json', '/tmp/perf.json', '']) {
+          assert.throws(() => new URL(uri), TypeError, uri)
+          const result = ConfigurationSchema.safeParse(
+            buildMinimalConfiguration({ performanceStorage: { ...section, uri } })
+          )
+          assert.ok(!result.success, `${JSON.stringify(section)} ${uri}`)
+          assert.ok(
+            result.error.issues.some(i => i.path.join('.') === 'performanceStorage.uri'),
+            `${JSON.stringify(section)} ${uri}`
+          )
+        }
+      }
+    })
+
+    await it('should leave a performanceStorage.uri the simulator never parses unchanged', () => {
+      for (const section of [
+        { type: 'none' },
+        { enabled: true, type: 'none' },
+        { enabled: false, type: 'mongodb' },
+        { enabled: false, type: 'mysql' },
+        { enabled: false, type: 'mariadb' },
+        {},
+        { enabled: true },
+      ]) {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({ performanceStorage: { ...section, uri: 'not a url' } })
+        )
+        assert.ok(result.success, JSON.stringify(section))
+      }
+    })
+
+    await it('should leave the unused performanceStorage.URI deprecated alias unchanged', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({ performanceStorage: { type: 'jsonfile', URI: 'not a url' } })
+      )
+      assert.ok(result.success)
+    })
   })
 
   await describe('round-trip on real config-template.json', async () => {

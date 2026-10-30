@@ -72,6 +72,14 @@ export class Constants {
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
 
   /**
+   * Whether the performance storage is enabled when `performanceStorage.enabled`
+   * is omitted from the configuration. Shared by the runtime default storage
+   * configuration and the configuration schema so both resolve an omitted
+   * `enabled` the same way.
+   */
+  static readonly DEFAULT_PERFORMANCE_STORAGE_ENABLED = true
+
+  /**
    * Peak jitter fraction: consumers scale the base delay by a uniform draw in
    * `[0, jitterPercent)`. See `computeExponentialBackOffDelay` (uni-directional
    * positive) and `randomizeDelay` (asymmetric with a probability-zero gap).
