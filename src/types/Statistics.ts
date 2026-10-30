@@ -34,7 +34,7 @@ export interface TemplateStatistics {
   configured: number
   /**
    * Template indexes known to the simulator: those allocated in the current process plus those reconstructed at startup
-   * from existing charging station configuration files in `dist/assets/configurations/`. Used by `getLastContiguousIndex`
+   * from existing charging station configuration files in `<assets-dir>/configurations/`. Used by `getLastContiguousIndex`
    * to allocate collision-free indexes when adding stations via UI. May exceed `added` because reconstructed indexes
    * reserve disk-persisted slots without re-spawning their stations.
    */

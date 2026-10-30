@@ -13,6 +13,7 @@ import type { CoherentSession } from './meter-values/index.js'
 
 import { BaseError, OCPPError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
+import { getStationConfigurationDir } from '../resolveAssetsDir.js'
 import {
   type AutomaticTransactionGeneratorConfiguration,
   AvailabilityType,
@@ -2875,7 +2876,7 @@ export class ChargingStation extends EventEmitter {
       throw new BaseError(errorMsg)
     }
     this.configurationFile = join(
-      dirname(this.templateFile.replace('station-templates', 'configurations')),
+      getStationConfigurationDir(this.templateFile),
       `${getHashId(this.index, stationTemplate)}.json`
     )
     const stationConfiguration = this.getConfigurationFromFile()

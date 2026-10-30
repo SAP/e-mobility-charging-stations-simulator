@@ -7,6 +7,7 @@ src/assets/*idtags*.json
 src/assets/ev-profiles*.json
 !src/assets/ev-profiles-template.json
 src/assets/configs-docker/*.json
+src/assets/configurations/
 mikro-orm.config*.ts
 !mikro-orm.config-template.ts
 manifest*.yml

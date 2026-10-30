@@ -3,17 +3,24 @@
  * @description Unit tests for OCPP 2.0 certificate management and validation
  */
 
+// First import by contract: project modules capture asset paths at module
+// load, so the bootstrap must set EVSE_ASSETS_DIR before any of them loads.
+import '../../../stubs/testEnvBootstrap.mjs'
 import assert from 'node:assert/strict'
-import { rm } from 'node:fs/promises'
+import { spawn } from 'node:child_process'
+import { mkdir, rm, symlink } from 'node:fs/promises'
+import { basename, join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { OCPP20CertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
+import { resolveAssetsDir } from '../../../../src/resolveAssetsDir.js'
 import {
   type CertificateHashDataType,
   DeleteCertificateStatusEnumType,
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../../src/types/index.js'
+import { cleanupTempDirs, createTempDir, writeTempFile } from '../../../helpers/TempFiles.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_HASH_ID } from '../../ChargingStationTestConstants.js'
 import {
@@ -31,19 +38,151 @@ const TEST_CERT_TYPE = InstallCertificateUseEnumType.CSMSRootCertificate
 
 await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   afterEach(async () => {
-    await rm(`dist/assets/configurations/${TEST_CHARGING_STATION_HASH_ID}`, {
+    await rm(join(resolveAssetsDir(), 'configurations', TEST_CHARGING_STATION_HASH_ID), {
       force: true,
       recursive: true,
     })
-    await rm('dist/assets/configurations/empty-station-hash-id', {
+    await rm(join(resolveAssetsDir(), 'configurations', 'empty-station-hash-id'), {
       force: true,
       recursive: true,
     })
-    await rm('dist/assets/configurations/invalid-station-id', {
+    await rm(join(resolveAssetsDir(), 'configurations', 'invalid-station-id'), {
       force: true,
       recursive: true,
     })
     standardCleanup()
+    cleanupTempDirs()
+  })
+
+  await describe('symlinked assets root', async () => {
+    for (const scenario of [
+      'missing configurations',
+      'existing configurations',
+      'escaping station',
+    ]) {
+      await it(`should handle ${scenario} through an assets alias`, async () => {
+        // Arrange
+        const fixtureDir = createTempDir('certificate-assets-alias-')
+        const assetsDir = join(fixtureDir, 'assets')
+        const aliasDir = join(fixtureDir, 'assets-alias')
+        const configurationsDir = join(assetsDir, 'configurations')
+        const outsideDir = join(fixtureDir, 'outside')
+        const stationLink = join(configurationsDir, 'escaping-station')
+        const configurationsExist = scenario !== 'missing configurations'
+        await mkdir(assetsDir)
+        if (configurationsExist) {
+          await mkdir(configurationsDir)
+        }
+        await symlink(assetsDir, aliasDir, 'junction')
+        if (scenario === 'escaping station') {
+          await mkdir(outsideDir)
+          await symlink(outsideDir, stationLink, 'junction')
+        }
+        const moduleUrl = (relativePath: string): string =>
+          JSON.stringify(new URL(relativePath, import.meta.url).href)
+        const script = writeTempFile(
+          fixtureDir,
+          'scenario.mjs',
+          `
+import assert from 'node:assert/strict'
+import { existsSync } from 'node:fs'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+
+const configurationsDir = ${JSON.stringify(configurationsDir)}
+assert.strictEqual(existsSync(configurationsDir), ${String(configurationsExist)})
+// Dynamic imports let assertions observe filesystem state before module initialization.
+const { OCPP20CertificateManager } = await import(${moduleUrl('../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.ts')})
+assert.strictEqual(existsSync(configurationsDir), ${String(configurationsExist)})
+const { resolveAssetsDir } = await import(${moduleUrl('../../../../src/resolveAssetsDir.ts')})
+const { DeleteCertificateStatusEnumType, GetCertificateIdUseEnumType, InstallCertificateUseEnumType } =
+  await import(${moduleUrl('../../../../src/types/index.ts')})
+const { VALID_X509_PEM_CERTIFICATE } = await import(${moduleUrl('./OCPP20CertificateTestData.ts')})
+assert.strictEqual(resolveAssetsDir(), ${JSON.stringify(aliasDir)})
+const manager = new OCPP20CertificateManager()
+const certificateType = InstallCertificateUseEnumType.CSMSRootCertificate
+const hashData = manager.computeCertificateHash(VALID_X509_PEM_CERTIFICATE)
+
+if (${JSON.stringify(scenario)} === 'escaping station') {
+  const outsideDir = ${JSON.stringify(outsideDir)}
+  const certDir = join(outsideDir, 'certs', certificateType)
+  await mkdir(certDir, { recursive: true })
+  const certPath = join(certDir, hashData.serialNumber.replace(/:/g, '-') + '.pem')
+  await writeFile(certPath, VALID_X509_PEM_CERTIFICATE)
+  const entriesBefore = await readdir(outsideDir, { recursive: true })
+  const result = await manager.storeCertificate(
+    'escaping-station', certificateType, VALID_X509_PEM_CERTIFICATE, 'test |'
+  )
+  assert.strictEqual(result.success, false)
+  assert.match(result.error, /Path traversal attempt detected/)
+  assert.deepStrictEqual(await manager.getInstalledCertificates('escaping-station'), {
+    certificateHashDataChain: [],
+  })
+  assert.deepStrictEqual(await manager.deleteCertificate('escaping-station', hashData), {
+    status: DeleteCertificateStatusEnumType.Failed,
+  })
+  assert.strictEqual(await readFile(certPath, 'utf8'), VALID_X509_PEM_CERTIFICATE)
+  assert.deepStrictEqual(await readdir(outsideDir, { recursive: true }), entriesBefore)
+} else {
+  for (const station of ['first-fresh-station', 'second-fresh-station']) {
+    assert.strictEqual(existsSync(join(configurationsDir, station)), false)
+    const result = await manager.storeCertificate(
+      station, certificateType, VALID_X509_PEM_CERTIFICATE, 'test |'
+    )
+    assert.strictEqual(result.success, true, result.error)
+    assert.strictEqual(typeof result.filePath, 'string')
+    assert.strictEqual(await readFile(result.filePath, 'utf8'), VALID_X509_PEM_CERTIFICATE)
+    assert.strictEqual(existsSync(configurationsDir), true)
+    assert.deepStrictEqual(await manager.getInstalledCertificates(station), {
+      certificateHashDataChain: [{
+        certificateHashData: hashData,
+        certificateType: GetCertificateIdUseEnumType.CSMSRootCertificate,
+      }],
+    })
+    assert.deepStrictEqual(await manager.deleteCertificate(station, hashData), {
+      status: DeleteCertificateStatusEnumType.Accepted,
+    })
+    assert.strictEqual(existsSync(result.filePath), false)
+    assert.deepStrictEqual(await manager.getInstalledCertificates(station), {
+      certificateHashDataChain: [],
+    })
+    assert.deepStrictEqual(await manager.deleteCertificate(station, hashData), {
+      status: DeleteCertificateStatusEnumType.NotFound,
+    })
+  }
+}
+`
+        )
+
+        // Act
+        try {
+          const child = spawn(process.execPath, ['--import', 'tsx', script], {
+            env: { ...process.env, EVSE_ASSETS_DIR: aliasDir, NODE_ENV: 'test' },
+            stdio: ['ignore', 'pipe', 'pipe'],
+            timeout: 120_000,
+          })
+          let diagnostics = ''
+          child.stdout.setEncoding('utf8').on('data', (chunk: string) => {
+            diagnostics += chunk
+          })
+          child.stderr.setEncoding('utf8').on('data', (chunk: string) => {
+            diagnostics += chunk
+          })
+          const { promise, reject, resolve } = Promise.withResolvers<null | number>()
+          child.once('error', reject)
+          child.once('close', resolve)
+          const exitCode = await promise
+
+          // Assert
+          assert.strictEqual(exitCode, 0, diagnostics)
+        } finally {
+          if (scenario === 'escaping station') {
+            await rm(stationLink, { force: true })
+          }
+          await rm(aliasDir, { force: true })
+        }
+      })
+    }
   })
 
   await describe('storeCertificate', async () => {
@@ -365,10 +504,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       )
 
       assert.notStrictEqual(path, undefined)
-      const filename = path.split('/').pop()
-      if (filename == null) {
-        assert.fail('Expected filename to be defined')
-      }
+      const filename = basename(path)
       assert.ok(!filename.includes(':'))
       assert.ok(!filename.includes('/'))
     })

@@ -12,7 +12,8 @@ import { maxTime } from 'date-fns/constants'
 import { randomInt } from 'node:crypto'
 import { createWriteStream, readdirSync } from 'node:fs'
 import { dirname, extname, join, resolve } from 'node:path'
-import { fileURLToPath, URL } from 'node:url'
+import process from 'node:process'
+import { URL } from 'node:url'
 import { create } from 'tar'
 
 import {
@@ -1518,9 +1519,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           )
           return OCPP16Constants.OCPP_RESPONSE_EMPTY
         }
-        const logFiles = readdirSync(
-          resolve(dirname(fileURLToPath(import.meta.url)), '../', dirname(logFile))
-        )
+        // Log files are written by winston relative to the working directory, so the
+        // scan must be too (a module-relative scan read the source tree in dev).
+        const logFiles = readdirSync(resolve(process.cwd(), dirname(logFile)))
           .filter(file => file.endsWith(extname(logFile)))
           .map(file => join(dirname(logFile), file))
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -1566,7 +1567,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               })
           })
           uploadResponse = await ftpClient.uploadFrom(
-            join(resolve(dirname(fileURLToPath(import.meta.url)), '../'), diagnosticsArchive),
+            join(process.cwd(), diagnosticsArchive),
             `${uri.pathname}${diagnosticsArchive}`
           )
           if (!this.isIncomingRequestDeliveryCurrent(chargingStation)) {
