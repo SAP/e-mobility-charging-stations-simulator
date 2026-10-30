@@ -66,7 +66,7 @@ const defaultUIServerConfiguration: UIServerConfiguration = {
 }
 
 const defaultStorageConfiguration: StorageConfiguration = {
-  enabled: true,
+  enabled: Constants.DEFAULT_PERFORMANCE_STORAGE_ENABLED,
   type: StorageType.NONE,
 }
 

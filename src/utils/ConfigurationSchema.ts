@@ -13,6 +13,7 @@ import {
 } from '../types/index.js'
 import { WorkerProcessType } from '../worker/index.js'
 import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from './ConfigurationMigrations.js'
+import { Constants } from './Constants.js'
 import { isHostLiteralWithoutPort } from './HostUtils.js'
 import { has, isNotEmptyArray } from './Utils.js'
 
@@ -72,9 +73,10 @@ export const WorkerConfigurationSchema = z
  * Legacy `URI` (uppercase) is accepted but not auto-migrated; canonical key is `uri`.
  * `uri` is parsed with `new URL()` when the configuration is loaded for the
  * `jsonfile` and `sqlite` types, and when the storage is opened at startup:
- * the `mongodb`, `mysql` and `mariadb` backends are enabled unless `enabled` is
- * false, since they inherit `enabled: true` from the default storage
- * configuration. It must then be an absolute URL: a relative file path would
+ * the `mongodb`, `mysql` and `mariadb` backends are opened when `enabled` is
+ * true or omitted (an omitted `enabled` resolves to
+ * `Constants.DEFAULT_PERFORMANCE_STORAGE_ENABLED`, the same default the runtime
+ * storage configuration uses). It must then be an absolute URL: a relative file path would
  * otherwise throw a bare `TypeError` at startup. Values the simulator never
  * parses are left as they are.
  */
@@ -89,9 +91,10 @@ export const StorageConfigurationSchema = z
   .superRefine((value, ctx) => {
     if (value.uri == null || URL.canParse(value.uri)) return
     const parsedAtLoad = value.type === StorageType.JSON_FILE || value.type === StorageType.SQLITE
-    // An omitted `enabled` inherits `true` from the default storage configuration.
     const parsedAtOpen =
-      value.enabled !== false && value.type != null && value.type !== StorageType.NONE
+      (value.enabled ?? Constants.DEFAULT_PERFORMANCE_STORAGE_ENABLED) &&
+      value.type != null &&
+      value.type !== StorageType.NONE
     if (parsedAtLoad || parsedAtOpen) {
       ctx.addIssue({
         code: 'custom',
