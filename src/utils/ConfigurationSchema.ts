@@ -286,11 +286,18 @@ export const StationTemplateUrlSchema = z
   .strict()
 
 /**
- * Supervision URL — a URL that the `ws` WebSocket client can dial: scheme
- * `ws:`, `wss:`, `http:`, `https:` or `ws+unix:`, no fragment identifier, and
- * a socket path for `ws+unix:`. A scheme-less `host:port/path` string parses
- * as a URL with the host as its scheme, so syntax validation alone would
- * accept a value that fails at connection time.
+ * Supervision URL — a URL that the `ws` WebSocket client can dial once the
+ * charging station identity is appended to it: scheme `ws:`, `wss:`, `http:`,
+ * `https:` or `ws+unix:`; no fragment delimiter (`#`, even with an empty
+ * fragment) and no query delimiter (`?`), since the appended identity would
+ * end up in the fragment or the query; and for `ws+unix:` a socket path other
+ * than `/`, then exactly one `:`, then an empty request path or one starting
+ * with `/` (`ws` splits the pathname at `:`, so without the separator the
+ * identity is appended to the socket path, and a request path without a
+ * leading `/` is not a valid HTTP request target). A
+ * scheme-less `host:port/path` string parses as a URL with the host as its
+ * scheme, so syntax validation alone would accept a value that fails at
+ * connection time.
  * Shared by the configuration file and the UI request payload gate so a value
  * is accepted by both or neither.
  */
@@ -299,8 +306,11 @@ export const SupervisionUrlSchema = z
     error: 'must be a WebSocket URL (ws://, wss://, http://, https:// or ws+unix://)',
     protocol: /^(?:wss?|https?|ws\+unix)$/,
   })
-  .refine(value => !URL.canParse(value) || new URL(value).hash === '', {
+  .refine(value => !URL.canParse(value) || !new URL(value).href.includes('#'), {
     message: 'must not contain a fragment identifier (#...)',
+  })
+  .refine(value => !URL.canParse(value) || !new URL(value).href.includes('?'), {
+    message: 'must not contain a query string (?...)',
   })
   .refine(
     value => {
@@ -308,10 +318,20 @@ export const SupervisionUrlSchema = z
         return true
       }
       const url = new URL(value)
-      return url.protocol !== 'ws+unix:' || url.pathname !== ''
+      if (url.protocol !== 'ws+unix:') {
+        return true
+      }
+      const [socketPath, ...requestPath] = url.pathname.split(':')
+      return (
+        requestPath.length === 1 &&
+        socketPath !== '' &&
+        socketPath !== '/' &&
+        (requestPath[0] === '' || requestPath[0].startsWith('/'))
+      )
     },
     {
-      message: 'ws+unix:// URLs must include the socket path',
+      message:
+        "ws+unix:// URLs must include the socket path, then exactly one ':' before a request path starting with '/' (ws+unix:///path/to/socket.sock:/path)",
     }
   )
 

@@ -860,8 +860,11 @@ await describe('ConfigurationSchema', async () => {
       'wss://localhost:8010/OCPP16',
       'http://localhost:8010/OCPP16',
       'https://localhost:8010/OCPP16',
-      'ws+unix:///tmp/simulator.sock',
       'ws+unix:///tmp/simulator.sock:/OCPP16',
+      'ws+unix:///tmp/simulator.sock:/',
+      'ws+unix:///tmp/simulator.sock:',
+      'ws+unix:s:/OCPP16',
+      'ws+unix:./s:/OCPP16',
       'ws:///OCPP16',
     ]
     const rejectedUrls = [
@@ -888,16 +891,39 @@ await describe('ConfigurationSchema', async () => {
       }
     })
 
-    await it('should reject a URL with a fragment identifier', () => {
-      const result = SupervisionUrlSchema.safeParse('ws://localhost:8010/OCPP16#fragment')
-      if (result.success) {
-        assert.fail('Expected a URL with a fragment identifier to be rejected')
+    await it('should reject a URL with a fragment delimiter, even with an empty fragment', () => {
+      for (const url of ['ws://localhost:8010/OCPP16#fragment', 'ws://localhost:8010/OCPP16#']) {
+        const result = SupervisionUrlSchema.safeParse(url)
+        if (result.success) {
+          assert.fail(`Expected '${url}' to be rejected`)
+        }
+        assert.match(result.error.issues[0].message, /fragment identifier/)
       }
-      assert.match(result.error.issues[0].message, /fragment identifier/)
     })
 
-    await it('should reject a ws+unix URL without a socket path', () => {
-      for (const url of ['ws+unix://', 'ws+unix:']) {
+    await it('should reject a URL with a query string delimiter, even with an empty query', () => {
+      for (const url of [
+        'ws://localhost:8010/OCPP16?token=secret',
+        'ws://localhost:8010/OCPP16?',
+      ]) {
+        const result = SupervisionUrlSchema.safeParse(url)
+        if (result.success) {
+          assert.fail(`Expected '${url}' to be rejected`)
+        }
+        assert.match(result.error.issues[0].message, /query string/)
+      }
+    })
+
+    await it("should reject a ws+unix URL without a socket path, exactly one ':' and a request path starting with '/'", () => {
+      for (const url of [
+        'ws+unix://',
+        'ws+unix:',
+        'ws+unix:///tmp/simulator.sock',
+        'ws+unix:///:/OCPP16',
+        'ws+unix:///tmp/simulator.sock:/OC:PP16',
+        'ws+unix:///tmp/simulator.sock:OCPP16',
+        'ws+unix:s:OCPP16',
+      ]) {
         const result = SupervisionUrlSchema.safeParse(url)
         if (result.success) {
           assert.fail(`Expected '${url}' to be rejected`)
@@ -906,27 +932,49 @@ await describe('ConfigurationSchema', async () => {
       }
     })
 
-    await it('should match the URLs accepted by the ws client', () => {
+    await it('should match the connection URLs the ws client can dial', () => {
       const edgeCaseUrls = [
         'ws://localhost:8010/OCPP16#fragment',
         'wss://localhost:8010/OCPP16#',
         'ws+unix://',
         'ws+unix:',
+        'ws+unix:///tmp/simulator.sock',
       ]
+      // URLs the ws client accepts but that do not reach the intended
+      // endpoint once the identity is appended (checked against real servers).
+      const wrongEndpointUrls = [
+        'ws://localhost:8010/OCPP16?token=secret',
+        'ws://localhost:8010/OCPP16?',
+        'ws+unix:///:/OCPP16',
+        'ws+unix:///tmp/simulator.sock:/OC:PP16',
+        'ws+unix:s:OCPP16',
+      ]
+      for (const url of wrongEndpointUrls) {
+        assert.strictEqual(SupervisionUrlSchema.safeParse(url).success, false, url)
+      }
       for (const url of [
         ...acceptedUrls,
         ...rejectedUrls.filter(url => URL.canParse(url)),
         ...edgeCaseUrls,
       ]) {
-        let wsAccepts = true
+        // The charging station dials the supervision URL with its identity
+        // appended (see ChargingStation.wsConnectionUrl).
+        const connectionUrl = `${url}${url.endsWith('/') ? '' : '/'}CS-1`
+        let wsCanDial = true
         try {
-          const webSocket = new WebSocket(url)
+          const webSocket = new WebSocket(connectionUrl)
           webSocket.on('error', () => undefined)
           webSocket.terminate()
+          // ws splits a ws+unix pathname at ':' into socket path and request
+          // path; without ':' the identity ends up in the socket path.
+          const { pathname, protocol } = new URL(connectionUrl)
+          if (protocol === 'ws+unix:' && pathname.indexOf(':') <= 0) {
+            wsCanDial = false
+          }
         } catch {
-          wsAccepts = false
+          wsCanDial = false
         }
-        assert.strictEqual(SupervisionUrlSchema.safeParse(url).success, wsAccepts, url)
+        assert.strictEqual(SupervisionUrlSchema.safeParse(url).success, wsCanDial, url)
       }
     })
   })
