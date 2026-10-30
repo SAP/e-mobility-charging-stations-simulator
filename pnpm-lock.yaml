@@ -231,88 +231,88 @@ importers:
         version: 4.6.7
     devDependencies:
       '@commitlint/cli':
-        specifier: ^21.2.4
+        specifier: 21.2.4
         version: 21.2.4(conventional-commits-parser@7.1.3)(typescript@6.0.3)
       '@commitlint/config-conventional':
-        specifier: ^21.2.4
+        specifier: 21.2.4
         version: 21.2.4
       '@cspell/eslint-plugin':
-        specifier: ^10.4.0
+        specifier: 10.4.0
         version: 10.4.0(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))
       '@eslint/js':
-        specifier: ^10.0.1
+        specifier: 10.0.1
         version: 10.0.1(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))
       '@mikro-orm/cli':
-        specifier: ^6.6.17
+        specifier: 6.6.17
         version: 6.6.17(better-sqlite3@11.10.0)(mariadb@3.4.5)(supports-color@7.2.0)
       '@types/node':
-        specifier: ^24.19.2
+        specifier: 24.19.2
         version: 24.19.2
       '@types/semver':
-        specifier: ^7.8.0
+        specifier: 7.8.0
         version: 7.8.0
       '@types/ws':
-        specifier: ^8.18.2
+        specifier: 8.18.2
         version: 8.18.2
       cross-env:
-        specifier: ^10.1.0
+        specifier: 10.1.0
         version: 10.1.0
       esbuild:
-        specifier: ^0.28.2
+        specifier: 0.28.2
         version: 0.28.2
       esbuild-plugin-clean:
-        specifier: ^1.0.1
+        specifier: 1.0.1
         version: 1.0.1(esbuild@0.28.2)
       esbuild-plugin-copy:
-        specifier: ^2.1.1
+        specifier: 2.1.1
         version: 2.1.1(esbuild@0.28.2)
       eslint:
-        specifier: ^10.13.0
+        specifier: 10.13.0
         version: 10.13.0(jiti@2.7.0)(supports-color@7.2.0)
       eslint-plugin-jsdoc:
-        specifier: ^65.4.2
+        specifier: 65.4.2
         version: 65.4.2(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       eslint-plugin-perfectionist:
-        specifier: ^5.13.0
+        specifier: 5.13.0
         version: 5.13.0(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       eslint-plugin-vue:
-        specifier: ^10.11.1
+        specifier: 10.12.0
         version: 10.12.0(@stylistic/eslint-plugin@5.10.0(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0)))(@typescript-eslint/parser@8.72.1(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(vue-eslint-parser@10.4.1(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0))
       husky:
-        specifier: ^9.1.7
+        specifier: 9.1.7
         version: 9.1.7
       lint-staged:
-        specifier: ^17.6.0
+        specifier: 17.6.0
         version: 17.6.0
       neostandard:
-        specifier: ^0.14.1
+        specifier: 0.14.1
         version: 0.14.1(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       prettier:
-        specifier: ^3.9.10
+        specifier: 3.9.10
         version: 3.9.10
       rimraf:
-        specifier: ^6.1.3
+        specifier: 6.1.3
         version: 6.1.3
       semver:
-        specifier: ^7.8.5
+        specifier: 7.8.5
         version: 7.8.5
       skott:
-        specifier: ^0.35.12
+        specifier: 0.35.12
         version: 0.35.12(supports-color@7.2.0)
       ts-node:
-        specifier: ^10.9.2
+        specifier: 10.9.2
         version: 10.9.2(@types/node@24.19.2)(typescript@6.0.3)
       tsx:
-        specifier: ^4.23.15
+        specifier: 4.23.15
         version: 4.23.15
       typescript:
-        specifier: ~6.0.3
+        specifier: 6.0.3
         version: 6.0.3
       typescript-language-server:
-        specifier: ^6.0.2
+        specifier: 6.0.2
         version: 6.0.2
       vue-eslint-parser:
-        specifier: ^10.4.1
+        specifier: 10.4.1
         version: 10.4.1(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
     optionalDependencies:
       bufferutil:
@@ -344,13 +344,13 @@ importers:
         version: 8.22.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     devDependencies:
       '@types/ws':
-        specifier: ^8.18.2
+        specifier: 8.18.2
         version: 8.18.2
       esbuild:
-        specifier: ^0.28.2
+        specifier: 0.28.2
         version: 0.28.2
       esbuild-plugin-clean:
-        specifier: ^1.0.1
+        specifier: 1.0.1
         version: 1.0.1(esbuild@0.28.2)
 
   ui/common:
@@ -381,37 +381,37 @@ importers:
         version: 3.1.3(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@tsconfig/node24':
-        specifier: ^24.0.5
+        specifier: 24.0.5
         version: 24.0.5
       '@types/jsdom':
-        specifier: ^30.0.0
+        specifier: 30.0.0
         version: 30.0.0
       '@vitejs/plugin-vue':
-        specifier: ^6.0.10
+        specifier: 6.0.10
         version: 6.0.10(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))
       '@vitejs/plugin-vue-jsx':
-        specifier: ^5.1.6
+        specifier: 5.1.6
         version: 5.1.6(supports-color@7.2.0)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))
       '@vitest/coverage-v8':
-        specifier: ^5.0.5
+        specifier: 5.0.5
         version: 5.0.5(vitest@5.0.5)
       '@vue/test-utils':
-        specifier: ^2.5.1
+        specifier: 2.5.1
         version: 2.5.1(@vue/compiler-dom@3.5.44)(@vue/server-renderer@3.5.44)(vue@3.5.44(typescript@6.0.3))
       '@vue/tsconfig':
-        specifier: ^0.9.1
+        specifier: 0.9.1
         version: 0.9.1(typescript@6.0.3)(vue@3.5.44(typescript@6.0.3))
       jsdom:
-        specifier: ^30.1.3
+        specifier: 30.1.3
         version: 30.1.3
       vite:
-        specifier: ^8.3.5
+        specifier: 8.3.5
         version: 8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       vitest:
-        specifier: ^5.0.5
+        specifier: 5.0.5
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.3)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
       vue-tsc:
-        specifier: ^3.3.13
+        specifier: 3.3.13
         version: 3.3.13(typescript@6.0.3)
 
 packages:
