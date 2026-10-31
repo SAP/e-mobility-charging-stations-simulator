@@ -11,8 +11,10 @@ import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import { WebSocket, WebSocketServer } from 'ws'
+
+import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { getConfigurationKey } from '../../src/charging-station/ConfigurationKeyUtils.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
@@ -36,22 +38,43 @@ const RESERVED_IDENTITIES: Record<string, string> = {
 
 const SUPERVISION_URL = `${TEST_SUPERVISION_URL}/OCPP16`
 
+// Every station created by a test, deleted in afterEach before its template
+// is removed, so no station keeps its BroadcastChannel open after the suite.
+let stations: ChargingStation[] = []
+
+const track = (station: ChargingStation): ChargingStation => {
+  stations.push(station)
+  return station
+}
+
 const createStationNamed = (baseName: string, supervisionUrl = SUPERVISION_URL) => {
-  const station = createStationFromTemplate(copyStationTemplate(), {
-    baseName,
-    fixedName: true,
-    persistentConfiguration: false,
-  })
+  const station = track(
+    createStationFromTemplate(copyStationTemplate(), {
+      baseName,
+      fixedName: true,
+      persistentConfiguration: false,
+    })
+  )
   // The template ships its own supervision URL; pin the one under test.
   station.setSupervisionUrl(supervisionUrl)
   return station
 }
 
 await describe('ChargingStation wsConnectionUrl identity encoding', async () => {
+  beforeEach(() => {
+    stations = []
+  })
+
   afterEach(async () => {
-    await flushMicrotasks()
-    standardCleanup()
-    cleanupStationTemplates()
+    try {
+      for (const station of stations) {
+        await station.delete(false)
+      }
+      await flushMicrotasks()
+    } finally {
+      standardCleanup()
+      cleanupStationTemplates()
+    }
   })
 
   await it('should leave an ordinary identity unchanged', () => {
@@ -80,17 +103,19 @@ await describe('ChargingStation wsConnectionUrl identity encoding', async () => 
     // The key carries the base URL without going through setSupervisionUrl
     // (template Configuration, or an OCPP ChangeConfiguration); the getter is
     // the only place that appends the identity to it.
-    const station = createStationFromTemplate(
-      copyStationTemplate({
-        Configuration: {
-          configurationKey: [
-            { key: OCPP_SUPERVISION_URL_KEY, readonly: false, value: SUPERVISION_URL },
-          ],
-        },
-        supervisionUrlOcppConfiguration: true,
-        supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
-      }),
-      { baseName: 'FRESH#1', fixedName: true, persistentConfiguration: false }
+    const station = track(
+      createStationFromTemplate(
+        copyStationTemplate({
+          Configuration: {
+            configurationKey: [
+              { key: OCPP_SUPERVISION_URL_KEY, readonly: false, value: SUPERVISION_URL },
+            ],
+          },
+          supervisionUrlOcppConfiguration: true,
+          supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
+        }),
+        { baseName: 'FRESH#1', fixedName: true, persistentConfiguration: false }
+      )
     )
     assert.strictEqual(
       getConfigurationKey(station, OCPP_SUPERVISION_URL_KEY)?.value,
