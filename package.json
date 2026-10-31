@@ -9,7 +9,7 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "24.22.2",
+      "version": "26.13.0",
       "onFail": "ignore"
     }
   },
@@ -107,7 +107,7 @@
     "@cspell/eslint-plugin": "10.4.0",
     "@eslint/js": "10.0.1",
     "@mikro-orm/cli": "6.6.17",
-    "@types/node": "24.19.2",
+    "@types/node": "26.6.5",
     "@types/semver": "7.8.0",
     "@types/ws": "8.18.2",
     "cross-env": "10.1.0",
