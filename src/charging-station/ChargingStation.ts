@@ -273,11 +273,14 @@ export class ChargingStation extends EventEmitter {
       supervisionUrlOcppKey != null && isNotEmptyString(configuredSupervisionUrl)
         ? supervisionUrlOcppKey
         : 'supervisionUrls'
+    // OCPP-J 1.6 section 3.1.1: the identity is one path segment and must be
+    // percent-encoded (RFC 3986), otherwise a reserved character in it becomes
+    // URL syntax ('#' a fragment, '?' a query, '/' another segment). The raw
+    // identity is kept everywhere else; only the connection URL is encoded.
     return this.parseSupervisionUrl(
       `${wsConnectionBaseUrlStr}${
         !wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }${this.stationInfo?.chargingStationId}`,
+      }${encodeURIComponent(String(this.stationInfo?.chargingStationId))}`,
       supervisionUrlField,
       wsConnectionBaseUrlStr
     )
