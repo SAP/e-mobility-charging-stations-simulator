@@ -1057,13 +1057,12 @@ await describe('AbstractUIService', async () => {
 
     // Capture the [uuid, procedureName, payload] tuple handed to the worker
     // channel; args.at(-1) is the tuple regardless of how the runner binds this.
-    let payload: unknown
-    t.mock.method(channel, 'sendRequest', (...args: unknown[]) => {
+    let receivedPayload: unknown
+    const sendRequest = t.mock.method(channel, 'sendRequest', (...args: unknown[]) => {
       const tuple = args.at(-1)
-      if (!Array.isArray(tuple)) {
-        return
+      if (Array.isArray(tuple)) {
+        receivedPayload = tuple[2]
       }
-      payload = tuple[2]
     })
 
     try {
@@ -1077,16 +1076,21 @@ await describe('AbstractUIService', async () => {
       // Broadcast dispatch yields no response, but the station must be targeted.
       assert.strictEqual(response, undefined)
 
+      // The dispatch must actually fire: a silent early return below would mask
+      // a regression where the request stops being broadcast to the station.
+      assert.ok(sendRequest.mock.calls.length)
+      assert.notStrictEqual(receivedPayload, undefined)
+
       // The sendRequest argument is the [uuid, procedureName, payload] tuple;
       // payload is its third element. Narrow to an object carrying the URL.
-      if (typeof payload !== 'object' || payload == null) return
-      if (!('url' in payload)) return
+      if (typeof receivedPayload !== 'object' || receivedPayload == null) return
+      if (!('url' in receivedPayload)) return
 
       // The gate approves the trimmed value; the station must receive it as-is.
-      assert.strictEqual(payload.url, 'ws://localhost:9999/OCPP16')
+      assert.strictEqual(receivedPayload.url, 'ws://localhost:9999/OCPP16')
       // Guard against the regression: the raw value with surrounding
       // whitespace must never be forwarded to the station.
-      assert.notEqual(payload.url, '\u00A0ws://localhost:9999/OCPP16\u00A0')
+      assert.notEqual(receivedPayload.url, '\u00A0ws://localhost:9999/OCPP16\u00A0')
     } finally {
       service.stop()
     }
