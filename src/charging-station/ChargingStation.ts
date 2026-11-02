@@ -278,9 +278,15 @@ export class ChargingStation extends EventEmitter {
     // percent-encoded (RFC 3986), otherwise a reserved character in it becomes
     // URL syntax ('#' a fragment, '?' a query, '/' another segment). The raw
     // identity is kept everywhere else; only the connection URL is encoded.
+    // Trim leading/trailing whitespace before appending the charging-station
+    // identity: the WHATWG URL parser does not trim NBSP/EM SPACE (U+00A0/U+2003),
+    // so a whitespace-padded OCPP configuration value would otherwise become
+    // internal whitespace percent-encoded into the dialed path. The derived URL
+    // is validated by parseSupervisionUrl.
+    const wsConnectionBaseUrl = wsConnectionBaseUrlStr.trim()
     return this.parseSupervisionUrl(
-      `${wsConnectionBaseUrlStr}${
-        !wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''
+      `${wsConnectionBaseUrl}${
+        !wsConnectionBaseUrl.endsWith('/') ? '/' : ''
       }${encodeURIComponent(String(this.stationInfo?.chargingStationId))}`,
       supervisionUrlField,
       wsConnectionBaseUrlStr

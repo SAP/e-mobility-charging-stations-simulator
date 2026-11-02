@@ -16,7 +16,10 @@ import { WebSocket, WebSocketServer } from 'ws'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
-import { getConfigurationKey } from '../../src/charging-station/ConfigurationKeyUtils.js'
+import {
+  getConfigurationKey,
+  setConfigurationKeyValue,
+} from '../../src/charging-station/ConfigurationKeyUtils.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_SUPERVISION_URL } from '../utils/TestNetworkConstants.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
@@ -122,6 +125,35 @@ await describe('ChargingStation wsConnectionUrl identity encoding', async () => 
       SUPERVISION_URL
     )
     assert.strictEqual(station.stationInfo?.chargingStationId, 'FRESH#1')
+    assert.strictEqual(station.wsConnectionUrl.href, `${SUPERVISION_URL}/FRESH%231`)
+  })
+  await it('should trim trailing whitespace from an OCPP configuration URL before appending the identity', () => {
+    // A whitespace-padded supervision URL from the OCPP configuration key (a
+    // CSMS-provided or pre-existing value) must not let trailing whitespace
+    // (NBSP/EM SPACE, which the WHATWG URL parser does not trim) become
+    // percent-encoded internal whitespace once the identity is appended.
+    // setConfigurationKeyValue stores the raw value, reproducing that state.
+    const station = track(
+      createStationFromTemplate(
+        copyStationTemplate({
+          Configuration: {
+            configurationKey: [
+              { key: OCPP_SUPERVISION_URL_KEY, readonly: false, value: SUPERVISION_URL },
+            ],
+          },
+          supervisionUrlOcppConfiguration: true,
+          supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
+        }),
+        { baseName: 'FRESH#1', fixedName: true, persistentConfiguration: false }
+      )
+    )
+    setConfigurationKeyValue(station, OCPP_SUPERVISION_URL_KEY, `${SUPERVISION_URL}\u00A0`)
+    assert.ok(
+      !/%C2%A0|%E2%80%83/.test(station.wsConnectionUrl.href),
+      'trailing whitespace must not be percent-encoded into the dialed path'
+    )
+    assert.strictEqual(station.wsConnectionUrl.href, `${SUPERVISION_URL}/FRESH%231`)
+    setConfigurationKeyValue(station, OCPP_SUPERVISION_URL_KEY, `${SUPERVISION_URL}\u2003`)
     assert.strictEqual(station.wsConnectionUrl.href, `${SUPERVISION_URL}/FRESH%231`)
   })
 
