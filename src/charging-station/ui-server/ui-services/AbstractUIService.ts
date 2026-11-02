@@ -35,7 +35,7 @@ import {
 } from '../../../utils/index.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import { DEFAULT_MAX_STATIONS, isValidNumberOfStations } from '../UIServerSecurity.js'
-import { getRequestPayloadValidationError } from './UIServiceRequestPayloadSchemas.js'
+import { parseRequestPayloadForDispatch } from './UIServiceRequestPayloadSchemas.js'
 
 const moduleName = 'AbstractUIService'
 
@@ -238,9 +238,9 @@ export abstract class AbstractUIService {
 
       // Transport schemas may validate a different envelope; enforce the shared
       // flat-payload contract before dispatching to stations.
-      const validationError = getRequestPayloadValidationError(command, requestPayload)
-      if (validationError != null) {
-        throw new BaseError(`'${command}' request payload is invalid: ${validationError}`)
+      const validatedPayload = parseRequestPayloadForDispatch(command, requestPayload)
+      if (validatedPayload.error != null) {
+        throw new BaseError(`'${command}' request payload is invalid: ${validatedPayload.error}`)
       }
 
       // Call the request handler to build the response payload
@@ -248,7 +248,7 @@ export abstract class AbstractUIService {
       if (requestHandler == null) {
         throw new BaseError(`'${command}' request handler not found`)
       }
-      responsePayload = await requestHandler(uuid, command, requestPayload, context)
+      responsePayload = await requestHandler(uuid, command, validatedPayload.payload, context)
     } catch (error) {
       // Log
       logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error)

@@ -14,6 +14,7 @@ import type {
   RequestPayload,
 } from '../../../../src/types/index.js'
 
+import { parseRequestPayloadForDispatch } from '../../../../src/charging-station/ui-server/ui-services/UIServiceRequestPayloadSchemas.js'
 import { ProcedureName, ResponseStatus } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_HASH_ID, TEST_UUID } from '../UIServerTestConstants.js'
@@ -988,5 +989,47 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     } finally {
       service.stop()
     }
+  })
+
+  await describe('parseRequestPayloadForDispatch', async () => {
+    await it('should trim NBSP around a SET_SUPERVISION_URL before validating', () => {
+      const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
+        hashIds: [TEST_HASH_ID],
+        url: '\u00A0ws://localhost:9999/OCPP16\u00A0',
+      })
+
+      assert.strictEqual(result.error, undefined)
+      assert.notStrictEqual(result.payload, undefined)
+
+      // The NBSP must be stripped so a value the gate approves is dialled as-is.
+      assert.strictEqual(result.payload.url, 'ws://localhost:9999/OCPP16')
+    })
+
+    await it('should replace only the url and preserve the other payload fields', () => {
+      const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
+        hashIds: [TEST_HASH_ID],
+        url: 'ws://localhost:9999/OCPP16',
+      })
+
+      assert.strictEqual(result.error, undefined)
+      assert.notStrictEqual(result.payload, undefined)
+
+      assert.deepStrictEqual(result.payload, {
+        hashIds: [TEST_HASH_ID],
+        url: 'ws://localhost:9999/OCPP16',
+      })
+    })
+
+    await it('should still reject an untrusted payload the schema rejects', () => {
+      const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
+        hashIds: [TEST_HASH_ID],
+        url: 'not-a-url',
+      })
+
+      assert.notStrictEqual(result.error, undefined)
+      if (result.error == null) return
+
+      assert.match(result.error, /url/)
+    })
   })
 })

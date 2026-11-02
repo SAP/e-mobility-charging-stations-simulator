@@ -10,7 +10,7 @@
 
 import { z } from 'zod'
 
-import { ProcedureName } from '../../../types/index.js'
+import { ProcedureName, type RequestPayload } from '../../../types/index.js'
 import { isEmpty, SupervisionUrlSchema } from '../../../utils/index.js'
 
 /**
@@ -318,17 +318,68 @@ const formatIssues = (issues: readonly z.core.$ZodIssue[]): string => {
 }
 
 /**
- * Validates the procedure payload without transforming it: handlers rely on
- * optional-field presence and unlisted PDU fields remaining unchanged.
+ * Result of validating and normalizing a UI request payload for dispatch.
+ *
+ * On success, `payload` carries the parsed (normalized) supervision URL values
+ * so a value the gate approves is consumed in that same normalized form. On
+ * failure, `error` describes every violation.
+ */
+export type ValidatedRequestPayload =
+  { error: string; payload?: undefined } | { error?: undefined; payload: RequestPayload }
+
+/**
+ * Validates a UI request payload and, when valid, returns it with the
+ * supervision URL fields replaced by their Zod-parsed (normalized) values.
+ *
+ * Zod URL parsing trims Unicode whitespace (NBSP, EM SPACE) that
+ * `new URL()` does not, so dispatching the raw value would approve a
+ * transformed URL and then dial a different one. Only those fields are swapped
+ * in: unrelated PDU fields and optional-field presence come from the original
+ * payload — the whole payload is never replaced wholesale.
  * @param procedureName - Procedure the payload is destined for.
  * @param requestPayload - Untrusted payload, as received from the transport.
- * @returns `undefined` when the payload is valid, otherwise a single-line
- * description of every violation.
+ * @returns `{ error }` on invalid input, otherwise `{ payload }` ready to dispatch.
  */
-export const getRequestPayloadValidationError = (
+export const parseRequestPayloadForDispatch = (
   procedureName: ProcedureName,
-  requestPayload: unknown
-): string | undefined => {
+  requestPayload: RequestPayload
+): ValidatedRequestPayload => {
   const result = uiServiceRequestPayloadSchemas[procedureName].safeParse(requestPayload)
-  return result.success ? undefined : formatIssues(result.error.issues)
+  if (!result.success) {
+    return { error: formatIssues(result.error.issues) }
+  }
+  return {
+    payload: overlayNormalizedSupervisionUrls(
+      requestPayload,
+      result.data as Record<string, unknown>
+    ),
+  }
+}
+
+/**
+ * Overlay that returns `requestPayload` with only its supervision URL fields
+ * replaced by the parsed (normalized) values.
+ * @param requestPayload - Payload received from the transport.
+ * @param parsed - Zod-safeParse output carrying the trimmed URL values.
+ * @returns `requestPayload` with the normalization overlay applied.
+ */
+const overlayNormalizedSupervisionUrls = (
+  requestPayload: RequestPayload,
+  parsed: Record<string, unknown>
+): RequestPayload => {
+  const override: Record<string, unknown> = { ...requestPayload }
+  const source = requestPayload as { options?: Record<string, unknown>; url?: unknown }
+  const parsedData = parsed as { options?: { supervisionUrls?: unknown }; url?: unknown }
+  // SET_SUPERVISION_URL: the accepted, normalized single URL.
+  if (typeof source.url === 'string' && typeof parsedData.url === 'string') {
+    override.url = parsedData.url
+  }
+  // ADD_CHARGING_STATIONS: accepted, normalized supervision URL(s) (string or array).
+  if (source.options?.supervisionUrls != null) {
+    override.options = {
+      ...source.options,
+      supervisionUrls: parsedData.options?.supervisionUrls ?? source.options.supervisionUrls,
+    }
+  }
+  return override as RequestPayload
 }

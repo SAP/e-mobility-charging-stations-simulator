@@ -1047,4 +1047,48 @@ await describe('AbstractUIService', async () => {
       }
     })
   })
+
+  await it('should dispatch the normalized supervision URL to the station', async t => {
+    const { service } = createServiceContext()
+    const channel = Reflect.get(
+      service,
+      'uiServiceWorkerBroadcastChannel'
+    ) as UIServiceWorkerBroadcastChannel
+
+    // Capture the [uuid, procedureName, payload] tuple handed to the worker
+    // channel; args.at(-1) is the tuple regardless of how the runner binds this.
+    let payload: unknown
+    t.mock.method(channel, 'sendRequest', (...args: unknown[]) => {
+      const tuple = args.at(-1)
+      if (!Array.isArray(tuple)) {
+        return
+      }
+      payload = tuple[2]
+    })
+
+    try {
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.SET_SUPERVISION_URL, {
+          hashIds: [TEST_HASH_ID],
+          url: '\u00A0ws://localhost:9999/OCPP16\u00A0',
+        })
+      )
+
+      // Broadcast dispatch yields no response, but the station must be targeted.
+      assert.strictEqual(response, undefined)
+
+      // The sendRequest argument is the [uuid, procedureName, payload] tuple;
+      // payload is its third element. Narrow to an object carrying the URL.
+      if (typeof payload !== 'object' || payload == null) return
+      if (!('url' in payload)) return
+
+      // The gate approves the trimmed value; the station must receive it as-is.
+      assert.strictEqual(payload.url, 'ws://localhost:9999/OCPP16')
+      // Guard against the regression: the raw value with surrounding
+      // whitespace must never be forwarded to the station.
+      assert.notEqual(payload.url, '\u00A0ws://localhost:9999/OCPP16\u00A0')
+    } finally {
+      service.stop()
+    }
+  })
 })

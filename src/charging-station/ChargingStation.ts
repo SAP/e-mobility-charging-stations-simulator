@@ -118,6 +118,7 @@ import {
   promiseWithTimeout,
   secureRandom,
   sleep,
+  SupervisionUrlSchema,
   watchJsonFile,
 } from '../utils/index.js'
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
@@ -3768,16 +3769,19 @@ export class ChargingStation extends EventEmitter {
     field: string,
     reportedUrl = supervisionUrl
   ): URL {
-    try {
-      return new URL(supervisionUrl)
-    } catch (error) {
+    const result = SupervisionUrlSchema.safeParse(supervisionUrl)
+    if (!result.success) {
       const chargingStationId = this.stationInfo?.chargingStationId
       const errorMsg = `${
         isNotEmptyString(chargingStationId) ? `${chargingStationId}: ` : ''
       }Invalid supervision url '${reportedUrl}' configured in '${field}'`
-      logger.error(`${this.logPrefix()} ${moduleName}.parseSupervisionUrl: ${errorMsg}`, error)
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.parseSupervisionUrl: ${errorMsg}`,
+        result.error
+      )
       throw new BaseError(errorMsg)
     }
+    return new URL(result.data)
   }
 
   private async performDelete (): Promise<void> {
