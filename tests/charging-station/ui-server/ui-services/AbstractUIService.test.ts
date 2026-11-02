@@ -1076,15 +1076,17 @@ await describe('AbstractUIService', async () => {
       // Broadcast dispatch yields no response, but the station must be targeted.
       assert.strictEqual(response, undefined)
 
-      // The dispatch must actually fire: a silent early return below would mask
-      // a regression where the request stops being broadcast to the station.
+      // The dispatch must actually fire and deliver a non-null object payload
+      // carrying a url. A malformed payload (missing the url, not an object, or
+      // null) must fail the test outright instead of silently returning early,
+      // as the old narrowing guards allowed.
       assert.ok(sendRequest.mock.calls.length)
-      assert.notStrictEqual(receivedPayload, undefined)
-
-      // The sendRequest argument is the [uuid, procedureName, payload] tuple;
-      // payload is its third element. Narrow to an object carrying the URL.
-      if (typeof receivedPayload !== 'object' || receivedPayload == null) return
-      if (!('url' in receivedPayload)) return
+      if (typeof receivedPayload !== 'object' || receivedPayload == null) {
+        assert.fail('dispatched payload must be a non-null object payload')
+      }
+      if (!('url' in receivedPayload)) {
+        assert.fail('dispatched payload must carry a "url" property')
+      }
 
       // The gate approves the trimmed value; the station must receive it as-is.
       assert.strictEqual(receivedPayload.url, 'ws://localhost:9999/OCPP16')
