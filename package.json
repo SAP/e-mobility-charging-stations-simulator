@@ -82,7 +82,7 @@
     "@modelcontextprotocol/sdk": "~1.32.2",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
-    "basic-ftp": "^6.2.3",
+    "basic-ftp": "^6.2.4",
     "chalk": "^6.0.1",
     "date-fns": "^4.4.0",
     "http-status-codes": "^2.3.0",
