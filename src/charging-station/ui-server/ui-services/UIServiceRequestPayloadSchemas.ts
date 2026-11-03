@@ -10,7 +10,7 @@
 
 import { z } from 'zod'
 
-import { ProcedureName } from '../../../types/index.js'
+import { ProcedureName, type RequestPayload } from '../../../types/index.js'
 import { isEmpty, SupervisionUrlSchema } from '../../../utils/index.js'
 
 /**
@@ -318,17 +318,57 @@ const formatIssues = (issues: readonly z.core.$ZodIssue[]): string => {
 }
 
 /**
- * Validates the procedure payload without transforming it: handlers rely on
- * optional-field presence and unlisted PDU fields remaining unchanged.
- * @param procedureName - Procedure the payload is destined for.
- * @param requestPayload - Untrusted payload, as received from the transport.
- * @returns `undefined` when the payload is valid, otherwise a single-line
- * description of every violation.
+ * Original payload with parsed supervision URLs, or grouped validation issues.
  */
-export const getRequestPayloadValidationError = (
+export type ValidatedRequestPayload =
+  { error: string; payload?: undefined } | { error?: undefined; payload: RequestPayload }
+
+/**
+ * Validates a UI payload and overlays schema-parsed supervision URLs.
+ * Preserves unlisted PDU fields and optional-field presence.
+ * @param procedureName - Target procedure.
+ * @param requestPayload - Untrusted payload received from the transport.
+ * @returns Validation issues or the payload ready for dispatch.
+ */
+export const parseRequestPayloadForDispatch = (
   procedureName: ProcedureName,
-  requestPayload: unknown
-): string | undefined => {
+  requestPayload: RequestPayload
+): ValidatedRequestPayload => {
   const result = uiServiceRequestPayloadSchemas[procedureName].safeParse(requestPayload)
-  return result.success ? undefined : formatIssues(result.error.issues)
+  if (!result.success) {
+    return { error: formatIssues(result.error.issues) }
+  }
+  return {
+    payload: overlayNormalizedSupervisionUrls(
+      requestPayload,
+      result.data as Record<string, unknown>
+    ),
+  }
+}
+
+/**
+ * Copies the payload with schema-parsed supervision URLs.
+ * @param requestPayload - Original transport payload.
+ * @param parsed - Validated schema output.
+ * @returns Payload copy with only supervision URL fields replaced.
+ */
+const overlayNormalizedSupervisionUrls = (
+  requestPayload: RequestPayload,
+  parsed: Record<string, unknown>
+): RequestPayload => {
+  const override: Record<string, unknown> = { ...requestPayload }
+  const source = requestPayload as { options?: Record<string, unknown>; url?: unknown }
+  const parsedData = parsed as { options?: { supervisionUrls?: unknown }; url?: unknown }
+  // SET_SUPERVISION_URL: parsed single URL.
+  if (typeof source.url === 'string' && typeof parsedData.url === 'string') {
+    override.url = parsedData.url
+  }
+  // ADD_CHARGING_STATIONS: parsed URL or URL array.
+  if (source.options?.supervisionUrls != null) {
+    override.options = {
+      ...source.options,
+      supervisionUrls: parsedData.options?.supervisionUrls ?? source.options.supervisionUrls,
+    }
+  }
+  return override as RequestPayload
 }

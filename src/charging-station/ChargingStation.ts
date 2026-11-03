@@ -118,6 +118,7 @@ import {
   promiseWithTimeout,
   secureRandom,
   sleep,
+  SupervisionUrlSchema,
   watchJsonFile,
 } from '../utils/index.js'
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
@@ -273,13 +274,14 @@ export class ChargingStation extends EventEmitter {
       supervisionUrlOcppKey != null && isNotEmptyString(configuredSupervisionUrl)
         ? supervisionUrlOcppKey
         : 'supervisionUrls'
-    // OCPP-J 1.6 section 3.1.1: the identity is one path segment and must be
-    // percent-encoded (RFC 3986), otherwise a reserved character in it becomes
-    // URL syntax ('#' a fragment, '?' a query, '/' another segment). The raw
-    // identity is kept everywhere else; only the connection URL is encoded.
+    // OCPP-J 1.6 §3.1.1: percent-encode the identity as one path segment;
+    // preserve its raw value elsewhere.
+    // Trim the base before appending the identity to keep trailing spaces
+    // (including NBSP/EM SPACE) out of the request path.
+    const wsConnectionBaseUrl = wsConnectionBaseUrlStr.trim()
     return this.parseSupervisionUrl(
-      `${wsConnectionBaseUrlStr}${
-        !wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''
+      `${wsConnectionBaseUrl}${
+        !wsConnectionBaseUrl.endsWith('/') ? '/' : ''
       }${encodeURIComponent(String(this.stationInfo?.chargingStationId))}`,
       supervisionUrlField,
       wsConnectionBaseUrlStr
@@ -3753,31 +3755,33 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
-   * Parses a supervision URL, raising a structured configuration error naming
-   * the offending field and station instead of leaking the `TypeError` thrown
-   * by `new URL()`. The original error is logged with its stack.
-   * @param supervisionUrl - Supervision URL string to parse.
-   * @param field - Configuration field or OCPP configuration key holding it.
-   * @param reportedUrl - Configured value quoted in the diagnostic; defaults to
-   *   `supervisionUrl`. The `wsConnectionUrl` getter passes the configured base
-   *   URL because it parses a derived URL (base plus charging station identity).
-   * @returns The parsed supervision URL.
+   * Validates and normalizes a supervision URL with the shared schema.
+   * Validation failures log the Zod error and throw a BaseError identifying the
+   * configuration field and, when available, the station.
+   * @param supervisionUrl - URL to validate and normalize.
+   * @param field - Configuration field or OCPP key used in diagnostics.
+   * @param reportedUrl - Value quoted in errors; defaults to `supervisionUrl`.
+   * @returns Validated, normalized supervision URL.
+   * @throws {BaseError} If the supervision URL fails validation.
    */
   private parseSupervisionUrl (
     supervisionUrl: string,
     field: string,
     reportedUrl = supervisionUrl
   ): URL {
-    try {
-      return new URL(supervisionUrl)
-    } catch (error) {
+    const result = SupervisionUrlSchema.safeParse(supervisionUrl)
+    if (!result.success) {
       const chargingStationId = this.stationInfo?.chargingStationId
       const errorMsg = `${
         isNotEmptyString(chargingStationId) ? `${chargingStationId}: ` : ''
       }Invalid supervision url '${reportedUrl}' configured in '${field}'`
-      logger.error(`${this.logPrefix()} ${moduleName}.parseSupervisionUrl: ${errorMsg}`, error)
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.parseSupervisionUrl: ${errorMsg}`,
+        result.error
+      )
       throw new BaseError(errorMsg)
     }
+    return new URL(result.data)
   }
 
   private async performDelete (): Promise<void> {

@@ -14,6 +14,7 @@ import type {
   RequestPayload,
 } from '../../../../src/types/index.js'
 
+import { parseRequestPayloadForDispatch } from '../../../../src/charging-station/ui-server/ui-services/UIServiceRequestPayloadSchemas.js'
 import { ProcedureName, ResponseStatus } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_HASH_ID, TEST_UUID } from '../UIServerTestConstants.js'
@@ -988,5 +989,89 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
     } finally {
       service.stop()
     }
+  })
+
+  await describe('parseRequestPayloadForDispatch', async () => {
+    await it('should trim NBSP from the supervision URL', () => {
+      const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
+        hashIds: [TEST_HASH_ID],
+        url: '\u00A0ws://localhost:9999/OCPP16\u00A0',
+      })
+
+      assert.strictEqual(result.error, undefined)
+      assert.notStrictEqual(result.payload, undefined)
+
+      assert.strictEqual(result.payload.url, 'ws://localhost:9999/OCPP16')
+    })
+
+    for (const scenario of [
+      {
+        expectedUrls: 'ws://localhost:9999/OCPP16',
+        name: 'string',
+        supervisionUrls: '\u00A0ws://localhost:9999/OCPP16\u2003',
+      },
+      {
+        expectedUrls: ['ws://localhost:9999/OCPP16', 'wss://localhost:9443/OCPP16'],
+        name: 'array',
+        supervisionUrls: [
+          '\u00A0ws://localhost:9999/OCPP16\u2003',
+          '\u2003wss://localhost:9443/OCPP16\u00A0',
+        ],
+      },
+    ]) {
+      await it(`should trim ${scenario.name} station option URLs without mutating the input`, () => {
+        const payload = {
+          numberOfStations: 1,
+          options: {
+            diagnostic: { source: 'operator' },
+            fixedName: false,
+            supervisionUrls: scenario.supervisionUrls,
+          },
+          template: 'test.station-template',
+        }
+        const originalPayload = structuredClone(payload)
+
+        const result = parseRequestPayloadForDispatch(ProcedureName.ADD_CHARGING_STATIONS, payload)
+
+        assert.strictEqual(result.error, undefined)
+        assert.deepStrictEqual(result.payload, {
+          numberOfStations: 1,
+          options: {
+            diagnostic: { source: 'operator' },
+            fixedName: false,
+            supervisionUrls: scenario.expectedUrls,
+          },
+          template: 'test.station-template',
+        })
+        assert.deepStrictEqual(payload, originalPayload)
+      })
+    }
+
+    await it('should preserve hashIds for a valid supervision URL', () => {
+      const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
+        hashIds: [TEST_HASH_ID],
+        url: 'ws://localhost:9999/OCPP16',
+      })
+
+      assert.strictEqual(result.error, undefined)
+      assert.notStrictEqual(result.payload, undefined)
+
+      assert.deepStrictEqual(result.payload, {
+        hashIds: [TEST_HASH_ID],
+        url: 'ws://localhost:9999/OCPP16',
+      })
+    })
+
+    await it('should reject a malformed supervision URL', () => {
+      const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
+        hashIds: [TEST_HASH_ID],
+        url: 'not-a-url',
+      })
+
+      assert.notStrictEqual(result.error, undefined)
+      if (result.error == null) return
+
+      assert.match(result.error, /url/)
+    })
   })
 })

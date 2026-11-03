@@ -1047,4 +1047,47 @@ await describe('AbstractUIService', async () => {
       }
     })
   })
+
+  await it('should pass the trimmed supervision URL to the worker channel', async t => {
+    const { service } = createServiceContext()
+    const channel = Reflect.get(
+      service,
+      'uiServiceWorkerBroadcastChannel'
+    ) as UIServiceWorkerBroadcastChannel
+
+    // Capture the payload from the worker-channel [uuid, procedureName, payload] tuple.
+    let receivedPayload: unknown
+    const sendRequest = t.mock.method(channel, 'sendRequest', (...args: unknown[]) => {
+      const tuple = args.at(-1)
+      if (Array.isArray(tuple)) {
+        receivedPayload = tuple[2]
+      }
+    })
+
+    try {
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.SET_SUPERVISION_URL, {
+          hashIds: [TEST_HASH_ID],
+          url: '\u00A0ws://localhost:9999/OCPP16\u00A0',
+        })
+      )
+
+      // Broadcast responses are deferred.
+      assert.strictEqual(response, undefined)
+
+      // Require a dispatched payload containing the trimmed URL.
+      assert.ok(sendRequest.mock.calls.length)
+      if (typeof receivedPayload !== 'object' || receivedPayload == null) {
+        assert.fail('dispatched payload must be a non-null object payload')
+      }
+      if (!('url' in receivedPayload)) {
+        assert.fail('dispatched payload must carry a "url" property')
+      }
+
+      assert.strictEqual(receivedPayload.url, 'ws://localhost:9999/OCPP16')
+      assert.notEqual(receivedPayload.url, '\u00A0ws://localhost:9999/OCPP16\u00A0')
+    } finally {
+      service.stop()
+    }
+  })
 })
