@@ -1005,6 +1005,49 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       assert.strictEqual(result.payload.url, 'ws://localhost:9999/OCPP16')
     })
 
+    for (const scenario of [
+      {
+        expectedUrls: 'ws://localhost:9999/OCPP16',
+        name: 'string',
+        supervisionUrls: '\u00A0ws://localhost:9999/OCPP16\u2003',
+      },
+      {
+        expectedUrls: ['ws://localhost:9999/OCPP16', 'wss://localhost:9443/OCPP16'],
+        name: 'array',
+        supervisionUrls: [
+          '\u00A0ws://localhost:9999/OCPP16\u2003',
+          '\u2003wss://localhost:9443/OCPP16\u00A0',
+        ],
+      },
+    ]) {
+      await it(`should normalize ${scenario.name} supervision URLs in station options without mutating the input`, () => {
+        const payload = {
+          numberOfStations: 1,
+          options: {
+            diagnostic: { source: 'operator' },
+            fixedName: false,
+            supervisionUrls: scenario.supervisionUrls,
+          },
+          template: 'test.station-template',
+        }
+        const originalPayload = structuredClone(payload)
+
+        const result = parseRequestPayloadForDispatch(ProcedureName.ADD_CHARGING_STATIONS, payload)
+
+        assert.strictEqual(result.error, undefined)
+        assert.deepStrictEqual(result.payload, {
+          numberOfStations: 1,
+          options: {
+            diagnostic: { source: 'operator' },
+            fixedName: false,
+            supervisionUrls: scenario.expectedUrls,
+          },
+          template: 'test.station-template',
+        })
+        assert.deepStrictEqual(payload, originalPayload)
+      })
+    }
+
     await it('should replace only the url and preserve the other payload fields', () => {
       const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
         hashIds: [TEST_HASH_ID],
