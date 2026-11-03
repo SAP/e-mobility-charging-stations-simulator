@@ -236,14 +236,12 @@ export abstract class AbstractUIService {
         )
       }
 
-      // Transport schemas may validate a different envelope; enforce the shared
-      // flat-payload contract before dispatching to stations.
+      // Validate the flat payload independently of transport envelope schemas.
       const validatedPayload = parseRequestPayloadForDispatch(command, requestPayload)
       if (validatedPayload.error != null) {
         throw new BaseError(`'${command}' request payload is invalid: ${validatedPayload.error}`)
       }
 
-      // Call the request handler to build the response payload
       const requestHandler = this.requestHandlers.get(command)
       if (requestHandler == null) {
         throw new BaseError(`'${command}' request handler not found`)

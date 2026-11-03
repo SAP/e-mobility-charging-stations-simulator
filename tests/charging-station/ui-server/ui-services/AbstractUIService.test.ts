@@ -1048,15 +1048,14 @@ await describe('AbstractUIService', async () => {
     })
   })
 
-  await it('should dispatch the normalized supervision URL to the station', async t => {
+  await it('should pass the trimmed supervision URL to the worker channel', async t => {
     const { service } = createServiceContext()
     const channel = Reflect.get(
       service,
       'uiServiceWorkerBroadcastChannel'
     ) as UIServiceWorkerBroadcastChannel
 
-    // Capture the [uuid, procedureName, payload] tuple handed to the worker
-    // channel; args.at(-1) is the tuple regardless of how the runner binds this.
+    // Capture the payload from the worker-channel [uuid, procedureName, payload] tuple.
     let receivedPayload: unknown
     const sendRequest = t.mock.method(channel, 'sendRequest', (...args: unknown[]) => {
       const tuple = args.at(-1)
@@ -1073,13 +1072,10 @@ await describe('AbstractUIService', async () => {
         })
       )
 
-      // Broadcast dispatch yields no response, but the station must be targeted.
+      // Broadcast responses are deferred.
       assert.strictEqual(response, undefined)
 
-      // The dispatch must actually fire and deliver a non-null object payload
-      // carrying a url. A malformed payload (missing the url, not an object, or
-      // null) must fail the test outright instead of silently returning early,
-      // as the old narrowing guards allowed.
+      // Require a dispatched payload containing the trimmed URL.
       assert.ok(sendRequest.mock.calls.length)
       if (typeof receivedPayload !== 'object' || receivedPayload == null) {
         assert.fail('dispatched payload must be a non-null object payload')
@@ -1088,10 +1084,7 @@ await describe('AbstractUIService', async () => {
         assert.fail('dispatched payload must carry a "url" property')
       }
 
-      // The gate approves the trimmed value; the station must receive it as-is.
       assert.strictEqual(receivedPayload.url, 'ws://localhost:9999/OCPP16')
-      // Guard against the regression: the raw value with surrounding
-      // whitespace must never be forwarded to the station.
       assert.notEqual(receivedPayload.url, '\u00A0ws://localhost:9999/OCPP16\u00A0')
     } finally {
       service.stop()

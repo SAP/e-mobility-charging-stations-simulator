@@ -318,27 +318,17 @@ const formatIssues = (issues: readonly z.core.$ZodIssue[]): string => {
 }
 
 /**
- * Result of validating and normalizing a UI request payload for dispatch.
- *
- * On success, `payload` carries the parsed (normalized) supervision URL values
- * so a value the gate approves is consumed in that same normalized form. On
- * failure, `error` describes every violation.
+ * Original payload with parsed supervision URLs, or grouped validation issues.
  */
 export type ValidatedRequestPayload =
   { error: string; payload?: undefined } | { error?: undefined; payload: RequestPayload }
 
 /**
- * Validates a UI request payload and, when valid, returns it with the
- * supervision URL fields replaced by their Zod-parsed (normalized) values.
- *
- * Zod URL parsing trims Unicode whitespace (NBSP, EM SPACE) that
- * `new URL()` does not, so dispatching the raw value would approve a
- * transformed URL and then dial a different one. Only those fields are swapped
- * in: unrelated PDU fields and optional-field presence come from the original
- * payload — the whole payload is never replaced wholesale.
- * @param procedureName - Procedure the payload is destined for.
- * @param requestPayload - Untrusted payload, as received from the transport.
- * @returns `{ error }` on invalid input, otherwise `{ payload }` ready to dispatch.
+ * Validates a UI payload and overlays schema-parsed supervision URLs.
+ * Preserves unlisted PDU fields and optional-field presence.
+ * @param procedureName - Target procedure.
+ * @param requestPayload - Untrusted payload received from the transport.
+ * @returns Validation issues or the payload ready for dispatch.
  */
 export const parseRequestPayloadForDispatch = (
   procedureName: ProcedureName,
@@ -357,11 +347,10 @@ export const parseRequestPayloadForDispatch = (
 }
 
 /**
- * Overlay that returns `requestPayload` with only its supervision URL fields
- * replaced by the parsed (normalized) values.
- * @param requestPayload - Payload received from the transport.
- * @param parsed - Zod-safeParse output carrying the trimmed URL values.
- * @returns `requestPayload` with the normalization overlay applied.
+ * Copies the payload with schema-parsed supervision URLs.
+ * @param requestPayload - Original transport payload.
+ * @param parsed - Validated schema output.
+ * @returns Payload copy with only supervision URL fields replaced.
  */
 const overlayNormalizedSupervisionUrls = (
   requestPayload: RequestPayload,
@@ -370,11 +359,11 @@ const overlayNormalizedSupervisionUrls = (
   const override: Record<string, unknown> = { ...requestPayload }
   const source = requestPayload as { options?: Record<string, unknown>; url?: unknown }
   const parsedData = parsed as { options?: { supervisionUrls?: unknown }; url?: unknown }
-  // SET_SUPERVISION_URL: the accepted, normalized single URL.
+  // SET_SUPERVISION_URL: parsed single URL.
   if (typeof source.url === 'string' && typeof parsedData.url === 'string') {
     override.url = parsedData.url
   }
-  // ADD_CHARGING_STATIONS: accepted, normalized supervision URL(s) (string or array).
+  // ADD_CHARGING_STATIONS: parsed URL or URL array.
   if (source.options?.supervisionUrls != null) {
     override.options = {
       ...source.options,

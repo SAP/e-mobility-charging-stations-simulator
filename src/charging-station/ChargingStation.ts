@@ -274,15 +274,10 @@ export class ChargingStation extends EventEmitter {
       supervisionUrlOcppKey != null && isNotEmptyString(configuredSupervisionUrl)
         ? supervisionUrlOcppKey
         : 'supervisionUrls'
-    // OCPP-J 1.6 section 3.1.1: the identity is one path segment and must be
-    // percent-encoded (RFC 3986), otherwise a reserved character in it becomes
-    // URL syntax ('#' a fragment, '?' a query, '/' another segment). The raw
-    // identity is kept everywhere else; only the connection URL is encoded.
-    // Trim leading/trailing whitespace before appending the charging-station
-    // identity: the WHATWG URL parser does not trim NBSP/EM SPACE (U+00A0/U+2003),
-    // so a whitespace-padded OCPP configuration value would otherwise become
-    // internal whitespace percent-encoded into the dialed path. The derived URL
-    // is validated by parseSupervisionUrl.
+    // OCPP-J 1.6 §3.1.1: percent-encode the identity as one path segment;
+    // preserve its raw value elsewhere.
+    // Trim the base before appending the identity to keep trailing spaces
+    // (including NBSP/EM SPACE) out of the request path.
     const wsConnectionBaseUrl = wsConnectionBaseUrlStr.trim()
     return this.parseSupervisionUrl(
       `${wsConnectionBaseUrl}${
@@ -3760,15 +3755,14 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
-   * Parses a supervision URL, raising a structured configuration error naming
-   * the offending field and station instead of leaking the `TypeError` thrown
-   * by `new URL()`. The original error is logged with its stack.
-   * @param supervisionUrl - Supervision URL string to parse.
-   * @param field - Configuration field or OCPP configuration key holding it.
-   * @param reportedUrl - Configured value quoted in the diagnostic; defaults to
-   *   `supervisionUrl`. The `wsConnectionUrl` getter passes the configured base
-   *   URL because it parses a derived URL (base plus charging station identity).
-   * @returns The parsed supervision URL.
+   * Validates and normalizes a supervision URL with the shared schema.
+   * Validation failures log the Zod error and throw a BaseError identifying the
+   * configuration field and, when available, the station.
+   * @param supervisionUrl - URL to validate and normalize.
+   * @param field - Configuration field or OCPP key used in diagnostics.
+   * @param reportedUrl - Value quoted in errors; defaults to `supervisionUrl`.
+   * @returns Validated, normalized supervision URL.
+   * @throws {BaseError} If the supervision URL fails validation.
    */
   private parseSupervisionUrl (
     supervisionUrl: string,

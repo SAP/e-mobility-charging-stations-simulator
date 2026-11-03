@@ -992,7 +992,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
   })
 
   await describe('parseRequestPayloadForDispatch', async () => {
-    await it('should trim NBSP around a SET_SUPERVISION_URL before validating', () => {
+    await it('should trim NBSP from the supervision URL', () => {
       const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
         hashIds: [TEST_HASH_ID],
         url: '\u00A0ws://localhost:9999/OCPP16\u00A0',
@@ -1001,7 +1001,6 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       assert.strictEqual(result.error, undefined)
       assert.notStrictEqual(result.payload, undefined)
 
-      // The NBSP must be stripped so a value the gate approves is dialled as-is.
       assert.strictEqual(result.payload.url, 'ws://localhost:9999/OCPP16')
     })
 
@@ -1020,7 +1019,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
         ],
       },
     ]) {
-      await it(`should normalize ${scenario.name} supervision URLs in station options without mutating the input`, () => {
+      await it(`should trim ${scenario.name} station option URLs without mutating the input`, () => {
         const payload = {
           numberOfStations: 1,
           options: {
@@ -1048,7 +1047,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       })
     }
 
-    await it('should replace only the url and preserve the other payload fields', () => {
+    await it('should preserve hashIds for a valid supervision URL', () => {
       const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
         hashIds: [TEST_HASH_ID],
         url: 'ws://localhost:9999/OCPP16',
@@ -1063,7 +1062,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
       })
     })
 
-    await it('should still reject an untrusted payload the schema rejects', () => {
+    await it('should reject a malformed supervision URL', () => {
       const result = parseRequestPayloadForDispatch(ProcedureName.SET_SUPERVISION_URL, {
         hashIds: [TEST_HASH_ID],
         url: 'not-a-url',
