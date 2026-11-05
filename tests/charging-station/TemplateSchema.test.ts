@@ -323,6 +323,37 @@ await describe('TemplateSchema', async () => {
       assert.ok(result.success)
     })
 
+    await it('should reject a padded value seeded in the active OCPP key, as the runtime write guards do', () => {
+      // SupervisionUrlSchema normalizes surrounding whitespace, but the OCPP
+      // key stores the value as sent and the runtime write guards reject raw
+      // whitespace and control characters; the seeded check matches them.
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate(seededConfiguration(' ws://localhost:8010 '))
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          issue =>
+            issue.path.join('.').startsWith('Configuration.configurationKey.0.value') &&
+            issue.message.includes('must not contain whitespace or control characters')
+        ),
+        `rejection must name the whitespace rule: ${JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should reject a seeded value containing a control character', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate(seededConfiguration('ws://localhost:8010\u0000'))
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(issue =>
+          issue.path.join('.').startsWith('Configuration.configurationKey.0.value')
+        ),
+        `rejection must name the seeded value: ${JSON.stringify(result.error.issues)}`
+      )
+    })
+
     await it('should apply the check to the default key when the template omits supervisionUrlOcppKey', () => {
       // The consumer merges the template with the station defaults before
       // activating the key, so an omitted key resolves to the default

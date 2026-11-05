@@ -4,7 +4,7 @@ import { z, type ZodError } from 'zod'
 import { SupervisionUrlSchema } from '../utils/ConfigurationSchema.js'
 import { Constants } from '../utils/Constants.js'
 import { convertToIntOrNaN, isNotEmptyString } from '../utils/Utils.js'
-import { resolveOcppParameterKey } from './ConfigurationKeyUtils.js'
+import { isSupportedSupervisionUrl, resolveOcppParameterKey } from './ConfigurationKeyUtils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
 // ---------------------------------------------------------------
@@ -283,9 +283,19 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
     const configurationKeys = template.Configuration?.configurationKey ?? []
     const firstIndex = configurationKeys.findIndex(entry => entry.key === supervisionKey)
     const entry = firstIndex === -1 ? undefined : configurationKeys[firstIndex]
-    if (entry != null && isNotEmptyString(entry.value)) {
+    // The OCPP key stores the value as sent and the consumer dials it raw,
+    // so the shared raw-value guard applies before schema parsing:
+    // SupervisionUrlSchema normalizes whitespace and control characters that
+    // the runtime write guards (ChangeConfiguration, SetVariables) reject.
+    if (entry != null && isNotEmptyString(entry.value) && !isSupportedSupervisionUrl(entry.value)) {
       const result = SupervisionUrlSchema.safeParse(entry.value)
-      if (!result.success) {
+      if (result.success) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Seeded value of OCPP key '${supervisionKey}' must not contain whitespace or control characters`,
+          path: ['Configuration', 'configurationKey', firstIndex, 'value'],
+        })
+      } else {
         const error: ZodError = result.error
         for (const issue of error.issues) {
           ctx.addIssue({
