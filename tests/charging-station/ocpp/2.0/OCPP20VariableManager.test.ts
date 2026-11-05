@@ -58,7 +58,7 @@ const CONNECTION_URL_MAX_LENGTH =
  * @param fillerChar Character used to pad after the base prefix.
  * @returns Valid WebSocket URL string of exact targetLength.
  */
-function buildWsExampleUrl(targetLength: number, fillerChar = 'a'): string {
+function buildWsExampleUrl (targetLength: number, fillerChar = 'a'): string {
   const base = 'ws://example/'
   if (targetLength <= base.length) {
     throw new Error('targetLength too small')
