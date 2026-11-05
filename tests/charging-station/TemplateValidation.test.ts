@@ -12,7 +12,10 @@ import { TemplateValidationError, validateTemplate } from '../../src/charging-st
 import { BaseError } from '../../src/exception/index.js'
 import { clone, logger } from '../../src/utils/index.js'
 import { mockLoggerWarnDebug, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
-import { TEST_SUPERVISION_URL } from '../utils/TestNetworkConstants.js'
+import {
+  TEST_SUPERVISION_URL,
+  TEST_SUPERVISION_URL_ALT_PORT,
+} from '../utils/TestNetworkConstants.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
 import { buildLegacyTemplate, buildMinimalTemplate } from './helpers/TemplateFixtures.js'
 
@@ -31,10 +34,10 @@ await describe('TemplateValidation', async () => {
       assert.strictEqual(result.baseName, TEST_CHARGING_STATION_BASE_NAME)
     })
 
-    await it('should accept string "$schemaVersion": "1" at current version (no-migration path)', t => {
+    await it('should accept string "$schemaVersion": "2" at current version (no-migration path)', t => {
       t.mock.method(logger, 'warn')
       const parsed = buildMinimalTemplate({
-        $schemaVersion: '1',
+        $schemaVersion: '2',
         Connectors: { 0: {}, 1: {} },
       })
 
@@ -168,8 +171,58 @@ await describe('TemplateValidation', async () => {
       } catch (error) {
         assert.ok(error instanceof TemplateValidationError)
         assert.strictEqual(error.migratedFrom, 0)
-        assert.match(error.message, /migrated from v0 → v1/)
+        assert.match(error.message, /migrated from v0 → v2/)
       }
+    })
+
+    await it('should reject a v1 template carrying a supervision URL the transport cannot dial', t => {
+      // The v1→v2 hop is an identity: the unsupported value survives the
+      // migration and is rejected by the schema, naming the field.
+      mockLoggerWarnDebug(t, logger)
+      try {
+        validateTemplate(
+          buildMinimalTemplate({
+            $schemaVersion: 1,
+            Connectors: { 0: {} },
+            supervisionUrls: 'ftp://localhost/OCPP16',
+          }),
+          'v1-unsupported-scheme.json'
+        )
+        assert.fail('Expected TemplateValidationError')
+      } catch (error) {
+        assert.ok(error instanceof TemplateValidationError)
+        assert.strictEqual(error.migratedFrom, 1)
+        assert.strictEqual(error.filePath, 'v1-unsupported-scheme.json')
+        assert.ok(
+          error.fieldErrors.some(
+            fieldError =>
+              fieldError.path.startsWith('supervisionUrls') &&
+              fieldError.message.includes('must be a WebSocket URL')
+          ),
+          `rejection must name the supervisionUrls field: ${JSON.stringify(error.fieldErrors)}`
+        )
+      }
+    })
+
+    await it('should migrate a v1 template with a supported supervision URL to the current version', t => {
+      mockLoggerWarnDebug(t, logger)
+      const result = validateTemplate(
+        buildMinimalTemplate({
+          $schemaVersion: 1,
+          Connectors: { 0: {} },
+          supervisionUrls: [TEST_SUPERVISION_URL, TEST_SUPERVISION_URL_ALT_PORT],
+        }),
+        'v1-valid.json'
+      )
+
+      assert.strictEqual(
+        (result as unknown as Record<string, unknown>).$schemaVersion,
+        CURRENT_SCHEMA_VERSION
+      )
+      assert.deepStrictEqual(result.supervisionUrls, [
+        TEST_SUPERVISION_URL,
+        TEST_SUPERVISION_URL_ALT_PORT,
+      ])
     })
   })
 

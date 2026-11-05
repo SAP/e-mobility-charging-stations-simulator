@@ -9,7 +9,10 @@ import { afterEach, describe, it } from 'node:test'
 import { CURRENT_SCHEMA_VERSION } from '../../src/charging-station/index.js'
 import { TemplateSchema } from '../../src/charging-station/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
-import { TEST_SUPERVISION_URL } from '../utils/TestNetworkConstants.js'
+import {
+  TEST_SUPERVISION_URL,
+  TEST_SUPERVISION_URL_ALT_PORT,
+} from '../utils/TestNetworkConstants.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
 import { buildMinimalTemplate } from './helpers/TemplateFixtures.js'
 
@@ -213,6 +216,74 @@ await describe('TemplateSchema', async () => {
         buildMinimalTemplate({ wsOptions: { headers: { 'X-Foo': true } } })
       )
       assert.ok(!result.success)
+    })
+  })
+
+  await describe('supervisionUrls (shared supervision endpoint policy)', async () => {
+    await it('should accept a single supported supervision URL (string form)', () => {
+      for (const url of [
+        'ws://localhost:8010',
+        'wss://example.org/OCPP16',
+        'http://localhost:8010/steve/websocket',
+        'https://example.org/CentralSystemService',
+        'ws+unix:///path/to/socket.sock:/OCPP16',
+      ]) {
+        const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: url }))
+        assert.ok(result.success, `should accept ${url}`)
+      }
+    })
+
+    await it('should accept an array of supported supervision URLs', () => {
+      const urls = [TEST_SUPERVISION_URL, TEST_SUPERVISION_URL_ALT_PORT]
+      const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: urls }))
+      assert.ok(result.success)
+      assert.deepStrictEqual(result.data.supervisionUrls, urls)
+    })
+
+    await it('should reject an unsupported scheme in string and array forms, naming the field', () => {
+      // The v2 narrowing: a syntactically valid URL the supervision transport
+      // cannot dial (e.g. `ftp://`) fails at template load, not at connection.
+      for (const url of ['ftp://localhost/OCPP16', 'file:///etc/passwd', 'gopher://localhost']) {
+        for (const value of [url, [url], [url, TEST_SUPERVISION_URL]]) {
+          const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: value }))
+          assert.ok(!result.success, `should reject ${JSON.stringify(value)}`)
+          assert.ok(
+            result.error.issues.some(
+              issue =>
+                issue.path.join('.').startsWith('supervisionUrls') &&
+                issue.message.includes('must be a WebSocket URL')
+            ),
+            `rejection for ${JSON.stringify(value)} must name the supervisionUrls field`
+          )
+        }
+      }
+    })
+
+    await it('should reject query and fragment delimiters (shared endpoint policy)', () => {
+      for (const url of ['ws://localhost:8010?token=1', 'ws://localhost:8010#fragment']) {
+        const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: url }))
+        assert.ok(!result.success, `should reject ${url}`)
+        assert.ok(
+          result.error.issues.some(issue => issue.path.join('.').startsWith('supervisionUrls'))
+        )
+      }
+    })
+
+    await it('should reject an invalid ws+unix URL (missing request path separator)', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate({ supervisionUrls: 'ws+unix:///path/to/socket.sockOCPP16' })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(issue => issue.path.join('.').startsWith('supervisionUrls'))
+      )
+    })
+
+    await it('should trim surrounding Unicode whitespace from the parsed value', () => {
+      const padded = `\u00A0${TEST_SUPERVISION_URL}\u2003`
+      const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: padded }))
+      assert.ok(result.success)
+      assert.strictEqual(result.data.supervisionUrls, TEST_SUPERVISION_URL)
     })
   })
 

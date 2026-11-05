@@ -11,6 +11,7 @@ import { Worker } from 'node:worker_threads'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
+import { TemplateValidationError } from '../../src/charging-station/TemplateValidation.js'
 import { BaseError } from '../../src/exception/BaseError.js'
 import {
   type ChargingStationConfiguration,
@@ -32,6 +33,9 @@ import {
 // retain it to verify diagnostics name the configured key, not the default.
 const OCPP_SUPERVISION_URL_KEY = 'ocppcentraladdress'
 const MALFORMED_SUPERVISION_URL = 'not a url'
+// Syntactically valid per `new URL()`, unsupported by the supervision
+// transport.
+const UNSUPPORTED_SCHEME_URL = 'ftp://localhost/OCPP16'
 
 const stationInternalsOf = (
   station: ChargingStation
@@ -71,22 +75,22 @@ await describe('ChargingStation supervision URL validation', async () => {
     cleanupStationTemplates()
   })
 
-  await it('should reject a malformed supervision URL with a field-naming configuration error', () => {
-    // A template with a relative or malformed supervision URL must surface a
-    // structured configuration error, never the bare `TypeError` from `new URL()`.
-    for (const malformedUrl of ['/relative', MALFORMED_SUPERVISION_URL]) {
+  await it('should reject a template supervision URL the transport cannot dial with a field-naming validation error', () => {
+    // A template whose supervision URL the supervision transport cannot dial
+    // (relative, malformed, or unsupported scheme) must fail template
+    // validation, naming the field, before station construction proceeds.
+    for (const invalidUrl of ['/relative', MALFORMED_SUPERVISION_URL, UNSUPPORTED_SCHEME_URL]) {
       assert.throws(
         () =>
-          createStationFromTemplate(copyStationTemplate({ supervisionUrls: malformedUrl }), {
+          createStationFromTemplate(copyStationTemplate({ supervisionUrls: invalidUrl }), {
             baseName: TEST_CHARGING_STATION_BASE_NAME,
             fixedName: true,
             persistentConfiguration: false,
-            supervisionUrls: malformedUrl,
+            supervisionUrls: invalidUrl,
           }),
-        {
-          message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${malformedUrl}' configured in 'supervisionUrls'`,
-          name: 'BaseError',
-        }
+        (error: unknown) =>
+          error instanceof TemplateValidationError && error.message.includes('supervisionUrls'),
+        `expected TemplateValidationError naming supervisionUrls for '${invalidUrl}'`
       )
     }
   })
@@ -170,6 +174,81 @@ await describe('ChargingStation supervision URL validation', async () => {
       message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
       name: 'BaseError',
     })
+  })
+
+  await it('should reject an unsupported-scheme URL seeded in the OCPP configuration key before connection', () => {
+    // `ftp://` parses fine with `new URL()`, so syntax-level checks cannot
+    // catch it; the shared endpoint policy rejects it at the
+    // effective-endpoint consumer, naming the OCPP key and the station.
+    const station = createStationFromTemplate(
+      copyStationTemplate({
+        Configuration: {
+          configurationKey: [
+            {
+              key: OCPP_SUPERVISION_URL_KEY,
+              readonly: false,
+              value: UNSUPPORTED_SCHEME_URL,
+            },
+          ],
+        },
+        supervisionUrlOcppConfiguration: true,
+        supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
+      }),
+      { baseName: TEST_CHARGING_STATION_BASE_NAME, fixedName: true, persistentConfiguration: false }
+    )
+
+    assert.throws(() => station.wsConnectionUrl, {
+      message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${UNSUPPORTED_SCHEME_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
+      name: 'BaseError',
+    })
+  })
+
+  await it('should reject an unsupported-scheme URL from setSupervisionUrl and preserve the previous endpoint on both branches', () => {
+    // Both setter branches must apply the shared endpoint policy: a rejected
+    // update leaves the previous endpoint and credentials untouched.
+    const plain = createStationFromTemplate(copyStationTemplate(), {
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      fixedName: true,
+      persistentConfiguration: false,
+    })
+    const initialPlainUrl = plain.wsConnectionUrl.href
+    const initialPlainSupervisionUrls = plain.stationInfo?.supervisionUrls
+
+    assert.throws(
+      () => {
+        plain.setSupervisionUrl(UNSUPPORTED_SCHEME_URL, 'keeper-user', 'keeper-password')
+      },
+      {
+        message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${UNSUPPORTED_SCHEME_URL}' configured in 'supervisionUrls'`,
+        name: 'BaseError',
+      }
+    )
+    assert.strictEqual(plain.wsConnectionUrl.href, initialPlainUrl)
+    assert.strictEqual(plain.stationInfo?.supervisionUrls, initialPlainSupervisionUrls)
+    // A rejected update must not store credentials either.
+    assert.strictEqual(plain.stationInfo?.supervisionUser, undefined)
+    assert.strictEqual(plain.stationInfo?.supervisionPassword, undefined)
+
+    const ocpp = createStationFromTemplate(
+      copyStationTemplate({
+        supervisionUrlOcppConfiguration: true,
+        supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
+      }),
+      { baseName: TEST_CHARGING_STATION_BASE_NAME, fixedName: true, persistentConfiguration: false }
+    )
+    const initialOcppUrl = ocpp.wsConnectionUrl.href
+
+    assert.throws(
+      () => {
+        ocpp.setSupervisionUrl(UNSUPPORTED_SCHEME_URL)
+      },
+      {
+        message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${UNSUPPORTED_SCHEME_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
+        name: 'BaseError',
+      }
+    )
+    // The rejected value must not have reached the OCPP configuration key.
+    assert.strictEqual(ocpp.wsConnectionUrl.href, initialOcppUrl)
   })
 
   await it('should normalize supervision URLs in a worker and preserve persisted state on rejection', async () => {

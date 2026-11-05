@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 // Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts which uses Zod enums, causing a TDZ cycle.
+import { SupervisionUrlSchema } from '../utils/ConfigurationSchema.js'
 import { convertToIntOrNaN } from '../utils/Utils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
@@ -228,7 +229,9 @@ const BaseTemplateSchema = z.looseObject({
   supervisionPassword: z.string().optional(),
   supervisionUrlOcppConfiguration: z.boolean().optional(),
   supervisionUrlOcppKey: z.string().optional(),
-  supervisionUrls: z.union([z.string(), z.array(z.string())]).optional(),
+  // Shared supervision endpoint policy: a value the transport cannot dial
+  // is rejected at template load instead of at connection time.
+  supervisionUrls: z.union([SupervisionUrlSchema, z.array(SupervisionUrlSchema)]).optional(),
   supervisionUser: z.string().optional(),
   templateHash: z.string().optional(),
   transactionDataMeterValues: z.boolean().optional(),

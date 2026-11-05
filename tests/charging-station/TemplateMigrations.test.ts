@@ -24,7 +24,7 @@ await describe('TemplateMigrations', async () => {
   await describe('CURRENT_SCHEMA_VERSION', async () => {
     await it('should be a positive integer', () => {
       assert.ok(Number.isInteger(CURRENT_SCHEMA_VERSION))
-      assert.strictEqual(CURRENT_SCHEMA_VERSION, 1)
+      assert.strictEqual(CURRENT_SCHEMA_VERSION, 2)
     })
   })
 
@@ -138,6 +138,28 @@ await describe('TemplateMigrations', async () => {
         })
       })
     }
+
+    await it('should migrate v1 to v2 as an identity hop (narrowing is enforced by validation)', () => {
+      // The v2 supervisionUrls narrowing has no structural rewrite: a v1
+      // template value the transport cannot dial is rejected by strict
+      // validation after the hop, never rewritten here.
+      const template = {
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'Simulator simple',
+        chargePointVendor: 'Simulator',
+        supervisionUrls: ['ftp://localhost/OCPP16', TEST_SUPERVISION_URL],
+      }
+
+      const result = applyMigration(1, template)
+
+      assert.strictEqual(result, template)
+      assert.strictEqual(result.$schemaVersion, 2)
+      assert.deepStrictEqual(result.supervisionUrls, [
+        'ftp://localhost/OCPP16',
+        TEST_SUPERVISION_URL,
+      ])
+    })
 
     await it('should set $schemaVersion to CURRENT_SCHEMA_VERSION after migration', t => {
       mockLoggerWarnDebug(t, logger)
