@@ -130,12 +130,16 @@ const resolveKey = (
 ): ConfigurationKeyType => resolveOcppParameterKey(chargingStation.stationInfo?.ocppVersion, key)
 
 /**
- * Whether a value is a URL the supervision WebSocket client can dial once the
- * charging station identity is appended to it. The endpoint policy (schemes,
- * fragment and query delimiters, `ws+unix:` socket and request path) is the
- * shared `SupervisionUrlSchema`. The OCPP key stores the value as sent, so
- * whitespace and control characters are rejected here first: `z.url()` strips
- * them from its output, but the raw value would still be dialed with them.
+ * Whether a raw OCPP configuration value is acceptable as the seeded
+ * supervision URL. The endpoint policy (schemes, fragment and query
+ * delimiters, `ws+unix:` socket and request path) is the shared
+ * `SupervisionUrlSchema`. The OCPP key stores the value as sent, so the raw
+ * value is checked for whitespace and control characters before schema
+ * parsing: `z.url()` strips surrounding whitespace from its output, which
+ * would hide padded values from the policy. The check is deliberately
+ * stricter than the dial path (which trims the base before appending the
+ * station identity): it enforces the same input hygiene as the runtime write
+ * guards and keeps the stored OCPP value clean.
  * @param value - Candidate supervision URL.
  * @returns `true` when the raw value has no whitespace or control characters
  * and satisfies `SupervisionUrlSchema`.

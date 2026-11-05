@@ -176,10 +176,43 @@ await describe('ChargingStation supervision URL validation', async () => {
           ),
         (error: unknown) =>
           error instanceof TemplateValidationError &&
-          error.message.includes(OCPP_SUPERVISION_URL_KEY),
+          error.message.includes(OCPP_SUPERVISION_URL_KEY) &&
+          error.filePath.includes('virtual-simple.station-template.json'),
         `expected TemplateValidationError naming the OCPP key for '${value}'`
       )
     }
+  })
+
+  await it('should reject a malformed supervision URL seeded in the OCPP configuration key outside template load', () => {
+    // A station built from a valid template (supervision flags active, no
+    // seeded entry, so template load passes) can still carry a malformed
+    // value in the OCPP key from a persisted station file or a manual edit,
+    // bypassing the template-load check. The wsConnectionUrl getter is the
+    // dial-time backstop and must raise the structured error naming the key.
+    const station = createStationFromTemplate(
+      copyStationTemplate({
+        supervisionUrlOcppConfiguration: true,
+        supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
+      }),
+      { baseName: TEST_CHARGING_STATION_BASE_NAME, fixedName: true, persistentConfiguration: false }
+    )
+
+    // The constructor seeds the active supervision OCPP key with the
+    // configured supervision URL; overwrite that entry's value to simulate a
+    // persisted station file (or a manual edit) carrying a malformed value.
+    const configurationKey = station.ocppConfiguration?.configurationKey
+    assert.ok(
+      configurationKey,
+      'Expected the station to carry the template OCPP configuration keys'
+    )
+    const supervisionEntry = configurationKey.find(entry => entry.key === OCPP_SUPERVISION_URL_KEY)
+    assert.ok(supervisionEntry, `Expected the seeded '${OCPP_SUPERVISION_URL_KEY}' entry`)
+    supervisionEntry.value = MALFORMED_SUPERVISION_URL
+
+    assert.throws(() => station.wsConnectionUrl, {
+      message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
+      name: 'BaseError',
+    })
   })
 
   await it('should reject an unsupported-scheme URL from setSupervisionUrl and preserve the previous endpoint on both branches', () => {
