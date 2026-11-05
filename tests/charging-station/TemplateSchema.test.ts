@@ -323,6 +323,32 @@ await describe('TemplateSchema', async () => {
       assert.ok(result.success)
     })
 
+    await it('should apply the check to the default key when the template omits supervisionUrlOcppKey', () => {
+      // The consumer merges the template with the station defaults before
+      // activating the key, so an omitted key resolves to the default
+      // ConnectionUrl and the seeded value for it is checked.
+      const omittedKey = (value: string) => ({
+        Configuration: {
+          configurationKey: [{ key: 'ConnectionUrl', readonly: false, value }],
+        },
+        supervisionUrlOcppConfiguration: true,
+      })
+
+      const rejected = TemplateSchema.safeParse(
+        buildMinimalTemplate(omittedKey('ftp://localhost/OCPP16'))
+      )
+      assert.ok(!rejected.success)
+      assert.ok(
+        rejected.error.issues.some(issue => issue.message.includes("'ConnectionUrl'")),
+        `rejection must name the default OCPP key: ${JSON.stringify(rejected.error.issues)}`
+      )
+
+      const accepted = TemplateSchema.safeParse(
+        buildMinimalTemplate(omittedKey('ws://localhost:8010'))
+      )
+      assert.ok(accepted.success)
+    })
+
     await it('should ignore the seeded value when supervisionUrlOcppConfiguration is false', () => {
       const result = TemplateSchema.safeParse(
         buildMinimalTemplate({

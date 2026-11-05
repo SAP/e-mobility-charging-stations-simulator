@@ -22,6 +22,7 @@ import {
   convertToIntOrNaN,
   getEnumStringValue,
   isEmpty,
+  isNotEmptyString,
   logger,
 } from '../../../utils/index.js'
 import {
@@ -29,6 +30,8 @@ import {
   buildConfigKey,
   type ChargingStation,
   getConfigurationKey,
+  isSupportedSupervisionUrl,
+  resolveOcppParameterKey,
   setConfigurationKeyValue,
 } from '../../index.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
@@ -116,11 +119,11 @@ export class OCPP20VariableManager {
   private readonly runtimeOverrides = new Map<string, Map<string, string>>() // stationId → composite key → value
   private readonly validatedStations = new Set<string>() // stationId
 
-  private constructor () {
+  private constructor() {
     /* This is intentional */
   }
 
-  public static getInstance (): OCPP20VariableManager {
+  public static getInstance(): OCPP20VariableManager {
     OCPP20VariableManager.instance ??= new OCPP20VariableManager()
     return OCPP20VariableManager.instance
   }
@@ -133,7 +136,7 @@ export class OCPP20VariableManager {
    * @param variableMetadata - Canonical registry metadata.
    * @returns Supported component descriptors in stable station/EVSE order.
    */
-  public getSupportedComponents (
+  public getSupportedComponents(
     chargingStation: ChargingStation,
     variableMetadata: VariableMetadata
   ): ComponentType[] {
@@ -148,7 +151,7 @@ export class OCPP20VariableManager {
     return components
   }
 
-  public getVariables (
+  public getVariables(
     chargingStation: ChargingStation,
     getVariableData: OCPP20GetVariableDataType[]
   ): OCPP20GetVariableResultType[] {
@@ -178,7 +181,7 @@ export class OCPP20VariableManager {
     return results
   }
 
-  public invalidateMappingsCache (stationId?: string): void {
+  public invalidateMappingsCache(stationId?: string): void {
     if (stationId != null) {
       this.validatedStations.delete(stationId)
       this.invalidVariables.delete(stationId)
@@ -188,7 +191,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  public resetRuntimeOverrides (stationId?: string): void {
+  public resetRuntimeOverrides(stationId?: string): void {
     if (stationId != null) {
       this.runtimeOverrides.delete(stationId)
       this.minSetOverrides.delete(stationId)
@@ -207,7 +210,7 @@ export class OCPP20VariableManager {
    * @param name - Configuration key name (`component.variable[.instance]`).
    * @returns The resolved tuple, or `undefined` when the name is not registry-backed.
    */
-  public resolveConfigurationKeyName (
+  public resolveConfigurationKeyName(
     name: string
   ): undefined | { component: string; evseId?: number; instance?: string; variable: string } {
     const directMatch = this.#configurationKeyNameToVariable.get(name)
@@ -222,7 +225,7 @@ export class OCPP20VariableManager {
     return { ...baseMatch, evseId: Number(scopedMatch[2]) }
   }
 
-  public setVariables (
+  public setVariables(
     chargingStation: ChargingStation,
     setVariableData: OCPP20SetVariableDataType[]
   ): OCPP20SetVariableResultType[] {
@@ -334,7 +337,7 @@ export class OCPP20VariableManager {
     return results
   }
 
-  public validatePersistentMappings (chargingStation: ChargingStation): void {
+  public validatePersistentMappings(chargingStation: ChargingStation): void {
     const stationId = this.getStationId(chargingStation)
     if (this.validatedStations.has(stationId)) return
     const invalidVariables = this.getInvalidVariables(stationId)
@@ -403,7 +406,7 @@ export class OCPP20VariableManager {
     this.validatedStations.add(stationId)
   }
 
-  private getInvalidVariables (stationId: string): Set<string> {
+  private getInvalidVariables(stationId: string): Set<string> {
     let set = this.invalidVariables.get(stationId)
     if (set == null) {
       set = new Set<string>()
@@ -412,7 +415,7 @@ export class OCPP20VariableManager {
     return set
   }
 
-  private getMaxSetOverrides (stationId: string): Map<string, string> {
+  private getMaxSetOverrides(stationId: string): Map<string, string> {
     let map = this.maxSetOverrides.get(stationId)
     if (map == null) {
       map = new Map<string, string>()
@@ -421,7 +424,7 @@ export class OCPP20VariableManager {
     return map
   }
 
-  private getMinSetOverrides (stationId: string): Map<string, string> {
+  private getMinSetOverrides(stationId: string): Map<string, string> {
     let map = this.minSetOverrides.get(stationId)
     if (map == null) {
       map = new Map<string, string>()
@@ -430,7 +433,7 @@ export class OCPP20VariableManager {
     return map
   }
 
-  private getRuntimeOverrides (stationId: string): Map<string, string> {
+  private getRuntimeOverrides(stationId: string): Map<string, string> {
     let map = this.runtimeOverrides.get(stationId)
     if (map == null) {
       map = new Map<string, string>()
@@ -439,7 +442,7 @@ export class OCPP20VariableManager {
     return map
   }
 
-  private getStationId (chargingStation: ChargingStation): string {
+  private getStationId(chargingStation: ChargingStation): string {
     const stationId = chargingStation.stationInfo?.hashId
     if (stationId == null) {
       throw new BaseError('ChargingStation has no stationInfo.hashId, cannot identify station')
@@ -447,7 +450,7 @@ export class OCPP20VariableManager {
     return stationId
   }
 
-  private getVariable (
+  private getVariable(
     chargingStation: ChargingStation,
     variableData: OCPP20GetVariableDataType
   ): OCPP20GetVariableResultType {
@@ -648,7 +651,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private isComponentValid (chargingStation: ChargingStation, component: ComponentType): boolean {
+  private isComponentValid(chargingStation: ChargingStation, component: ComponentType): boolean {
     if (!this.#validComponentNames.has(component.name)) return false
     if (component.evse?.id === 0) return false
     if (component.evse == null) return true
@@ -659,7 +662,7 @@ export class OCPP20VariableManager {
     )
   }
 
-  private isVariableSupported (component: ComponentType, variable: VariableType): boolean {
+  private isVariableSupported(component: ComponentType, variable: VariableType): boolean {
     if (
       component.name.toLowerCase() === OCPP20ComponentName.AlignedDataCtrlr.toLowerCase() &&
       component.evse != null &&
@@ -673,7 +676,7 @@ export class OCPP20VariableManager {
     )
   }
 
-  private rejectGet (
+  private rejectGet(
     variable: VariableType,
     component: ComponentType,
     attributeType: AttributeEnumType | undefined,
@@ -694,7 +697,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private rejectSet (
+  private rejectSet(
     variable: VariableType,
     component: ComponentType,
     attributeType: AttributeEnumType,
@@ -715,7 +718,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private resolveVariableValue (
+  private resolveVariableValue(
     chargingStation: ChargingStation,
     component: ComponentType,
     variable: VariableType
@@ -791,7 +794,7 @@ export class OCPP20VariableManager {
     return value
   }
 
-  private setVariable (
+  private setVariable(
     chargingStation: ChargingStation,
     variableData: OCPP20SetVariableDataType
   ): OCPP20SetVariableResultType {
@@ -1101,6 +1104,28 @@ export class OCPP20VariableManager {
 
     let rebootRequired = false
     const configurationKeyName = computeScopedConfigurationKeyName(variableMetadata, component)
+    // A supervision OCPP key that is a settable registry variable can be
+    // pointed at an endpoint the transport cannot dial; enforce the same
+    // dialability guard as the OCPP 1.6 ChangeConfiguration handler.
+    if (
+      chargingStation.stationInfo?.supervisionUrlOcppConfiguration === true &&
+      isNotEmptyString(chargingStation.stationInfo.supervisionUrlOcppKey) &&
+      configurationKeyName ===
+        resolveOcppParameterKey(
+          chargingStation.stationInfo.ocppVersion,
+          chargingStation.stationInfo.supervisionUrlOcppKey
+        ) &&
+      !isSupportedSupervisionUrl(attributeValue)
+    ) {
+      return this.rejectSet(
+        variable,
+        component,
+        resolvedAttributeType,
+        SetVariableStatusEnumType.Rejected,
+        ReasonCodeEnumType.InvalidValue,
+        'The supervision URL is not dialable'
+      )
+    }
     const previousValue =
       this.getRuntimeOverrides(stationId).get(variableKey) ??
       getConfigurationKey(chargingStation, configurationKeyName)?.value

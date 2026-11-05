@@ -23,6 +23,7 @@ import {
   getConfigurationKey,
   getConnectorChargingProfiles,
   getIdTagsFile,
+  isSupportedSupervisionUrl,
   prepareChargingProfileKind,
   removeExpiredReservations,
   resetAuthorizeConnectorStatus,
@@ -133,7 +134,6 @@ import {
   isValidRandomIntBounds,
   logger,
   sleep,
-  SupervisionUrlSchema,
   truncateId,
 } from '../../../utils/index.js'
 import { AuthContext, type DifferentialAuthEntry, OCPPAuthServiceFactory } from '../auth/index.js'
@@ -158,21 +158,6 @@ import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16IncomingRequestService'
-
-/**
- * Whether a value is a URL the supervision WebSocket client can dial once the
- * charging station identity is appended to it. The endpoint policy (schemes,
- * fragment and query delimiters, `ws+unix:` socket and request path) is the
- * shared `SupervisionUrlSchema`. The OCPP key stores the value as sent, so
- * whitespace and control characters are rejected here first: `z.url()` strips
- * them from its output, but the raw value would still be dialed with them.
- * @param value - Candidate supervision URL.
- * @returns `true` when the raw value has no whitespace or control characters
- * and satisfies `SupervisionUrlSchema`.
- */
-const isSupportedSupervisionUrl = (value: string): boolean =>
-  // eslint-disable-next-line no-control-regex -- control characters are rejected on purpose
-  !/[\s\u0000-\u001F\u007F]/.test(value) && SupervisionUrlSchema.safeParse(value).success
 
 const requireOCPP16ChargePointStatus = (status: string | undefined): OCPP16ChargePointStatus => {
   const ocpp16Status = getEnumStringValue(OCPP16ChargePointStatus, status)
@@ -377,7 +362,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   /**
    * Constructs an OCPP 1.6 Incoming Request Service with request handlers, validators, and event listeners.
    */
-  public constructor () {
+  public constructor() {
     super(OCPPVersion.VERSION_16)
     this.incomingRequestHandlers = new Map<IncomingRequestCommand, IncomingRequestHandler>([
       [
@@ -701,11 +686,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                 const publicKeyDeliveryToken =
                   transactionId != null
                     ? claimPublicKeyDelivery(
-                      connectorStatus,
-                      transactionId,
-                      target.request,
-                      publicKeyIncluded
-                    )
+                        connectorStatus,
+                        transactionId,
+                        target.request,
+                        publicKeyIncluded
+                      )
                     : undefined
                 const deliveryState = {
                   buffered: false,
@@ -897,7 +882,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     )
   }
 
-  public changeConfiguration (
+  public changeConfiguration(
     chargingStation: ChargingStation,
     key: string,
     value: string
@@ -910,7 +895,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
    *   fields unset. Fields are lazily assigned by the request handlers
    *   that own them (see {@link OCPP16StationState}).
    */
-  protected override createStationState (): OCPP16StationState {
+  protected override createStationState(): OCPP16StationState {
     return {}
   }
 
@@ -920,7 +905,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
    * @param commandPayload - Exact incoming request payload owning the reservation.
    * @returns Serialized bytes retained by the reservation.
    */
-  protected override getResponseDeliveryRetainedBytes (
+  protected override getResponseDeliveryRetainedBytes(
     commandName: IncomingRequestCommand,
     commandPayload: JsonType
   ): number {
@@ -939,14 +924,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
    * @param commandName - Incoming request command to check
    * @returns Whether the command is supported
    */
-  protected isIncomingRequestCommandSupported (
+  protected isIncomingRequestCommandSupported(
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand
   ): boolean {
     return isIncomingRequestCommandSupported(chargingStation, commandName)
   }
 
-  protected override onResponseSendError (
+  protected override onResponseSendError(
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand,
     commandPayload: JsonType
@@ -981,7 +966,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
    * successor.
    * @param stationState - Per-station state to release.
    */
-  protected override resetStationState (stationState: OCPP16StationState): void {
+  protected override resetStationState(stationState: OCPP16StationState): void {
     stationState.activeDiagnosticsAbortController?.abort()
     this.cancelDeferredFirmwareUpdate(stationState)
     for (const target of stationState.triggeredMeterValueTargets ?? []) {
@@ -996,14 +981,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
    * the handle. No-op when no timer is pending.
    * @param stationState - Per-station state carrying the timer handle.
    */
-  private cancelDeferredFirmwareUpdate (stationState: OCPP16StationState): void {
+  private cancelDeferredFirmwareUpdate(stationState: OCPP16StationState): void {
     if (stationState.deferredFirmwareUpdateTimer != null) {
       clearTimeout(stationState.deferredFirmwareUpdateTimer)
       stationState.deferredFirmwareUpdateTimer = undefined
     }
   }
 
-  private composeCompositeSchedule (
+  private composeCompositeSchedule(
     chargingStation: ChargingStation,
     chargingProfiles: OCPP16ChargingProfile[],
     duration: number,
@@ -1073,7 +1058,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return compositeSchedule
   }
 
-  private async handleRequestCancelReservation (
+  private async handleRequestCancelReservation(
     chargingStation: ChargingStation,
     commandPayload: OCPP16CancelReservationRequest
   ): Promise<GenericResponse> {
@@ -1115,7 +1100,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
   }
 
-  private async handleRequestChangeAvailability (
+  private async handleRequestChangeAvailability(
     chargingStation: ChargingStation,
     commandPayload: OCPP16ChangeAvailabilityRequest
   ): Promise<OCPP16ChangeAvailabilityResponse> {
@@ -1172,7 +1157,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED
   }
 
-  private handleRequestChangeConfiguration (
+  private handleRequestChangeConfiguration(
     chargingStation: ChargingStation,
     commandPayload: ChangeConfigurationRequest
   ): ChangeConfigurationResponse {
@@ -1260,7 +1245,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED
   }
 
-  private handleRequestClearCache (chargingStation: ChargingStation): ClearCacheResponse {
+  private handleRequestClearCache(chargingStation: ChargingStation): ClearCacheResponse {
     const idTagsFile =
       chargingStation.stationInfo != null ? getIdTagsFile(chargingStation.stationInfo) : undefined
     if (idTagsFile != null && chargingStation.idTagsCache.deleteIdTags(idTagsFile)) {
@@ -1269,7 +1254,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPPConstants.OCPP_RESPONSE_REJECTED
   }
 
-  private handleRequestClearChargingProfile (
+  private handleRequestClearChargingProfile(
     chargingStation: ChargingStation,
     commandPayload: OCPP16ClearChargingProfileRequest
   ): OCPP16ClearChargingProfileResponse {
@@ -1331,7 +1316,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN
   }
 
-  private handleRequestDataTransfer (
+  private handleRequestDataTransfer(
     chargingStation: ChargingStation,
     commandPayload: OCPP16DataTransferRequest
   ): OCPP16DataTransferResponse {
@@ -1360,7 +1345,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
   }
 
-  private handleRequestGetCompositeSchedule (
+  private handleRequestGetCompositeSchedule(
     chargingStation: ChargingStation,
     commandPayload: OCPP16GetCompositeScheduleRequest
   ): OCPP16GetCompositeScheduleResponse {
@@ -1445,7 +1430,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }
 
-  private handleRequestGetConfiguration (
+  private handleRequestGetConfiguration(
     chargingStation: ChargingStation,
     commandPayload: GetConfigurationRequest
   ): GetConfigurationResponse {
@@ -1486,7 +1471,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
   }
 
-  private async handleRequestGetDiagnostics (
+  private async handleRequestGetDiagnostics(
     chargingStation: ChargingStation,
     commandPayload: GetDiagnosticsRequest
   ): Promise<GetDiagnosticsResponse> {
@@ -1683,7 +1668,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
    * @param chargingStation - The charging station instance processing the request
    * @returns GetLocalListVersionResponse with list version
    */
-  private handleRequestGetLocalListVersion (
+  private handleRequestGetLocalListVersion(
     chargingStation: ChargingStation
   ): OCPP16GetLocalListVersionResponse {
     if (
@@ -1718,7 +1703,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
    * @param commandPayload - RemoteStartTransaction request payload with connector and ID tag
    * @returns Promise resolving to GenericResponse indicating operation success or failure
    */
-  private async handleRequestRemoteStartTransaction (
+  private async handleRequestRemoteStartTransaction(
     chargingStation: ChargingStation,
     commandPayload: RemoteStartTransactionRequest
   ): Promise<GenericResponse> {
@@ -1812,7 +1797,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
   }
 
-  private handleRequestRemoteStopTransaction (
+  private handleRequestRemoteStopTransaction(
     chargingStation: ChargingStation,
     commandPayload: RemoteStopTransactionRequest
   ): GenericResponse {
@@ -1829,7 +1814,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }
 
-  private async handleRequestReserveNow (
+  private async handleRequestReserveNow(
     chargingStation: ChargingStation,
     commandPayload: OCPP16ReserveNowRequest
   ): Promise<OCPP16ReserveNowResponse> {
@@ -1938,7 +1923,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
    * @param commandPayload - Reset request payload containing reset type
    * @returns OCPP response indicating acceptance of the reset request
    */
-  private handleRequestReset (
+  private handleRequestReset(
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
   ): GenericResponse {
@@ -1969,7 +1954,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
   }
 
-  private handleRequestSendLocalList (
+  private handleRequestSendLocalList(
     chargingStation: ChargingStation,
     commandPayload: OCPP16SendLocalListRequest
   ): OCPP16SendLocalListResponse {
@@ -2051,7 +2036,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
   }
 
-  private handleRequestSetChargingProfile (
+  private handleRequestSetChargingProfile(
     chargingStation: ChargingStation,
     commandPayload: SetChargingProfileRequest
   ): SetChargingProfileResponse {
@@ -2121,7 +2106,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_ACCEPTED
   }
 
-  private handleRequestTriggerMessage (
+  private handleRequestTriggerMessage(
     chargingStation: ChargingStation,
     commandPayload: OCPP16TriggerMessageRequest
   ): OCPP16TriggerMessageResponse {
@@ -2204,9 +2189,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           const delivery =
             target.transactionId != null
               ? TransactionMeterValueDeliveryBarrier.begin(
-                target.connectorStatus,
-                target.transactionId
-              )
+                  target.connectorStatus,
+                  target.transactionId
+                )
               : undefined
           if (target.transactionId != null && delivery == null) {
             for (const reservedTarget of targets) reservedTarget.delivery?.settle(true)
@@ -2285,7 +2270,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
   }
 
-  private async handleRequestUnlockConnector (
+  private async handleRequestUnlockConnector(
     chargingStation: ChargingStation,
     commandPayload: UnlockConnectorRequest
   ): Promise<UnlockConnectorResponse> {
@@ -2335,7 +2320,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
   }
 
-  private handleRequestUpdateFirmware (
+  private handleRequestUpdateFirmware(
     chargingStation: ChargingStation,
     commandPayload: OCPP16UpdateFirmwareRequest
   ): OCPP16UpdateFirmwareResponse {
@@ -2361,7 +2346,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_RESPONSE_EMPTY
   }
 
-  private isRemoteStartTransactionChargingProfileValid (
+  private isRemoteStartTransactionChargingProfileValid(
     chargingStation: ChargingStation,
     chargingProfile: OCPP16ChargingProfile
   ): boolean {
@@ -2378,7 +2363,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return valid
   }
 
-  private notifyRemoteStartTransactionRejected (
+  private notifyRemoteStartTransactionRejected(
     chargingStation: ChargingStation,
     connectorId: number,
     idTag: string
@@ -2397,7 +2382,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }
 
-  private releaseTriggeredMeterValueTarget (
+  private releaseTriggeredMeterValueTarget(
     chargingStation: ChargingStation | undefined,
     target: TriggeredMeterValueTarget,
     definitivelyRejected: boolean,
@@ -2417,7 +2402,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
   }
 
-  private async updateFirmwareSimulation (
+  private async updateFirmwareSimulation(
     chargingStation: ChargingStation,
     maxDelay = 30,
     minDelay = 15

@@ -7,7 +7,7 @@ import {
   StandardParametersKey,
   VendorParametersKey,
 } from '../types/index.js'
-import { isOCPP20x, logger } from '../utils/index.js'
+import { isOCPP20x, logger, SupervisionUrlSchema } from '../utils/index.js'
 
 export const buildConfigKey = (component: string, variable: string, instance?: string): string => {
   const base = `${component}.${variable}`
@@ -128,6 +128,21 @@ const resolveKey = (
   chargingStation: ChargingStation,
   key: ConfigurationKeyType
 ): ConfigurationKeyType => resolveOcppParameterKey(chargingStation.stationInfo?.ocppVersion, key)
+
+/**
+ * Whether a value is a URL the supervision WebSocket client can dial once the
+ * charging station identity is appended to it. The endpoint policy (schemes,
+ * fragment and query delimiters, `ws+unix:` socket and request path) is the
+ * shared `SupervisionUrlSchema`. The OCPP key stores the value as sent, so
+ * whitespace and control characters are rejected here first: `z.url()` strips
+ * them from its output, but the raw value would still be dialed with them.
+ * @param value - Candidate supervision URL.
+ * @returns `true` when the raw value has no whitespace or control characters
+ * and satisfies `SupervisionUrlSchema`.
+ */
+export const isSupportedSupervisionUrl = (value: string): boolean =>
+  // eslint-disable-next-line no-control-regex -- control characters are rejected on purpose
+  !/[\s\u0000-\u001F\u007F]/.test(value) && SupervisionUrlSchema.safeParse(value).success
 
 export const warnOnOCPP16TemplateKeys = (chargingStation: ChargingStation): void => {
   const version = chargingStation.stationInfo?.ocppVersion

@@ -2,6 +2,7 @@ import { z, type ZodError } from 'zod'
 
 // Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts which uses Zod enums, causing a TDZ cycle.
 import { SupervisionUrlSchema } from '../utils/ConfigurationSchema.js'
+import { Constants } from '../utils/Constants.js'
 import { convertToIntOrNaN, isNotEmptyString } from '../utils/Utils.js'
 import { resolveOcppParameterKey } from './ConfigurationKeyUtils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
@@ -266,17 +267,16 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
   // The seeded value of the active supervision OCPP key is dialed as the
   // effective endpoint, so it must satisfy the shared supervision endpoint
   // policy at template load; empty values are ignored by the consumer.
-  if (
-    template.supervisionUrlOcppConfiguration === true &&
-    isNotEmptyString(template.supervisionUrlOcppKey)
-  ) {
+  // The consumer merges the template with the station defaults before
+  // activating the key, so an omitted key falls back to the default
+  // connection key and the check resolves the same effective key.
+  const rawSupervisionKey =
+    template.supervisionUrlOcppKey ?? Constants.DEFAULT_STATION_INFO.supervisionUrlOcppKey
+  if (template.supervisionUrlOcppConfiguration === true && isNotEmptyString(rawSupervisionKey)) {
     // The consumer resolves the key before matching configuration entries
     // (OCPP 2.0.x stations store the mapped 1.6 standard keys under their
     // 2.0.1 namespaced variable name), so the check must match the same way.
-    const supervisionKey = resolveOcppParameterKey(
-      template.ocppVersion,
-      template.supervisionUrlOcppKey
-    )
+    const supervisionKey = resolveOcppParameterKey(template.ocppVersion, rawSupervisionKey)
     // The consumer dials only the first matching entry (later duplicates are
     // ignored, and an empty first value falls back to the configured
     // supervision URL), so only that value is subject to the check.
