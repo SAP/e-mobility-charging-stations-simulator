@@ -197,7 +197,7 @@ await describe('TemplateValidation', async () => {
           error.fieldErrors.some(
             fieldError =>
               fieldError.path.startsWith('supervisionUrls') &&
-              fieldError.message.includes('must be a WebSocket URL')
+              fieldError.message.includes('must be a supervision URL')
           ),
           `rejection must name the supervisionUrls field: ${JSON.stringify(error.fieldErrors)}`
         )

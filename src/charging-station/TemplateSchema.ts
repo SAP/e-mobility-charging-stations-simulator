@@ -1,8 +1,8 @@
-import { z } from 'zod'
+import { z, type ZodError } from 'zod'
 
 // Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts which uses Zod enums, causing a TDZ cycle.
 import { SupervisionUrlSchema } from '../utils/ConfigurationSchema.js'
-import { convertToIntOrNaN } from '../utils/Utils.js'
+import { convertToIntOrNaN, isNotEmptyString } from '../utils/Utils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
 // ---------------------------------------------------------------
@@ -260,6 +260,31 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
         message: `Deprecated template key '${legacyKey}' is not allowed at $schemaVersion ${CURRENT_SCHEMA_VERSION.toString()}. Remove '$schemaVersion' to trigger automatic v0 migration, or replace the key with its v1 equivalent`,
         path: [legacyKey],
       })
+    }
+  }
+  // The seeded value of the active supervision OCPP key is dialed as the
+  // effective endpoint, so it must satisfy the shared supervision endpoint
+  // policy at template load; empty values are ignored by the consumer.
+  if (
+    template.supervisionUrlOcppConfiguration === true &&
+    isNotEmptyString(template.supervisionUrlOcppKey)
+  ) {
+    const supervisionKey = template.supervisionUrlOcppKey
+    for (const [index, entry] of (template.Configuration?.configurationKey ?? []).entries()) {
+      if (entry.key !== supervisionKey || !isNotEmptyString(entry.value)) {
+        continue
+      }
+      const result = SupervisionUrlSchema.safeParse(entry.value)
+      if (!result.success) {
+        const error: ZodError = result.error
+        for (const issue of error.issues) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Seeded value of OCPP key '${supervisionKey}' ${issue.message}`,
+            path: ['Configuration', 'configurationKey', index, 'value'],
+          })
+        }
+      }
     }
   }
   const hasConnectors = template.Connectors != null

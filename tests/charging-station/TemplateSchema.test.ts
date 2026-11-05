@@ -251,7 +251,7 @@ await describe('TemplateSchema', async () => {
             result.error.issues.some(
               issue =>
                 issue.path.join('.').startsWith('supervisionUrls') &&
-                issue.message.includes('must be a WebSocket URL')
+                issue.message.includes('must be a supervision URL')
             ),
             `rejection for ${JSON.stringify(value)} must name the supervisionUrls field`
           )
@@ -284,6 +284,53 @@ await describe('TemplateSchema', async () => {
       const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: padded }))
       assert.ok(result.success)
       assert.strictEqual(result.data.supervisionUrls, TEST_SUPERVISION_URL)
+    })
+  })
+
+  await describe('supervisionUrlOcppKey seeded configuration value', async () => {
+    const seededConfiguration = (value: string) => ({
+      Configuration: {
+        configurationKey: [{ key: 'ocppcentraladdress', readonly: false, value }],
+      },
+      supervisionUrlOcppConfiguration: true,
+      supervisionUrlOcppKey: 'ocppcentraladdress',
+    })
+
+    await it('should reject a value the transport cannot dial seeded in the active OCPP key, naming the key', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate(seededConfiguration('ftp://localhost/OCPP16'))
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          issue =>
+            issue.path.join('.').startsWith('Configuration.configurationKey.0.value') &&
+            issue.message.includes("'ocppcentraladdress'")
+        ),
+        `rejection must name the seeded OCPP key: ${JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should accept a supported value seeded in the active OCPP key', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate(seededConfiguration('ws://localhost:8010'))
+      )
+      assert.ok(result.success)
+    })
+
+    await it('should ignore an empty value seeded in the active OCPP key', () => {
+      const result = TemplateSchema.safeParse(buildMinimalTemplate(seededConfiguration('')))
+      assert.ok(result.success)
+    })
+
+    await it('should ignore the seeded value when supervisionUrlOcppConfiguration is false', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate({
+          ...seededConfiguration('ftp://localhost/OCPP16'),
+          supervisionUrlOcppConfiguration: false,
+        })
+      )
+      assert.ok(result.success)
     })
   })
 

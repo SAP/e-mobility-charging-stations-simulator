@@ -148,59 +148,38 @@ await describe('ChargingStation supervision URL validation', async () => {
     assert.strictEqual(station.wsConnectionUrl.href, initialWsConnectionUrl)
   })
 
-  await it('should reject a malformed supervision URL seeded in the OCPP configuration key', () => {
-    // The OCPP configuration key can carry the supervision URL without going
-    // through setSupervisionUrl (template Configuration, or an OCPP
-    // ChangeConfiguration). The wsConnectionUrl getter is the only place that
-    // parses it, so it must raise the structured error too.
-    const station = createStationFromTemplate(
-      copyStationTemplate({
-        Configuration: {
-          configurationKey: [
+  await it('should reject a value the transport cannot dial seeded in the OCPP configuration key at template load', () => {
+    // The seeded value of the active supervision OCPP key is dialed as the
+    // effective endpoint, so it is validated at template load, naming the key.
+    for (const value of [MALFORMED_SUPERVISION_URL, UNSUPPORTED_SCHEME_URL]) {
+      assert.throws(
+        () =>
+          createStationFromTemplate(
+            copyStationTemplate({
+              Configuration: {
+                configurationKey: [
+                  {
+                    key: OCPP_SUPERVISION_URL_KEY,
+                    readonly: false,
+                    value,
+                  },
+                ],
+              },
+              supervisionUrlOcppConfiguration: true,
+              supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
+            }),
             {
-              key: OCPP_SUPERVISION_URL_KEY,
-              readonly: false,
-              value: MALFORMED_SUPERVISION_URL,
-            },
-          ],
-        },
-        supervisionUrlOcppConfiguration: true,
-        supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
-      }),
-      { baseName: TEST_CHARGING_STATION_BASE_NAME, fixedName: true, persistentConfiguration: false }
-    )
-
-    assert.throws(() => station.wsConnectionUrl, {
-      message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${MALFORMED_SUPERVISION_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
-      name: 'BaseError',
-    })
-  })
-
-  await it('should reject an unsupported-scheme URL seeded in the OCPP configuration key before connection', () => {
-    // `ftp://` parses fine with `new URL()`, so syntax-level checks cannot
-    // catch it; the shared endpoint policy rejects it at the
-    // effective-endpoint consumer, naming the OCPP key and the station.
-    const station = createStationFromTemplate(
-      copyStationTemplate({
-        Configuration: {
-          configurationKey: [
-            {
-              key: OCPP_SUPERVISION_URL_KEY,
-              readonly: false,
-              value: UNSUPPORTED_SCHEME_URL,
-            },
-          ],
-        },
-        supervisionUrlOcppConfiguration: true,
-        supervisionUrlOcppKey: OCPP_SUPERVISION_URL_KEY,
-      }),
-      { baseName: TEST_CHARGING_STATION_BASE_NAME, fixedName: true, persistentConfiguration: false }
-    )
-
-    assert.throws(() => station.wsConnectionUrl, {
-      message: `${TEST_CHARGING_STATION_BASE_NAME}: Invalid supervision url '${UNSUPPORTED_SCHEME_URL}' configured in '${OCPP_SUPERVISION_URL_KEY}'`,
-      name: 'BaseError',
-    })
+              baseName: TEST_CHARGING_STATION_BASE_NAME,
+              fixedName: true,
+              persistentConfiguration: false,
+            }
+          ),
+        (error: unknown) =>
+          error instanceof TemplateValidationError &&
+          error.message.includes(OCPP_SUPERVISION_URL_KEY),
+        `expected TemplateValidationError naming the OCPP key for '${value}'`
+      )
+    }
   })
 
   await it('should reject an unsupported-scheme URL from setSupervisionUrl and preserve the previous endpoint on both branches', () => {
