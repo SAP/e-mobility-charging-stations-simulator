@@ -356,9 +356,7 @@ await describe('TemplateSchema', async () => {
       )
       assert.ok(!result.success)
       assert.ok(
-        result.error.issues.some(issue =>
-          issue.message.includes('OCPPCommCtrlr.HeartbeatInterval')
-        )
+        result.error.issues.some(issue => issue.message.includes('OCPPCommCtrlr.HeartbeatInterval'))
       )
     })
 

@@ -122,13 +122,12 @@ export const resolveOcppParameterKey = (
   ocppVersion: string | undefined,
   key: ConfigurationKeyType
 ): ConfigurationKeyType =>
-  isOCPP20x(ocppVersion) ? OCPP2_PARAMETER_KEY_MAP.get(key) ?? key : key
+  isOCPP20x(ocppVersion) ? (OCPP2_PARAMETER_KEY_MAP.get(key) ?? key) : key
 
 const resolveKey = (
   chargingStation: ChargingStation,
   key: ConfigurationKeyType
-): ConfigurationKeyType =>
-  resolveOcppParameterKey(chargingStation.stationInfo?.ocppVersion, key)
+): ConfigurationKeyType => resolveOcppParameterKey(chargingStation.stationInfo?.ocppVersion, key)
 
 export const warnOnOCPP16TemplateKeys = (chargingStation: ChargingStation): void => {
   const version = chargingStation.stationInfo?.ocppVersion
