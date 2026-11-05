@@ -117,7 +117,7 @@ export const isEmpty = (value: unknown): boolean => {
   return false
 }
 
-export const isOCPP20x = (version: OCPPVersion | undefined): boolean =>
+export const isOCPP20x = (version: string | undefined): boolean =>
   version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters

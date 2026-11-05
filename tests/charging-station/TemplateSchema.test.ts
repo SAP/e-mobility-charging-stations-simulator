@@ -332,6 +332,54 @@ await describe('TemplateSchema', async () => {
       )
       assert.ok(result.success)
     })
+
+    await it('should reject an invalid value seeded under the resolved 2.0.x namespaced key spelling, naming it', () => {
+      // The consumer resolves the OCPP key before matching configuration
+      // entries (2.0.x stations store the mapped 1.6 standard keys under
+      // their 2.0.1 namespaced variable name), so the load check applies the
+      // same resolution and names the spelling present in the entry.
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate({
+          ...seededConfiguration('ftp://localhost/OCPP16'),
+          Configuration: {
+            configurationKey: [
+              {
+                key: 'OCPPCommCtrlr.HeartbeatInterval',
+                readonly: false,
+                value: 'ftp://localhost/OCPP16',
+              },
+            ],
+          },
+          ocppVersion: '2.0.1',
+          supervisionUrlOcppKey: 'HeartbeatInterval',
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(issue =>
+          issue.message.includes('OCPPCommCtrlr.HeartbeatInterval')
+        )
+      )
+    })
+
+    await it('should ignore a value seeded under the un-resolved key spelling on a 2.0.x station', () => {
+      // The consumer resolves the key before matching entries, so an entry
+      // whose spelling the resolution does not produce is never dialed and
+      // is not subject to the seeded-value check.
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate({
+          ...seededConfiguration('ftp://localhost/OCPP16'),
+          Configuration: {
+            configurationKey: [
+              { key: 'HeartbeatInterval', readonly: false, value: 'ftp://localhost/OCPP16' },
+            ],
+          },
+          ocppVersion: '2.0.1',
+          supervisionUrlOcppKey: 'HeartbeatInterval',
+        })
+      )
+      assert.ok(result.success)
+    })
   })
 
   await describe('topology discrimination', async () => {

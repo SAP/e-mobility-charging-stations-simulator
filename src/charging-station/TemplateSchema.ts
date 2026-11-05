@@ -3,6 +3,7 @@ import { z, type ZodError } from 'zod'
 // Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts which uses Zod enums, causing a TDZ cycle.
 import { SupervisionUrlSchema } from '../utils/ConfigurationSchema.js'
 import { convertToIntOrNaN, isNotEmptyString } from '../utils/Utils.js'
+import { resolveOcppParameterKey } from './ConfigurationKeyUtils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
 // ---------------------------------------------------------------
@@ -269,7 +270,13 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
     template.supervisionUrlOcppConfiguration === true &&
     isNotEmptyString(template.supervisionUrlOcppKey)
   ) {
-    const supervisionKey = template.supervisionUrlOcppKey
+    // The consumer resolves the key before matching configuration entries
+    // (OCPP 2.0.x stations store the mapped 1.6 standard keys under their
+    // 2.0.1 namespaced variable name), so the check must match the same way.
+    const supervisionKey = resolveOcppParameterKey(
+      template.ocppVersion,
+      template.supervisionUrlOcppKey
+    )
     for (const [index, entry] of (template.Configuration?.configurationKey ?? []).entries()) {
       if (entry.key !== supervisionKey || !isNotEmptyString(entry.value)) {
         continue

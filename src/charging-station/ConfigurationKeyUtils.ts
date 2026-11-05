@@ -116,16 +116,19 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<ConfigurationKeyType, ConfigurationKeyTy
   ],
 ])
 
+// OCPP 2.0.x stations store the mapped 1.6 standard keys under their 2.0.1
+// namespaced variable name; other versions use the key as-is.
+export const resolveOcppParameterKey = (
+  ocppVersion: string | undefined,
+  key: ConfigurationKeyType
+): ConfigurationKeyType =>
+  isOCPP20x(ocppVersion) ? OCPP2_PARAMETER_KEY_MAP.get(key) ?? key : key
+
 const resolveKey = (
   chargingStation: ChargingStation,
   key: ConfigurationKeyType
-): ConfigurationKeyType => {
-  const version = chargingStation.stationInfo?.ocppVersion
-  if (isOCPP20x(version)) {
-    return OCPP2_PARAMETER_KEY_MAP.get(key) ?? key
-  }
-  return key
-}
+): ConfigurationKeyType =>
+  resolveOcppParameterKey(chargingStation.stationInfo?.ocppVersion, key)
 
 export const warnOnOCPP16TemplateKeys = (chargingStation: ChargingStation): void => {
   const version = chargingStation.stationInfo?.ocppVersion
