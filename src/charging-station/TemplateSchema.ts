@@ -277,10 +277,13 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
       template.ocppVersion,
       template.supervisionUrlOcppKey
     )
-    for (const [index, entry] of (template.Configuration?.configurationKey ?? []).entries()) {
-      if (entry.key !== supervisionKey || !isNotEmptyString(entry.value)) {
-        continue
-      }
+    // The consumer dials only the first matching entry (later duplicates are
+    // ignored, and an empty first value falls back to the configured
+    // supervision URL), so only that value is subject to the check.
+    const configurationKeys = template.Configuration?.configurationKey ?? []
+    const firstIndex = configurationKeys.findIndex(entry => entry.key === supervisionKey)
+    const entry = firstIndex === -1 ? undefined : configurationKeys[firstIndex]
+    if (entry != null && isNotEmptyString(entry.value)) {
       const result = SupervisionUrlSchema.safeParse(entry.value)
       if (!result.success) {
         const error: ZodError = result.error
@@ -288,7 +291,7 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
           ctx.addIssue({
             code: 'custom',
             message: `Seeded value of OCPP key '${supervisionKey}' ${issue.message}`,
-            path: ['Configuration', 'configurationKey', index, 'value'],
+            path: ['Configuration', 'configurationKey', firstIndex, 'value'],
           })
         }
       }

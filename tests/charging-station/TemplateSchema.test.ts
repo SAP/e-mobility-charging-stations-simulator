@@ -378,6 +378,37 @@ await describe('TemplateSchema', async () => {
       )
       assert.ok(result.success)
     })
+
+    await it('should validate only the first matching configuration key entry, mirroring the consumer', () => {
+      const duplicated = (firstValue: string, secondValue: string) =>
+        buildMinimalTemplate({
+          ...seededConfiguration('ftp://localhost/OCPP16'),
+          Configuration: {
+            configurationKey: [
+              { key: 'ocppcentraladdress', readonly: false, value: firstValue },
+              { key: 'ocppcentraladdress', readonly: false, value: secondValue },
+            ],
+          },
+        })
+
+      // A later invalid duplicate is inert: the consumer dials the first entry.
+      assert.ok(
+        TemplateSchema.safeParse(duplicated('ws://localhost:8010', 'ftp://localhost/OCPP16'))
+          .success
+      )
+      // An empty first value falls back to the configured supervision URL; the later duplicate is inert.
+      assert.ok(TemplateSchema.safeParse(duplicated('', 'ftp://localhost/OCPP16')).success)
+      // An invalid first value is dialed and rejected at its own entry.
+      const rejected = TemplateSchema.safeParse(
+        duplicated('ftp://localhost/OCPP16', 'ws://localhost:8010')
+      )
+      assert.ok(!rejected.success)
+      assert.ok(
+        rejected.error.issues.some(
+          issue => issue.path.join('.') === 'Configuration.configurationKey.0.value'
+        )
+      )
+    })
   })
 
   await describe('topology discrimination', async () => {
