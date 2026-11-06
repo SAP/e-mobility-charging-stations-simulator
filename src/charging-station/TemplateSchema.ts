@@ -274,8 +274,7 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
     template.supervisionUrlOcppKey ?? Constants.DEFAULT_STATION_INFO.supervisionUrlOcppKey
   if (template.supervisionUrlOcppConfiguration === true && isNotEmptyString(rawSupervisionKey)) {
     // The consumer resolves the key before matching configuration entries
-    // (OCPP 2.0.x stations store the mapped 1.6 standard keys under their
-    // 2.0.1 namespaced variable name), so the check must match the same way.
+    // (resolveOcppParameterKey), so the check must match the same way.
     const supervisionKey = resolveOcppParameterKey(template.ocppVersion, rawSupervisionKey)
     // The consumer dials the first matching entry of the effective
     // configuration (persisted station file when present, else this template;
@@ -286,10 +285,8 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
     const firstIndex = configurationKeys.findIndex(entry => entry.key === supervisionKey)
     const entry = firstIndex === -1 ? undefined : configurationKeys[firstIndex]
     // The OCPP key stores the value as sent, so the shared raw-value guard
-    // applies before schema parsing: SupervisionUrlSchema strips surrounding
-    // whitespace from its output, which would hide padded values from the
-    // policy; the guard matches the runtime write guards (ChangeConfiguration,
-    // SetVariables).
+    // applies before schema parsing; it matches the runtime write guards
+    // (ChangeConfiguration, SetVariables).
     if (entry != null && isNotEmptyString(entry.value) && !isSupportedSupervisionUrl(entry.value)) {
       const result = SupervisionUrlSchema.safeParse(entry.value)
       if (result.success) {

@@ -259,7 +259,7 @@ await describe('TemplateSchema', async () => {
       }
     })
 
-    await it('should reject query and fragment delimiters (shared endpoint policy)', () => {
+    await it('should reject query and fragment delimiters (shared supervision endpoint policy)', () => {
       for (const url of ['ws://localhost:8010?token=1', 'ws://localhost:8010#fragment']) {
         const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: url }))
         assert.ok(!result.success, `should reject ${url}`)
@@ -324,9 +324,9 @@ await describe('TemplateSchema', async () => {
     })
 
     await it('should reject a padded value seeded in the active OCPP key, as the runtime write guards do', () => {
-      // SupervisionUrlSchema normalizes surrounding whitespace, but the OCPP
-      // key stores the value as sent and the runtime write guards reject raw
-      // whitespace and control characters; the seeded check matches them.
+      // The OCPP key stores the value as sent, so raw whitespace and control
+      // characters are rejected as the runtime write guards do, although
+      // SupervisionUrlSchema would normalize the surrounding ones.
       const result = TemplateSchema.safeParse(
         buildMinimalTemplate(seededConfiguration(' ws://localhost:8010 '))
       )
@@ -391,10 +391,9 @@ await describe('TemplateSchema', async () => {
     })
 
     await it('should reject an invalid value seeded under the resolved 2.0.x namespaced key spelling, naming it', () => {
-      // The consumer resolves the OCPP key before matching configuration
-      // entries (2.0.x stations store the mapped 1.6 standard keys under
-      // their 2.0.1 namespaced variable name), so the load check applies the
-      // same resolution and names the spelling present in the entry.
+      // The consumer resolves the key before matching configuration entries
+      // (resolveOcppParameterKey), so the load check applies the same
+      // resolution and names the spelling present in the entry.
       const result = TemplateSchema.safeParse(
         buildMinimalTemplate({
           ...seededConfiguration('ftp://localhost/OCPP16'),

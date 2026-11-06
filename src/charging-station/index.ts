@@ -13,6 +13,7 @@ export {
   buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
+  isSupervisionOcppKeyActive,
   isSupportedSupervisionUrl,
   resolveOcppParameterKey,
   setConfigurationKeyValue,

@@ -188,7 +188,7 @@ await describe('ChargingStation supervision URL validation', async () => {
     // seeded entry, so template load passes) can still carry a malformed
     // value in the OCPP key from a persisted station file or a manual edit,
     // bypassing the template-load check. The wsConnectionUrl getter is the
-    // dial-time backstop and must raise the structured error naming the key.
+    // fail-closed dial-time parse and must raise the structured error naming the key.
     const station = createStationFromTemplate(
       copyStationTemplate({
         supervisionUrlOcppConfiguration: true,
@@ -216,7 +216,7 @@ await describe('ChargingStation supervision URL validation', async () => {
   })
 
   await it('should reject an unsupported-scheme URL from setSupervisionUrl and preserve the previous endpoint on both branches', () => {
-    // Both setter branches must apply the shared endpoint policy: a rejected
+    // Both setter branches must apply the shared supervision endpoint policy: a rejected
     // update leaves the previous endpoint and credentials untouched.
     const plain = createStationFromTemplate(copyStationTemplate(), {
       baseName: TEST_CHARGING_STATION_BASE_NAME,

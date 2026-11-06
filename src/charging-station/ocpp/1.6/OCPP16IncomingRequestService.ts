@@ -23,6 +23,7 @@ import {
   getConfigurationKey,
   getConnectorChargingProfiles,
   getIdTagsFile,
+  isSupervisionOcppKeyActive,
   isSupportedSupervisionUrl,
   prepareChargingProfileKind,
   removeExpiredReservations,
@@ -1187,7 +1188,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       // The supervision URL key is dialed by the WebSocket client on reconnect;
       // reject a value it cannot dial instead of persisting it.
       if (
-        chargingStation.stationInfo?.supervisionUrlOcppConfiguration === true &&
+        isSupervisionOcppKeyActive(chargingStation) &&
         keyToChange.key === chargingStation.stationInfo.supervisionUrlOcppKey &&
         !isSupportedSupervisionUrl(value)
       ) {

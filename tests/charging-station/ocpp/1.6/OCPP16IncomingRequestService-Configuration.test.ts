@@ -322,6 +322,26 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
         assert.strictEqual(getConfigurationKey(station, supervisionUrlOcppKey)?.value, value)
       }
     })
+
+    await it('should accept a non-dialable value when the supervision key is empty', () => {
+      // Arrange
+      const { station, testableService } = testContext
+      if (station.stationInfo != null) {
+        station.stationInfo.supervisionUrlOcppKey = ''
+      }
+      upsertConfigurationKey(station, '', supervisionUrl)
+      const request: ChangeConfigurationRequest = {
+        key: '',
+        value: 'ftp://localhost/OCPP16',
+      }
+
+      // Act
+      const response = testableService.handleRequestChangeConfiguration(station, request)
+
+      // Assert — an empty supervision key is never dialed, so the write is inert
+      assert.strictEqual(response.status, OCPP16ConfigurationStatus.ACCEPTED)
+      assert.strictEqual(getConfigurationKey(station, '')?.value, 'ftp://localhost/OCPP16')
+    })
   })
 
   // ---------------------------------------------------------------------------

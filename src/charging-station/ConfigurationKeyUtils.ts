@@ -1,13 +1,14 @@
 import type { ChargingStation } from './ChargingStation.js'
 
 import {
+  type ChargingStationInfo,
   type ConfigurationKey,
   type ConfigurationKeyType,
   OCPP20ComponentName,
   StandardParametersKey,
   VendorParametersKey,
 } from '../types/index.js'
-import { isOCPP20x, logger, SupervisionUrlSchema } from '../utils/index.js'
+import { isNotEmptyString, isOCPP20x, logger, SupervisionUrlSchema } from '../utils/index.js'
 
 export const buildConfigKey = (component: string, variable: string, instance?: string): string => {
   const base = `${component}.${variable}`
@@ -116,7 +117,7 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<ConfigurationKeyType, ConfigurationKeyTy
   ],
 ])
 
-// OCPP 2.0.x stations store the mapped 1.6 standard keys under their 2.0.1
+// OCPP 2.0.x stations store the mapped 1.6 keys under their 2.0.1
 // namespaced variable name; other versions use the key as-is.
 export const resolveOcppParameterKey = (
   ocppVersion: string | undefined,
@@ -130,8 +131,24 @@ const resolveKey = (
 ): ConfigurationKeyType => resolveOcppParameterKey(chargingStation.stationInfo?.ocppVersion, key)
 
 /**
- * Whether a raw OCPP configuration value is acceptable as the seeded
- * supervision URL. The endpoint policy (schemes, fragment and query
+ * Whether the station's supervision OCPP key is active: the configuration
+ * flag is on and the key is non-empty. Empty keys are never dialed — the
+ * consumer falls back to the configured supervision URL — so writers treat
+ * them as inactive instead of guarding a value the station never reads.
+ * @param chargingStation - Station whose stationInfo holds the flag and key.
+ * @returns `true` when the supervision OCPP key is active.
+ */
+export const isSupervisionOcppKeyActive = (
+  chargingStation: ChargingStation
+): chargingStation is ChargingStation & {
+  stationInfo: ChargingStationInfo & { supervisionUrlOcppKey: string }
+} =>
+  chargingStation.stationInfo?.supervisionUrlOcppConfiguration === true &&
+  isNotEmptyString(chargingStation.stationInfo.supervisionUrlOcppKey)
+
+/**
+ * Whether a raw OCPP configuration value is acceptable as the supervision
+ * URL held by the active supervision OCPP key. The endpoint policy (schemes, fragment and query
  * delimiters, `ws+unix:` socket and request path) is the shared
  * `SupervisionUrlSchema`. The OCPP key stores the value as sent, so the raw
  * value is checked for whitespace and control characters before schema

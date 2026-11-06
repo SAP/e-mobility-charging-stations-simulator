@@ -22,7 +22,6 @@ import {
   convertToIntOrNaN,
   getEnumStringValue,
   isEmpty,
-  isNotEmptyString,
   logger,
 } from '../../../utils/index.js'
 import {
@@ -30,6 +29,7 @@ import {
   buildConfigKey,
   type ChargingStation,
   getConfigurationKey,
+  isSupervisionOcppKeyActive,
   isSupportedSupervisionUrl,
   resolveOcppParameterKey,
   setConfigurationKeyValue,
@@ -1106,14 +1106,14 @@ export class OCPP20VariableManager {
     const configurationKeyName = computeScopedConfigurationKeyName(variableMetadata, component)
     // A supervision OCPP key that is a settable registry variable can be
     // pointed at an endpoint the transport cannot dial; enforce the same
-    // dialability guard as the OCPP 1.6 ChangeConfiguration handler. Only
-    // mapped keys match a component-scoped write key, so unmapped vendor keys
-    // are inert here, as is the BootNotification heartbeat-interval write:
-    // a supervision key resolving to HeartbeatInterval is a contradictory
-    // configuration. The dial-time parse remains fail-closed for both.
+    // dialability guard as the OCPP 1.6 ChangeConfiguration handler. A key
+    // matches a component-scoped write key only when its resolved spelling
+    // is namespaced, so flat unmapped keys are inert here, as is the
+    // BootNotification heartbeat-interval write: a supervision key resolving
+    // to HeartbeatInterval is a contradictory configuration. The dial-time
+    // parse remains fail-closed for both.
     if (
-      chargingStation.stationInfo?.supervisionUrlOcppConfiguration === true &&
-      isNotEmptyString(chargingStation.stationInfo.supervisionUrlOcppKey) &&
+      isSupervisionOcppKeyActive(chargingStation) &&
       configurationKeyName ===
         resolveOcppParameterKey(
           chargingStation.stationInfo.ocppVersion,

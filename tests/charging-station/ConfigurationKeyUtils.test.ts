@@ -655,7 +655,7 @@ await describe('ConfigurationKeyUtils', async () => {
       assert.strictEqual(isSupportedSupervisionUrl('ftp://localhost/OCPP16'), false)
     })
 
-    await it('should reject whitespace and control characters inside the value', () => {
+    await it('should reject whitespace and control characters in the raw value', () => {
       assert.strictEqual(isSupportedSupervisionUrl('ws://localhost:8010 '), false)
       assert.strictEqual(isSupportedSupervisionUrl('ws://localhost:8010\x00'), false)
     })
