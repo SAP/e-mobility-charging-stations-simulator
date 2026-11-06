@@ -5,7 +5,9 @@
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { Writable } from 'node:stream'
 import { afterEach, describe, it } from 'node:test'
+import { createLogger, transports, config as winstonConfig } from 'winston'
 import { WebSocket } from 'ws'
 
 import {
@@ -14,6 +16,7 @@ import {
 } from '../../src/utils/index.js'
 import {
   ConfigurationSchema,
+  has,
   SupervisionUrlSchema,
   UI_SERVER_ACCESS_POLICY_DEFAULTS,
   WorkerConfigurationSchema,
@@ -1065,27 +1068,73 @@ await describe('ConfigurationSchema', async () => {
       assert.ok(!result.success)
     })
 
-    await it('should accept valid log.level values', () => {
+    await it('should accept the winston npm log.level values', () => {
+      for (const level of ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']) {
+        const result = ConfigurationSchema.safeParse(buildMinimalConfiguration({ log: { level } }))
+        assert.ok(result.success, `Expected log.level '${level}' to be valid`)
+        assert.strictEqual(result.data.log?.level, level)
+      }
+    })
+
+    await it('should map the syslog log.level names to the winston npm level of the same severity', () => {
+      for (const [level, expected] of [
+        ['emerg', 'error'],
+        ['alert', 'error'],
+        ['crit', 'error'],
+        ['warning', 'warn'],
+        ['notice', 'info'],
+      ]) {
+        const result = ConfigurationSchema.safeParse(buildMinimalConfiguration({ log: { level } }))
+        assert.ok(result.success, `Expected log.level '${level}' to be valid`)
+        assert.strictEqual(result.data.log?.level, expected)
+      }
+    })
+
+    await it('should only produce log.level values the winston logger knows', () => {
       for (const level of [
         'emerg',
         'alert',
         'crit',
         'error',
         'warning',
+        'warn',
         'notice',
         'info',
+        'http',
+        'verbose',
         'debug',
+        'silly',
       ]) {
         const result = ConfigurationSchema.safeParse(buildMinimalConfiguration({ log: { level } }))
         assert.ok(result.success, `Expected log.level '${level}' to be valid`)
+        const parsedLevel = result.data.log?.level
+        assert.ok(parsedLevel != null && has(parsedLevel, winstonConfig.npm.levels))
+        // a logger at any accepted level must still emit errors
+        const lines: string[] = []
+        const logger = createLogger({
+          level: parsedLevel,
+          transports: [
+            new transports.Stream({
+              stream: new Writable({
+                write (chunk: Buffer, _encoding, callback) {
+                  lines.push(chunk.toString())
+                  callback()
+                },
+              }),
+            }),
+          ],
+        })
+        logger.error('error message')
+        assert.strictEqual(lines.length, 1, `Expected log.level '${level}' to log errors`)
+        logger.close()
       }
     })
 
     await it('should reject invalid log.level', () => {
-      const result = ConfigurationSchema.safeParse(
-        buildMinimalConfiguration({ log: { level: 'verbose' } })
-      )
-      assert.ok(!result.success)
+      for (const level of ['trace', 'WARN', '']) {
+        const result = ConfigurationSchema.safeParse(buildMinimalConfiguration({ log: { level } }))
+        assert.ok(!result.success, `Expected log.level '${level}' to be invalid`)
+      }
     })
   })
 
