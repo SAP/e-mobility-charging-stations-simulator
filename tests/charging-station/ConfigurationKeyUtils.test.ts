@@ -10,6 +10,7 @@ import {
   buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
+  isSupportedSupervisionUrl,
   setConfigurationKeyValue,
 } from '../../src/charging-station/index.js'
 import { OCPP20ComponentName, OCPPVersion, StandardParametersKey } from '../../src/types/index.js'
@@ -640,6 +641,23 @@ await describe('ConfigurationKeyUtils', async () => {
       assert.strictEqual(setRes?.value, VALUE_B)
       assert.strictEqual(delRes?.length, 1)
       assert.strictEqual(getConfigurationKey(cs, TEST_KEY_1), undefined)
+    })
+  })
+
+  await describe('IsSupportedSupervisionUrl', async () => {
+    await it('should accept dialable ws and wss endpoints', () => {
+      assert.strictEqual(isSupportedSupervisionUrl('ws://localhost:8010'), true)
+      assert.strictEqual(isSupportedSupervisionUrl('wss://csms.example.com/ocpp'), true)
+    })
+
+    await it('should reject non-URL values', () => {
+      assert.strictEqual(isSupportedSupervisionUrl('30'), false)
+      assert.strictEqual(isSupportedSupervisionUrl('ftp://localhost/OCPP16'), false)
+    })
+
+    await it('should reject whitespace and control characters in the raw value', () => {
+      assert.strictEqual(isSupportedSupervisionUrl('ws://localhost:8010 '), false)
+      assert.strictEqual(isSupportedSupervisionUrl('ws://localhost:8010\x00'), false)
     })
   })
 })

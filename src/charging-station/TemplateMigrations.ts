@@ -8,7 +8,7 @@ const moduleName = 'TemplateMigrations'
  * Bump only on breaking changes (field rename, removal, type narrowing).
  * Single authoritative location — concurrent bumps force git merge conflict.
  */
-export const CURRENT_SCHEMA_VERSION = 1
+export const CURRENT_SCHEMA_VERSION = 2
 
 type MigrationFn = (template: Record<string, unknown>) => Record<string, unknown>
 
@@ -17,7 +17,7 @@ type MigrationFn = (template: Record<string, unknown>) => Record<string, unknown
  * To add schema version N+1: append one `migrateV{N}ToV{N+1}` function and
  * bump `CURRENT_SCHEMA_VERSION`.
  */
-const migrationChain: readonly MigrationFn[] = [migrateV0ToV1]
+const migrationChain: readonly MigrationFn[] = [migrateV0ToV1, migrateV1ToV2]
 
 /**
  * Strict integer-string pattern for `$schemaVersion`. Rejects permissive
@@ -134,5 +134,15 @@ function migrateV0ToV1 (template: Record<string, unknown>): Record<string, unkno
       delete template[deprecatedKey]
     }
   }
+  return template
+}
+
+/**
+ * Migrate a v1 template to v2. Identity hop: the `supervisionUrls`
+ * narrowing is enforced by validation, not by a structural rewrite.
+ * @param template - Pre-migration template object
+ * @returns Same reference, unchanged
+ */
+function migrateV1ToV2 (template: Record<string, unknown>): Record<string, unknown> {
   return template
 }

@@ -23,6 +23,8 @@ import {
   getConfigurationKey,
   getConnectorChargingProfiles,
   getIdTagsFile,
+  isSupervisionOcppKeyActive,
+  isSupportedSupervisionUrl,
   prepareChargingProfileKind,
   removeExpiredReservations,
   resetAuthorizeConnectorStatus,
@@ -133,7 +135,6 @@ import {
   isValidRandomIntBounds,
   logger,
   sleep,
-  SupervisionUrlSchema,
   truncateId,
 } from '../../../utils/index.js'
 import { AuthContext, type DifferentialAuthEntry, OCPPAuthServiceFactory } from '../auth/index.js'
@@ -158,21 +159,6 @@ import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16IncomingRequestService'
-
-/**
- * Whether a value is a URL the supervision WebSocket client can dial once the
- * charging station identity is appended to it. The endpoint policy (schemes,
- * fragment and query delimiters, `ws+unix:` socket and request path) is the
- * shared `SupervisionUrlSchema`. The OCPP key stores the value as sent, so
- * whitespace and control characters are rejected here first: `z.url()` strips
- * them from its output, but the raw value would still be dialed with them.
- * @param value - Candidate supervision URL.
- * @returns `true` when the raw value has no whitespace or control characters
- * and satisfies `SupervisionUrlSchema`.
- */
-const isSupportedSupervisionUrl = (value: string): boolean =>
-  // eslint-disable-next-line no-control-regex -- control characters are rejected on purpose
-  !/[\s\u0000-\u001F\u007F]/.test(value) && SupervisionUrlSchema.safeParse(value).success
 
 const requireOCPP16ChargePointStatus = (status: string | undefined): OCPP16ChargePointStatus => {
   const ocpp16Status = getEnumStringValue(OCPP16ChargePointStatus, status)
@@ -1202,7 +1188,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       // The supervision URL key is dialed by the WebSocket client on reconnect;
       // reject a value it cannot dial instead of persisting it.
       if (
-        chargingStation.stationInfo?.supervisionUrlOcppConfiguration === true &&
+        isSupervisionOcppKeyActive(chargingStation) &&
         keyToChange.key === chargingStation.stationInfo.supervisionUrlOcppKey &&
         !isSupportedSupervisionUrl(value)
       ) {

@@ -9,7 +9,10 @@ import { afterEach, describe, it } from 'node:test'
 import { CURRENT_SCHEMA_VERSION } from '../../src/charging-station/index.js'
 import { TemplateSchema } from '../../src/charging-station/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
-import { TEST_SUPERVISION_URL } from '../utils/TestNetworkConstants.js'
+import {
+  TEST_SUPERVISION_URL,
+  TEST_SUPERVISION_URL_ALT_PORT,
+} from '../utils/TestNetworkConstants.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
 import { buildMinimalTemplate } from './helpers/TemplateFixtures.js'
 
@@ -213,6 +216,254 @@ await describe('TemplateSchema', async () => {
         buildMinimalTemplate({ wsOptions: { headers: { 'X-Foo': true } } })
       )
       assert.ok(!result.success)
+    })
+  })
+
+  await describe('supervisionUrls (shared supervision endpoint policy)', async () => {
+    await it('should accept a single supported supervision URL (string form)', () => {
+      for (const url of [
+        'ws://localhost:8010',
+        'wss://example.org/OCPP16',
+        'http://localhost:8010/steve/websocket',
+        'https://example.org/CentralSystemService',
+        'ws+unix:///path/to/socket.sock:/OCPP16',
+      ]) {
+        const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: url }))
+        assert.ok(result.success, `should accept ${url}`)
+      }
+    })
+
+    await it('should accept an array of supported supervision URLs', () => {
+      const urls = [TEST_SUPERVISION_URL, TEST_SUPERVISION_URL_ALT_PORT]
+      const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: urls }))
+      assert.ok(result.success)
+      assert.deepStrictEqual(result.data.supervisionUrls, urls)
+    })
+
+    await it('should reject an unsupported scheme in string and array forms, naming the field', () => {
+      // The v2 narrowing: a syntactically valid URL the supervision transport
+      // cannot dial (e.g. `ftp://`) fails at template load, not at connection.
+      for (const url of ['ftp://localhost/OCPP16', 'file:///etc/passwd', 'gopher://localhost']) {
+        for (const value of [url, [url], [url, TEST_SUPERVISION_URL]]) {
+          const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: value }))
+          assert.ok(!result.success, `should reject ${JSON.stringify(value)}`)
+          assert.ok(
+            result.error.issues.some(
+              issue =>
+                issue.path.join('.').startsWith('supervisionUrls') &&
+                issue.message.includes('must be a supervision URL')
+            ),
+            `rejection for ${JSON.stringify(value)} must name the supervisionUrls field`
+          )
+        }
+      }
+    })
+
+    await it('should reject query and fragment delimiters (shared supervision endpoint policy)', () => {
+      for (const url of ['ws://localhost:8010?token=1', 'ws://localhost:8010#fragment']) {
+        const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: url }))
+        assert.ok(!result.success, `should reject ${url}`)
+        assert.ok(
+          result.error.issues.some(issue => issue.path.join('.').startsWith('supervisionUrls'))
+        )
+      }
+    })
+
+    await it('should reject an invalid ws+unix URL (missing request path separator)', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate({ supervisionUrls: 'ws+unix:///path/to/socket.sockOCPP16' })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(issue => issue.path.join('.').startsWith('supervisionUrls'))
+      )
+    })
+
+    await it('should trim surrounding Unicode whitespace from the parsed value', () => {
+      const padded = `\u00A0${TEST_SUPERVISION_URL}\u2003`
+      const result = TemplateSchema.safeParse(buildMinimalTemplate({ supervisionUrls: padded }))
+      assert.ok(result.success)
+      assert.strictEqual(result.data.supervisionUrls, TEST_SUPERVISION_URL)
+    })
+  })
+
+  await describe('supervisionUrlOcppKey seeded configuration value', async () => {
+    const seededConfiguration = (value: string) => ({
+      Configuration: {
+        configurationKey: [{ key: 'ocppcentraladdress', readonly: false, value }],
+      },
+      supervisionUrlOcppConfiguration: true,
+      supervisionUrlOcppKey: 'ocppcentraladdress',
+    })
+
+    await it('should reject a value the transport cannot dial seeded in the active OCPP key, naming the key', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate(seededConfiguration('ftp://localhost/OCPP16'))
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          issue =>
+            issue.path.join('.').startsWith('Configuration.configurationKey.0.value') &&
+            issue.message.includes("'ocppcentraladdress'")
+        ),
+        `rejection must name the seeded OCPP key: ${JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should accept a supported value seeded in the active OCPP key', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate(seededConfiguration('ws://localhost:8010'))
+      )
+      assert.ok(result.success)
+    })
+
+    await it('should ignore an empty value seeded in the active OCPP key', () => {
+      const result = TemplateSchema.safeParse(buildMinimalTemplate(seededConfiguration('')))
+      assert.ok(result.success)
+    })
+
+    await it('should reject a padded value seeded in the active OCPP key, as the runtime write guards do', () => {
+      // The OCPP key stores the value as sent, so raw whitespace and control
+      // characters are rejected as the runtime write guards do, although
+      // SupervisionUrlSchema would normalize the surrounding ones.
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate(seededConfiguration(' ws://localhost:8010 '))
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          issue =>
+            issue.path.join('.').startsWith('Configuration.configurationKey.0.value') &&
+            issue.message.includes('must not contain whitespace or control characters')
+        ),
+        `rejection must name the whitespace rule: ${JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should reject a seeded value containing a control character', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate(seededConfiguration('ws://localhost:8010\u0000'))
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(issue =>
+          issue.path.join('.').startsWith('Configuration.configurationKey.0.value')
+        ),
+        `rejection must name the seeded value: ${JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should apply the check to the default key when the template omits supervisionUrlOcppKey', () => {
+      // The consumer merges the template with the station defaults before
+      // activating the key, so an omitted key resolves to the default
+      // ConnectionUrl and the seeded value for it is checked.
+      const omittedKey = (value: string) => ({
+        Configuration: {
+          configurationKey: [{ key: 'ConnectionUrl', readonly: false, value }],
+        },
+        supervisionUrlOcppConfiguration: true,
+      })
+
+      const rejected = TemplateSchema.safeParse(
+        buildMinimalTemplate(omittedKey('ftp://localhost/OCPP16'))
+      )
+      assert.ok(!rejected.success)
+      assert.ok(
+        rejected.error.issues.some(issue => issue.message.includes("'ConnectionUrl'")),
+        `rejection must name the default OCPP key: ${JSON.stringify(rejected.error.issues)}`
+      )
+
+      const accepted = TemplateSchema.safeParse(
+        buildMinimalTemplate(omittedKey('ws://localhost:8010'))
+      )
+      assert.ok(accepted.success)
+    })
+
+    await it('should ignore the seeded value when supervisionUrlOcppConfiguration is false', () => {
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate({
+          ...seededConfiguration('ftp://localhost/OCPP16'),
+          supervisionUrlOcppConfiguration: false,
+        })
+      )
+      assert.ok(result.success)
+    })
+
+    await it('should reject an invalid value seeded under the resolved 2.0.x namespaced key spelling, naming it', () => {
+      // The consumer resolves the key before matching configuration entries
+      // (resolveOcppParameterKey), so the load check applies the same
+      // resolution and names the spelling present in the entry.
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate({
+          ...seededConfiguration('ftp://localhost/OCPP16'),
+          Configuration: {
+            configurationKey: [
+              {
+                key: 'OCPPCommCtrlr.HeartbeatInterval',
+                readonly: false,
+                value: 'ftp://localhost/OCPP16',
+              },
+            ],
+          },
+          ocppVersion: '2.0.1',
+          supervisionUrlOcppKey: 'HeartbeatInterval',
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(issue => issue.message.includes('OCPPCommCtrlr.HeartbeatInterval'))
+      )
+    })
+
+    await it('should ignore a value seeded under the un-resolved key spelling on a 2.0.x station', () => {
+      // The consumer resolves the key before matching entries, so an entry
+      // whose spelling the resolution does not produce is never dialed and
+      // is not subject to the seeded-value check.
+      const result = TemplateSchema.safeParse(
+        buildMinimalTemplate({
+          ...seededConfiguration('ftp://localhost/OCPP16'),
+          Configuration: {
+            configurationKey: [
+              { key: 'HeartbeatInterval', readonly: false, value: 'ftp://localhost/OCPP16' },
+            ],
+          },
+          ocppVersion: '2.0.1',
+          supervisionUrlOcppKey: 'HeartbeatInterval',
+        })
+      )
+      assert.ok(result.success)
+    })
+
+    await it('should validate only the first matching configuration key entry, mirroring the consumer', () => {
+      const duplicated = (firstValue: string, secondValue: string) =>
+        buildMinimalTemplate({
+          ...seededConfiguration('ftp://localhost/OCPP16'),
+          Configuration: {
+            configurationKey: [
+              { key: 'ocppcentraladdress', readonly: false, value: firstValue },
+              { key: 'ocppcentraladdress', readonly: false, value: secondValue },
+            ],
+          },
+        })
+
+      // A later invalid duplicate is inert: the consumer dials the first entry.
+      assert.ok(
+        TemplateSchema.safeParse(duplicated('ws://localhost:8010', 'ftp://localhost/OCPP16'))
+          .success
+      )
+      // An empty first value falls back to the configured supervision URL; the later duplicate is inert.
+      assert.ok(TemplateSchema.safeParse(duplicated('', 'ftp://localhost/OCPP16')).success)
+      // An invalid first value is dialed and rejected at its own entry.
+      const rejected = TemplateSchema.safeParse(
+        duplicated('ftp://localhost/OCPP16', 'ws://localhost:8010')
+      )
+      assert.ok(!rejected.success)
+      assert.ok(
+        rejected.error.issues.some(
+          issue => issue.path.join('.') === 'Configuration.configurationKey.0.value'
+        )
+      )
     })
   })
 

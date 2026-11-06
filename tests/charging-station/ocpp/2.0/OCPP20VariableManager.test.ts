@@ -1531,6 +1531,160 @@ await describe('B05 - OCPP20VariableManager', async () => {
     })
   })
 
+  await describe('supervision URL dialability guard', async () => {
+    let guardStation: ChargingStation
+    let manager: OCPP20VariableManager
+
+    beforeEach(() => {
+      const { station: newStation } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 3,
+        evseConfiguration: { evsesCount: 3 },
+        ocppConfiguration: {
+          configurationKey: [
+            {
+              key: buildConfigKey(
+                OCPP20ComponentName.OCPPCommCtrlr,
+                StandardParametersKey.HeartbeatInterval
+              ),
+              readonly: false,
+              value: '30',
+            },
+          ],
+        },
+        stationInfo: {
+          ocppVersion: OCPPVersion.VERSION_201,
+          supervisionUrlOcppConfiguration: true,
+          supervisionUrlOcppKey: StandardParametersKey.HeartbeatInterval,
+        },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      guardStation = newStation
+      manager = OCPP20VariableManager.getInstance()
+    })
+
+    await it('should reject a value the transport cannot dial for the mapped supervision key variable', () => {
+      const result = manager.setVariables(guardStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '30',
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])
+
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (result[0].attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      assert.strictEqual(result[0].attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.strictEqual(
+        result[0].attributeStatusInfo.additionalInfo,
+        'The supervision URL is not dialable'
+      )
+    })
+
+    await it('should accept the same value when the supervision key is inactive', () => {
+      const { station: inactiveStation } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 3,
+        evseConfiguration: { evsesCount: 3 },
+        ocppConfiguration: guardStation.ocppConfiguration,
+        stationInfo: {
+          ocppVersion: OCPPVersion.VERSION_201,
+          supervisionUrlOcppConfiguration: false,
+          supervisionUrlOcppKey: StandardParametersKey.HeartbeatInterval,
+        },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+
+      const result = manager.setVariables(inactiveStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '30',
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])
+
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+    })
+
+    await it('should leave other variables settable when the supervision key is active', () => {
+      const result = manager.setVariables(guardStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '30',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+      ])
+
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+    })
+
+    await it('should be inert when the supervision key is empty', () => {
+      const { station: emptyKeyStation } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 3,
+        evseConfiguration: { evsesCount: 3 },
+        ocppConfiguration: guardStation.ocppConfiguration,
+        stationInfo: {
+          ocppVersion: OCPPVersion.VERSION_201,
+          supervisionUrlOcppConfiguration: true,
+          supervisionUrlOcppKey: '',
+        },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+
+      const result = manager.setVariables(emptyKeyStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '30',
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])
+
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+    })
+
+    await it('should be inert for an unmapped vendor key that never matches a component-scoped write key', () => {
+      const { station: vendorKeyStation } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 3,
+        evseConfiguration: { evsesCount: 3 },
+        ocppConfiguration: {
+          configurationKey: [
+            { key: 'ConnectionUrl', readonly: false, value: 'ws://localhost:8010' },
+          ],
+        },
+        stationInfo: {
+          ocppVersion: OCPPVersion.VERSION_201,
+          supervisionUrlOcppConfiguration: true,
+          supervisionUrlOcppKey: 'ConnectionUrl',
+        },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+
+      const result = manager.setVariables(vendorKeyStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: 'ftp://localhost/OCPP16',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])
+
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+    })
+  })
+
   await describe('List validation tests', async () => {
     const manager = OCPP20VariableManager.getInstance()
 

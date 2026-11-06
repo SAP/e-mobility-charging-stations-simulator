@@ -104,6 +104,8 @@ words:
   - emerg
   - REMAPPINGS
   - interruptible
+  - dialable
+  - dialability
   - HSTS
   - Hsts
   - hsts

@@ -29,6 +29,9 @@ import {
   buildConfigKey,
   type ChargingStation,
   getConfigurationKey,
+  isSupervisionOcppKeyActive,
+  isSupportedSupervisionUrl,
+  resolveOcppParameterKey,
   setConfigurationKeyValue,
 } from '../../index.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
@@ -1101,6 +1104,32 @@ export class OCPP20VariableManager {
 
     let rebootRequired = false
     const configurationKeyName = computeScopedConfigurationKeyName(variableMetadata, component)
+    // A supervision OCPP key that is a settable registry variable can be
+    // pointed at an endpoint the transport cannot dial; enforce the same
+    // dialability guard as the OCPP 1.6 ChangeConfiguration handler. A key
+    // matches a component-scoped write key only when its resolved spelling
+    // is namespaced, so flat unmapped keys are inert here, as is the
+    // BootNotification heartbeat-interval write: a supervision key resolving
+    // to HeartbeatInterval is a contradictory configuration. The dial-time
+    // parse remains fail-closed for both.
+    if (
+      isSupervisionOcppKeyActive(chargingStation) &&
+      configurationKeyName ===
+        resolveOcppParameterKey(
+          chargingStation.stationInfo.ocppVersion,
+          chargingStation.stationInfo.supervisionUrlOcppKey
+        ) &&
+      !isSupportedSupervisionUrl(attributeValue)
+    ) {
+      return this.rejectSet(
+        variable,
+        component,
+        resolvedAttributeType,
+        SetVariableStatusEnumType.Rejected,
+        ReasonCodeEnumType.InvalidValue,
+        'The supervision URL is not dialable'
+      )
+    }
     const previousValue =
       this.getRuntimeOverrides(stationId).get(variableKey) ??
       getConfigurationKey(chargingStation, configurationKeyName)?.value

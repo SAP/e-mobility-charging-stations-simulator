@@ -1,7 +1,10 @@
-import { z } from 'zod'
+import { z, type ZodError } from 'zod'
 
 // Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts which uses Zod enums, causing a TDZ cycle.
-import { convertToIntOrNaN } from '../utils/Utils.js'
+import { SupervisionUrlSchema } from '../utils/ConfigurationSchema.js'
+import { Constants } from '../utils/Constants.js'
+import { convertToIntOrNaN, isNotEmptyString } from '../utils/Utils.js'
+import { isSupportedSupervisionUrl, resolveOcppParameterKey } from './ConfigurationKeyUtils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
 // ---------------------------------------------------------------
@@ -228,7 +231,9 @@ const BaseTemplateSchema = z.looseObject({
   supervisionPassword: z.string().optional(),
   supervisionUrlOcppConfiguration: z.boolean().optional(),
   supervisionUrlOcppKey: z.string().optional(),
-  supervisionUrls: z.union([z.string(), z.array(z.string())]).optional(),
+  // Shared supervision endpoint policy: a value the transport cannot dial
+  // is rejected at template load instead of at connection time.
+  supervisionUrls: z.union([SupervisionUrlSchema, z.array(SupervisionUrlSchema)]).optional(),
   supervisionUser: z.string().optional(),
   templateHash: z.string().optional(),
   transactionDataMeterValues: z.boolean().optional(),
@@ -257,6 +262,49 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
         message: `Deprecated template key '${legacyKey}' is not allowed at $schemaVersion ${CURRENT_SCHEMA_VERSION.toString()}. Remove '$schemaVersion' to trigger automatic v0 migration, or replace the key with its v1 equivalent`,
         path: [legacyKey],
       })
+    }
+  }
+  // The seeded value of the active supervision OCPP key is dialed as the
+  // effective endpoint, so it must satisfy the shared supervision endpoint
+  // policy at template load; empty values are ignored by the consumer.
+  // The consumer merges the template with the station defaults before
+  // activating the key, so an omitted key falls back to the default
+  // connection key and the check resolves the same effective key.
+  const rawSupervisionKey =
+    template.supervisionUrlOcppKey ?? Constants.DEFAULT_STATION_INFO.supervisionUrlOcppKey
+  if (template.supervisionUrlOcppConfiguration === true && isNotEmptyString(rawSupervisionKey)) {
+    // The consumer resolves the key before matching configuration entries
+    // (resolveOcppParameterKey), so the check must match the same way.
+    const supervisionKey = resolveOcppParameterKey(template.ocppVersion, rawSupervisionKey)
+    // The consumer dials the first matching entry of the effective
+    // configuration (persisted station file when present, else this template;
+    // later duplicates are ignored, and an empty first value falls back to
+    // the configured supervision URL), so the template's first matching entry
+    // is subject to the check.
+    const configurationKeys = template.Configuration?.configurationKey ?? []
+    const firstIndex = configurationKeys.findIndex(entry => entry.key === supervisionKey)
+    const entry = firstIndex === -1 ? undefined : configurationKeys[firstIndex]
+    // The OCPP key stores the value as sent, so the shared raw-value guard
+    // applies before schema parsing; it matches the runtime write guards
+    // (ChangeConfiguration, SetVariables).
+    if (entry != null && isNotEmptyString(entry.value) && !isSupportedSupervisionUrl(entry.value)) {
+      const result = SupervisionUrlSchema.safeParse(entry.value)
+      if (result.success) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Seeded value of OCPP key '${supervisionKey}' must not contain whitespace or control characters`,
+          path: ['Configuration', 'configurationKey', firstIndex, 'value'],
+        })
+      } else {
+        const error: ZodError = result.error
+        for (const issue of error.issues) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Seeded value of OCPP key '${supervisionKey}' ${issue.message}`,
+            path: ['Configuration', 'configurationKey', firstIndex, 'value'],
+          })
+        }
+      }
     }
   }
   const hasConnectors = template.Connectors != null

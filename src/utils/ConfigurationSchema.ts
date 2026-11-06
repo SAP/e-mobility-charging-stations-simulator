@@ -328,7 +328,7 @@ export const StationTemplateUrlSchema = z
  */
 export const SupervisionUrlSchema = z
   .url({
-    error: 'must be a WebSocket URL (ws://, wss://, http://, https:// or ws+unix://)',
+    error: 'must be a supervision URL (ws://, wss://, http://, https:// or ws+unix://)',
     protocol: /^(?:wss?|https?|ws\+unix)$/,
   })
   .refine(value => !URL.canParse(value) || !new URL(value).href.includes('#'), {

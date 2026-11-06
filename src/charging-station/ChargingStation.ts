@@ -129,6 +129,7 @@ import {
   buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
+  isSupervisionOcppKeyActive,
   setConfigurationKeyValue,
   warnOnOCPP16TemplateKeys,
 } from './ConfigurationKeyUtils.js'
@@ -255,11 +256,9 @@ export class ChargingStation extends EventEmitter {
   }
 
   public get wsConnectionUrl (): URL {
-    const supervisionUrlOcppKey =
-      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
-      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
-        ? this.stationInfo.supervisionUrlOcppKey
-        : undefined
+    const supervisionUrlOcppKey = isSupervisionOcppKeyActive(this)
+      ? this.stationInfo.supervisionUrlOcppKey
+      : undefined
     const configuredSupervisionUrl =
       supervisionUrlOcppKey != null
         ? getConfigurationKey(this, supervisionUrlOcppKey)?.value
@@ -1866,10 +1865,7 @@ export class ChargingStation extends EventEmitter {
         target.supervisionPassword = supervisionPassword
       }
     }
-    if (
-      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
-      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
-    ) {
+    if (isSupervisionOcppKeyActive(this)) {
       const supervisionUrl = this.parseSupervisionUrl(url, this.stationInfo.supervisionUrlOcppKey)
       setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, supervisionUrl.href)
     } else if (this.stationInfo != null) {
@@ -3306,8 +3302,7 @@ export class ChargingStation extends EventEmitter {
       })
     }
     if (
-      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
-      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
+      isSupervisionOcppKeyActive(this) &&
       getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey) == null
     ) {
       addConfigurationKey(

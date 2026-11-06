@@ -13,6 +13,9 @@ export {
   buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
+  isSupervisionOcppKeyActive,
+  isSupportedSupervisionUrl,
+  resolveOcppParameterKey,
   setConfigurationKeyValue,
 } from './ConfigurationKeyUtils.js'
 export {

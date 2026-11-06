@@ -263,7 +263,7 @@ await describe('UIServiceRequestPayloadSchemas', async () => {
             hashIds: [TEST_HASH_ID],
             url,
           }),
-          /url.*must be a WebSocket URL/
+          /url.*must be a supervision URL/
         )
       }
       assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
