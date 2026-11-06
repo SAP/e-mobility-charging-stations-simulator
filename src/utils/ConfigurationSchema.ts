@@ -31,7 +31,9 @@ type LogLevel = (typeof LOG_LEVELS)[number]
 /**
  * Syslog level names accepted for backward compatibility and mapped to the
  * `npm` level of the same severity. winston has no such levels in its `npm`
- * set: passed as is, they disable every log output, errors included.
+ * set: passed as is, they silence the console and the main log file, errors
+ * included (only the error file transport, which sets its own `error` level,
+ * still logs errors).
  */
 const SYSLOG_LOG_LEVEL_ALIASES = {
   alert: 'error',
