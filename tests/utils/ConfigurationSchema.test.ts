@@ -19,6 +19,7 @@ import {
   has,
   SupervisionUrlSchema,
   UI_SERVER_ACCESS_POLICY_DEFAULTS,
+  validateConfiguration,
   WorkerConfigurationSchema,
 } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
@@ -26,6 +27,7 @@ import {
   BAD_FIXTURES,
   buildFullConfiguration,
   buildMinimalConfiguration,
+  buildV1WithDeprecatedKey,
 } from './helpers/ConfigurationFixtures.js'
 import { TEST_SUPERVISION_URL, TEST_SUPERVISION_URL_ALT_PORT } from './TestNetworkConstants.js'
 
@@ -1088,6 +1090,14 @@ await describe('ConfigurationSchema', async () => {
         assert.ok(result.success, `Expected log.level '${level}' to be valid`)
         assert.strictEqual(result.data.log?.level, expected)
       }
+    })
+
+    await it('should map a deprecated logLevel through the syslog aliases', () => {
+      const result = validateConfiguration(
+        buildV1WithDeprecatedKey('logLevel', 'warning'),
+        'loglevel.json'
+      )
+      assert.strictEqual(result.log?.level, 'warn')
     })
 
     await it('should only produce log.level values the winston logger knows', () => {

@@ -56,9 +56,9 @@ const LogLevelSchema = z
 
 /**
  * LogConfiguration — winston logger configuration section.
- * `level` is a winston `npm` logging level; the syslog names `emerg`, `alert`,
- * `crit`, `warning` and `notice` are mapped to `error`, `error`, `error`,
- * `warn` and `info`.
+ * `level` is a winston `npm` logging level (`LOG_LEVELS`); the syslog
+ * aliases (`SYSLOG_LOG_LEVEL_ALIASES`) are mapped to the `npm` level of
+ * the same severity.
  * `maxFiles` and `maxSize` accept `number | string` (winston-daily-rotate-file
  * units like '14d', '20m').
  */
