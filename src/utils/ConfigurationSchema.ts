@@ -22,7 +22,43 @@ import { has, isNotEmptyArray } from './Utils.js'
 // ---------------------------------------------------------------
 
 /**
+ * Logging levels of the winston logger: the logger is created with winston's
+ * default `npm` levels, so only these names select a severity threshold.
+ */
+const LOG_LEVELS = ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'] as const
+type LogLevel = (typeof LOG_LEVELS)[number]
+
+/**
+ * Syslog level names accepted for backward compatibility and mapped to the
+ * `npm` level of the same severity. winston has no such levels in its `npm`
+ * set: passed as is, they silence the console and the main log file, errors
+ * included (only the error file transport, which sets its own `error` level,
+ * still logs errors).
+ */
+const SYSLOG_LOG_LEVEL_ALIASES = {
+  alert: 'error',
+  crit: 'error',
+  emerg: 'error',
+  notice: 'info',
+  warning: 'warn',
+} as const satisfies Record<string, LogLevel>
+
+type SyslogLogLevelAlias = keyof typeof SYSLOG_LOG_LEVEL_ALIASES
+
+const isSyslogLogLevelAlias = (level: string): level is SyslogLogLevelAlias =>
+  has(level, SYSLOG_LOG_LEVEL_ALIASES)
+
+const LogLevelSchema = z
+  .enum([...LOG_LEVELS, ...(Object.keys(SYSLOG_LOG_LEVEL_ALIASES) as SyslogLogLevelAlias[])])
+  .transform((level): LogLevel =>
+    isSyslogLogLevelAlias(level) ? SYSLOG_LOG_LEVEL_ALIASES[level] : level
+  )
+
+/**
  * LogConfiguration — winston logger configuration section.
+ * `level` is a winston `npm` logging level (`LOG_LEVELS`); the syslog
+ * aliases (`SYSLOG_LOG_LEVEL_ALIASES`) are mapped to the `npm` level of
+ * the same severity.
  * `maxFiles` and `maxSize` accept `number | string` (winston-daily-rotate-file
  * units like '14d', '20m').
  */
@@ -33,9 +69,7 @@ export const LogConfigurationSchema = z
     errorFile: z.string().optional(),
     file: z.string().optional(),
     format: z.string().optional(),
-    level: z
-      .enum(['emerg', 'alert', 'crit', 'error', 'warning', 'notice', 'info', 'debug'])
-      .optional(),
+    level: LogLevelSchema.optional(),
     maxFiles: z.union([z.number(), z.string()]).optional(),
     maxSize: z.union([z.number(), z.string()]).optional(),
     rotate: z.boolean().optional(),
