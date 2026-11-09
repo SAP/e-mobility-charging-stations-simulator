@@ -57,7 +57,7 @@ export {
   normalizeHost,
   normalizeIPAddress,
 } from './HostUtils.js'
-export { logger } from './Logger.js'
+export { getRotatingLogFileName, logger } from './Logger.js'
 export {
   buildAddedMessage,
   buildDeletedMessage,

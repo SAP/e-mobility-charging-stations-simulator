@@ -1,11 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
 import { open, stat } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { z } from 'zod'
 
 import { ConfigurationSection, type LogConfiguration } from '../../../types/index.js'
-import { Configuration } from '../../../utils/index.js'
+import { Configuration, getRotatingLogFileName } from '../../../utils/index.js'
 
 const MAX_TAIL_LINES = 5000
 const DEFAULT_TAIL_LINES = 200
@@ -26,9 +26,8 @@ const getLogFilePath = (configField: 'errorFile' | 'file', date?: string): strin
   const localDate =
     date ??
     `${now.getFullYear().toString()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`
-  const dir = dirname(resolve(relativePath))
-  const baseName = configField === 'file' ? `combined-${localDate}.log` : `error-${localDate}.log`
-  return join(dir, baseName)
+  // Same file name pattern as the daily rotating transports in Logger.ts.
+  return resolve(getRotatingLogFileName(relativePath).replace('%DATE%', localDate))
 }
 
 const tailFile = async (

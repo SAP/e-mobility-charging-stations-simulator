@@ -239,5 +239,31 @@ await describe('UIMCPServer HTTP Integration', async () => {
       assert.strictEqual(result.isError, true)
       assert.ok(result.content[0].text.includes('not available'))
     })
+
+    await it('should read the rotated file of a configured log file name', async () => {
+      // Arrange
+      getConfigSectionCache().set(ConfigurationSection.log, {
+        console: false,
+        enabled: true,
+        errorFile: join(logTmpDir, 'simulator-errors.txt'),
+        file: join(logTmpDir, 'simulator.txt'),
+        format: 'simple',
+        level: 'info',
+        rotate: true,
+      })
+      const testDate = '2020-01-01'
+      writeTempFile(logTmpDir, `simulator-${testDate}.txt`, 'info: custom log entry\n')
+      writeTempFile(logTmpDir, `simulator-errors-${testDate}.txt`, 'error: custom error entry\n')
+
+      // Act
+      const logResult = await callTool(testPort, 'readCombinedLog', { date: testDate, tail: 10 })
+      const errorResult = await callTool(testPort, 'readErrorLog', { date: testDate, tail: 10 })
+
+      // Assert
+      assert.strictEqual(logResult.isError, undefined)
+      assert.ok(logResult.content[0].text.includes('custom log entry'))
+      assert.strictEqual(errorResult.isError, undefined)
+      assert.ok(errorResult.content[0].text.includes('custom error entry'))
+    })
   })
 })
