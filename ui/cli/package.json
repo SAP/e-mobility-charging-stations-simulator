@@ -27,7 +27,7 @@
   "dependencies": {
     "chalk": "^6.0.1",
     "cli-table3": "^0.6.5",
-    "commander": "^15.0.0",
+    "commander": "^15.1.0",
     "ora": "^10.0.0",
     "ui-common": "workspace:*",
     "ws": "^8.22.1"
