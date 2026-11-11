@@ -1,5 +1,6 @@
 import type { FormatWrap } from 'logform'
 
+import { parse } from 'node:path'
 import {
   createLogger,
   format,
@@ -11,9 +12,22 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 
 import { ConfigurationSection, type LogConfiguration } from '../types/index.js'
 import { Configuration } from './Configuration.js'
-import { insertAt, isEmpty, isNotEmptyString } from './Utils.js'
+import { isEmpty, isNotEmptyString } from './Utils.js'
 
 let loggerInstance: undefined | WinstonLogger
+
+/**
+ * Builds the daily rotated log file name pattern by inserting the date
+ * placeholder before the file extension of the base name, or at the end
+ * when the file has no extension.
+ * Trailing separators are ignored without changing the directory prefix.
+ * @param file - Log file path
+ * @returns Log file path pattern with the `%DATE%` placeholder
+ */
+export const getRotatingLogFileName = (file: string): string => {
+  const { base, ext, name } = parse(file)
+  return `${file.slice(0, file.lastIndexOf(base))}${name}-%DATE%${ext}`
+}
 
 const getLoggerInstance = (): WinstonLogger => {
   if (loggerInstance !== undefined) {
@@ -29,11 +43,7 @@ const getLoggerInstance = (): WinstonLogger => {
     if (isNotEmptyString(logConfiguration.errorFile)) {
       logTransports.push(
         new DailyRotateFile({
-          filename: insertAt(
-            logConfiguration.errorFile,
-            '-%DATE%',
-            logConfiguration.errorFile.indexOf('.log')
-          ),
+          filename: getRotatingLogFileName(logConfiguration.errorFile),
           level: 'error',
           ...(logMaxFiles != null && { maxFiles: logMaxFiles }),
           ...(logMaxSize != null && { maxSize: logMaxSize }),
@@ -43,11 +53,7 @@ const getLoggerInstance = (): WinstonLogger => {
     if (isNotEmptyString(logConfiguration.file)) {
       logTransports.push(
         new DailyRotateFile({
-          filename: insertAt(
-            logConfiguration.file,
-            '-%DATE%',
-            logConfiguration.file.indexOf('.log')
-          ),
+          filename: getRotatingLogFileName(logConfiguration.file),
           ...(logMaxFiles != null && { maxFiles: logMaxFiles }),
           ...(logMaxSize != null && { maxSize: logMaxSize }),
         })
