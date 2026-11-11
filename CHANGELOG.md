@@ -2,11 +2,10 @@
 
 ## [5.0.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v5.0.0...simulator@v5.0.1) (2026-11-11)
 
-
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#2192](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2192)) ([80967d5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/80967d5caefa3ee28a7cbfa634e3c27f8b1b4764))
-* **simulator:** insert the rotation date before the log file extension ([#2195](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2195)) ([7d6c22a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7d6c22aedfaee0855a9821108d55cb93ab722514))
+- **deps:** update all non-major dependencies ([#2192](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2192)) ([80967d5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/80967d5caefa3ee28a7cbfa634e3c27f8b1b4764))
+- **simulator:** insert the rotation date before the log file extension ([#2195](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2195)) ([7d6c22a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7d6c22aedfaee0855a9821108d55cb93ab722514))
 
 ## [5.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.12.0...simulator@v5.0.0) (2026-11-08)
 
