@@ -1,6 +1,6 @@
 import type { FormatWrap } from 'logform'
 
-import { extname } from 'node:path'
+import { parse } from 'node:path'
 import {
   createLogger,
   format,
@@ -20,12 +20,13 @@ let loggerInstance: undefined | WinstonLogger
  * Builds the daily rotated log file name pattern by inserting the date
  * placeholder before the file extension of the base name, or at the end
  * when the file has no extension.
+ * Trailing separators are ignored without changing the directory prefix.
  * @param file - Log file path
  * @returns Log file path pattern with the `%DATE%` placeholder
  */
 export const getRotatingLogFileName = (file: string): string => {
-  const extension = extname(file)
-  return `${file.slice(0, file.length - extension.length)}-%DATE%${extension}`
+  const { base, ext, name } = parse(file)
+  return `${file.slice(0, file.lastIndexOf(base))}${name}-%DATE%${ext}`
 }
 
 const getLoggerInstance = (): WinstonLogger => {
