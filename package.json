@@ -117,7 +117,7 @@
     "eslint": "10.14.0",
     "eslint-plugin-jsdoc": "65.4.5",
     "eslint-plugin-perfectionist": "5.13.0",
-    "eslint-plugin-vue": "10.12.0",
+    "eslint-plugin-vue": "10.12.1",
     "husky": "9.1.7",
     "lint-staged": "17.6.0",
     "neostandard": "0.14.1",
