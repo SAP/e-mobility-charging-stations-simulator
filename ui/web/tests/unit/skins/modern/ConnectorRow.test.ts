@@ -192,9 +192,8 @@ describe('ConnectorRow', () => {
       await wrapper.find('.modern-icon-btn--primary').trigger('click')
       // Explicit payload type: @vue/test-utils infers it from the component,
       // and the ESLint TypeScript program does not resolve .vue modules.
-      const emitted = wrapper.emitted<[{ evseId?: unknown; ocppVersion?: unknown }]>(
-        'open-start-tx'
-      )?.[0]?.[0]
+      const emitted =
+        wrapper.emitted<[{ evseId?: unknown; ocppVersion?: unknown }]>('open-start-tx')?.[0]?.[0]
       expect(emitted).toBeDefined()
       expect(emitted?.evseId).toBeUndefined()
       expect(emitted?.ocppVersion).toBeUndefined()
