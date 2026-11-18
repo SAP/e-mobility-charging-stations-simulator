@@ -1,7 +1,7 @@
 {
-  ".": "5.0.1",
-  "ui/common": "5.0.1",
-  "ui/cli": "5.0.1",
-  "ui/web": "5.0.1",
-  "tests/ocpp-server": "5.0.1"
+  ".": "5.0.2",
+  "ui/common": "5.0.2",
+  "ui/cli": "5.0.2",
+  "ui/web": "5.0.2",
+  "tests/ocpp-server": "5.0.2"
 }
