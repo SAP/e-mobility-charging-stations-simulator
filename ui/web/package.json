@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "web",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "readme": "README.md",
   "engines": {
     "node": ">=22.0.0",
