@@ -190,9 +190,14 @@ describe('ConnectorRow', () => {
     it('should omit evseId/ocppVersion from emitted data when not set', async () => {
       wrapper = mountRow()
       await wrapper.find('.modern-icon-btn--primary').trigger('click')
-      const emitted = wrapper.emitted('open-start-tx')?.[0]?.[0] as Record<string, unknown>
-      expect(emitted.evseId).toBeUndefined()
-      expect(emitted.ocppVersion).toBeUndefined()
+      // Explicit payload type: @vue/test-utils infers it from the component,
+      // and the ESLint TypeScript program does not resolve .vue modules.
+      const emitted = wrapper.emitted<[{ evseId?: unknown; ocppVersion?: unknown }]>(
+        'open-start-tx'
+      )?.[0]?.[0]
+      expect(emitted).toBeDefined()
+      expect(emitted?.evseId).toBeUndefined()
+      expect(emitted?.ocppVersion).toBeUndefined()
     })
 
     it('should show stop icon when transaction running and stops it', async () => {
