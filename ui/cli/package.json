@@ -6,7 +6,7 @@
     "node": ">=22.0.0",
     "pnpm": ">=10.9.0"
   },
-  "packageManager": "pnpm@12.20.0",
+  "packageManager": "pnpm@12.21.0",
   "type": "module",
   "bin": {
     "evse-cli": "./dist/cli.js"
@@ -30,7 +30,7 @@
     "commander": "^15.1.0",
     "ora": "^10.0.0",
     "ui-common": "workspace:*",
-    "ws": "^8.22.2"
+    "ws": "^8.23.0"
   },
   "devDependencies": {
     "@types/ws": "8.18.2",

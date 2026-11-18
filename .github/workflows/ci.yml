@@ -74,13 +74,13 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Dependency Review
         if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           base-ref: ${{ github.ref_name }}
           head-ref: ${{ github.sha }}
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
@@ -174,13 +174,13 @@ jobs:
           fetch-depth: 0
       - name: Dependency Review
         if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           base-ref: ${{ github.ref_name }}
           head-ref: ${{ github.sha }}
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
@@ -230,13 +230,13 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Dependency Review
         if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           base-ref: ${{ github.ref_name }}
           head-ref: ${{ github.sha }}
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
