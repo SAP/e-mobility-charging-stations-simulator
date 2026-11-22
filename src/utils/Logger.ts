@@ -118,8 +118,28 @@ const initializeLogger = (): void => {
   }
 }
 
+const createLoggerTarget = (): WinstonLogger => {
+  const target = createLogger({ silent: true })
+  // Winston generates these methods on a private prototype and defaults detached calls
+  // to its raw instance. Use the proxy as the default so pipe and unpipe agree on identity.
+  const prototype = Reflect.getPrototypeOf(target) as Record<
+    string,
+    (...args: unknown[]) => WinstonLogger
+  >
+  for (const level of Object.keys(target.levels)) {
+    const log = prototype[level]
+    prototype[level] = function (this: unknown, ...args: unknown[]): WinstonLogger {
+      if (!this) {
+        return log.apply(logger, args)
+      }
+      return log.apply(this, args)
+    }
+  }
+  return target
+}
+
 // Configure the actual target in place. There is no second set of stream state or descriptors.
-export const logger = new Proxy<WinstonLogger>(createLogger({ silent: true }), {
+export const logger = new Proxy<WinstonLogger>(createLoggerTarget(), {
   defineProperty (target, property, descriptor): boolean {
     initializeLogger()
     return Reflect.defineProperty(target, property, descriptor)
@@ -135,6 +155,10 @@ export const logger = new Proxy<WinstonLogger>(createLogger({ silent: true }), {
   getOwnPropertyDescriptor (target, property): PropertyDescriptor | undefined {
     initializeLogger()
     return Reflect.getOwnPropertyDescriptor(target, property)
+  },
+  getPrototypeOf (target): null | object {
+    initializeLogger()
+    return Reflect.getPrototypeOf(target)
   },
   has (target, property): boolean {
     initializeLogger()

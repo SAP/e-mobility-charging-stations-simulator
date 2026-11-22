@@ -355,7 +355,9 @@ export const createMockIncomingMessage = (
       remoteAddress: { value: peer?.remoteAddress ?? '127.0.0.1' },
     })
   }
-  return Object.assign(new IncomingMessage(socket), { method: HttpMethod.POST, url: '/ui' }, rest)
+  const request = new IncomingMessage(socket)
+  // IncomingMessage.connection aliases socket, so apply the selected socket last.
+  return Object.assign(request, { method: HttpMethod.POST, url: '/ui' }, rest, { socket })
 }
 
 /**

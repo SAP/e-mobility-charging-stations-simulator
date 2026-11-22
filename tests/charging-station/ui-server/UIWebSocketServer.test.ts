@@ -8,6 +8,7 @@ import type { Duplex } from 'node:stream'
 
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
+import { Socket } from 'node:net'
 import { afterEach, describe, it, type TestContext } from 'node:test'
 
 import type { UIServiceWorkerBroadcastChannel } from '../../../src/charging-station/broadcast-channel/UIServiceWorkerBroadcastChannel.js'
@@ -1149,17 +1150,23 @@ await describe('UIWebSocketServer', async () => {
       const server = new TestableUIWebSocketServer(createWsMetricsConfig())
       enrichBootstrapForMetrics(server)
       server.mockListen(t)
+      const socket = createMockIncomingMessage().socket
+      const connection = new Socket()
       try {
         server.start()
-        const req = buildWsMetricsRequest({ complete: false, url: '/unknown' })
+        const req = buildWsMetricsRequest({ complete: false, connection, socket, url: '/unknown' })
+        assert.strictEqual(req.socket, socket, 'the explicit socket takes precedence')
         const closed = once(req, 'close')
         const res = new MockServerResponse()
         server.emitRequest(req, res)
 
         await closed
         assert.strictEqual(res.statusCode, 404)
-        assert.strictEqual(req.socket.destroyed, true)
+        assert.strictEqual(socket.destroyed, true)
+        assert.strictEqual(connection.destroyed, false)
       } finally {
+        socket.destroy()
+        connection.destroy()
         server.stop()
       }
     })

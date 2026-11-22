@@ -89,28 +89,43 @@ import { once } from 'node:events'
 
 import { logger } from ${JSON.stringify(loggerUrl)}
 
+const { error: prototypeError, isInfoEnabled } = Object.getPrototypeOf(logger)
+assert.equal(isInfoEnabled(), false, 'prototype lookup must apply the configured warn level')
+const firstLogger = prototypeError('prototype-first')
+assert.equal(firstLogger.level, 'warn', 'the first detached prototype call must use configuration')
+assert.equal(firstLogger, logger)
+
 const [transport] = logger.transports
 assert.ok(transport, 'the proxy must expose the configured transport')
 assert.equal(logger.level, 'warn')
 logger.silent = false
 
-const child = logger.child({})
+const child = logger.child({ childId: 'test-child' })
 const sibling = logger.child({})
 child.silent = true
 child.level = 'debug'
-assert.equal(logger.silent, false, 'muting a child must not mute the root')
-assert.equal(sibling.silent, false, 'muting a child must not mute siblings')
+assert.equal(logger.silent, false, 'setting child.silent must not change the root')
+assert.equal(sibling.silent, false, 'setting child.silent must not change siblings')
 assert.equal(logger.level, 'warn', 'changing a child level must not change the root')
 assert.equal(child.level, 'debug')
 
+child.silent = false
+const childLogged = once(transport, 'logged')
+child.error('child-record')
+const [childRecord] = await childLogged
+assert.equal(childRecord.childId, 'test-child')
+
 const marker = 'logger-proxy-delegation-marker'
 const logged = once(transport, 'logged')
-logger.error(marker)
+const { error } = logger
+const writer = error(marker)
 const [record] = await logged
 assert.equal(record.message, marker)
+assert.equal(record.childId, undefined)
 
-logger.remove(transport)
+writer.remove(transport)
 assert.equal(logger.listenerCount('data'), 0, 'removing a transport must detach its listener')
+assert.equal(writer, logger)
 
 const key = Symbol('metadata')
 Object.defineProperty(logger, key, { configurable: false, value: 'metadata' })
