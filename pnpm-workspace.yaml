@@ -7,7 +7,7 @@ packages:
 # The js-beautify CLI uses glob ^13.0.6, with no patched 13.x release.
 # Vue Test Utils bundles the formatter, not the CLI.
 overrides:
-  'js-beautify>glob': ^14.0.6
+  'js-beautify@2.0.3>glob': ^14.0.6
 
 allowBuilds:
   '@parcel/watcher': false

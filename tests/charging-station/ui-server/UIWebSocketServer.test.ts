@@ -1156,11 +1156,10 @@ await describe('UIWebSocketServer', async () => {
         server.start()
         const req = buildWsMetricsRequest({ complete: false, connection, socket, url: '/unknown' })
         assert.strictEqual(req.socket, socket, 'the explicit socket takes precedence')
-        const closed = once(req, 'close')
         const res = new MockServerResponse()
         server.emitRequest(req, res)
 
-        await closed
+        await once(req, 'close', { signal: AbortSignal.timeout(5_000) })
         assert.strictEqual(res.statusCode, 404)
         assert.strictEqual(socket.destroyed, true)
         assert.strictEqual(connection.destroyed, false)

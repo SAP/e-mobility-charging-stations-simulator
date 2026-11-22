@@ -108,7 +108,7 @@ const initializeLogger = (): void => {
   if (loggerInitialized) {
     return
   }
-  // Winston attaches transports through the proxy so pipe and unpipe use the same identity.
+  // Configuration calls back through the proxy while attaching transports.
   loggerInitialized = true
   try {
     configureLogger()
@@ -121,7 +121,7 @@ const initializeLogger = (): void => {
 const createLoggerTarget = (): WinstonLogger => {
   const target = createLogger({ silent: true })
   // Winston generates these methods on a private prototype and defaults detached calls
-  // to its raw instance. Use the proxy as the default so pipe and unpipe agree on identity.
+  // to its raw instance. Preserve the public receiver for detached calls.
   const prototype = Reflect.getPrototypeOf(target) as Record<
     string,
     (...args: unknown[]) => WinstonLogger
@@ -135,6 +135,21 @@ const createLoggerTarget = (): WinstonLogger => {
       return log.apply(this, args)
     }
   }
+  // Stream callbacks can emit on the raw target. Use it as the root pipe source
+  // even when the caller holds the proxy, so unpipe matches the registered source.
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- The apply traps supply the stream receiver.
+  const { pipe, unpipe } = target
+  target.pipe = new Proxy(pipe, {
+    apply (pipe, receiver: unknown, args): unknown {
+      return Reflect.apply(pipe, receiver === logger ? target : receiver, args) as unknown
+    },
+  })
+  target.unpipe = new Proxy(unpipe, {
+    apply (unpipe, receiver: unknown, args): unknown {
+      const result: unknown = Reflect.apply(unpipe, receiver === logger ? target : receiver, args)
+      return receiver === logger && result === target ? logger : result
+    },
+  })
   return target
 }
 

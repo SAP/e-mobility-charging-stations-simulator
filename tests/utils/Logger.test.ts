@@ -127,6 +127,24 @@ writer.remove(transport)
 assert.equal(logger.listenerCount('data'), 0, 'removing a transport must detach its listener')
 assert.equal(writer, logger)
 
+logger.add(transport)
+logger.silent = true
+logger.on('drain', function removeTransport () {
+  logger.off('drain', removeTransport)
+  this.remove(transport)
+})
+const drained = once(logger, 'drain')
+const queued = { level: 'warn', message: 'queued-record', [Symbol.for('level')]: 'warn' }
+logger.cork()
+for (let i = 1; i < logger.writableHighWaterMark; i++) {
+  logger.write(queued)
+}
+assert.equal(logger.write(queued), false, 'corked writes must reach the high-water mark')
+logger.uncork()
+await drained
+assert.equal(logger.transports.length, 0)
+assert.equal(logger.listenerCount('data'), 0, 'removing a transport from drain must detach its pipe')
+
 const key = Symbol('metadata')
 Object.defineProperty(logger, key, { configurable: false, value: 'metadata' })
 assert.equal(Object.getOwnPropertyDescriptor(logger, key).configurable, false)
