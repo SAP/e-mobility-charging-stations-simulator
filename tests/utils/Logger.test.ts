@@ -127,6 +127,8 @@ writer.remove(transport)
 assert.equal(logger.listenerCount('data'), 0, 'removing a transport must detach its listener')
 assert.equal(writer, logger)
 
+const piped = once(transport, 'pipe')
+const removed = once(transport, 'unpipe')
 logger.add(transport)
 logger.silent = true
 logger.on('drain', function removeTransport () {
@@ -144,6 +146,13 @@ logger.uncork()
 await drained
 assert.equal(logger.transports.length, 0)
 assert.equal(logger.listenerCount('data'), 0, 'removing a transport from drain must detach its pipe')
+const [pipeSource] = await piped
+const [unpipeSource] = await removed
+assert.deepEqual(
+  [pipeSource === logger, unpipeSource === logger],
+  [true, true],
+  'pipe and drain-triggered unpipe must expose the public logger'
+)
 
 const key = Symbol('metadata')
 Object.defineProperty(logger, key, { configurable: false, value: 'metadata' })

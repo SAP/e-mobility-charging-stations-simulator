@@ -135,19 +135,19 @@ const createLoggerTarget = (): WinstonLogger => {
       return log.apply(this, args)
     }
   }
-  // Stream callbacks can emit on the raw target. Use it as the root pipe source
-  // even when the caller holds the proxy, so unpipe matches the registered source.
+  // Stream callbacks can emit on the raw target. Use the public logger for both
+  // root receivers so destinations see the same source on pipe and unpipe.
   // eslint-disable-next-line @typescript-eslint/unbound-method -- The apply traps supply the stream receiver.
   const { pipe, unpipe } = target
   target.pipe = new Proxy(pipe, {
     apply (pipe, receiver: unknown, args): unknown {
-      return Reflect.apply(pipe, receiver === logger ? target : receiver, args) as unknown
+      return Reflect.apply(pipe, receiver === target ? logger : receiver, args) as unknown
     },
   })
   target.unpipe = new Proxy(unpipe, {
     apply (unpipe, receiver: unknown, args): unknown {
-      const result: unknown = Reflect.apply(unpipe, receiver === logger ? target : receiver, args)
-      return receiver === logger && result === target ? logger : result
+      const result: unknown = Reflect.apply(unpipe, receiver === target ? logger : receiver, args)
+      return receiver === target && result === logger ? target : result
     },
   })
   return target
