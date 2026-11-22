@@ -14,7 +14,7 @@ import { ConfigurationSection, type LogConfiguration } from '../types/index.js'
 import { Configuration } from './Configuration.js'
 import { isEmpty, isNotEmptyString } from './Utils.js'
 
-let loggerInstance: undefined | WinstonLogger
+let loggerInitialized = false
 
 /**
  * Builds the daily rotated log file name pattern by inserting the date
@@ -29,10 +29,7 @@ export const getRotatingLogFileName = (file: string): string => {
   return `${file.slice(0, file.lastIndexOf(base))}${name}-%DATE%${ext}`
 }
 
-const getLoggerInstance = (): WinstonLogger => {
-  if (loggerInstance !== undefined) {
-    return loggerInstance
-  }
+const configureLogger = (): void => {
   const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
     ConfigurationSection.log
   )
@@ -84,7 +81,7 @@ const getLoggerInstance = (): WinstonLogger => {
     format.splat(),
     (format[(logConfiguration.format ?? 'simple') as keyof FormatWrap] as FormatWrap)()
   )
-  loggerInstance = createLogger({
+  logger.configure({
     format: logFormat,
     level: logConfiguration.level,
     silent:
@@ -98,43 +95,65 @@ const getLoggerInstance = (): WinstonLogger => {
   // `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
   //
   if (logConfiguration.console === true) {
-    loggerInstance.add(
+    logger.add(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
       new WinstonTransports.Console({
         format: logFormat,
       })
     )
   }
-  return loggerInstance
 }
 
-// The target is a silent stand-in required by @typescript-eslint/no-unsafe-class-instance-assignment:
-// winston's class methods run with the proxy as `this`, so every trap must resolve on the live
-// logger. Reading the target instead would expose its own `silent`, `level` and stream state and
-// would swallow every log record.
-export const logger = new Proxy(createLogger({ silent: true }), {
-  defineProperty (_target, property, descriptor): boolean {
-    return Reflect.defineProperty(getLoggerInstance(), property, descriptor)
+const initializeLogger = (): void => {
+  if (loggerInitialized) {
+    return
+  }
+  // Winston attaches transports through the proxy so pipe and unpipe use the same identity.
+  loggerInitialized = true
+  try {
+    configureLogger()
+  } catch (error) {
+    loggerInitialized = false
+    throw error
+  }
+}
+
+// Configure the actual target in place. There is no second set of stream state or descriptors.
+export const logger = new Proxy<WinstonLogger>(createLogger({ silent: true }), {
+  defineProperty (target, property, descriptor): boolean {
+    initializeLogger()
+    return Reflect.defineProperty(target, property, descriptor)
   },
-  deleteProperty (_target, property): boolean {
-    return Reflect.deleteProperty(getLoggerInstance(), property)
+  deleteProperty (target, property): boolean {
+    initializeLogger()
+    return Reflect.deleteProperty(target, property)
   },
-  get (_target, property, receiver): unknown {
-    return Reflect.get(getLoggerInstance(), property, receiver) as unknown
+  get (target, property, receiver): unknown {
+    initializeLogger()
+    return Reflect.get(target, property, receiver) as unknown
   },
-  getOwnPropertyDescriptor (_target, property): PropertyDescriptor | undefined {
-    return Reflect.getOwnPropertyDescriptor(getLoggerInstance(), property)
+  getOwnPropertyDescriptor (target, property): PropertyDescriptor | undefined {
+    initializeLogger()
+    return Reflect.getOwnPropertyDescriptor(target, property)
   },
-  getPrototypeOf (): null | object {
-    return Reflect.getPrototypeOf(getLoggerInstance())
+  has (target, property): boolean {
+    initializeLogger()
+    return Reflect.has(target, property)
   },
-  has (_target, property): boolean {
-    return Reflect.has(getLoggerInstance(), property)
+  ownKeys (target): ArrayLike<string | symbol> {
+    initializeLogger()
+    return Reflect.ownKeys(target)
   },
-  ownKeys (): ArrayLike<string | symbol> {
-    return Reflect.ownKeys(getLoggerInstance())
+  preventExtensions (target): boolean {
+    initializeLogger()
+    return Reflect.preventExtensions(target)
   },
-  set (_target, property, value): boolean {
-    return Reflect.set(getLoggerInstance(), property, value)
+  set (target, property, value, receiver): boolean {
+    initializeLogger()
+    return Reflect.set(target, property, value, receiver)
+  },
+  setPrototypeOf (target, prototype): boolean {
+    initializeLogger()
+    return Reflect.setPrototypeOf(target, prototype)
   },
 })

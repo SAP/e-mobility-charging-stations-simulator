@@ -140,12 +140,14 @@ const enrichBootstrap = (server: TestableUIHttpServer, version = '4.9.0'): void 
   }))
 }
 
-const buildMetricsRequest = (overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
+const buildMetricsRequest = (
+  overrides: Parameters<typeof createMockIncomingMessage>[0] = {}
+): IncomingMessage =>
   createMockIncomingMessage({
     complete: true,
     headers: { host: 'localhost' },
     method: 'GET',
-    socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+    socket: { encrypted: false, remoteAddress: '127.0.0.1' },
     url: '/metrics',
     ...overrides,
   })
@@ -305,7 +307,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       gatedServer.emitRequest(
         buildMetricsRequest({
           headers: { host: 'gateway.example.com' },
-          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' },
         }),
         res
       )

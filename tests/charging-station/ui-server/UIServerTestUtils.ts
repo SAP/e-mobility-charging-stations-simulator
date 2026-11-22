@@ -333,33 +333,29 @@ export class MockUpgradeSocket extends EventEmitter {
 
 /**
  * Create an HTTP IncomingMessage for testing.
- * The message is a real instance over an unconnected socket; no I/O happens. Its `socket`
- * defaults to a loopback stub: an unconnected socket exposes no `remoteAddress`, which the UI
- * access policy would read as non-loopback, and `IncomingMessage._destroy` forwards
- * `req.destroy()` to `socket.destroy()`.
+ * Use a real socket so destroying an incomplete request also closes its stream.
+ * Supply peer properties for an unconnected test socket or pass an existing socket unchanged.
  * @param overrides - Partial message properties to merge with defaults
  * @returns IncomingMessage configured for testing
  */
 export const createMockIncomingMessage = (
-  overrides?: Partial<IncomingMessage>
+  overrides?: Omit<Partial<IncomingMessage>, 'socket'> & {
+    socket?: Socket | { encrypted?: boolean; remoteAddress?: string }
+  }
 ): IncomingMessage => {
-  const socket = new Socket()
-  socket.unref()
-  const request = new IncomingMessage(socket)
-  request.method = HttpMethod.POST
-  request.url = '/ui'
-  const { socket: socketOverride, ...rest } = overrides ?? {}
-  const requestSocket = Object.assign(
-    {
-      // Keep the side-effect-free `destroy()` the double used to provide.
-      destroy: (): undefined => undefined,
-      encrypted: false,
-      remoteAddress: '127.0.0.1',
-    },
-    socketOverride
-  ) as Socket
-  // `connection` is a prototype accessor aliasing `socket`, so both stay consistent.
-  return Object.assign(request, rest, { socket: requestSocket })
+  const { socket: peer, ...rest } = overrides ?? {}
+  let socket: Socket
+  if (peer instanceof Socket) {
+    socket = peer
+  } else {
+    socket = new Socket()
+    socket.unref()
+    Object.defineProperties(socket, {
+      encrypted: { value: peer?.encrypted ?? false },
+      remoteAddress: { value: peer?.remoteAddress ?? '127.0.0.1' },
+    })
+  }
+  return Object.assign(new IncomingMessage(socket), { method: HttpMethod.POST, url: '/ui' }, rest)
 }
 
 /**

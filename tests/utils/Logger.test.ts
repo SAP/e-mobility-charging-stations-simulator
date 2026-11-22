@@ -4,16 +4,19 @@
  * delegation of the exported logger proxy to the live winston logger.
  */
 import assert from 'node:assert/strict'
-import { once } from 'node:events'
+import { execFile } from 'node:child_process'
 import { afterEach, describe, it } from 'node:test'
+import { promisify } from 'node:util'
 
-import { getRotatingLogFileName } from '../../src/utils/index.js'
-import { logger } from '../../src/utils/Logger.js'
+import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../src/utils/ConfigurationMigrations.js'
+import { getRotatingLogFileName } from '../../src/utils/Logger.js'
+import { cleanupTempDirs, createTempDir, writeTempFile } from '../helpers/TempFiles.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('Logger', async () => {
   afterEach(() => {
     standardCleanup()
+    cleanupTempDirs()
   })
 
   await it('should insert the date placeholder before the .log extension', () => {
@@ -58,29 +61,72 @@ await describe('Logger', async () => {
     assert.strictEqual(getRotatingLogFileName('logs/.log'), 'logs/.log-%DATE%')
   })
 
-  await describe('proxy delegation', async () => {
-    // The live logger is built from the canonical default configuration, so it owns at least one
-    // transport. Reading through the exported proxy must expose those live transports: resolving
-    // the read on the silent stand-in returns its own empty transport set and every record is
-    // dropped before reaching a transport. The record is logged at the error level so that no
-    // configured transport level filters it out.
-    await it('should route writes to the live logger transport', async () => {
-      // Arrange
-      const marker = 'logger-proxy-delegation-marker'
-      const previousSilent = logger.silent
-      assert.ok(logger.transports.length > 0, 'the proxy must expose the live logger transports')
-      const [liveTransport] = logger.transports
-      try {
-        // Act
-        logger.silent = false
-        const logged = once(liveTransport, 'logged')
-        logger.error(marker)
+  await it('should preserve logger behavior with a configured transport', async () => {
+    // Set the configuration before importing the logger in a fresh process.
+    const assetsDir = createTempDir('logger-test-')
+    writeTempFile(
+      assetsDir,
+      'config.json',
+      JSON.stringify({
+        $schemaVersion: CURRENT_CONFIGURATION_SCHEMA_VERSION,
+        log: {
+          console: true,
+          errorFile: '',
+          file: '',
+          format: 'simple',
+          level: 'warn',
+        },
+        stationTemplateUrls: [{ file: 'fixture.station-template.json', numberOfStations: 1 }],
+      })
+    )
+    const loggerUrl = new URL('../../src/utils/Logger.js', import.meta.url).href
+    const fixturePath = writeTempFile(
+      assetsDir,
+      'logger.mjs',
+      `
+import assert from 'node:assert/strict'
+import { once } from 'node:events'
 
-        // Assert
-        await logged
-      } finally {
-        logger.silent = previousSilent
-      }
+import { logger } from ${JSON.stringify(loggerUrl)}
+
+const [transport] = logger.transports
+assert.ok(transport, 'the proxy must expose the configured transport')
+assert.equal(logger.level, 'warn')
+logger.silent = false
+
+const child = logger.child({})
+const sibling = logger.child({})
+child.silent = true
+child.level = 'debug'
+assert.equal(logger.silent, false, 'muting a child must not mute the root')
+assert.equal(sibling.silent, false, 'muting a child must not mute siblings')
+assert.equal(logger.level, 'warn', 'changing a child level must not change the root')
+assert.equal(child.level, 'debug')
+
+const marker = 'logger-proxy-delegation-marker'
+const logged = once(transport, 'logged')
+logger.error(marker)
+const [record] = await logged
+assert.equal(record.message, marker)
+
+logger.remove(transport)
+assert.equal(logger.listenerCount('data'), 0, 'removing a transport must detach its listener')
+
+const key = Symbol('metadata')
+Object.defineProperty(logger, key, { configurable: false, value: 'metadata' })
+assert.equal(Object.getOwnPropertyDescriptor(logger, key).configurable, false)
+assert.equal(logger[key], 'metadata')
+Object.preventExtensions(logger)
+assert.ok(Reflect.ownKeys(logger).includes(key))
+
+// Configuration keeps a watcher open; all assertions have completed.
+process.exit(0)
+`
+    )
+
+    await promisify(execFile)(process.execPath, ['--import', 'tsx', fixturePath], {
+      env: { ...process.env, EVSE_ASSETS_DIR: assetsDir, NODE_ENV: 'test' },
+      timeout: 30_000,
     })
   })
 })
