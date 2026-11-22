@@ -453,6 +453,13 @@ export interface OCPPAuthService {
   getStats(): AuthStats
 
   /**
+   * Get a specific authentication strategy
+   * @param strategyName - Name of the authentication strategy to retrieve (e.g., 'local', 'remote', 'certificate')
+   * @returns The requested authentication strategy, or undefined if not found
+   */
+  getStrategy(strategyName: string): AuthStrategy | undefined
+
+  /**
    * Invalidate cached authorization for an identifier
    * @param identifier - Identifier to invalidate
    */

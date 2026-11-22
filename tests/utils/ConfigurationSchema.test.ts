@@ -1124,6 +1124,7 @@ await describe('ConfigurationSchema', async () => {
         const logger = createLogger({
           level: parsedLevel,
           transports: [
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
             new transports.Stream({
               stream: new Writable({
                 write (chunk: Buffer, _encoding, callback) {

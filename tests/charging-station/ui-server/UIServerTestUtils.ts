@@ -2,12 +2,13 @@
  * @file UIServerTestUtils
  * @description Test utilities for UI server testing
  */
-import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
 import type { mock } from 'node:test'
 
 import assert from 'node:assert/strict'
 import { EventEmitter, once } from 'node:events'
+import { IncomingMessage } from 'node:http'
+import { Socket } from 'node:net'
 
 import type { IBootstrap } from '../../../src/charging-station/IBootstrap.js'
 import type {
@@ -331,22 +332,20 @@ export class MockUpgradeSocket extends EventEmitter {
 }
 
 /**
- * Create a mock HTTP IncomingMessage for testing.
+ * Create an HTTP IncomingMessage for testing.
+ * The message is a real instance over an unconnected socket; no I/O happens.
  * @param overrides - Partial message properties to merge with defaults
  * @returns IncomingMessage configured for testing
  */
 export const createMockIncomingMessage = (
   overrides?: Partial<IncomingMessage>
 ): IncomingMessage => {
-  return {
-    destroy: () => undefined,
-    headers: {},
-    headersDistinct: {},
-    method: HttpMethod.POST,
-    rawHeaders: [],
-    url: '/ui',
-    ...overrides,
-  } as IncomingMessage
+  const socket = new Socket()
+  socket.unref()
+  const request = new IncomingMessage(socket)
+  request.method = HttpMethod.POST
+  request.url = '/ui'
+  return Object.assign(request, overrides)
 }
 
 /**

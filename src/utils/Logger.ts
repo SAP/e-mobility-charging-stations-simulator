@@ -42,6 +42,7 @@ const getLoggerInstance = (): WinstonLogger => {
     const logMaxSize = logConfiguration.maxSize
     if (isNotEmptyString(logConfiguration.errorFile)) {
       logTransports.push(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
         new DailyRotateFile({
           filename: getRotatingLogFileName(logConfiguration.errorFile),
           level: 'error',
@@ -52,6 +53,7 @@ const getLoggerInstance = (): WinstonLogger => {
     }
     if (isNotEmptyString(logConfiguration.file)) {
       logTransports.push(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
         new DailyRotateFile({
           filename: getRotatingLogFileName(logConfiguration.file),
           ...(logMaxFiles != null && { maxFiles: logMaxFiles }),
@@ -62,6 +64,7 @@ const getLoggerInstance = (): WinstonLogger => {
   } else {
     if (isNotEmptyString(logConfiguration.errorFile)) {
       logTransports.push(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
         new WinstonTransports.File({
           filename: logConfiguration.errorFile,
           level: 'error',
@@ -70,6 +73,7 @@ const getLoggerInstance = (): WinstonLogger => {
     }
     if (isNotEmptyString(logConfiguration.file)) {
       logTransports.push(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
         new WinstonTransports.File({
           filename: logConfiguration.file,
         })
@@ -95,6 +99,7 @@ const getLoggerInstance = (): WinstonLogger => {
   //
   if (logConfiguration.console === true) {
     loggerInstance.add(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
       new WinstonTransports.Console({
         format: logFormat,
       })
@@ -103,9 +108,9 @@ const getLoggerInstance = (): WinstonLogger => {
   return loggerInstance
 }
 
-export const logger = new Proxy({} as WinstonLogger, {
+export const logger = new Proxy(createLogger({ silent: true }), {
   get (target, property, receiver): unknown {
-    if (Reflect.has(target, property)) {
+    if (Object.hasOwn(target, property)) {
       return Reflect.get(target, property, receiver) as unknown
     }
     return Reflect.get(getLoggerInstance(), property, receiver) as unknown
@@ -120,7 +125,7 @@ export const logger = new Proxy({} as WinstonLogger, {
     return Reflect.getPrototypeOf(getLoggerInstance())
   },
   has (target, property) {
-    return Reflect.has(target, property) || Reflect.has(getLoggerInstance(), property)
+    return Object.hasOwn(target, property) || Reflect.has(getLoggerInstance(), property)
   },
   set (target, property, value, receiver) {
     return Reflect.set(target, property, value, receiver)

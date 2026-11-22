@@ -11,10 +11,9 @@ import type {
   OCPPAuthAdapter,
   OCPPAuthService,
 } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
-import type { OCPPAuthServiceImpl } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
-import type { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 
 import { OCPPAuthServiceFactory } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
+import { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 import {
   type AuthConfiguration,
   AuthContext,
@@ -351,9 +350,11 @@ export const createMockLocalAuthListManager = (
 })
 
 export const getTestAuthCache = (authService: OCPPAuthService): AuthCache => {
-  const localStrategy = (authService as OCPPAuthServiceImpl).getStrategy('local') as
-    LocalAuthStrategy | undefined
-  const cache = localStrategy?.getAuthCache()
+  const localStrategy = authService.getStrategy('local')
+  if (!(localStrategy instanceof LocalAuthStrategy)) {
+    assert.fail('Local auth strategy must expose the auth cache for tests')
+  }
+  const cache = localStrategy.getAuthCache()
   assert.ok(cache != null, 'Auth cache must be available for test')
   return cache
 }

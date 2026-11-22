@@ -4,8 +4,6 @@
  *   parsing, UI subprotocol negotiation).
  */
 
-import type { IncomingMessage } from 'node:http'
-
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
@@ -18,6 +16,7 @@ import {
 import { Protocol, ProtocolVersion } from '../../../src/types/index.js'
 import { logger } from '../../../src/utils/index.js'
 import { createLoggerMocks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import { createMockIncomingMessage } from './UIServerTestUtils.js'
 
 await describe('UIServerUtils', async () => {
   afterEach(() => {
@@ -101,7 +100,7 @@ await describe('UIServerUtils', async () => {
   })
 
   await describe('handleProtocols', async () => {
-    const dummyRequest = {} as IncomingMessage
+    const dummyRequest = createMockIncomingMessage()
 
     await it('should return matching protocol from set', () => {
       const protocols = new Set([`${Protocol.UI}${ProtocolVersion['0.0.1']}`])
