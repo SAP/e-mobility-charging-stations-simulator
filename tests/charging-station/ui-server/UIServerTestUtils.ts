@@ -2,12 +2,13 @@
  * @file UIServerTestUtils
  * @description Test utilities for UI server testing
  */
-import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
 import type { mock } from 'node:test'
 
 import assert from 'node:assert/strict'
 import { EventEmitter, once } from 'node:events'
+import { IncomingMessage } from 'node:http'
+import { Socket } from 'node:net'
 
 import type { IBootstrap } from '../../../src/charging-station/IBootstrap.js'
 import type {
@@ -331,22 +332,32 @@ export class MockUpgradeSocket extends EventEmitter {
 }
 
 /**
- * Create a mock HTTP IncomingMessage for testing.
+ * Create an HTTP IncomingMessage for testing.
+ * Use a real socket so destroying an incomplete request also closes its stream.
+ * Supply peer properties for an unconnected test socket or pass an existing socket unchanged.
  * @param overrides - Partial message properties to merge with defaults
  * @returns IncomingMessage configured for testing
  */
 export const createMockIncomingMessage = (
-  overrides?: Partial<IncomingMessage>
+  overrides?: Omit<Partial<IncomingMessage>, 'socket'> & {
+    socket?: Socket | { encrypted?: boolean; remoteAddress?: string }
+  }
 ): IncomingMessage => {
-  return {
-    destroy: () => undefined,
-    headers: {},
-    headersDistinct: {},
-    method: HttpMethod.POST,
-    rawHeaders: [],
-    url: '/ui',
-    ...overrides,
-  } as IncomingMessage
+  const { socket: peer, ...rest } = overrides ?? {}
+  let socket: Socket
+  if (peer instanceof Socket) {
+    socket = peer
+  } else {
+    socket = new Socket()
+    socket.unref()
+    Object.defineProperties(socket, {
+      encrypted: { value: peer?.encrypted ?? false },
+      remoteAddress: { value: peer?.remoteAddress ?? '127.0.0.1' },
+    })
+  }
+  const request = new IncomingMessage(socket)
+  // IncomingMessage.connection aliases socket, so apply the selected socket last.
+  return Object.assign(request, { method: HttpMethod.POST, url: '/ui' }, rest, { socket })
 }
 
 /**

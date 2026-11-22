@@ -200,12 +200,14 @@ const createMcpMetricsConfig = (
     ...overrides,
   })
 
-const buildMcpMetricsRequest = (overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
+const buildMcpMetricsRequest = (
+  overrides: Parameters<typeof createMockIncomingMessage>[0] = {}
+): IncomingMessage =>
   createMockIncomingMessage({
     complete: true,
     headers: { host: 'localhost' },
     method: 'GET',
-    socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+    socket: { encrypted: false, remoteAddress: '127.0.0.1' },
     url: '/metrics',
     ...overrides,
   })
@@ -277,7 +279,7 @@ await describe('UIMCPServer', async () => {
       const req = createMockIncomingMessage({
         complete: true,
         headers: { host: 'attacker.test' },
-        socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        socket: { encrypted: false, remoteAddress: '127.0.0.1' },
         url: '/mcp',
       })
       const res = new MockServerResponse()
@@ -311,7 +313,7 @@ await describe('UIMCPServer', async () => {
       const req = createMockIncomingMessage({
         complete: true,
         headers: { host: 'localhost' },
-        socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        socket: { encrypted: false, remoteAddress: '127.0.0.1' },
         url: '/mcp',
       })
       const res = new MockServerResponse()
@@ -341,7 +343,7 @@ await describe('UIMCPServer', async () => {
 
       gatedServer.callSendErrorResponse(
         createMockIncomingMessage({
-          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' },
         }),
         res as unknown as ServerResponse,
         StatusCodes.METHOD_NOT_ALLOWED,
@@ -435,7 +437,7 @@ await describe('UIMCPServer', async () => {
       const req = createMockIncomingMessage({
         complete: true,
         headers: { host: 'localhost' },
-        socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        socket: { encrypted: false, remoteAddress: '127.0.0.1' },
         url: '/mcp',
       })
       const res = new MockServerResponse()
@@ -1089,7 +1091,7 @@ await describe('UIMCPServer', async () => {
         mcpServer.emitRequest(
           buildMcpMetricsRequest({
             headers: { host: 'gateway.example.com' },
-            socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+            socket: { encrypted: false, remoteAddress: '203.0.113.10' },
           }),
           res
         )

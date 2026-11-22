@@ -14,7 +14,7 @@ import { ConfigurationSection, type LogConfiguration } from '../types/index.js'
 import { Configuration } from './Configuration.js'
 import { isEmpty, isNotEmptyString } from './Utils.js'
 
-let loggerInstance: undefined | WinstonLogger
+let loggerInitialized = false
 
 /**
  * Builds the daily rotated log file name pattern by inserting the date
@@ -29,10 +29,7 @@ export const getRotatingLogFileName = (file: string): string => {
   return `${file.slice(0, file.lastIndexOf(base))}${name}-%DATE%${ext}`
 }
 
-const getLoggerInstance = (): WinstonLogger => {
-  if (loggerInstance !== undefined) {
-    return loggerInstance
-  }
+const configureLogger = (): void => {
   const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
     ConfigurationSection.log
   )
@@ -42,6 +39,7 @@ const getLoggerInstance = (): WinstonLogger => {
     const logMaxSize = logConfiguration.maxSize
     if (isNotEmptyString(logConfiguration.errorFile)) {
       logTransports.push(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
         new DailyRotateFile({
           filename: getRotatingLogFileName(logConfiguration.errorFile),
           level: 'error',
@@ -52,6 +50,7 @@ const getLoggerInstance = (): WinstonLogger => {
     }
     if (isNotEmptyString(logConfiguration.file)) {
       logTransports.push(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
         new DailyRotateFile({
           filename: getRotatingLogFileName(logConfiguration.file),
           ...(logMaxFiles != null && { maxFiles: logMaxFiles }),
@@ -62,6 +61,7 @@ const getLoggerInstance = (): WinstonLogger => {
   } else {
     if (isNotEmptyString(logConfiguration.errorFile)) {
       logTransports.push(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
         new WinstonTransports.File({
           filename: logConfiguration.errorFile,
           level: 'error',
@@ -70,6 +70,7 @@ const getLoggerInstance = (): WinstonLogger => {
     }
     if (isNotEmptyString(logConfiguration.file)) {
       logTransports.push(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
         new WinstonTransports.File({
           filename: logConfiguration.file,
         })
@@ -80,7 +81,7 @@ const getLoggerInstance = (): WinstonLogger => {
     format.splat(),
     (format[(logConfiguration.format ?? 'simple') as keyof FormatWrap] as FormatWrap)()
   )
-  loggerInstance = createLogger({
+  logger.configure({
     format: logFormat,
     level: logConfiguration.level,
     silent:
@@ -94,35 +95,104 @@ const getLoggerInstance = (): WinstonLogger => {
   // `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
   //
   if (logConfiguration.console === true) {
-    loggerInstance.add(
+    logger.add(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- false positive: winston's transport class is reached through an `export =` + `export import` alias (typescript-eslint#13234)
       new WinstonTransports.Console({
         format: logFormat,
       })
     )
   }
-  return loggerInstance
 }
 
-export const logger = new Proxy({} as WinstonLogger, {
-  get (target, property, receiver): unknown {
-    if (Reflect.has(target, property)) {
-      return Reflect.get(target, property, receiver) as unknown
+const initializeLogger = (): void => {
+  if (loggerInitialized) {
+    return
+  }
+  // Configuration calls back through the proxy while attaching transports.
+  loggerInitialized = true
+  try {
+    configureLogger()
+  } catch (error) {
+    loggerInitialized = false
+    throw error
+  }
+}
+
+const createLoggerTarget = (): WinstonLogger => {
+  const target = createLogger({ silent: true })
+  // Winston generates these methods on a private prototype and defaults detached calls
+  // to its raw instance. Preserve the public receiver for detached calls.
+  const prototype = Reflect.getPrototypeOf(target) as Record<
+    string,
+    (...args: unknown[]) => WinstonLogger
+  >
+  for (const level of Object.keys(target.levels)) {
+    const log = prototype[level]
+    prototype[level] = function (this: unknown, ...args: unknown[]): WinstonLogger {
+      if (!this) {
+        return log.apply(logger, args)
+      }
+      return log.apply(this, args)
     }
-    return Reflect.get(getLoggerInstance(), property, receiver) as unknown
+  }
+  // Stream callbacks can emit on the raw target. Use the public logger for both
+  // root receivers so destinations see the same source on pipe and unpipe.
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- The apply traps supply the stream receiver.
+  const { pipe, unpipe } = target
+  target.pipe = new Proxy(pipe, {
+    apply (pipe, receiver: unknown, args): unknown {
+      return Reflect.apply(pipe, receiver === target ? logger : receiver, args) as unknown
+    },
+  })
+  target.unpipe = new Proxy(unpipe, {
+    apply (unpipe, receiver: unknown, args): unknown {
+      const result: unknown = Reflect.apply(unpipe, receiver === target ? logger : receiver, args)
+      return receiver === target && result === logger ? target : result
+    },
+  })
+  return target
+}
+
+// Configure the actual target in place. There is no second set of stream state or descriptors.
+export const logger = new Proxy<WinstonLogger>(createLoggerTarget(), {
+  defineProperty (target, property, descriptor): boolean {
+    initializeLogger()
+    return Reflect.defineProperty(target, property, descriptor)
   },
-  getOwnPropertyDescriptor (target, property) {
-    return (
-      Reflect.getOwnPropertyDescriptor(target, property) ??
-      Reflect.getOwnPropertyDescriptor(getLoggerInstance(), property)
-    )
+  deleteProperty (target, property): boolean {
+    initializeLogger()
+    return Reflect.deleteProperty(target, property)
   },
-  getPrototypeOf () {
-    return Reflect.getPrototypeOf(getLoggerInstance())
+  get (target, property, receiver): unknown {
+    initializeLogger()
+    return Reflect.get(target, property, receiver) as unknown
   },
-  has (target, property) {
-    return Reflect.has(target, property) || Reflect.has(getLoggerInstance(), property)
+  getOwnPropertyDescriptor (target, property): PropertyDescriptor | undefined {
+    initializeLogger()
+    return Reflect.getOwnPropertyDescriptor(target, property)
   },
-  set (target, property, value, receiver) {
+  getPrototypeOf (target): null | object {
+    initializeLogger()
+    return Reflect.getPrototypeOf(target)
+  },
+  has (target, property): boolean {
+    initializeLogger()
+    return Reflect.has(target, property)
+  },
+  ownKeys (target): ArrayLike<string | symbol> {
+    initializeLogger()
+    return Reflect.ownKeys(target)
+  },
+  preventExtensions (target): boolean {
+    initializeLogger()
+    return Reflect.preventExtensions(target)
+  },
+  set (target, property, value, receiver): boolean {
+    initializeLogger()
     return Reflect.set(target, property, value, receiver)
+  },
+  setPrototypeOf (target, prototype): boolean {
+    initializeLogger()
+    return Reflect.setPrototypeOf(target, prototype)
   },
 })

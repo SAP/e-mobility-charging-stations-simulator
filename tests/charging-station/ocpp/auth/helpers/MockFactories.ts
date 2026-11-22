@@ -11,10 +11,9 @@ import type {
   OCPPAuthAdapter,
   OCPPAuthService,
 } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
-import type { OCPPAuthServiceImpl } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
-import type { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 
 import { OCPPAuthServiceFactory } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
+import { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 import {
   type AuthConfiguration,
   AuthContext,
@@ -113,44 +112,47 @@ export const createMockAuthorizationResult = (
  * @param overrides - Optional partial overrides for mock methods
  * @returns Mock auth service object with stubbed authorize, cache, and stats methods
  */
-export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCPPAuthService =>
-  ({
-    authorize: (_request: AuthRequest) =>
-      new Promise<AuthorizationResult>(resolve => {
-        resolve(
-          createMockAuthorizationResult({
-            method: AuthenticationMethod.LOCAL_LIST,
-          })
-        )
-      }),
-    clearCache: () => {
-      /* empty */
-    },
-    getConfiguration: () => ({}) as AuthConfiguration,
-    getLocalAuthListManager: () => undefined,
-    getStats: () => ({
-      avgResponseTime: 0,
-      cacheHitRate: 0,
-      failedAuth: 0,
-      lastUpdatedDate: new Date(),
-      localUsageRate: 1,
-      remoteSuccessRate: 0,
-      successfulAuth: 0,
-      totalRequests: 0,
+export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCPPAuthService => ({
+  authorize: (_request: AuthRequest) =>
+    new Promise<AuthorizationResult>(resolve => {
+      resolve(
+        createMockAuthorizationResult({
+          method: AuthenticationMethod.LOCAL_LIST,
+        })
+      )
     }),
-    invalidateCache: () => {
-      /* empty */
-    },
-    isLocallyAuthorized: (_identifier: Identifier, _connectorId?: number) =>
-      new Promise<AuthorizationResult | undefined>(resolve => {
-        resolve(undefined)
-      }),
-    testConnectivity: () => true,
-    updateConfiguration: () => {
-      /* empty */
-    },
-    ...overrides,
-  }) as OCPPAuthService
+  clearCache: () => {
+    /* empty */
+  },
+  getConfiguration: createTestAuthConfig,
+  getLocalAuthListManager: () => undefined,
+  getStats: () => ({
+    avgResponseTime: 0,
+    cacheHitRate: 0,
+    failedAuth: 0,
+    lastUpdatedDate: new Date(),
+    localUsageRate: 1,
+    remoteSuccessRate: 0,
+    successfulAuth: 0,
+    totalRequests: 0,
+  }),
+  getStrategy: () => undefined,
+  invalidateCache: () => {
+    /* empty */
+  },
+  isLocallyAuthorized: (_identifier: Identifier, _connectorId?: number) =>
+    new Promise<AuthorizationResult | undefined>(resolve => {
+      resolve(undefined)
+    }),
+  testConnectivity: () => true,
+  updateCacheEntry: () => {
+    /* empty */
+  },
+  updateConfiguration: () => {
+    /* empty */
+  },
+  ...overrides,
+})
 
 // ============================================================================
 // Cache Mocks
@@ -351,9 +353,13 @@ export const createMockLocalAuthListManager = (
 })
 
 export const getTestAuthCache = (authService: OCPPAuthService): AuthCache => {
-  const localStrategy = (authService as OCPPAuthServiceImpl).getStrategy('local') as
-    LocalAuthStrategy | undefined
-  const cache = localStrategy?.getAuthCache()
+  const localStrategy = authService.getStrategy('local')
+  const strategyName =
+    localStrategy == null ? String(localStrategy) : localStrategy.constructor.name
+  if (!(localStrategy instanceof LocalAuthStrategy)) {
+    assert.fail(`Local auth strategy is required for the test auth cache, got: ${strategyName}`)
+  }
+  const cache = localStrategy.getAuthCache()
   assert.ok(cache != null, 'Auth cache must be available for test')
   return cache
 }

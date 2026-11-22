@@ -1,7 +1,17 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
-import { type Options as SqliteOptions, MikroORM as SqliteORM } from '@mikro-orm/better-sqlite'
-import { type Options as MariaDbOptions, MikroORM as MariaDbORM } from '@mikro-orm/mariadb'
+import type { MikroORM } from '@mikro-orm/core'
+
+import {
+  type BetterSqliteDriver,
+  type Options as SqliteOptions,
+  MikroORM as SqliteORM,
+} from '@mikro-orm/better-sqlite'
+import {
+  type MariaDbDriver,
+  type Options as MariaDbOptions,
+  MikroORM as MariaDbORM,
+} from '@mikro-orm/mariadb'
 
 import { BaseError } from '../../exception/index.js'
 import { PerformanceRecord, type Statistics, StorageType } from '../../types/index.js'
@@ -9,7 +19,7 @@ import { Constants, ensureError } from '../../utils/index.js'
 import { Storage } from './Storage.js'
 
 export class MikroOrmStorage extends Storage {
-  private orm?: MariaDbORM | SqliteORM
+  private orm?: MikroORM<BetterSqliteDriver> | MikroORM<MariaDbDriver>
   private readonly storageType: StorageType
 
   constructor (storageUri: string, logPrefix: string, storageType: StorageType) {
@@ -33,7 +43,7 @@ export class MikroOrmStorage extends Storage {
   public async open (): Promise<void> {
     try {
       if (this.orm == null) {
-        let orm: MariaDbORM | SqliteORM | undefined
+        let orm: MikroORM<BetterSqliteDriver> | MikroORM<MariaDbDriver> | undefined
         switch (this.storageType) {
           case StorageType.MARIA_DB:
           case StorageType.MYSQL:

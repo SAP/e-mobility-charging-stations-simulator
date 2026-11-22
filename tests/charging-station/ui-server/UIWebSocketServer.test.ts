@@ -7,6 +7,8 @@ import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
 
 import assert from 'node:assert/strict'
+import { once } from 'node:events'
+import { Socket } from 'node:net'
 import { afterEach, describe, it, type TestContext } from 'node:test'
 
 import type { UIServiceWorkerBroadcastChannel } from '../../../src/charging-station/broadcast-channel/UIServiceWorkerBroadcastChannel.js'
@@ -64,12 +66,14 @@ const createWsMetricsConfig = (
     ...overrides,
   })
 
-const buildWsMetricsRequest = (overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
+const buildWsMetricsRequest = (
+  overrides: Parameters<typeof createMockIncomingMessage>[0] = {}
+): IncomingMessage =>
   createMockIncomingMessage({
     complete: true,
     headers: { host: 'localhost' },
     method: 'GET',
-    socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+    socket: { encrypted: false, remoteAddress: '127.0.0.1' },
     url: '/metrics',
     ...overrides,
   })
@@ -353,7 +357,7 @@ await describe('UIWebSocketServer', async () => {
             host: 'gateway.example.com',
             upgrade: 'websocket',
           },
-          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' },
         }),
         socket as unknown as Duplex
       )
@@ -393,7 +397,7 @@ await describe('UIWebSocketServer', async () => {
             host: 'not-allowed.example.com',
             upgrade: 'websocket',
           },
-          socket: { encrypted: true, remoteAddress: '203.0.113.10' } as never,
+          socket: { encrypted: true, remoteAddress: '203.0.113.10' },
         }),
         socket as unknown as Duplex
       )
@@ -432,7 +436,7 @@ await describe('UIWebSocketServer', async () => {
             host: 'gateway.example.com',
             upgrade: 'websocket',
           },
-          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' },
         }),
         socket as unknown as Duplex
       )
@@ -474,7 +478,7 @@ await describe('UIWebSocketServer', async () => {
             host: 'localhost',
             upgrade: 'websocket',
           },
-          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' },
         }),
         socket as unknown as Duplex
       )
@@ -510,7 +514,7 @@ await describe('UIWebSocketServer', async () => {
             host: 'localhost',
             upgrade: 'websocket',
           },
-          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' },
         }),
         socket as unknown as Duplex
       )
@@ -540,7 +544,7 @@ await describe('UIWebSocketServer', async () => {
       server.emitUpgrade(
         createMockIncomingMessage({
           headers: { connection: 'keep-alive', host: 'localhost', upgrade: 'http/1.1' },
-          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' },
         }),
         socket as unknown as Duplex
       )
@@ -753,7 +757,7 @@ await describe('UIWebSocketServer', async () => {
         const res = new MockServerResponse()
         server.emitRequest(
           buildWsMetricsRequest({
-            socket: { encrypted: true, remoteAddress: '127.0.0.1' } as never,
+            socket: { encrypted: true, remoteAddress: '127.0.0.1' },
           }),
           res
         )
@@ -782,7 +786,7 @@ await describe('UIWebSocketServer', async () => {
         server.emitRequest(
           buildWsMetricsRequest({
             method: 'HEAD',
-            socket: { encrypted: true, remoteAddress: '127.0.0.1' } as never,
+            socket: { encrypted: true, remoteAddress: '127.0.0.1' },
           }),
           res
         )
@@ -834,7 +838,7 @@ await describe('UIWebSocketServer', async () => {
         const res = new MockServerResponse()
         server.emitRequest(
           buildWsMetricsRequest({
-            socket: { encrypted: true, remoteAddress: '127.0.0.1' } as never,
+            socket: { encrypted: true, remoteAddress: '127.0.0.1' },
           }),
           res
         )
@@ -912,7 +916,7 @@ await describe('UIWebSocketServer', async () => {
         server.emitRequest(
           buildWsMetricsRequest({
             headers: { host: 'gateway.example.com' },
-            socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+            socket: { encrypted: false, remoteAddress: '203.0.113.10' },
           }),
           res
         )
@@ -1036,7 +1040,7 @@ await describe('UIWebSocketServer', async () => {
               'sec-websocket-version': '13',
               upgrade: 'websocket',
             },
-            socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+            socket: { encrypted: false, remoteAddress: '127.0.0.1' },
           }),
           socket as unknown as Duplex
         )
@@ -1138,6 +1142,30 @@ await describe('UIWebSocketServer', async () => {
         assert.strictEqual(res.statusCode, 404)
         assert.deepStrictEqual(order, ['end', 'destroy'])
       } finally {
+        server.stop()
+      }
+    })
+
+    await it('should close an incomplete HTTP request on the 404 fallback', async t => {
+      const server = new TestableUIWebSocketServer(createWsMetricsConfig())
+      enrichBootstrapForMetrics(server)
+      server.mockListen(t)
+      const socket = createMockIncomingMessage().socket
+      const connection = new Socket()
+      try {
+        server.start()
+        const req = buildWsMetricsRequest({ complete: false, connection, socket, url: '/unknown' })
+        assert.strictEqual(req.socket, socket, 'the explicit socket takes precedence')
+        const res = new MockServerResponse()
+        server.emitRequest(req, res)
+
+        await once(req, 'close', { signal: AbortSignal.timeout(5_000) })
+        assert.strictEqual(res.statusCode, 404)
+        assert.strictEqual(socket.destroyed, true)
+        assert.strictEqual(connection.destroyed, false)
+      } finally {
+        socket.destroy()
+        connection.destroy()
         server.stop()
       }
     })

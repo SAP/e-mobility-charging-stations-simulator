@@ -8,10 +8,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type {
-  LocalAuthListManager,
-  OCPPAuthService,
-} from '../../../../src/charging-station/ocpp/auth/index.js'
+import type { LocalAuthListManager } from '../../../../src/charging-station/ocpp/auth/index.js'
 import type { OCPP16SendLocalListRequest } from '../../../../src/types/index.js'
 
 import {
@@ -25,34 +22,12 @@ import {
   OCPP16UpdateType,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import {
   createOCPP16IncomingRequestTestContext,
   type OCPP16IncomingRequestTestContext,
   upsertConfigurationKey,
 } from './OCPP16TestUtils.js'
-
-/**
- * @param manager - LocalAuthListManager instance or undefined
- * @returns Mock OCPPAuthService wired to the given manager
- */
-function createMockAuthService (manager: LocalAuthListManager | undefined): OCPPAuthService {
-  return {
-    authorize: async () => Promise.resolve({ status: 'Accepted' }),
-    getAuthCache: () => undefined,
-    getLocalAuthListManager: () => manager,
-    getStats: () => ({
-      avgResponseTime: 0,
-      cacheHitRate: 0,
-      failedAuth: 0,
-      lastUpdatedDate: new Date(),
-      localUsageRate: 0,
-      remoteSuccessRate: 0,
-      successfulAuth: 0,
-      totalRequests: 0,
-    }),
-    initialize: () => undefined,
-  } as unknown as OCPPAuthService
-}
 
 /**
  * @param context - Test context with station and service
@@ -77,7 +52,10 @@ function setupMockAuthService (
   manager: LocalAuthListManager | undefined
 ): void {
   const stationId = station.stationInfo?.chargingStationId ?? 'unknown'
-  OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService(manager))
+  OCPPAuthServiceFactory.setInstanceForTesting(
+    stationId,
+    createMockAuthService({ getLocalAuthListManager: () => manager })
+  )
 }
 
 await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {

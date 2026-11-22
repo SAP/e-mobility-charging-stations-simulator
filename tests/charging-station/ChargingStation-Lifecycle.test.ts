@@ -48,11 +48,22 @@ import {
 } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_PUBLIC_KEY_HEX } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
+import { MockWebSocket } from './mocks/MockWebSocket.js'
 import {
   createMeterValuesTemplate,
   createOCPP16RequestTestContext,
   upsertConfigurationKey,
 } from './ocpp/1.6/OCPP16TestUtils.js'
+
+/**
+ * Stand-in connection used only to change the admitted connection identity.
+ * `onMessage` compares the source connection with the station's current one.
+ * @returns A connection distinct from the station's admitted one
+ */
+const createStaleConnection = (): NonNullable<ChargingStation['wsConnection']> =>
+  new MockWebSocket('ws://stale-connection.invalid/') as unknown as NonNullable<
+    ChargingStation['wsConnection']
+  >
 
 const installBufferedMessageCallbackState = (target: object): void => {
   const callbackState = target as { bufferedMessageEntries?: unknown[] }
@@ -2263,7 +2274,7 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(stationLifecycle.bufferedMessageCallbackCount, 0)
 
       stationLifecycle.stopping = false
-      activeStation.wsConnection = {} as NonNullable<typeof activeStation.wsConnection>
+      activeStation.wsConnection = createStaleConnection()
       await stationLifecycle.onMessage.call(activeStation, request, admittedConnection)
       assert.strictEqual(handleIncomingMessage.mock.callCount(), 0)
       await stationLifecycle.onMessage.call(activeStation, request, activeStation.wsConnection)
@@ -2568,7 +2579,7 @@ await describe('ChargingStation Lifecycle', async () => {
       )
       await handlerStarted.promise
 
-      activeStation.wsConnection = {} as NonNullable<typeof activeStation.wsConnection>
+      activeStation.wsConnection = createStaleConnection()
       releaseHandler.resolve(undefined)
       await handled
 

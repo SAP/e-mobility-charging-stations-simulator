@@ -3,6 +3,12 @@ packages:
   - ui/cli
   - ui/web
 
+# GHSA-3g3m-2fjr-6pw4 (CVE-2026-118773) affects glob >= 9.0.0 and <= 14.0.1.
+# The js-beautify CLI uses glob ^13.0.6, with no patched 13.x release.
+# Vue Test Utils bundles the formatter, not the CLI.
+overrides:
+  'js-beautify@2.0.3>glob': ^14.0.6
+
 allowBuilds:
   '@parcel/watcher': false
   better-sqlite3: false

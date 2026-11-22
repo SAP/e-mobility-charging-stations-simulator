@@ -2148,13 +2148,13 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
     })
 
     await it('should restore the periodic producer after a retryable stop failure', async () => {
-      const sendFailure = new Error('StopTransaction send failure')
+      const sendFailure = new OCPPError(ErrorType.GENERIC_ERROR, 'StopTransaction send failure')
       let stopAttempts = 0
       const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
         if (args[1] === OCPP16RequestCommand.STOP_TRANSACTION) {
           stopAttempts++
           if (stopAttempts === 1) {
-            ;(args[3] as RequestParams).onError?.(sendFailure as OCPPError, false)
+            ;(args[3] as RequestParams).onError?.(sendFailure, false)
             return Promise.reject(sendFailure)
           }
           return Promise.resolve({

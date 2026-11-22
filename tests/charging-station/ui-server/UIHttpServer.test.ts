@@ -328,7 +328,7 @@ await describe('UIHttpServer', async () => {
     const req = createMockIncomingMessage({
       complete: true,
       headers: { host: 'gateway.example.com' },
-      socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+      socket: { encrypted: false, remoteAddress: '203.0.113.10' },
       url: '/ui/ui0.0.1/listChargingStations',
     })
     const res = new MockServerResponse()
@@ -372,7 +372,7 @@ await describe('UIHttpServer', async () => {
     const denyingReq = createMockIncomingMessage({
       complete: true,
       headers: { host: 'gateway.example.com' },
-      socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+      socket: { encrypted: false, remoteAddress: '203.0.113.10' },
       url: '/ui/ui0.0.1/listChargingStations',
     })
     const res = new MockServerResponse()
@@ -765,7 +765,7 @@ await describe('UIHttpServer', async () => {
     const emitDenial = (
       t: { mock: { method: typeof mock.method } },
       accessPolicy: UIServerConfiguration['accessPolicy'],
-      reqOverrides: Partial<IncomingMessage>
+      reqOverrides: Parameters<typeof createMockIncomingMessage>[0]
     ): MockServerResponse => {
       const gatedServer = new TestableUIHttpServer(
         createMockUIServerConfiguration({
@@ -879,7 +879,7 @@ await describe('UIHttpServer', async () => {
         { allowedHosts: ['gateway.example.com'], requireTlsForNonLoopback: true },
         {
           headers: { host: 'not-allowed.example.com' },
-          socket: { encrypted: true, remoteAddress: '203.0.113.10' } as never,
+          socket: { encrypted: true, remoteAddress: '203.0.113.10' },
         }
       )
 
@@ -897,7 +897,7 @@ await describe('UIHttpServer', async () => {
         },
         {
           headers: { host: 'not-allowed.example.com', 'x-forwarded-proto': 'https' },
-          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' },
         }
       )
 
@@ -911,7 +911,7 @@ await describe('UIHttpServer', async () => {
         { allowedHosts: ['gateway.example.com'], requireTlsForNonLoopback: true },
         {
           headers: { host: 'gateway.example.com' },
-          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' },
         }
       )
 
