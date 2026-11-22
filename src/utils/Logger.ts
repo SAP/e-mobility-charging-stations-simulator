@@ -108,26 +108,33 @@ const getLoggerInstance = (): WinstonLogger => {
   return loggerInstance
 }
 
+// The target is a silent stand-in required by @typescript-eslint/no-unsafe-class-instance-assignment:
+// winston's class methods run with the proxy as `this`, so every trap must resolve on the live
+// logger. Reading the target instead would expose its own `silent`, `level` and stream state and
+// would swallow every log record.
 export const logger = new Proxy(createLogger({ silent: true }), {
-  get (target, property, receiver): unknown {
-    if (Object.hasOwn(target, property)) {
-      return Reflect.get(target, property, receiver) as unknown
-    }
+  defineProperty (_target, property, descriptor): boolean {
+    return Reflect.defineProperty(getLoggerInstance(), property, descriptor)
+  },
+  deleteProperty (_target, property): boolean {
+    return Reflect.deleteProperty(getLoggerInstance(), property)
+  },
+  get (_target, property, receiver): unknown {
     return Reflect.get(getLoggerInstance(), property, receiver) as unknown
   },
-  getOwnPropertyDescriptor (target, property) {
-    return (
-      Reflect.getOwnPropertyDescriptor(target, property) ??
-      Reflect.getOwnPropertyDescriptor(getLoggerInstance(), property)
-    )
+  getOwnPropertyDescriptor (_target, property): PropertyDescriptor | undefined {
+    return Reflect.getOwnPropertyDescriptor(getLoggerInstance(), property)
   },
-  getPrototypeOf () {
+  getPrototypeOf (): null | object {
     return Reflect.getPrototypeOf(getLoggerInstance())
   },
-  has (target, property) {
-    return Object.hasOwn(target, property) || Reflect.has(getLoggerInstance(), property)
+  has (_target, property): boolean {
+    return Reflect.has(getLoggerInstance(), property)
   },
-  set (target, property, value, receiver) {
-    return Reflect.set(target, property, value, receiver)
+  ownKeys (): ArrayLike<string | symbol> {
+    return Reflect.ownKeys(getLoggerInstance())
+  },
+  set (_target, property, value): boolean {
+    return Reflect.set(getLoggerInstance(), property, value)
   },
 })

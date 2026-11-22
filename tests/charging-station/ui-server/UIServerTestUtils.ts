@@ -333,7 +333,10 @@ export class MockUpgradeSocket extends EventEmitter {
 
 /**
  * Create an HTTP IncomingMessage for testing.
- * The message is a real instance over an unconnected socket; no I/O happens.
+ * The message is a real instance over an unconnected socket; no I/O happens. Its `socket`
+ * defaults to a loopback stub: an unconnected socket exposes no `remoteAddress`, which the UI
+ * access policy would read as non-loopback, and `IncomingMessage._destroy` forwards
+ * `req.destroy()` to `socket.destroy()`.
  * @param overrides - Partial message properties to merge with defaults
  * @returns IncomingMessage configured for testing
  */
@@ -345,7 +348,18 @@ export const createMockIncomingMessage = (
   const request = new IncomingMessage(socket)
   request.method = HttpMethod.POST
   request.url = '/ui'
-  return Object.assign(request, overrides)
+  const { socket: socketOverride, ...rest } = overrides ?? {}
+  const requestSocket = Object.assign(
+    {
+      // Keep the side-effect-free `destroy()` the double used to provide.
+      destroy: (): undefined => undefined,
+      encrypted: false,
+      remoteAddress: '127.0.0.1',
+    },
+    socketOverride
+  ) as Socket
+  // `connection` is a prototype accessor aliasing `socket`, so both stay consistent.
+  return Object.assign(request, rest, { socket: requestSocket })
 }
 
 /**

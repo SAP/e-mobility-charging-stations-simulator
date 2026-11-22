@@ -61,7 +61,7 @@ import {
  * @returns A connection distinct from the station's admitted one
  */
 const createStaleConnection = (): NonNullable<ChargingStation['wsConnection']> =>
-  new MockWebSocket('ws://localhost:8080/stale-connection') as unknown as NonNullable<
+  new MockWebSocket('ws://stale-connection.invalid/') as unknown as NonNullable<
     ChargingStation['wsConnection']
   >
 

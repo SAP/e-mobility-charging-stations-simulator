@@ -1,11 +1,14 @@
 /**
  * @file Tests for Logger
- * @description Unit tests for the daily rotated log file name pattern.
+ * @description Unit tests for the daily rotated log file name pattern and for the
+ * delegation of the exported logger proxy to the live winston logger.
  */
 import assert from 'node:assert/strict'
+import { once } from 'node:events'
 import { afterEach, describe, it } from 'node:test'
 
 import { getRotatingLogFileName } from '../../src/utils/index.js'
+import { logger } from '../../src/utils/Logger.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('Logger', async () => {
@@ -53,5 +56,31 @@ await describe('Logger', async () => {
 
   await it('should treat a dotfile without another dot as a file without an extension', () => {
     assert.strictEqual(getRotatingLogFileName('logs/.log'), 'logs/.log-%DATE%')
+  })
+
+  await describe('proxy delegation', async () => {
+    // The live logger is built from the canonical default configuration, so it owns at least one
+    // transport. Reading through the exported proxy must expose those live transports: resolving
+    // the read on the silent stand-in returns its own empty transport set and every record is
+    // dropped before reaching a transport. The record is logged at the error level so that no
+    // configured transport level filters it out.
+    await it('should route writes to the live logger transport', async () => {
+      // Arrange
+      const marker = 'logger-proxy-delegation-marker'
+      const previousSilent = logger.silent
+      assert.ok(logger.transports.length > 0, 'the proxy must expose the live logger transports')
+      const [liveTransport] = logger.transports
+      try {
+        // Act
+        logger.silent = false
+        const logged = once(liveTransport, 'logged')
+        logger.error(marker)
+
+        // Assert
+        await logged
+      } finally {
+        logger.silent = previousSilent
+      }
+    })
   })
 })
