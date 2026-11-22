@@ -3,6 +3,12 @@ packages:
   - ui/cli
   - ui/web
 
+# GHSA-3g3m-2fjr-6pw4 (CVE-2026-118773): glob <= 14.0.1 allows post-timeout traversal.
+# js-beautify (dev-only, via @vue/test-utils, which never loads it) pins glob ^13.0.6
+# with no patched 13.x available.
+overrides:
+  'js-beautify>glob': ^14.0.6
+
 allowBuilds:
   '@parcel/watcher': false
   better-sqlite3: false
