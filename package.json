@@ -13,7 +13,7 @@
       "onFail": "ignore"
     }
   },
-  "packageManager": "pnpm@12.21.0",
+  "packageManager": "pnpm@12.22.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -76,9 +76,9 @@
   },
   "dependencies": {
     "@mikro-orm/better-sqlite": "^6.6.14",
-    "@mikro-orm/core": "^6.6.18",
-    "@mikro-orm/mariadb": "^6.6.18",
-    "@mikro-orm/reflection": "^6.6.18",
+    "@mikro-orm/core": "^6.6.19",
+    "@mikro-orm/mariadb": "^6.6.19",
+    "@mikro-orm/reflection": "^6.6.19",
     "@modelcontextprotocol/sdk": "~1.32.2",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
@@ -99,14 +99,14 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.2.0",
-    "utf-8-validate": "^6.0.6"
+    "utf-8-validate": "^6.1.0"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
     "@cspell/eslint-plugin": "10.5.2",
     "@eslint/js": "10.0.1",
-    "@mikro-orm/cli": "6.6.18",
+    "@mikro-orm/cli": "6.6.19",
     "@types/node": "24.19.2",
     "@types/semver": "7.8.0",
     "@types/ws": "8.18.2",
