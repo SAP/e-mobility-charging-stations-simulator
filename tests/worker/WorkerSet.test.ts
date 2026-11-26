@@ -27,6 +27,7 @@ interface WorkerSetElementView {
 
 interface WorkerSetInternals {
   elementMap: Map<string, WorkerSetElementView>
+  pendingSlotByElement: Map<unknown, number>
   promiseResponseMap: Map<unknown, unknown>
   workerSet: Set<WorkerSetElementView>
 }
@@ -235,6 +236,41 @@ await describe('WorkerSet', async () => {
     // worker never emitted 'exit'.
     await assert.rejects(pendingAddition)
     assert.strictEqual(internalsOf(workerSet).promiseResponseMap.size, 0)
+    await realTerminate()
+  })
+
+  await it('should spread concurrent additions across workers respecting elementsPerWorker', async () => {
+    const target = createWorkerSet(2)
+    workerSet = target
+    await target.start()
+
+    const ids = ['cs-1', 'cs-2', 'cs-3', 'cs-4', 'cs-5', 'cs-6']
+    await Promise.allSettled(ids.map(id => target.addElement({ id })))
+
+    const counts = [...internalsOf(target).workerSet].map(
+      workerSetElement => workerSetElement.numberOfWorkerElements
+    )
+    assert.deepStrictEqual(counts, [2, 2, 2])
+    assert.strictEqual(internalsOf(target).workerSet.size, 3)
+    assert.strictEqual(internalsOf(target).pendingSlotByElement.size, 0)
+  })
+
+  await it('should release the reservation when an addition is rejected', async () => {
+    workerSet = createWorkerSet(1)
+    await workerSet.start()
+    await workerSet.addElement({ id: 'cs-1' })
+    const rejecting = workerSet.addElement({ hold: true, id: 'cs-2' })
+    await flushMicrotasks()
+    const internals = internalsOf(workerSet)
+    const [hostingWorker] = [...internals.workerSet]
+    const realTerminate = hostingWorker.worker.terminate.bind(hostingWorker.worker)
+    hostingWorker.worker.terminate = () => Promise.reject(new Error('ERR_WORKER_NOT_RUNNING'))
+
+    await workerSet.stop()
+
+    await assert.rejects(rejecting)
+    assert.strictEqual(internals.promiseResponseMap.size, 0)
+    assert.strictEqual(internals.pendingSlotByElement.size, 0)
     await realTerminate()
   })
 })

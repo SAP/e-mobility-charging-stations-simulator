@@ -56,6 +56,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
 
   private readonly elementKey?: (element: R) => string
   private readonly elementMap: Map<string, WorkerSetElement>
+  private readonly pendingSlotByElement = new Map<WorkerSetElement, number>()
   private readonly promiseResponseMap: Map<UUIDv4, ResponseWrapper<R>>
 
   private started: boolean
@@ -101,25 +102,29 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       throw new Error('Cannot add a WorkerSet element: not started')
     }
     const workerSetElement = await this.getWorkerSetElement()
-    const sendMessageToWorker = new Promise<R>((resolve, reject) => {
-      const message = {
-        data: elementData,
-        event: WorkerMessageEvents.addWorkerElement,
-        uuid: randomUUID(),
-      } satisfies WorkerMessage<D>
-      this.promiseResponseMap.set(message.uuid, {
-        reject,
-        resolve,
-        workerSetElement,
+    try {
+      const sendMessageToWorker = new Promise<R>((resolve, reject) => {
+        const message = {
+          data: elementData,
+          event: WorkerMessageEvents.addWorkerElement,
+          uuid: randomUUID(),
+        } satisfies WorkerMessage<D>
+        this.promiseResponseMap.set(message.uuid, {
+          reject,
+          resolve,
+          workerSetElement,
+        })
+        workerSetElement.worker.postMessage(message)
       })
-      workerSetElement.worker.postMessage(message)
-    })
-    const response = await sendMessageToWorker
-    // Add element sequentially to optimize memory at startup
-    if (this.workerOptions.elementAddDelay != null && this.workerOptions.elementAddDelay > 0) {
-      await sleep(randomizeDelay(this.workerOptions.elementAddDelay))
+      const response = await sendMessageToWorker
+      // Add element sequentially to optimize memory at startup
+      if (this.workerOptions.elementAddDelay != null && this.workerOptions.elementAddDelay > 0) {
+        await sleep(randomizeDelay(this.workerOptions.elementAddDelay))
+      }
+      return response
+    } finally {
+      this.releaseSlot(workerSetElement)
     }
-    return response
   }
 
   /** @inheritDoc */
@@ -273,19 +278,22 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     for (const workerSetElement of this.workerSet) {
       if (
         !workerSetElement.terminating &&
-        workerSetElement.numberOfWorkerElements <
+        workerSetElement.numberOfWorkerElements +
+          (this.pendingSlotByElement.get(workerSetElement) ?? 0) <
           (this.workerOptions.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER)
       ) {
         chosenWorkerSetElement = workerSetElement
         break
       }
     }
-    if (chosenWorkerSetElement == null) {
-      chosenWorkerSetElement = this.addWorkerSetElement()
+    chosenWorkerSetElement ??= this.addWorkerSetElement()
+    // Reserve the slot synchronously: concurrent additions must not observe the
+    // same free capacity before this promise yields. The release happens in
+    // addElement's finally block, on any outcome.
+    this.reserveSlot(chosenWorkerSetElement)
+    if (this.workerOptions.workerStartDelay != null && this.workerOptions.workerStartDelay > 0) {
       // Add worker set element sequentially to optimize memory at startup
-      if (this.workerOptions.workerStartDelay != null && this.workerOptions.workerStartDelay > 0) {
-        await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
-      }
+      await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
     }
     return chosenWorkerSetElement
   }
@@ -324,6 +332,15 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
   }
 
+  private releaseSlot (workerSetElement: WorkerSetElement): void {
+    const pending = (this.pendingSlotByElement.get(workerSetElement) ?? 0) - 1
+    if (pending > 0) {
+      this.pendingSlotByElement.set(workerSetElement, pending)
+    } else {
+      this.pendingSlotByElement.delete(workerSetElement)
+    }
+  }
+
   private removeWorkerSetElement (workerSetElement: undefined | WorkerSetElement): void {
     if (workerSetElement == null) {
       return
@@ -334,6 +351,13 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       }
     }
     this.workerSet.delete(workerSetElement)
+  }
+
+  private reserveSlot (workerSetElement: WorkerSetElement): void {
+    this.pendingSlotByElement.set(
+      workerSetElement,
+      (this.pendingSlotByElement.get(workerSetElement) ?? 0) + 1
+    )
   }
 
   private safeEmit (event: WorkerSetEvents, ...args: unknown[]): void {
