@@ -117,6 +117,13 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         workerSetElement,
       })
     })
+    // A concurrent termination (stop()/removeElement/restart) during the
+    // creation delay rejects this wrapper. Track the rejection so the abort is
+    // propagated through addElement instead of an unhandled rejection.
+    let cancelled = false
+    responsePromise.catch(() => {
+      cancelled = true
+    })
     let released = false
     try {
       if (
@@ -127,11 +134,14 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         // Add worker set element sequentially to optimize memory at startup
         await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
       }
-      workerSetElement.worker.postMessage(message)
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- flag is set from the promise's rejection handler; the check is load-bearing
+      if (!cancelled) {
+        workerSetElement.worker.postMessage(message)
+      }
       const response = await responsePromise
       // The successful response already registered the element (see
-      // trackAddedWorkerElement); convert the reservation into the occupied
-      // count here so later additions see the right capacity window.
+      // trackAddedWorkerElement); drop the reservation now so later additions
+      // see the right capacity window.
       this.releaseSlot(workerSetElement)
       released = true
       // Add element sequentially to optimize memory at startup
@@ -310,9 +320,10 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       created = true
     }
     chosenWorkerSetElement ??= this.addWorkerSetElement()
-    // Reserve the slot synchronously: concurrent additions must not observe the
-    // same free capacity before this promise yields. Released by addElement,
-    // right after the response (success) or in a finally block (failure).
+    // Reserve the slot synchronously so concurrent additions observe the
+    // reservation before any of them yields to the microtask queue. Released by
+    // addElement, right after the response (success) or in a finally block
+    // (failure).
     this.reserveSlot(chosenWorkerSetElement)
     return { created, element: chosenWorkerSetElement }
   }

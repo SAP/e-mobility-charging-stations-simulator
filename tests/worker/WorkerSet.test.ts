@@ -273,4 +273,43 @@ await describe('WorkerSet', async () => {
     assert.strictEqual(internals.pendingSlotByElement.size, 0)
     await realTerminate()
   })
+
+  await it('should reject cleanly when stop() happens during the creation delay', async () => {
+    const target = new WorkerSet<TestElement, TestElement>(
+      ECHO_WORKER_SCRIPT,
+      {
+        elementAddDelay: 0,
+        elementsPerWorker: 1,
+        poolMaxSize: 4,
+        poolMinSize: 1,
+        workerStartDelay: 150,
+      },
+      element => element.id
+    )
+    workerSet = target
+    const unhandled: unknown[] = []
+    const onUnhandled = (reason: unknown) => {
+      unhandled.push(reason)
+    }
+    process.on('unhandledRejection', onUnhandled)
+    try {
+      await target.start()
+      await target.addElement({ id: 'cs-1' })
+      // cs-2 forces a new worker to be created (worker 1 is full), then the
+      // creation delay is pending.
+      const pendingAddition = target.addElement({ hold: true, id: 'cs-2' })
+      await flushMicrotasks()
+
+      await target.stop()
+
+      await assert.rejects(pendingAddition)
+      // Give the unhandled-rejection listener a tick to fire.
+      await new Promise(resolve => setTimeout(resolve, 20))
+      assert.strictEqual(unhandled.length, 0)
+      assert.strictEqual(internalsOf(target).promiseResponseMap.size, 0)
+      assert.strictEqual(internalsOf(target).pendingSlotByElement.size, 0)
+    } finally {
+      process.removeListener('unhandledRejection', onUnhandled)
+    }
+  })
 })
