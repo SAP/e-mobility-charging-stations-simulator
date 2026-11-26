@@ -101,29 +101,48 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     if (!this.started) {
       throw new Error('Cannot add a WorkerSet element: not started')
     }
-    const workerSetElement = await this.getWorkerSetElement()
-    try {
-      const sendMessageToWorker = new Promise<R>((resolve, reject) => {
-        const message = {
-          data: elementData,
-          event: WorkerMessageEvents.addWorkerElement,
-          uuid: randomUUID(),
-        } satisfies WorkerMessage<D>
-        this.promiseResponseMap.set(message.uuid, {
-          reject,
-          resolve,
-          workerSetElement,
-        })
-        workerSetElement.worker.postMessage(message)
+    const { created, element: workerSetElement } = this.getWorkerSetElement()
+    // Register the pending response before any delay so that a concurrent
+    // termination (stop()/removeElement/restart) can reject it cleanly instead
+    // of leaving a reservation with no wrapper registered.
+    const message = {
+      data: elementData,
+      event: WorkerMessageEvents.addWorkerElement,
+      uuid: randomUUID(),
+    } satisfies WorkerMessage<D>
+    const responsePromise = new Promise<R>((resolve, reject) => {
+      this.promiseResponseMap.set(message.uuid, {
+        reject,
+        resolve,
+        workerSetElement,
       })
-      const response = await sendMessageToWorker
+    })
+    let released = false
+    try {
+      if (
+        created &&
+        this.workerOptions.workerStartDelay != null &&
+        this.workerOptions.workerStartDelay > 0
+      ) {
+        // Add worker set element sequentially to optimize memory at startup
+        await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
+      }
+      workerSetElement.worker.postMessage(message)
+      const response = await responsePromise
+      // The successful response already registered the element (see
+      // trackAddedWorkerElement); convert the reservation into the occupied
+      // count here so later additions see the right capacity window.
+      this.releaseSlot(workerSetElement)
+      released = true
       // Add element sequentially to optimize memory at startup
       if (this.workerOptions.elementAddDelay != null && this.workerOptions.elementAddDelay > 0) {
         await sleep(randomizeDelay(this.workerOptions.elementAddDelay))
       }
       return response
     } finally {
-      this.releaseSlot(workerSetElement)
+      if (!released) {
+        this.releaseSlot(workerSetElement)
+      }
     }
   }
 
@@ -273,7 +292,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return workerSetElement
   }
 
-  private async getWorkerSetElement (): Promise<WorkerSetElement> {
+  private getWorkerSetElement (): { created: boolean; element: WorkerSetElement } {
     let chosenWorkerSetElement: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
       if (
@@ -286,16 +305,16 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         break
       }
     }
+    let created = false
+    if (chosenWorkerSetElement == null) {
+      created = true
+    }
     chosenWorkerSetElement ??= this.addWorkerSetElement()
     // Reserve the slot synchronously: concurrent additions must not observe the
-    // same free capacity before this promise yields. The release happens in
-    // addElement's finally block, on any outcome.
+    // same free capacity before this promise yields. Released by addElement,
+    // right after the response (success) or in a finally block (failure).
     this.reserveSlot(chosenWorkerSetElement)
-    if (this.workerOptions.workerStartDelay != null && this.workerOptions.workerStartDelay > 0) {
-      // Add worker set element sequentially to optimize memory at startup
-      await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
-    }
-    return chosenWorkerSetElement
+    return { created, element: chosenWorkerSetElement }
   }
 
   private getWorkerSetElementByWorker (worker: Worker): undefined | WorkerSetElement {
