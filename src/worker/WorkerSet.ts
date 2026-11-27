@@ -124,7 +124,6 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     responsePromise.catch(() => {
       cancelled = true
     })
-    let released = false
     try {
       if (
         created &&
@@ -139,20 +138,15 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         workerSetElement.worker.postMessage(message)
       }
       const response = await responsePromise
-      // The successful response already registered the element (see
-      // trackAddedWorkerElement); drop the reservation now so later additions
-      // see the right capacity window.
-      this.releaseSlot(workerSetElement)
-      released = true
       // Add element sequentially to optimize memory at startup
       if (this.workerOptions.elementAddDelay != null && this.workerOptions.elementAddDelay > 0) {
         await sleep(randomizeDelay(this.workerOptions.elementAddDelay))
       }
       return response
     } finally {
-      if (!released) {
-        this.releaseSlot(workerSetElement)
-      }
+      // Failure path: the response never registered the element, so release the
+      // reservation here. No-op after the handler already converted it.
+      this.releaseSlot(workerSetElement)
     }
   }
 
@@ -236,6 +230,10 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         switch (event) {
           case WorkerMessageEvents.addedWorkerElement:
             this.trackAddedWorkerElement(workerSetElement, data)
+            // Convert this request's reservation into its occupied count before
+            // any elementAdded listener can observe the element; a listener
+            // calling addElement() synchronously must see the right capacity.
+            this.releaseSlot(workerSetElement)
             this.safeEmit(WorkerSetEvents.elementAdded, this.info)
             resolve(data)
             break
