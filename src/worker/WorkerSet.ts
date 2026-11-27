@@ -110,8 +110,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       wrapper,
     } = this.createPendingRequest(workerSetElement, elementData)
     try {
-      // A newly created worker delays the addition sequentially to optimize
-      // memory at startup.
+      // New worker additions wait for the startup delay to optimize memory.
       if (created) {
         await this.waitForDelay(this.workerOptions.workerStartDelay)
       }
@@ -119,13 +118,10 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         workerSetElement.worker.postMessage(message)
       }
       const response = await responsePromise
-      // Delay the post-response addition sequentially to optimize memory at
-      // startup.
       await this.waitForDelay(this.workerOptions.elementAddDelay)
       return response
     } finally {
-      // Failure path (or a concurrent termination): release the slot only when
-      // the request has not been converted into an occupied element yet.
+      // Release the reservation when the request never became occupancy.
       if (!wrapper.released) {
         wrapper.released = true
         this.releaseSlot(workerSetElement)
@@ -157,7 +153,6 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   /** @inheritDoc */
   public async start (): Promise<void> {
     this.addWorkerSetElement()
-    // Add worker set element sequentially to optimize memory at startup
     await this.waitForDelay(this.workerOptions.workerStartDelay)
     this.started = true
     this.safeEmit(WorkerSetEvents.started, this.info)
@@ -311,9 +306,8 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       wrapper.resolve = resolve
       this.promiseResponseMap.set(message.uuid, wrapper)
     })
-    // A concurrent termination (stop()/removeElement/restart) during the
-    // creation delay rejects this wrapper. Track the rejection so the abort is
-    // propagated through addElement instead of an unhandled rejection.
+    // Track rejection so an abort during the delay propagates through
+    // addElement instead of surfacing as an unhandled rejection.
     let isCancelledFlag = false
     promise.catch(() => {
       isCancelledFlag = true
@@ -341,10 +335,8 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
     const created = chosenWorkerSetElement == null
     chosenWorkerSetElement ??= this.addWorkerSetElement()
-    // Reserve the slot synchronously so concurrent additions observe the
-    // reservation before any of them yields to the microtask queue. Released
-    // by the response handler (success) or by addElement's finally fallback
-    // (failure paths), exactly once per request.
+    // Reserve synchronously so concurrent additions observe it before yielding.
+    // Released exactly once per request (handler on success, finally on failure).
     this.reserveSlot(chosenWorkerSetElement)
     return { created, element: chosenWorkerSetElement }
   }
