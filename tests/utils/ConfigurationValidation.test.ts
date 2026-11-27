@@ -717,7 +717,9 @@ await describe('ConfigurationValidation', async () => {
           assert.strictEqual(error.phase, 'schema')
           assert.ok(
             error.fieldErrors.some(
-              e => e.path === 'worker.poolMinSize' && e.message.includes('no larger safe integer exists')
+              e =>
+                e.path === 'worker.poolMinSize' &&
+                e.message.includes('no larger safe integer exists')
             ),
             `Expected a poolMinSize field error, got ${JSON.stringify(error.fieldErrors)}`
           )
