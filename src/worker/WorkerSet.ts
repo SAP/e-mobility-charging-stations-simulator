@@ -103,50 +103,25 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       throw new Error('Cannot add a WorkerSet element: not started')
     }
     const { created, element: workerSetElement } = this.getWorkerSetElement()
-    // Register the pending response before any delay so that a concurrent
-    // termination (stop()/removeElement/restart) can reject it cleanly instead
-    // of leaving a reservation with no wrapper registered.
-    const message = {
-      data: elementData,
-      event: WorkerMessageEvents.addWorkerElement,
-      uuid: randomUUID(),
-    } satisfies WorkerMessage<D>
-    const wrapper: ResponseWrapper<R> = {
-      reject: undefined as unknown as (reason?: unknown) => void,
-      released: false,
-      resolve: undefined as unknown as (value: PromiseLike<R> | R) => void,
-      workerSetElement,
-    }
-    const responsePromise = new Promise<R>((resolve, reject) => {
-      wrapper.reject = reject
-      wrapper.resolve = resolve
-      this.promiseResponseMap.set(message.uuid, wrapper)
-    })
-    // A concurrent termination (stop()/removeElement/restart) during the
-    // creation delay rejects this wrapper. Track the rejection so the abort is
-    // propagated through addElement instead of an unhandled rejection.
-    let cancelled = false
-    responsePromise.catch(() => {
-      cancelled = true
-    })
+    const {
+      isCancelled,
+      message,
+      promise: responsePromise,
+      wrapper,
+    } = this.createPendingRequest(workerSetElement, elementData)
     try {
-      if (
-        created &&
-        this.workerOptions.workerStartDelay != null &&
-        this.workerOptions.workerStartDelay > 0
-      ) {
-        // Add worker set element sequentially to optimize memory at startup
-        await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
+      // A newly created worker delays the addition sequentially to optimize
+      // memory at startup.
+      if (created) {
+        await this.waitForDelay(this.workerOptions.workerStartDelay)
       }
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- flag is set from the promise's rejection handler; the check is load-bearing
-      if (!cancelled) {
+      if (!isCancelled()) {
         workerSetElement.worker.postMessage(message)
       }
       const response = await responsePromise
-      // Add element sequentially to optimize memory at startup
-      if (this.workerOptions.elementAddDelay != null && this.workerOptions.elementAddDelay > 0) {
-        await sleep(randomizeDelay(this.workerOptions.elementAddDelay))
-      }
+      // Delay the post-response addition sequentially to optimize memory at
+      // startup.
+      await this.waitForDelay(this.workerOptions.elementAddDelay)
       return response
     } finally {
       // Failure path (or a concurrent termination): release the slot only when
@@ -183,9 +158,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   public async start (): Promise<void> {
     this.addWorkerSetElement()
     // Add worker set element sequentially to optimize memory at startup
-    if (this.workerOptions.workerStartDelay != null && this.workerOptions.workerStartDelay > 0) {
-      await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
-    }
+    await this.waitForDelay(this.workerOptions.workerStartDelay)
     this.started = true
     this.safeEmit(WorkerSetEvents.started, this.info)
   }
@@ -311,6 +284,48 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return workerSetElement
   }
 
+  /**
+   * Builds a pending request (message, wrapper, promise, cancellation observer).
+   * The Promise executor runs synchronously and replaces the placeholder
+   * resolvers, so the wrapper is registered in `promiseResponseMap` before any
+   * delay in `addElement` can start.
+   * @param workerSetElement - Element the request targets
+   * @param elementData - Data payload for the request
+   * @returns The request object with its message, promise, wrapper, and a
+   *   cancellation predicate
+   */
+  private createPendingRequest (workerSetElement: WorkerSetElement, elementData: D) {
+    const message = {
+      data: elementData,
+      event: WorkerMessageEvents.addWorkerElement,
+      uuid: randomUUID(),
+    } satisfies WorkerMessage<D>
+    const wrapper: ResponseWrapper<R> = {
+      reject: () => undefined,
+      released: false,
+      resolve: () => undefined,
+      workerSetElement,
+    }
+    const promise = new Promise<R>((resolve, reject) => {
+      wrapper.reject = reject
+      wrapper.resolve = resolve
+      this.promiseResponseMap.set(message.uuid, wrapper)
+    })
+    // A concurrent termination (stop()/removeElement/restart) during the
+    // creation delay rejects this wrapper. Track the rejection so the abort is
+    // propagated through addElement instead of an unhandled rejection.
+    let isCancelledFlag = false
+    promise.catch(() => {
+      isCancelledFlag = true
+    })
+    return {
+      isCancelled: () => isCancelledFlag,
+      message,
+      promise,
+      wrapper,
+    }
+  }
+
   private getWorkerSetElement (): { created: boolean; element: WorkerSetElement } {
     let chosenWorkerSetElement: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
@@ -324,10 +339,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         break
       }
     }
-    let created = false
-    if (chosenWorkerSetElement == null) {
-      created = true
-    }
+    const created = chosenWorkerSetElement == null
     chosenWorkerSetElement ??= this.addWorkerSetElement()
     // Reserve the slot synchronously so concurrent additions observe the
     // reservation before any of them yields to the microtask queue. Released
@@ -438,5 +450,11 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
     ++workerSetElement.numberOfWorkerElements
     this.elementMap.set(key, workerSetElement)
+  }
+
+  private async waitForDelay (delayMs: number | undefined): Promise<void> {
+    if (delayMs != null && delayMs > 0) {
+      await sleep(randomizeDelay(delayMs))
+    }
   }
 }
