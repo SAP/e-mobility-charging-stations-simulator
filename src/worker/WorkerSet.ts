@@ -24,6 +24,7 @@ import { randomizeDelay, sleep } from './WorkerUtils.js'
 
 interface ResponseWrapper<R extends WorkerData> {
   reject: (reason?: unknown) => void
+  released: boolean
   resolve: (value: PromiseLike<R> | R) => void
   workerSetElement: WorkerSetElement
 }
@@ -56,6 +57,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
 
   private readonly elementKey?: (element: R) => string
   private readonly elementMap: Map<string, WorkerSetElement>
+  private readonly pendingSlotByElement = new Map<WorkerSetElement, number>()
   private readonly promiseResponseMap: Map<UUIDv4, ResponseWrapper<R>>
 
   private started: boolean
@@ -100,26 +102,31 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     if (!this.started) {
       throw new Error('Cannot add a WorkerSet element: not started')
     }
-    const workerSetElement = await this.getWorkerSetElement()
-    const sendMessageToWorker = new Promise<R>((resolve, reject) => {
-      const message = {
-        data: elementData,
-        event: WorkerMessageEvents.addWorkerElement,
-        uuid: randomUUID(),
-      } satisfies WorkerMessage<D>
-      this.promiseResponseMap.set(message.uuid, {
-        reject,
-        resolve,
-        workerSetElement,
-      })
-      workerSetElement.worker.postMessage(message)
-    })
-    const response = await sendMessageToWorker
-    // Add element sequentially to optimize memory at startup
-    if (this.workerOptions.elementAddDelay != null && this.workerOptions.elementAddDelay > 0) {
-      await sleep(randomizeDelay(this.workerOptions.elementAddDelay))
+    const { created, element: workerSetElement } = this.getWorkerSetElement()
+    const {
+      isRejected,
+      message,
+      promise: responsePromise,
+      wrapper,
+    } = this.createPendingRequest(workerSetElement, elementData)
+    try {
+      // New worker additions wait for the startup delay to optimize memory.
+      if (created) {
+        await this.waitForDelay(this.workerOptions.workerStartDelay)
+      }
+      if (!isRejected()) {
+        workerSetElement.worker.postMessage(message)
+      }
+      const response = await responsePromise
+      await this.waitForDelay(this.workerOptions.elementAddDelay)
+      return response
+    } finally {
+      // Release the reservation when the request never became occupancy.
+      if (!wrapper.released) {
+        wrapper.released = true
+        this.releaseSlot(workerSetElement)
+      }
     }
-    return response
   }
 
   /** @inheritDoc */
@@ -146,10 +153,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   /** @inheritDoc */
   public async start (): Promise<void> {
     this.addWorkerSetElement()
-    // Add worker set element sequentially to optimize memory at startup
-    if (this.workerOptions.workerStartDelay != null && this.workerOptions.workerStartDelay > 0) {
-      await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
-    }
+    await this.waitForDelay(this.workerOptions.workerStartDelay)
     this.started = true
     this.safeEmit(WorkerSetEvents.started, this.info)
   }
@@ -202,6 +206,13 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         switch (event) {
           case WorkerMessageEvents.addedWorkerElement:
             this.trackAddedWorkerElement(workerSetElement, data)
+            // Convert this request's reservation into its occupied count before
+            // any elementAdded listener can observe the element; a listener
+            // calling addElement() synchronously must see the right capacity.
+            if (!responseWrapper.released) {
+              responseWrapper.released = true
+              this.releaseSlot(workerSetElement)
+            }
             this.safeEmit(WorkerSetEvents.elementAdded, this.info)
             resolve(data)
             break
@@ -268,26 +279,66 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return workerSetElement
   }
 
-  private async getWorkerSetElement (): Promise<WorkerSetElement> {
+  /**
+   * Builds a pending request (message, wrapper, promise, and a rejection observer).
+   * The Promise executor runs synchronously and replaces the placeholder
+   * resolvers, so the wrapper is registered in `promiseResponseMap` before any
+   * delay in `addElement` can start.
+   * @param workerSetElement - Element the request targets
+   * @param elementData - Data payload for the request
+   * @returns The request object with its message, promise, wrapper, and a
+   *   rejection predicate
+   */
+  private createPendingRequest (workerSetElement: WorkerSetElement, elementData: D) {
+    const message = {
+      data: elementData,
+      event: WorkerMessageEvents.addWorkerElement,
+      uuid: randomUUID(),
+    } satisfies WorkerMessage<D>
+    const wrapper: ResponseWrapper<R> = {
+      reject: () => undefined,
+      released: false,
+      resolve: () => undefined,
+      workerSetElement,
+    }
+    const promise = new Promise<R>((resolve, reject) => {
+      wrapper.reject = reject
+      wrapper.resolve = resolve
+      this.promiseResponseMap.set(message.uuid, wrapper)
+    })
+    // Track the rejection so a concurrent termination during the delay
+    // surfaces through addElement instead of as an unhandled rejection.
+    let isRejectedFlag = false
+    promise.catch(() => {
+      isRejectedFlag = true
+    })
+    return {
+      isRejected: () => isRejectedFlag,
+      message,
+      promise,
+      wrapper,
+    }
+  }
+
+  private getWorkerSetElement (): { created: boolean; element: WorkerSetElement } {
     let chosenWorkerSetElement: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
       if (
         !workerSetElement.terminating &&
-        workerSetElement.numberOfWorkerElements <
+        workerSetElement.numberOfWorkerElements +
+          (this.pendingSlotByElement.get(workerSetElement) ?? 0) <
           (this.workerOptions.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER)
       ) {
         chosenWorkerSetElement = workerSetElement
         break
       }
     }
-    if (chosenWorkerSetElement == null) {
-      chosenWorkerSetElement = this.addWorkerSetElement()
-      // Add worker set element sequentially to optimize memory at startup
-      if (this.workerOptions.workerStartDelay != null && this.workerOptions.workerStartDelay > 0) {
-        await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
-      }
-    }
-    return chosenWorkerSetElement
+    const created = chosenWorkerSetElement == null
+    chosenWorkerSetElement ??= this.addWorkerSetElement()
+    // Reserve synchronously so concurrent additions observe it before yielding.
+    // Released exactly once per request (handler on success, finally on failure).
+    this.reserveSlot(chosenWorkerSetElement)
+    return { created, element: chosenWorkerSetElement }
   }
 
   private getWorkerSetElementByWorker (worker: Worker): undefined | WorkerSetElement {
@@ -324,6 +375,15 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
   }
 
+  private releaseSlot (workerSetElement: WorkerSetElement): void {
+    const pending = (this.pendingSlotByElement.get(workerSetElement) ?? 0) - 1
+    if (pending > 0) {
+      this.pendingSlotByElement.set(workerSetElement, pending)
+    } else {
+      this.pendingSlotByElement.delete(workerSetElement)
+    }
+  }
+
   private removeWorkerSetElement (workerSetElement: undefined | WorkerSetElement): void {
     if (workerSetElement == null) {
       return
@@ -336,17 +396,22 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     this.workerSet.delete(workerSetElement)
   }
 
+  private reserveSlot (workerSetElement: WorkerSetElement): void {
+    this.pendingSlotByElement.set(
+      workerSetElement,
+      (this.pendingSlotByElement.get(workerSetElement) ?? 0) + 1
+    )
+  }
+
   private safeEmit (event: WorkerSetEvents, ...args: unknown[]): void {
     if (this.emitter != null && this.emitter.listenerCount(event) > 0) {
       this.emitter.emit(event, ...args)
     }
   }
 
-  // terminate() fulfils once the worker has exited, so waiting on the 'exit'
-  // event afterwards is redundant and would deadlock if the event fired before
-  // its listener was attached. A rejected terminate() is surfaced but not
-  // rethrown: the element removal still succeeds. Cleanup is idempotent with the
-  // 'exit' handler.
+  // terminate() fulfils once the worker has exited, so no 'exit' wait follows.
+  // A rejected terminate() is surfaced via safeEmit, not rethrown: removal still
+  // succeeds and cleanup stays idempotent with the 'exit' handler.
   private async terminateWorker (workerSetElement: WorkerSetElement): Promise<void> {
     workerSetElement.terminating = true
     workerSetElement.worker.unref()
@@ -375,5 +440,11 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
     ++workerSetElement.numberOfWorkerElements
     this.elementMap.set(key, workerSetElement)
+  }
+
+  private async waitForDelay (delayMs: number | undefined): Promise<void> {
+    if (delayMs != null && delayMs > 0) {
+      await sleep(randomizeDelay(delayMs))
+    }
   }
 }

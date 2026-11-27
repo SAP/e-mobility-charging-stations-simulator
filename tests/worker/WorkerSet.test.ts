@@ -1,18 +1,25 @@
 /**
  * @file Tests for WorkerSet
- * @description Element-granular worker termination (issue #2027): a removed
- * element's hosting worker is terminated once it hosts zero elements, without
- * disrupting sibling elements or unrelated in-flight additions, and bulk stop()
- * stays unchanged with no leaked pending-response or element-map entries.
+ * @description WorkerSet lifecycle: element-granular worker termination (issue #2027) — a
+ * removed element's hosting worker is terminated once it hosts zero elements, without
+ * disrupting sibling elements or unrelated in-flight additions — and concurrent
+ * reservation accounting (issue #2214) — slots are reserved synchronously at pick
+ * time, released exactly once per request, and never double-released when a sibling
+ * addition is in flight.
  */
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import type { WorkerData } from '../../src/worker/index.js'
+import type { WorkerOptions } from '../../src/worker/WorkerTypes.js'
 
 import { WorkerSet } from '../../src/worker/WorkerSet.js'
-import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import {
+  flushMicrotasks,
+  standardCleanup,
+  withMockTimers,
+} from '../helpers/TestLifecycleHelpers.js'
 
 interface TestElement extends WorkerData {
   hold?: boolean
@@ -27,13 +34,17 @@ interface WorkerSetElementView {
 
 interface WorkerSetInternals {
   elementMap: Map<string, WorkerSetElementView>
+  pendingSlotByElement: Map<unknown, number>
   promiseResponseMap: Map<unknown, unknown>
   workerSet: Set<WorkerSetElementView>
 }
 
 const ECHO_WORKER_SCRIPT = fileURLToPath(new URL('./fixtures/echoWorker.mjs', import.meta.url))
 
-const createWorkerSet = (elementsPerWorker: number): WorkerSet<TestElement, TestElement> =>
+const createWorkerSet = (
+  elementsPerWorker: number,
+  overrides: Partial<WorkerOptions> = {}
+): WorkerSet<TestElement, TestElement> =>
   new WorkerSet<TestElement, TestElement>(
     ECHO_WORKER_SCRIPT,
     {
@@ -42,6 +53,7 @@ const createWorkerSet = (elementsPerWorker: number): WorkerSet<TestElement, Test
       poolMaxSize: 4,
       poolMinSize: 1,
       workerStartDelay: 0,
+      ...overrides,
     },
     element => element.id
   )
@@ -236,5 +248,110 @@ await describe('WorkerSet', async () => {
     await assert.rejects(pendingAddition)
     assert.strictEqual(internalsOf(workerSet).promiseResponseMap.size, 0)
     await realTerminate()
+  })
+
+  await it('should spread concurrent additions across workers respecting elementsPerWorker', async () => {
+    // Arrange
+    const target = createWorkerSet(2)
+    workerSet = target
+    await target.start()
+
+    // Act
+    const ids = ['cs-1', 'cs-2', 'cs-3', 'cs-4', 'cs-5', 'cs-6']
+    await Promise.allSettled(ids.map(id => target.addElement({ id })))
+
+    // Assert
+    const counts = [...internalsOf(target).workerSet].map(
+      workerSetElement => workerSetElement.numberOfWorkerElements
+    )
+    assert.deepStrictEqual(counts, [2, 2, 2])
+    assert.strictEqual(internalsOf(target).workerSet.size, 3)
+    assert.strictEqual(internalsOf(target).pendingSlotByElement.size, 0)
+  })
+
+  await it('should release the reservation when an addition is rejected', async () => {
+    // Arrange
+    workerSet = createWorkerSet(1)
+    await workerSet.start()
+    await workerSet.addElement({ id: 'cs-1' })
+    const rejecting = workerSet.addElement({ hold: true, id: 'cs-2' })
+    await flushMicrotasks()
+    const internals = internalsOf(workerSet)
+    const [hostingWorker] = [...internals.workerSet]
+    const realTerminate = hostingWorker.worker.terminate.bind(hostingWorker.worker)
+    hostingWorker.worker.terminate = () => Promise.reject(new Error('ERR_WORKER_NOT_RUNNING'))
+
+    // Act
+    await workerSet.stop()
+
+    // Assert
+    await assert.rejects(rejecting)
+    assert.strictEqual(internals.promiseResponseMap.size, 0)
+    assert.strictEqual(internals.pendingSlotByElement.size, 0)
+    await realTerminate()
+  })
+
+  await it('should reject cleanly when stop() happens during the creation delay', async t => {
+    await withMockTimers(t, ['setTimeout'], async () => {
+      const target = createWorkerSet(1, { workerStartDelay: 150 })
+      workerSet = target
+      const unhandled: unknown[] = []
+      const onUnhandled = (reason: unknown) => {
+        unhandled.push(reason)
+      }
+      process.on('unhandledRejection', onUnhandled)
+      try {
+        // Arrange
+        const starting = target.start()
+        // start() awaits the startup delay; tick past it so start() can finish.
+        t.mock.timers.tick(200)
+        await starting
+        await target.addElement({ id: 'cs-1' })
+        // cs-2 forces a new worker to be created (worker 1 is full); the
+        // creation delay stays pending.
+        const pendingAddition = target.addElement({ hold: true, id: 'cs-2' })
+        await flushMicrotasks()
+
+        // Act
+        await target.stop()
+        // Fire the pending delay; the rejection handler has already
+        // tracked the rejection.
+        t.mock.timers.tick(200)
+
+        // Assert
+        await assert.rejects(pendingAddition)
+        await flushMicrotasks()
+        assert.strictEqual(unhandled.length, 0)
+        assert.strictEqual(internalsOf(target).promiseResponseMap.size, 0)
+        assert.strictEqual(internalsOf(target).pendingSlotByElement.size, 0)
+      } finally {
+        process.removeListener('unhandledRejection', onUnhandled)
+      }
+    })
+  })
+
+  await it('should keep the reservation of a held sibling when another addition succeeds', async () => {
+    const target = createWorkerSet(2)
+    workerSet = target
+    await target.start()
+    // Arrange
+    const a = target.addElement({ id: 'cs-a' })
+    const heldSibling = target.addElement({ hold: true, id: 'cs-b' })
+    heldSibling.catch(() => undefined) // handle the sibling's rejection during stop() before the assertion below
+    const internals = internalsOf(target)
+    await a
+    // Only the held sibling's reservation must be left (cs-a is converted to
+    // an occupied count); the sibling must not lose its slot when another
+    // addition succeeds.
+    assert.strictEqual(internals.workerSet.size, 1)
+    assert.deepStrictEqual([...internals.pendingSlotByElement.values()], [1])
+    // Act
+    const c = target.addElement({ id: 'cs-c' })
+    await c
+    // Assert
+    assert.strictEqual(internals.workerSet.size, 2)
+    await target.stop()
+    await assert.rejects(heldSibling)
+    assert.strictEqual(internals.pendingSlotByElement.size, 0)
   })
 })
