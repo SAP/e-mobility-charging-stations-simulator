@@ -113,7 +113,8 @@ const moduleName = 'ConfigurationValidation'
 /**
  * Phase of the validation pipeline that produced a failure.
  * - `remap`: deprecated-key sweep (collisions, non-object intermediates)
- * - `schema`: strict Zod parse against `ConfigurationSchema`
+ * - `schema`: strict Zod parse against `ConfigurationSchema`, plus dynamic-pool
+ *   bounds resolution (ordering, safe-integer ceiling, derivation and rejection)
  *
  * Schema-version migration-chain failures (`coerceConfigurationVersion`,
  * `applyConfigurationMigration`) propagate as bare `BaseError`, mirroring

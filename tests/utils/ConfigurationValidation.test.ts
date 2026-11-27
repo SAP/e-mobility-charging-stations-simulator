@@ -728,7 +728,7 @@ await describe('ConfigurationValidation', async () => {
       )
     })
 
-    await it('should derive a safe maximum from a minimum at the safe-integer ceiling', () => {
+    await it('should derive a safe maximum from a minimum one below the safe-integer ceiling', () => {
       const parsed = buildMinimalConfiguration({
         worker: {
           poolMinSize: Number.MAX_SAFE_INTEGER - 1,
@@ -740,7 +740,6 @@ await describe('ConfigurationValidation', async () => {
       assert.ok(worker)
       assert.strictEqual(worker.poolMinSize, Number.MAX_SAFE_INTEGER - 1)
       assert.strictEqual(worker.poolMaxSize, Number.MAX_SAFE_INTEGER)
-      assert.ok(Number.isSafeInteger(worker.poolMaxSize))
     })
 
     await it('should derive the maximum from a minimum above the CPU default', () => {
