@@ -314,8 +314,8 @@ await describe('WorkerSet', async () => {
 
         // Act
         await target.stop()
-        // Fire the pending startup delay; the rejection handler has already
-        // set the cancellation flag.
+        // Fire the pending delay; the rejection handler has already
+        // tracked the rejection.
         t.mock.timers.tick(200)
 
         // Assert
