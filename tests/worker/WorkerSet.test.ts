@@ -1,9 +1,11 @@
 /**
  * @file Tests for WorkerSet
- * @description Element-granular worker termination (issue #2027): a removed
- * element's hosting worker is terminated once it hosts zero elements, without
- * disrupting sibling elements or unrelated in-flight additions, and bulk stop()
- * stays unchanged with no leaked pending-response or element-map entries.
+ * @description WorkerSet lifecycle: element-granular worker termination (issue #2027) — a
+ * removed element's hosting worker is terminated once it hosts zero elements, without
+ * disrupting sibling elements or unrelated in-flight additions — and concurrent
+ * reservation accounting (issue #2214) — slots are reserved synchronously at pick
+ * time, released exactly once per request, and never double-released when a sibling
+ * addition is in flight.
  */
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
