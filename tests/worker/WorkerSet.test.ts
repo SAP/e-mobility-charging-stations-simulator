@@ -247,13 +247,16 @@ await describe('WorkerSet', async () => {
   })
 
   await it('should spread concurrent additions across workers respecting elementsPerWorker', async () => {
+    // Arrange
     const target = createWorkerSet(2)
     workerSet = target
     await target.start()
 
+    // Act
     const ids = ['cs-1', 'cs-2', 'cs-3', 'cs-4', 'cs-5', 'cs-6']
     await Promise.allSettled(ids.map(id => target.addElement({ id })))
 
+    // Assert
     const counts = [...internalsOf(target).workerSet].map(
       workerSetElement => workerSetElement.numberOfWorkerElements
     )
@@ -263,6 +266,7 @@ await describe('WorkerSet', async () => {
   })
 
   await it('should release the reservation when an addition is rejected', async () => {
+    // Arrange
     workerSet = createWorkerSet(1)
     await workerSet.start()
     await workerSet.addElement({ id: 'cs-1' })
@@ -273,8 +277,10 @@ await describe('WorkerSet', async () => {
     const realTerminate = hostingWorker.worker.terminate.bind(hostingWorker.worker)
     hostingWorker.worker.terminate = () => Promise.reject(new Error('ERR_WORKER_NOT_RUNNING'))
 
+    // Act
     await workerSet.stop()
 
+    // Assert
     await assert.rejects(rejecting)
     assert.strictEqual(internals.promiseResponseMap.size, 0)
     assert.strictEqual(internals.pendingSlotByElement.size, 0)
@@ -290,6 +296,7 @@ await describe('WorkerSet', async () => {
     }
     process.on('unhandledRejection', onUnhandled)
     try {
+      // Arrange
       await target.start()
       await target.addElement({ id: 'cs-1' })
       // cs-2 forces a new worker to be created (worker 1 is full), then the
@@ -297,8 +304,10 @@ await describe('WorkerSet', async () => {
       const pendingAddition = target.addElement({ hold: true, id: 'cs-2' })
       await flushMicrotasks()
 
+      // Act
       await target.stop()
 
+      // Assert
       await assert.rejects(pendingAddition)
       // Give the unhandled-rejection listener a tick to fire.
       await new Promise(resolve => setTimeout(resolve, 20))
@@ -314,6 +323,7 @@ await describe('WorkerSet', async () => {
     const target = createWorkerSet(2)
     workerSet = target
     await target.start()
+    // Arrange
     const a = target.addElement({ id: 'cs-a' })
     const heldSibling = target.addElement({ hold: true, id: 'cs-b' })
     heldSibling.catch(() => undefined) // handle the sibling's rejection during stop() before the assertion below
@@ -324,9 +334,10 @@ await describe('WorkerSet', async () => {
     // addition succeeds.
     assert.strictEqual(internals.workerSet.size, 1)
     assert.deepStrictEqual([...internals.pendingSlotByElement.values()], [1])
-    // A third addition must not reuse the full worker 1 (1 occupied + 1 pending).
+    // Act
     const c = target.addElement({ id: 'cs-c' })
     await c
+    // Assert
     assert.strictEqual(internals.workerSet.size, 2)
     await target.stop()
     await assert.rejects(heldSibling)
