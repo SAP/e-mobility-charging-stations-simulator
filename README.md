@@ -204,7 +204,7 @@ The `<assets-dir>/configurations` subdirectory is created by the runtime when pe
 
 - **workerSet** ignores both bounds.
 - **fixedPool** consumes only `poolMaxSize`; `poolMinSize` is ignored.
-- **dynamicPool** requires both bounds with `poolMinSize < poolMaxSize`. When a bound is omitted, it is derived at validation time from the configured sibling bound and the CPU-based default (minimum derived from the maximum, maximum derived from the minimum, capped/floored at the CPU defaults). A maximum of 1 cannot be worked around (the minimum would be 0), a minimum above the safe-integer range cannot be raised to a valid maximum, and an explicit pair with `poolMinSize >= poolMaxSize` is rejected with a structured configuration error.
+- **dynamicPool** requires both bounds with `poolMinSize < poolMaxSize`. When a bound is omitted, it is derived at validation time from the configured sibling bound and the CPU-based default (minimum derived from the maximum, maximum derived from the minimum, capped/floored at the CPU defaults). A maximum of 1 cannot be worked around (the minimum would be 0), a minimum at the safe-integer ceiling (`Number.MAX_SAFE_INTEGER`, for which no strictly larger safe integer exists) cannot be raised to a valid maximum, and an explicit pair with `poolMinSize >= poolMaxSize` is rejected with a structured configuration error.
 
 ### Charging station template configuration
 
