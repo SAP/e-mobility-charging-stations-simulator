@@ -649,7 +649,7 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual(worker.poolMaxSize, undefined)
     })
 
-    await it('should ignore bounds in fixed-pool configurations (only the maximum is used)', () => {
+    await it('should leave bounds unchanged in fixed-pool configurations (only the maximum is used)', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMaxSize: 2, poolMinSize: 3, processType: 'fixedPool' },
       })
@@ -660,7 +660,7 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual(worker.poolMaxSize, 2)
     })
 
-    await it('should ignore bounds in workerSet configurations', () => {
+    await it('should leave bounds unchanged in workerSet configurations', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMaxSize: 2, poolMinSize: 4, processType: 'workerSet' },
       })

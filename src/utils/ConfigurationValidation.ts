@@ -27,9 +27,9 @@ import { assertIsJsonObject, clone, isEmpty, isNotEmptyArray } from './Utils.js'
  * Resolve the pool bounds of a dynamic-pool worker configuration.
  * A dynamic pool needs both bounds strictly ordered (min < max), and
  * `poolifier` rejects anything else with a `RangeError` during construction.
- * Bounds are validated and completed here, at validation time, so a bad
- * configuration fails with a structured error instead of a bare startup
- * exception.
+ * Explicit bounds are checked here, and a missing bound is derived when its
+ * sibling is configured (at validation time, so a bad configuration fails
+ * with a structured error instead of a bare startup exception).
  *
  * - Both explicit: they must be strictly ordered, otherwise the configuration
  *   is rejected with structured field errors.
@@ -37,9 +37,9 @@ import { assertIsJsonObject, clone, isEmpty, isNotEmptyArray } from './Utils.js'
  *   CPU-based default as a floor. A minimum at the safe-integer ceiling (no
  *   larger safe integer exists) is rejected with a structured field error.
  * - Only `poolMaxSize`: the minimum is derived from the maximum, using the
- *   CPU-based default as a cap. A maximum of 1 cannot be worked around
- *   (the minimum would be 0) so the configuration is rejected.
- * - None explicit: the CPU-based defaults apply unchanged.
+ *   CPU-based default as a cap. A maximum of 1 cannot produce a positive
+ *   minimum below the maximum, so the configuration is rejected.
+ * - None explicit: validation leaves both bounds absent; the CPU-based defaults apply during runtime defaulting, not here.
  *
  * Fixed-pool and worker-set configurations are returned unchanged: fixedPool
  * consumes only the maximum and workerSet ignores both bounds.
@@ -96,7 +96,7 @@ const resolveDynamicPoolBounds = (
       throw new ConfigurationValidationError(
         [
           {
-            message: `dynamic pool maximum of ${configuredMax.toString()} is invalid without a minimum (minimum would be 0, and a dynamic pool requires min < max)`,
+            message: `dynamic pool maximum of ${configuredMax.toString()} is invalid without a minimum (no positive minimum smaller than the maximum exists)`,
             path: 'worker.poolMaxSize',
           },
         ],
@@ -170,9 +170,9 @@ export class ConfigurationValidationError extends BaseError {
 
 /**
  * Validate a parsed configuration through the
- * remap → migrate → strict-parse → transform pipeline.
+ * remap → migrate → strict-parse → dynamic-pool bounds resolution → transform pipeline.
  * Throws `BaseError` for shape failures, `ConfigurationValidationError`
- * for migration collisions or schema failures.
+ * for migration collisions, schema failures and dynamic-pool bounds failures.
  * @param parsed - Raw parsed JSON value (any type — guarded internally)
  * @param filePath - Configuration file path (for error messages)
  * @returns Validated and transformed `ConfigurationData`
