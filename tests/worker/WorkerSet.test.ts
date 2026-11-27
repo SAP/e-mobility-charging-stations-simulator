@@ -312,4 +312,37 @@ await describe('WorkerSet', async () => {
       process.removeListener('unhandledRejection', onUnhandled)
     }
   })
+
+  await it('should keep the reservation of a held sibling when another addition succeeds', async () => {
+    const target = new WorkerSet<TestElement, TestElement>(
+      ECHO_WORKER_SCRIPT,
+      {
+        elementAddDelay: 0,
+        elementsPerWorker: 2,
+        poolMaxSize: 4,
+        poolMinSize: 1,
+        workerStartDelay: 0,
+      },
+      element => element.id
+    )
+    workerSet = target
+    await target.start()
+    const a = target.addElement({ id: 'cs-a' })
+    const heldSibling = target.addElement({ hold: true, id: 'cs-b' })
+    heldSibling.catch(() => undefined) // settle the floating outer promise so the assertion below is deterministic
+    const internals = internalsOf(target)
+    await a
+    // Only the held sibling's reservation must be left (cs-a is converted to
+    // an occupied count); the sibling must not lose its slot when another
+    // addition succeeds.
+    assert.strictEqual(internals.workerSet.size, 1)
+    assert.deepStrictEqual([...internals.pendingSlotByElement.values()], [1])
+    // A third addition must not reuse the full worker 1 (1 occupied + 1 pending).
+    const c = target.addElement({ id: 'cs-c' })
+    await c
+    assert.strictEqual(internals.workerSet.size, 2)
+    await target.stop()
+    await assert.rejects(heldSibling)
+    assert.strictEqual(internals.pendingSlotByElement.size, 0)
+  })
 })

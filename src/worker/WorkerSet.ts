@@ -24,6 +24,7 @@ import { randomizeDelay, sleep } from './WorkerUtils.js'
 
 interface ResponseWrapper<R extends WorkerData> {
   reject: (reason?: unknown) => void
+  released: boolean
   resolve: (value: PromiseLike<R> | R) => void
   workerSetElement: WorkerSetElement
 }
@@ -110,12 +111,16 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       event: WorkerMessageEvents.addWorkerElement,
       uuid: randomUUID(),
     } satisfies WorkerMessage<D>
+    const wrapper: ResponseWrapper<R> = {
+      reject: undefined as unknown as (reason?: unknown) => void,
+      released: false,
+      resolve: undefined as unknown as (value: PromiseLike<R> | R) => void,
+      workerSetElement,
+    }
     const responsePromise = new Promise<R>((resolve, reject) => {
-      this.promiseResponseMap.set(message.uuid, {
-        reject,
-        resolve,
-        workerSetElement,
-      })
+      wrapper.reject = reject
+      wrapper.resolve = resolve
+      this.promiseResponseMap.set(message.uuid, wrapper)
     })
     // A concurrent termination (stop()/removeElement/restart) during the
     // creation delay rejects this wrapper. Track the rejection so the abort is
@@ -144,9 +149,12 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       }
       return response
     } finally {
-      // Failure path: the response never registered the element, so release the
-      // reservation here. No-op after the handler already converted it.
-      this.releaseSlot(workerSetElement)
+      // Failure path (or a concurrent termination): release the slot only when
+      // the request has not been converted into an occupied element yet.
+      if (!wrapper.released) {
+        wrapper.released = true
+        this.releaseSlot(workerSetElement)
+      }
     }
   }
 
@@ -233,7 +241,10 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
             // Convert this request's reservation into its occupied count before
             // any elementAdded listener can observe the element; a listener
             // calling addElement() synchronously must see the right capacity.
-            this.releaseSlot(workerSetElement)
+            if (!responseWrapper.released) {
+              responseWrapper.released = true
+              this.releaseSlot(workerSetElement)
+            }
             this.safeEmit(WorkerSetEvents.elementAdded, this.info)
             resolve(data)
             break
@@ -319,9 +330,9 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
     chosenWorkerSetElement ??= this.addWorkerSetElement()
     // Reserve the slot synchronously so concurrent additions observe the
-    // reservation before any of them yields to the microtask queue. Released by
-    // addElement, right after the response (success) or in a finally block
-    // (failure).
+    // reservation before any of them yields to the microtask queue. Released
+    // by the response handler (success) or by addElement's finally fallback
+    // (failure paths), exactly once per request.
     this.reserveSlot(chosenWorkerSetElement)
     return { created, element: chosenWorkerSetElement }
   }
