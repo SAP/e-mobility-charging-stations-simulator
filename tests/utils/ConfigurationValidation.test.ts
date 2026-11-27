@@ -728,6 +728,21 @@ await describe('ConfigurationValidation', async () => {
       )
     })
 
+    await it('should derive a safe maximum from a minimum at the safe-integer ceiling', () => {
+      const parsed = buildMinimalConfiguration({
+        worker: {
+          poolMinSize: Number.MAX_SAFE_INTEGER - 1,
+          processType: 'dynamicPool',
+        },
+      })
+      const result = validateConfiguration(parsed, 'bounds-near-ceiling.json')
+      const worker = result.worker
+      assert.ok(worker)
+      assert.strictEqual(worker.poolMinSize, Number.MAX_SAFE_INTEGER - 1)
+      assert.strictEqual(worker.poolMaxSize, Number.MAX_SAFE_INTEGER)
+      assert.ok(Number.isSafeInteger(worker.poolMaxSize))
+    })
+
     await it('should derive the maximum from a minimum above the CPU default', () => {
       const min = DEFAULT_POOL_MAX_SIZE + 1
       const parsed = buildMinimalConfiguration({
