@@ -583,7 +583,9 @@ await describe('ConfigurationValidation', async () => {
           assert.ok(error instanceof ConfigurationValidationError)
           assert.strictEqual(error.phase, 'schema')
           assert.ok(
-            error.fieldErrors.some(e => e.path === 'worker.poolMaxSize' && e.message.includes('invalid')),
+            error.fieldErrors.some(
+              e => e.path === 'worker.poolMaxSize' && e.message.includes('invalid')
+            ),
             `Expected a poolMaxSize field error, got ${JSON.stringify(error.fieldErrors)}`
           )
           return true
@@ -600,7 +602,9 @@ await describe('ConfigurationValidation', async () => {
         (error: unknown) => {
           assert.ok(error instanceof ConfigurationValidationError)
           assert.ok(
-            error.fieldErrors.some(e => e.path === 'worker.poolMaxSize' && e.message.includes('greater')),
+            error.fieldErrors.some(
+              e => e.path === 'worker.poolMaxSize' && e.message.includes('greater')
+            ),
             `Expected a poolMaxSize field error, got ${JSON.stringify(error.fieldErrors)}`
           )
           return true

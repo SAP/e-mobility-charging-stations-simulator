@@ -217,10 +217,7 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
       ? resolveDynamicPoolBounds(result.data.worker, filePath, migratedFrom)
       : undefined
 
-  return transformConfiguration(
-    worker != null ? { ...result.data, worker } : result.data,
-    filePath
-  )
+  return transformConfiguration(worker != null ? { ...result.data, worker } : result.data, filePath)
 }
 
 /**
