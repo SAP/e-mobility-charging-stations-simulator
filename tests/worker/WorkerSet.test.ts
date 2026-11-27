@@ -316,7 +316,7 @@ await describe('WorkerSet', async () => {
     await target.start()
     const a = target.addElement({ id: 'cs-a' })
     const heldSibling = target.addElement({ hold: true, id: 'cs-b' })
-    heldSibling.catch(() => undefined) // settle the floating outer promise so the assertion below is deterministic
+    heldSibling.catch(() => undefined) // handle the sibling's rejection during stop() before the assertion below
     const internals = internalsOf(target)
     await a
     // Only the held sibling's reservation must be left (cs-a is converted to

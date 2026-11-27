@@ -104,7 +104,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
     const { created, element: workerSetElement } = this.getWorkerSetElement()
     const {
-      isCancelled,
+      isRejected,
       message,
       promise: responsePromise,
       wrapper,
@@ -114,7 +114,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       if (created) {
         await this.waitForDelay(this.workerOptions.workerStartDelay)
       }
-      if (!isCancelled()) {
+      if (!isRejected()) {
         workerSetElement.worker.postMessage(message)
       }
       const response = await responsePromise
@@ -280,14 +280,14 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   }
 
   /**
-   * Builds a pending request (message, wrapper, promise, cancellation observer).
+   * Builds a pending request (message, wrapper, promise, and a rejection observer).
    * The Promise executor runs synchronously and replaces the placeholder
    * resolvers, so the wrapper is registered in `promiseResponseMap` before any
    * delay in `addElement` can start.
    * @param workerSetElement - Element the request targets
    * @param elementData - Data payload for the request
    * @returns The request object with its message, promise, wrapper, and a
-   *   cancellation predicate
+   *   rejection predicate
    */
   private createPendingRequest (workerSetElement: WorkerSetElement, elementData: D) {
     const message = {
@@ -306,14 +306,14 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       wrapper.resolve = resolve
       this.promiseResponseMap.set(message.uuid, wrapper)
     })
-    // Track rejection so an abort during the delay propagates through
-    // addElement instead of surfacing as an unhandled rejection.
-    let isCancelledFlag = false
+    // Track the rejection so a concurrent termination during the delay
+    // surfaces through addElement instead of as an unhandled rejection.
+    let isRejectedFlag = false
     promise.catch(() => {
-      isCancelledFlag = true
+      isRejectedFlag = true
     })
     return {
-      isCancelled: () => isCancelledFlag,
+      isRejected: () => isRejectedFlag,
       message,
       promise,
       wrapper,
@@ -409,11 +409,9 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
   }
 
-  // terminate() fulfils once the worker has exited, so waiting on the 'exit'
-  // event afterwards is redundant and would deadlock if the event fired before
-  // its listener was attached. A rejected terminate() is surfaced but not
-  // rethrown: the element removal still succeeds. Cleanup is idempotent with the
-  // 'exit' handler.
+  // terminate() fulfils once the worker has exited, so no 'exit' wait follows.
+  // A rejected terminate() is surfaced via safeEmit, not rethrown: removal still
+  // succeeds and cleanup stays idempotent with the 'exit' handler.
   private async terminateWorker (workerSetElement: WorkerSetElement): Promise<void> {
     workerSetElement.terminating = true
     workerSetElement.worker.unref()
