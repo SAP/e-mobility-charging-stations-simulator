@@ -34,7 +34,8 @@ import { assertIsJsonObject, clone, isEmpty, isNotEmptyArray } from './Utils.js'
  * - Both explicit: they must be strictly ordered, otherwise the configuration
  *   is rejected with structured field errors.
  * - Only `poolMinSize`: the maximum is derived from the minimum, using the
- *   CPU-based default as a floor.
+ *   CPU-based default as a floor. A minimum for which no larger safe integer
+ *   exists is rejected (no drawable maximum would remain).
  * - Only `poolMaxSize`: the minimum is derived from the maximum, using the
  *   CPU-based default as a cap. A maximum of 1 cannot be worked around
  *   (the minimum would be 0) so the configuration is rejected.
@@ -73,6 +74,17 @@ const resolveDynamicPoolBounds = (
     return worker
   }
   if (configuredMin != null) {
+    if (configuredMin >= Number.MAX_SAFE_INTEGER) {
+      throw new ConfigurationValidationError(
+        [
+          {
+            message: `dynamic pool minimum of ${configuredMin.toString()} cannot be raised to a valid maximum (the next safe integer is non-representable)`,
+            path: 'worker.poolMinSize',
+          },
+        ],
+        { filePath, migratedFrom, phase: 'schema' }
+      )
+    }
     return {
       ...worker,
       poolMaxSize: Math.max(DEFAULT_POOL_MAX_SIZE, configuredMin + 1),

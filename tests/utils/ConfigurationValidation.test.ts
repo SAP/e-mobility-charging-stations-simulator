@@ -549,7 +549,7 @@ await describe('ConfigurationValidation', async () => {
     })
   })
   await describe('dynamic pool bounds resolution', async () => {
-    await it('derives the maximum from an explicit minimum', () => {
+    await it('should derive the maximum from an explicit minimum', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMinSize: 4, processType: 'dynamicPool' },
       })
@@ -561,7 +561,7 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual(worker.poolMaxSize, Math.max(DEFAULT_POOL_MAX_SIZE, 5))
     })
 
-    await it('derives the minimum from an explicit maximum', () => {
+    await it('should derive the minimum from an explicit maximum', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMaxSize: 8, processType: 'dynamicPool' },
       })
@@ -573,7 +573,7 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual(worker.poolMaxSize, 8)
     })
 
-    await it('rejects a maximum of 1 without an explicit minimum', () => {
+    await it('should reject a maximum of 1 without an explicit minimum', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMaxSize: 1, processType: 'dynamicPool' },
       })
@@ -593,7 +593,7 @@ await describe('ConfigurationValidation', async () => {
       )
     })
 
-    await it('rejects an explicit pair whose maximum is not greater than its minimum', () => {
+    await it('should reject an explicit pair whose maximum is not greater than its minimum', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMaxSize: 4, poolMinSize: 4, processType: 'dynamicPool' },
       })
@@ -612,7 +612,7 @@ await describe('ConfigurationValidation', async () => {
       )
     })
 
-    await it('rejects an explicit pair whose maximum is below its minimum', () => {
+    await it('should reject an explicit pair whose maximum is below its minimum', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMaxSize: 3, poolMinSize: 5, processType: 'dynamicPool' },
       })
@@ -626,7 +626,7 @@ await describe('ConfigurationValidation', async () => {
       )
     })
 
-    await it('keeps an explicit ordered pair unchanged', () => {
+    await it('should keep an explicit ordered pair unchanged', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMaxSize: 5, poolMinSize: 2, processType: 'dynamicPool' },
       })
@@ -637,7 +637,7 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual(worker.poolMaxSize, 5)
     })
 
-    await it('leaves omitted bounds unchanged for a dynamic pool (defaults apply later)', () => {
+    await it('should leave omitted bounds unchanged for a dynamic pool (defaults apply later)', () => {
       const parsed = buildMinimalConfiguration({
         worker: { processType: 'dynamicPool' },
       })
@@ -649,7 +649,7 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual(worker.poolMaxSize, undefined)
     })
 
-    await it('ignores bounds in fixed-pool configurations (only the maximum is used)', () => {
+    await it('should ignore bounds in fixed-pool configurations (only the maximum is used)', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMaxSize: 2, poolMinSize: 3, processType: 'fixedPool' },
       })
@@ -660,7 +660,7 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual(worker.poolMaxSize, 2)
     })
 
-    await it('ignores bounds in workerSet configurations', () => {
+    await it('should ignore bounds in workerSet configurations', () => {
       const parsed = buildMinimalConfiguration({
         worker: { poolMaxSize: 2, poolMinSize: 4, processType: 'workerSet' },
       })
@@ -671,7 +671,7 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual(worker.poolMaxSize, 2)
     })
 
-    await it('derives canonical bounds from legacy alias keys', () => {
+    await it('should derive canonical bounds from legacy alias keys', () => {
       const parsed = buildMinimalConfiguration({
         worker: { processType: 'dynamicPool' },
         workerPoolMinSize: 3,
@@ -682,6 +682,72 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual(worker.processType, 'dynamicPool')
       assert.strictEqual(worker.poolMinSize, 3)
       assert.strictEqual(worker.poolMaxSize, Math.max(DEFAULT_POOL_MAX_SIZE, 4))
+    })
+
+    await it('should floor the derived maximum at the CPU default for a minimum below it', () => {
+      const parsed = buildMinimalConfiguration({
+        worker: { poolMinSize: 1, processType: 'dynamicPool' },
+      })
+      const result = validateConfiguration(parsed, 'bounds-min-1.json')
+      const worker = result.worker
+      assert.ok(worker)
+      assert.strictEqual(worker.poolMinSize, 1)
+      assert.strictEqual(worker.poolMaxSize, Math.max(DEFAULT_POOL_MAX_SIZE, 2))
+    })
+
+    await it('should derive a minimum of 1 from an explicit maximum of 2', () => {
+      const parsed = buildMinimalConfiguration({
+        worker: { poolMaxSize: 2, processType: 'dynamicPool' },
+      })
+      const result = validateConfiguration(parsed, 'bounds-max-2.json')
+      const worker = result.worker
+      assert.ok(worker)
+      assert.strictEqual(worker.poolMinSize, 1)
+      assert.strictEqual(worker.poolMaxSize, 2)
+    })
+
+    await it('should reject a minimum for which no larger safe integer exists', () => {
+      const parsed = buildMinimalConfiguration({
+        worker: { poolMinSize: Number.MAX_SAFE_INTEGER, processType: 'dynamicPool' },
+      })
+      assert.throws(
+        () => validateConfiguration(parsed, 'bounds-max-safe-integer.json'),
+        (error: unknown) => {
+          assert.ok(error instanceof ConfigurationValidationError)
+          assert.strictEqual(error.phase, 'schema')
+          assert.ok(
+            error.fieldErrors.some(
+              e => e.path === 'worker.poolMinSize' && e.message.includes('non-representable')
+            ),
+            `Expected a poolMinSize field error, got ${JSON.stringify(error.fieldErrors)}`
+          )
+          return true
+        }
+      )
+    })
+
+    await it('should derive the maximum from a minimum above the CPU default', () => {
+      const min = DEFAULT_POOL_MAX_SIZE + 1
+      const parsed = buildMinimalConfiguration({
+        worker: { poolMinSize: min, processType: 'dynamicPool' },
+      })
+      const result = validateConfiguration(parsed, 'bounds-min-above-default.json')
+      const worker = result.worker
+      assert.ok(worker)
+      assert.strictEqual(worker.poolMinSize, min)
+      assert.strictEqual(worker.poolMaxSize, min + 1)
+    })
+
+    await it('should leave bounds unchanged when processType is omitted (workerSet default)', () => {
+      const parsed = buildMinimalConfiguration({
+        worker: { poolMaxSize: 9, poolMinSize: 4 },
+      })
+      const result = validateConfiguration(parsed, 'bounds-omitted-type.json')
+      const worker = result.worker
+      assert.ok(worker)
+      assert.strictEqual(worker.processType, undefined)
+      assert.strictEqual(worker.poolMinSize, 4)
+      assert.strictEqual(worker.poolMaxSize, 9)
     })
   })
 })
