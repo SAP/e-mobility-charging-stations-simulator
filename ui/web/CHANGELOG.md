@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.0.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v5.0.1...web@v5.0.2) (2026-11-27)
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#2197](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2197)) ([8e0bfa2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8e0bfa29c572fa1f8b690dcc68129c40c65ba7ea))
+* **deps:** update all non-major dependencies ([#2200](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2200)) ([0778c3f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0778c3fe6c4cd1f542edf4660c34d7c902c752ab))
+* **deps:** update all non-major dependencies ([#2201](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2201)) ([af5791d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/af5791d23ad7731debc4687ec71dd43fea986791))
+* **deps:** update all non-major dependencies ([#2202](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2202)) ([1d0f190](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1d0f190e4ea659a68efb83c86ecbdf12b25cda4b))
+* **deps:** update all non-major dependencies ([#2206](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2206)) ([0bc73b1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0bc73b13794ecebb28fd99388e5049ad3cbd23f2))
+* **deps:** update all non-major dependencies ([#2208](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2208)) ([0cead7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0cead7a1488fbffa711a8022365f70082e3fa18f))
+* **deps:** update all non-major dependencies ([#2211](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2211)) ([c837998](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c8379987c94b3b55ed951ccb05fc12bab608e297))
+
 ## [5.0.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v5.0.0...web@v5.0.1) (2026-11-11)
 
 ### 🧹 Chores
