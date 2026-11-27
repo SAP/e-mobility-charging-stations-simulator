@@ -22,6 +22,7 @@ import {
   DEFAULT_ELEMENT_ADD_DELAY_MS,
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
+  DEFAULT_WORKER_PROCESS_TYPE,
   DEFAULT_WORKER_START_DELAY_MS,
   WorkerProcessType,
 } from '../worker/index.js'
@@ -85,7 +86,7 @@ const defaultWorkerConfiguration: WorkerConfiguration = {
   elementsPerWorker: 'auto',
   poolMaxSize: DEFAULT_POOL_MAX_SIZE,
   poolMinSize: DEFAULT_POOL_MIN_SIZE,
-  processType: WorkerProcessType.workerSet,
+  processType: DEFAULT_WORKER_PROCESS_TYPE,
   startDelay: DEFAULT_WORKER_START_DELAY_MS,
 }
 
