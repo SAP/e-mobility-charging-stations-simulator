@@ -10,6 +10,7 @@ import { afterEach, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import type { WorkerData } from '../../src/worker/index.js'
+import type { WorkerOptions } from '../../src/worker/WorkerTypes.js'
 
 import { WorkerSet } from '../../src/worker/WorkerSet.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
@@ -34,7 +35,10 @@ interface WorkerSetInternals {
 
 const ECHO_WORKER_SCRIPT = fileURLToPath(new URL('./fixtures/echoWorker.mjs', import.meta.url))
 
-const createWorkerSet = (elementsPerWorker: number): WorkerSet<TestElement, TestElement> =>
+const createWorkerSet = (
+  elementsPerWorker: number,
+  overrides: Partial<WorkerOptions> = {}
+): WorkerSet<TestElement, TestElement> =>
   new WorkerSet<TestElement, TestElement>(
     ECHO_WORKER_SCRIPT,
     {
@@ -43,6 +47,7 @@ const createWorkerSet = (elementsPerWorker: number): WorkerSet<TestElement, Test
       poolMaxSize: 4,
       poolMinSize: 1,
       workerStartDelay: 0,
+      ...overrides,
     },
     element => element.id
   )
@@ -275,17 +280,7 @@ await describe('WorkerSet', async () => {
   })
 
   await it('should reject cleanly when stop() happens during the creation delay', async () => {
-    const target = new WorkerSet<TestElement, TestElement>(
-      ECHO_WORKER_SCRIPT,
-      {
-        elementAddDelay: 0,
-        elementsPerWorker: 1,
-        poolMaxSize: 4,
-        poolMinSize: 1,
-        workerStartDelay: 150,
-      },
-      element => element.id
-    )
+    const target = createWorkerSet(1, { workerStartDelay: 150 })
     workerSet = target
     const unhandled: unknown[] = []
     const onUnhandled = (reason: unknown) => {
@@ -314,17 +309,7 @@ await describe('WorkerSet', async () => {
   })
 
   await it('should keep the reservation of a held sibling when another addition succeeds', async () => {
-    const target = new WorkerSet<TestElement, TestElement>(
-      ECHO_WORKER_SCRIPT,
-      {
-        elementAddDelay: 0,
-        elementsPerWorker: 2,
-        poolMaxSize: 4,
-        poolMinSize: 1,
-        workerStartDelay: 0,
-      },
-      element => element.id
-    )
+    const target = createWorkerSet(2)
     workerSet = target
     await target.start()
     const a = target.addElement({ id: 'cs-a' })
