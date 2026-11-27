@@ -1,7 +1,6 @@
 import { availableParallelism, type ThreadPoolOptions } from 'poolifier'
 
-import type { WorkerOptions } from './WorkerTypes.js'
-
+import { type WorkerOptions, WorkerProcessType } from './WorkerTypes.js'
 import { defaultErrorHandler, defaultExitHandler } from './WorkerUtils.js'
 
 export const EMPTY_FUNCTION = Object.freeze(() => {
@@ -12,6 +11,7 @@ export const WORKER_SET_VERSION = '1.0.1'
 
 export const DEFAULT_ELEMENT_ADD_DELAY_MS = 0
 export const DEFAULT_WORKER_START_DELAY_MS = 500
+export const DEFAULT_WORKER_PROCESS_TYPE = WorkerProcessType.workerSet
 export const DEFAULT_POOL_MIN_SIZE = Math.max(1, Math.floor(availableParallelism() / 2))
 export const DEFAULT_POOL_MAX_SIZE = Math.max(
   DEFAULT_POOL_MIN_SIZE,

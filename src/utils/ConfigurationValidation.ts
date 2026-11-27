@@ -2,10 +2,16 @@ import type { ZodError } from 'zod'
 
 import chalk from 'chalk'
 
-import type { ConfigurationData } from '../types/index.js'
+import type { ConfigurationData, WorkerConfiguration } from '../types/index.js'
 import type { FieldError } from './FieldError.js'
 
 import { BaseError } from '../exception/index.js'
+import {
+  DEFAULT_POOL_MAX_SIZE,
+  DEFAULT_POOL_MIN_SIZE,
+  DEFAULT_WORKER_PROCESS_TYPE,
+  WorkerProcessType,
+} from '../worker/index.js'
 import {
   applyConfigurationMigration,
   coerceConfigurationVersion,
@@ -17,12 +23,98 @@ import { configurationLogPrefix } from './ConfigurationUtils.js'
 import { formatFieldErrorsSummary, mapZodIssuesToFieldErrors } from './FieldError.js'
 import { assertIsJsonObject, clone, isEmpty, isNotEmptyArray } from './Utils.js'
 
+/**
+ * Resolve the pool bounds of a dynamic-pool worker configuration.
+ * A dynamic pool needs both bounds strictly ordered (min < max), and
+ * `poolifier` rejects anything else with a `RangeError` during construction.
+ * Explicit bounds are checked here, and a missing bound is derived when its
+ * sibling is configured (at validation time, so a bad configuration fails
+ * with a structured error instead of a bare startup exception).
+ *
+ * - Both explicit: they must be strictly ordered, otherwise the configuration
+ *   is rejected with structured field errors.
+ * - Only `poolMinSize`: the maximum is derived from the minimum, using the
+ *   CPU-based default as a floor. A minimum at the safe-integer ceiling (no
+ *   larger safe integer exists) is rejected with a structured field error.
+ * - Only `poolMaxSize`: the minimum is derived from the maximum, using the
+ *   CPU-based default as a cap. A maximum of 1 cannot produce a positive
+ *   minimum below the maximum, so the configuration is rejected.
+ * - None explicit: validation leaves both bounds absent; the CPU-based defaults apply during runtime defaulting, not here.
+ *
+ * Fixed-pool and worker-set configurations are returned unchanged: fixedPool
+ * consumes only the maximum and workerSet ignores both bounds.
+ * @param worker - the worker section from the schema-validated configuration
+ * @param filePath - configuration file path (for error messages)
+ * @param migratedFrom - source schema version when migration ran
+ * @returns the worker section with bounds resolved
+ */
+const resolveDynamicPoolBounds = (
+  worker: WorkerConfiguration,
+  filePath: string,
+  migratedFrom: number | undefined
+): WorkerConfiguration => {
+  const processType = worker.processType ?? DEFAULT_WORKER_PROCESS_TYPE
+  if (processType !== WorkerProcessType.dynamicPool) {
+    return worker
+  }
+  const configuredMin = worker.poolMinSize
+  const configuredMax = worker.poolMaxSize
+  if (configuredMin != null && configuredMax != null) {
+    if (configuredMin >= configuredMax) {
+      throw new ConfigurationValidationError(
+        [
+          {
+            message: `dynamic pool maximum (${configuredMax.toString()}) must be greater than minimum (${configuredMin.toString()})`,
+            path: 'worker.poolMaxSize',
+          },
+        ],
+        { filePath, migratedFrom, phase: 'schema' }
+      )
+    }
+    return worker
+  }
+  if (configuredMin != null) {
+    if (configuredMin >= Number.MAX_SAFE_INTEGER) {
+      throw new ConfigurationValidationError(
+        [
+          {
+            message: `dynamic pool minimum of ${configuredMin.toString()} cannot be raised to a valid maximum (no larger safe integer exists)`,
+            path: 'worker.poolMinSize',
+          },
+        ],
+        { filePath, migratedFrom, phase: 'schema' }
+      )
+    }
+    return {
+      ...worker,
+      poolMaxSize: Math.max(DEFAULT_POOL_MAX_SIZE, configuredMin + 1),
+    }
+  }
+  if (configuredMax != null) {
+    const derivedMin = Math.min(DEFAULT_POOL_MIN_SIZE, configuredMax - 1)
+    if (derivedMin < 1) {
+      throw new ConfigurationValidationError(
+        [
+          {
+            message: `dynamic pool maximum of ${configuredMax.toString()} is invalid without a minimum (no positive minimum smaller than the maximum exists)`,
+            path: 'worker.poolMaxSize',
+          },
+        ],
+        { filePath, migratedFrom, phase: 'schema' }
+      )
+    }
+    return { ...worker, poolMinSize: derivedMin }
+  }
+  return worker
+}
+
 const moduleName = 'ConfigurationValidation'
 
 /**
  * Phase of the validation pipeline that produced a failure.
  * - `remap`: deprecated-key sweep (collisions, non-object intermediates)
- * - `schema`: strict Zod parse against `ConfigurationSchema`
+ * - `schema`: strict Zod parse against `ConfigurationSchema`, plus dynamic-pool
+ *   bounds resolution (ordering, safe-integer ceiling, derivation and rejection)
  *
  * Schema-version migration-chain failures (`coerceConfigurationVersion`,
  * `applyConfigurationMigration`) propagate as bare `BaseError`, mirroring
@@ -78,9 +170,9 @@ export class ConfigurationValidationError extends BaseError {
 
 /**
  * Validate a parsed configuration through the
- * remap → migrate → strict-parse → transform pipeline.
+ * remap → migrate → strict-parse → dynamic-pool bounds resolution → transform pipeline.
  * Throws `BaseError` for shape failures, `ConfigurationValidationError`
- * for migration collisions or schema failures.
+ * for migration collisions, schema failures and dynamic-pool bounds failures.
  * @param parsed - Raw parsed JSON value (any type — guarded internally)
  * @param filePath - Configuration file path (for error messages)
  * @returns Validated and transformed `ConfigurationData`
@@ -133,7 +225,12 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
     throw ConfigurationValidationError.fromZodError(result.error, { filePath, migratedFrom })
   }
 
-  return transformConfiguration(result.data, filePath)
+  const worker =
+    result.data.worker != null
+      ? resolveDynamicPoolBounds(result.data.worker, filePath, migratedFrom)
+      : undefined
+
+  return transformConfiguration(worker != null ? { ...result.data, worker } : result.data, filePath)
 }
 
 /**
