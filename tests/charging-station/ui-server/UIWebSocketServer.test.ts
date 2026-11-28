@@ -1154,6 +1154,7 @@ await describe('UIWebSocketServer', async () => {
       const connection = new Socket()
       try {
         server.start()
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- populates the legacy `IncomingMessage` `connection` alias to assert `socket` precedence
         const req = buildWsMetricsRequest({ complete: false, connection, socket, url: '/unknown' })
         assert.strictEqual(req.socket, socket, 'the explicit socket takes precedence')
         const res = new MockServerResponse()
