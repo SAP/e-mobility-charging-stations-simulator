@@ -206,7 +206,7 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
       meterValue: z.array(z.looseObject({ sampledValue: z.array(z.unknown()) })).optional(),
     })
     .refine(payload => payload.connectorId != null || payload.evseId != null, {
-      message: 'at least one of "connectorId" or "evseId" is required',
+      error: 'at least one of "connectorId" or "evseId" is required',
       path: ['connectorId'],
     }),
   [ProcedureName.NOTIFY_CUSTOMER_INFORMATION]: broadcastSchema,
@@ -245,7 +245,7 @@ const uiServiceRequestPayloadSchemas: Readonly<Record<ProcedureName, z.ZodType>>
       status: z.string().optional(),
     })
     .refine(payload => payload.connectorStatus != null || payload.status != null, {
-      message: 'at least one of "connectorStatus" or "status" is required',
+      error: 'at least one of "connectorStatus" or "status" is required',
       path: [],
     }),
   [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]: z.looseObject(atgTargetFields),

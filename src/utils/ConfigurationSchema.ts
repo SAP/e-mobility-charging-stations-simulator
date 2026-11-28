@@ -156,7 +156,7 @@ const UIServerAuthenticationSchema = z
       .string()
       .min(1)
       .refine(value => !value.includes(':'), {
-        message: "must not contain ':' (RFC 7617)",
+        error: "must not contain ':' (RFC 7617)",
       })
       .optional(),
   })
@@ -192,7 +192,7 @@ const UIServerAccessPolicySchema = z
     allowedHosts: z
       .array(
         z.string().refine(isHostLiteralWithoutPort, {
-          message: 'must be a host literal without port (no path, query, or fragment)',
+          error: 'must be a host literal without port (no path, query, or fragment)',
         })
       )
       .optional(),
@@ -206,7 +206,7 @@ const UIServerAccessPolicySchema = z
             )
           },
           {
-            message:
+            error:
               'must be an origin URL without path, query, or fragment (e.g. https://example.com)',
           }
         )
@@ -217,7 +217,7 @@ const UIServerAccessPolicySchema = z
     trustedProxies: z
       .array(
         z.string().refine(value => isIP(value) !== 0, {
-          message:
+          error:
             'must be an IPv4 or IPv6 literal (hostnames, brackets, and CIDR ranges are not supported)',
         })
       )
@@ -225,7 +225,7 @@ const UIServerAccessPolicySchema = z
   })
   .strict()
   .refine(value => !(value.allowLoopbackProxy === true && !isNotEmptyArray(value.trustedProxies)), {
-    message: "'allowLoopbackProxy' requires at least one entry in 'trustedProxies'",
+    error: "'allowLoopbackProxy' requires at least one entry in 'trustedProxies'",
     path: ['trustedProxies'],
   })
 
@@ -258,10 +258,10 @@ const UIServerListenOptionsObjectSchema = z
 const UIServerListenOptionsSchema = z
   .custom<ListenOptions>(
     value => value != null && typeof value === 'object' && !Array.isArray(value),
-    { message: 'must be a non-array object' }
+    { error: 'must be a non-array object' }
   )
   .refine(value => !has('accessPolicy', value), {
-    message: "'accessPolicy' must be configured under 'uiServer', not 'uiServer.options'",
+    error: "'accessPolicy' must be configured under 'uiServer', not 'uiServer.options'",
   })
   .pipe(UIServerListenOptionsObjectSchema)
 
@@ -366,10 +366,10 @@ export const SupervisionUrlSchema = z
     protocol: /^(?:wss?|https?|ws\+unix)$/,
   })
   .refine(value => !URL.canParse(value) || !new URL(value).href.includes('#'), {
-    message: 'must not contain a fragment identifier (#...)',
+    error: 'must not contain a fragment identifier (#...)',
   })
   .refine(value => !URL.canParse(value) || !new URL(value).href.includes('?'), {
-    message: 'must not contain a query string (?...)',
+    error: 'must not contain a query string (?...)',
   })
   .refine(
     value => {
@@ -389,7 +389,7 @@ export const SupervisionUrlSchema = z
       )
     },
     {
-      message:
+      error:
         "ws+unix:// URLs must include the socket path, then exactly one ':' before a request path starting with '/' (ws+unix:///path/to/socket.sock:/path)",
     }
   )

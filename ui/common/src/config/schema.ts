@@ -32,7 +32,7 @@ export const authenticationConfigSchema = z
       .string()
       .min(1)
       .refine(value => !value.includes(':'), {
-        message: "must not contain ':' (RFC 7617)",
+        error: "must not contain ':' (RFC 7617)",
       })
       .optional(),
   })
